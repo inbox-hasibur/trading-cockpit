@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-04 14:16:22 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-04 14:18:47 UTC**.
 
 ---
 
@@ -8,10 +8,10 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 28 | 4,992 | Python Core Kernel, Engine & Hermes Agent |
+| `.py` | 28 | 4,993 | Python Core Kernel, Engine & Hermes Agent |
 | `.js` | 1 | 1,869 | Vanilla ES6+ Reactive Terminal Controller |
 | `.css` | 1 | 1,538 | Custom Dark / Light / Terminal Design System |
-| `.md` | 9 | 1,357 | Architecture & Strategy Documentation |
+| `.md` | 9 | 1,369 | Architecture & Strategy Documentation |
 | `.html` | 1 | 398 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
 | `.cursorignore` | 1 | 12 | Configuration / Asset |
@@ -19,7 +19,7 @@
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **47** | **10,212** | *Entire Humming Bird Repository* |
+| **TOTAL** | **47** | **10,225** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -363,30 +363,30 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `CheckpointManager` | `L67–L153` | `object` | — | 2 |
-| `HermesAgentLoop` | `L156–L724` | `object` | — | 8 |
+| `CheckpointManager` | `L68–L154` | `object` | — | 2 |
+| `HermesAgentLoop` | `L157–L725` | `object` | — | 8 |
 
 
 **Methods in `CheckpointManager`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `create_checkpoint` | `L69–L108` | `(session: Session, state: PortfolioS...)` | `HermesStateCheckpoint` | — | `HermesStateCheckpoint`, `add`, `flush`, `get` |
-| `rollback_last` | `L111–L153` | `(session: Session, state: PortfolioS...)` | `dict[str, Any]` | — | `ValueError`, `append`, `decimal`, `desc` |
+| `create_checkpoint` | `L70–L109` | `(session: Session, state: PortfolioS...)` | `HermesStateCheckpoint` | — | `HermesStateCheckpoint`, `add`, `flush`, `get` |
+| `rollback_last` | `L112–L154` | `(session: Session, state: PortfolioS...)` | `dict[str, Any]` | — | `ValueError`, `append`, `decimal`, `desc` |
 
 
 **Methods in `HermesAgentLoop`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__init__` | `L157–L161` | `(self, database: Database, settings:...)` | — | — | `SkillsManager` |
-| `execute_tool` | `L163–L283` | `(self, tool_name: str, args: dict[st...)` | `dict[str, Any]` | Deterministic execution of Hermes Agent tools with automatic checkpointing. | `HermesMemory`, `RuleAudit`, `TradingCalendar`, `ValueError` |
-| `compress_history` | `L285–L297` | `(self, history: list[dict[str, str]]...)` | `list[dict[str, str]]` | Summarizes older conversation turns to keep context window compact & lightweight. | `append`, `capitalize`, `join`, `len` |
-| `detect_intent_and_tool` | `L299–L430` | `(self, message: str, snapshot: dict...)` | `tuple[str | None, dict[str, Any]]` | High-precision intent detector for Bangla, Banglish & English agent commands. | `any`, `float`, `get`, `int` |
-| `run_turn` | `L432–L496` | `(self, user_message: str, history: l...)` | `dict[str, Any]` | Main turn loop: Layered Memory + Skills Injection + Tool Execution + Context Scrubbing. | `HermesMemory`, `_conversational_inference`, `_format_tool_response`, `build_snapshot` |
-| `_format_tool_response` | `L498–L612` | `(self, tool_name: str, tool_res: dic...)` | `str` | — | `any`, `get`, `join`, `lower` |
-| `_conversational_inference` | `L614–L707` | `(self, message: str, history: list[d...)` | `dict[str, Any]` | Runs conversational response with Layered Memory and Matched SKILL.md injection. | `AsyncClient`, `ChatBudget`, `HermesMemory`, `Timeout` |
-| `_local_conversational_fallback` | `L709–L724` | `(self, message: str, snapshot: dict,...)` | `dict[str, Any]` | — | `HermesMemory`, `local_summary`, `portfolio_state`, `record_turn` |
+| `__init__` | `L158–L162` | `(self, database: Database, settings:...)` | — | — | `SkillsManager` |
+| `execute_tool` | `L164–L284` | `(self, tool_name: str, args: dict[st...)` | `dict[str, Any]` | Deterministic execution of Hermes Agent tools with automatic checkpointing. | `HermesMemory`, `RuleAudit`, `TradingCalendar`, `ValueError` |
+| `compress_history` | `L286–L298` | `(self, history: list[dict[str, str]]...)` | `list[dict[str, str]]` | Summarizes older conversation turns to keep context window compact & lightweight. | `append`, `capitalize`, `join`, `len` |
+| `detect_intent_and_tool` | `L300–L431` | `(self, message: str, snapshot: dict...)` | `tuple[str | None, dict[str, Any]]` | High-precision intent detector for Bangla, Banglish & English agent commands. | `any`, `float`, `get`, `int` |
+| `run_turn` | `L433–L497` | `(self, user_message: str, history: l...)` | `dict[str, Any]` | Main turn loop: Layered Memory + Skills Injection + Tool Execution + Context Scrubbing. | `HermesMemory`, `_conversational_inference`, `_format_tool_response`, `build_snapshot` |
+| `_format_tool_response` | `L499–L613` | `(self, tool_name: str, tool_res: dic...)` | `str` | — | `any`, `get`, `join`, `lower` |
+| `_conversational_inference` | `L615–L708` | `(self, message: str, history: list[d...)` | `dict[str, Any]` | Runs conversational response with Layered Memory and Matched SKILL.md injection. | `AsyncClient`, `ChatBudget`, `HermesMemory`, `Timeout` |
+| `_local_conversational_fallback` | `L710–L725` | `(self, message: str, snapshot: dict,...)` | `dict[str, Any]` | — | `HermesMemory`, `local_summary`, `portfolio_state`, `record_turn` |
 
 
 ---
@@ -732,4 +732,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 24 Python modules inspected, 12 FastAPI endpoints registered, 10,212 total LOC indexed.
+> **Audit Summary:** 24 Python modules inspected, 12 FastAPI endpoints registered, 10,225 total LOC indexed.

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from datetime import datetime
 from decimal import Decimal
 from typing import Any
@@ -96,7 +97,7 @@ class CheckpointManager:
                 }
 
         cp = HermesStateCheckpoint(
-            id=str(uuid4()),
+            id=f"{time.time_ns():020d}_{uuid4().hex[:8]}",
             action=action,
             description=description,
             snapshot_payload=payload,
