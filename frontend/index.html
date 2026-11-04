@@ -24,7 +24,7 @@
         <a href="#ledger" class="nav-item" title="Trade Ledger" aria-label="Trade Ledger"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></a>
         <a href="#settings" class="nav-item" id="nav-system-control" title="System Settings & Brain" aria-label="System Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
       </div>
-      <div class="nav-bottom"><a class="nav-item" href="/docs" target="_blank" rel="noopener" title="API documentation" aria-label="API documentation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-3-13-2 20"/></svg></a><span class="local-avatar" title="Local, single-user workspace">HB</span></div>
+      <div class="nav-bottom"><a class="nav-item" href="/docs" target="_blank" rel="noopener" title="API documentation" aria-label="API documentation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-3-13-2 20"/></svg></a><button type="button" class="local-avatar" id="user-avatar-btn" title="Operator Profile: Hasibur Rahman (Click to inspect or lock)">HB</button></div>
     </nav>
 
     <main class="workspace">
@@ -47,12 +47,22 @@
 
       <div id="error-banner" class="error-banner" role="alert" hidden><span id="error-text"></span><button type="button" id="dismiss-error" aria-label="Dismiss error">×</button></div>
 
-      <!-- VIEW 1: OVERVIEW -->
-      <div id="view-overview" class="workspace-view active">
+      <!-- MAIN WORKSPACE VIEW: UNIFIED SCROLLABLE DASHBOARD -->
+      <div id="view-dashboard" class="workspace-view active">
         <section id="overview" class="section-anchor">
           <div class="page-heading">
             <div><div class="eyebrow breadcrumb">WORKSPACE <span>/</span> BANGLADESH EQUITIES</div><h1>Portfolio overview<span class="heading-dot">.</span></h1><p class="muted">A clear view. A measured next move.</p></div>
-            <div class="engine-controls"><button class="button secondary" id="pause-button" type="button" disabled>Pause engine</button><button class="button primary" id="run-cycle" type="button" disabled><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6V4Z"/></svg><span id="run-label">Run automation cycle</span></button></div>
+            <div class="header-action-group">
+              <div class="header-mode-slider" id="header-mode-slider" role="radiogroup" aria-label="Ingestion Mode">
+                <button type="button" class="hdr-slider-btn active" id="hdr-mode-polling" data-mode="BACKGROUND_POLLING" title="Method A: Periodic background polling">
+                  Background Polling
+                </button>
+                <button type="button" class="hdr-slider-btn" id="hdr-mode-live" data-mode="ONSCREEN_LIVE" title="Method B: Onscreen Live Mode (Playwright Headed CDP Attached)">
+                  Onscreen Live Mode
+                </button>
+              </div>
+              <div class="engine-controls"><button class="button secondary" id="pause-button" type="button" disabled>Pause engine</button><button class="button primary" id="run-cycle" type="button" disabled><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6V4Z"/></svg><span id="run-label">Run automation cycle</span></button></div>
+            </div>
           </div>
 
           <div class="session-bar">
@@ -99,12 +109,10 @@
           <div class="panel-heading"><div><h2>Decision stream</h2><p>Every action has a reason.</p></div><span class="outline-badge" id="cycle-badge">NO CYCLES YET</span></div>
           <div class="decision-feed" id="decision-feed"><div class="empty-state"><div class="empty-state-icon">⌁</div><strong>Ready when you are</strong><p>Run a paper cycle to see range signals, settlement guards, and sequential selling decisions.</p><span>No orders run on startup.</span></div></div>
         </section>
-      </div>
 
-      <!-- VIEW 2: WATCHLIST & MARKET MAP -->
-      <div id="view-watchlist" class="workspace-view" hidden>
-        <div class="page-heading">
-          <div><div class="eyebrow breadcrumb">WORKSPACE <span>/</span> WATCHLIST & MARKET MAP</div><h1>Company Watchlist & Market Map<span class="heading-dot">.</span></h1><p class="muted">Live 3-tier company tracking, lot inspector, and Finviz-style DSE heatmap breadth.</p></div>
+        <!-- SECTION 2: WATCHLIST & MARKET MAP -->
+        <div class="page-heading section-heading" style="margin-top: 36px;">
+          <div><div class="eyebrow breadcrumb">WORKSPACE <span>/</span> WATCHLIST & MARKET MAP</div><h2>Company Watchlist & Market Map<span class="heading-dot">.</span></h2><p class="muted">Live 3-tier company tracking, lot inspector, and Finviz-style DSE heatmap breadth.</p></div>
         </div>
 
         <section class="panel watchlist-panel section-anchor" id="watchlist">
@@ -192,75 +200,75 @@
             </div>
           </div>
         </section>
-      </div>
 
-      <!-- VIEW 3: STRATEGY RULES & ALLOCATION -->
-      <div id="view-rules" class="workspace-view" hidden>
-        <div class="page-heading">
-          <div><div class="eyebrow breadcrumb">WORKSPACE <span>/</span> STRATEGY RULES & ALLOCATION</div><h1>Strategy Rules & Allocation<span class="heading-dot">.</span></h1><p class="muted">Sequential profit tiers (+1.5%, +3.5%, +6.0%), 50/50 pullback execution, and canary hypotheses.</p></div>
-        </div>
+        <!-- SECTION 3: STRATEGY RULES & ALLOCATION -->
+        <section id="rules" class="section-anchor" style="margin-top: 36px;">
+          <div class="page-heading section-heading">
+            <div><div class="eyebrow breadcrumb">WORKSPACE <span>/</span> STRATEGY RULES & ALLOCATION</div><h2>Strategy Rules & Allocation<span class="heading-dot">.</span></h2><p class="muted">Sequential profit tiers (+1.5%, +3.5%, +6.0%), 50/50 pullback execution, and canary hypotheses.</p></div>
+          </div>
 
-        <div class="rules-view-grid">
-          <!-- "What-If" Profit Simulator Slider -->
-          <article class="panel what-if-card" id="what-if-card">
-            <div class="what-if-head">
-              <div>
-                <strong>"What-If" Profit Simulator</strong>
-                <p class="small muted">Simulate net pocket profit after 1% DSE round-trip fee</p>
+          <div class="rules-view-grid">
+            <!-- "What-If" Profit Simulator Slider -->
+            <article class="panel what-if-card" id="what-if-card">
+              <div class="what-if-head">
+                <div>
+                  <strong>"What-If" Profit Simulator</strong>
+                  <p class="small muted">Simulate net pocket profit after 1% DSE round-trip fee</p>
+                </div>
+                <span class="sim-badge" id="sim-symbol-badge">BANKASIA</span>
               </div>
-              <span class="sim-badge" id="sim-symbol-badge">BANKASIA</span>
-            </div>
-            <div class="what-if-slider-box">
-              <div class="slider-labels">
-                <span>Target: <strong id="what-if-target-price">৳20.00</strong></span>
-                <span id="what-if-target-pct" class="positive">+0.00%</span>
+              <div class="what-if-slider-box">
+                <div class="slider-labels">
+                  <span>Target: <strong id="what-if-target-price">৳20.00</strong></span>
+                  <span id="what-if-target-pct" class="positive">+0.00%</span>
+                </div>
+                <input type="range" id="what-if-slider" min="-30" max="40" step="0.5" value="0" aria-label="Price change percentage slider">
+                <div class="slider-scale"><span>-30%</span><span>-15%</span><span>0%</span><span>+15%</span><span>+30%</span></div>
               </div>
-              <input type="range" id="what-if-slider" min="-30" max="40" step="0.5" value="0" aria-label="Price change percentage slider">
-              <div class="slider-scale"><span>-30%</span><span>-15%</span><span>0%</span><span>+15%</span><span>+30%</span></div>
-            </div>
-            <div class="what-if-stats">
-              <div><span>Target Value</span><strong id="what-if-gross">—</strong></div>
-              <div><span>Fee (~1.0%)</span><strong id="what-if-fee">—</strong></div>
-              <div><span>Net Pocket Profit</span><strong id="what-if-net-pnl" class="positive">—</strong></div>
-              <div><span>Net Return</span><strong id="what-if-return-pct" class="positive">—</strong></div>
-            </div>
-            <div class="what-if-foot muted small">
-              *Applies to mature shares. Breakeven hurdle requires +1.005% gross gain to cover buy + sell fees.
-            </div>
-          </article>
+              <div class="what-if-stats">
+                <div><span>Target Value</span><strong id="what-if-gross">—</strong></div>
+                <div><span>Fee (~1.0%)</span><strong id="what-if-fee">—</strong></div>
+                <div><span>Net Pocket Profit</span><strong id="what-if-net-pnl" class="positive">—</strong></div>
+                <div><span>Net Return</span><strong id="what-if-return-pct" class="positive">—</strong></div>
+              </div>
+              <div class="what-if-foot muted small">
+                *Applies to mature shares. Breakeven hurdle requires +1.005% gross gain to cover buy + sell fees.
+              </div>
+            </article>
 
-          <!-- Company Allocation & Execution Rules -->
-          <article class="panel rules-card">
-            <div class="panel-heading">
-              <div><h2>Company Rules & Buy Allocation</h2><p>Per-company caps and sequential tier parameters</p></div>
-            </div>
-            <div class="tier-controls" style="padding: 14px 18px 0;"><span class="muted small">NET PROFIT TIERS</span><div id="profit-tiers" class="tier-list"></div><span class="muted small" id="pullback-setting">3% pullback → 50/50</span></div>
-            <form id="allocation-form" class="allocation-form" style="margin-top: 14px;"><label for="buy-allocation">Buy cap <span class="muted">% of initial capital</span><input type="number" id="buy-allocation" min="0" max="100" step="0.01" required></label><label class="toggle-label"><input id="company-enabled" type="checkbox"><span>Automation enabled</span></label><button type="submit" class="button secondary small-button" id="save-allocation">Apply</button></form>
-            <div class="panel-note" style="margin: 0 18px 14px;">Cap applies to open cost basis, not a new budget on every cycle. Sequential tiers lock gains at +1.5%, +3.5%, and +6.0%.</div>
-          </article>
-        </div>
+            <!-- Company Allocation & Execution Rules -->
+            <article class="panel rules-card">
+              <div class="panel-heading">
+                <div><h2>Company Rules & Buy Allocation</h2><p>Per-company caps and sequential tier parameters</p></div>
+              </div>
+              <div class="tier-controls" style="padding: 14px 18px 0;"><span class="muted small">NET PROFIT TIERS</span><div id="profit-tiers" class="tier-list"></div><span class="muted small" id="pullback-setting">3% pullback → 50/50</span></div>
+              <form id="allocation-form" class="allocation-form" style="margin-top: 14px;"><label for="buy-allocation">Buy cap <span class="muted">% of initial capital</span><input type="number" id="buy-allocation" min="0" max="100" step="0.01" required></label><label class="toggle-label"><input id="company-enabled" type="checkbox"><span>Automation enabled</span></label><button type="submit" class="button secondary small-button" id="save-allocation">Apply</button></form>
+              <div class="panel-note" style="margin: 0 18px 14px;">Cap applies to open cost basis, not a new budget on every cycle. Sequential tiers lock gains at +1.5%, +3.5%, and +6.0%.</div>
+            </article>
+          </div>
 
-        <section class="panel canary-panel section-anchor" id="canary-section" hidden style="margin-top: 18px;">
-          <div class="panel-heading"><div><h2>Hermes Canary Observations</h2><p>User-reported threat hypotheses tracked with 10% canary probe</p></div><span class="count-badge" id="canary-count">0</span></div>
-          <div class="canary-feed" id="canary-feed"></div>
+          <section class="panel canary-panel section-anchor" id="canary-section" hidden style="margin-top: 18px;">
+            <div class="panel-heading"><div><h2>Hermes Canary Observations</h2><p>User-reported threat hypotheses tracked with 10% canary probe</p></div><span class="count-badge" id="canary-count">0</span></div>
+            <div class="canary-feed" id="canary-feed"></div>
+          </section>
+        </section>
+
+        <!-- SECTION 4: TRADE LEDGER -->
+        <section id="ledger" class="section-anchor" style="margin-top: 36px;">
+          <div class="page-heading section-heading">
+            <div><div class="eyebrow breadcrumb">WORKSPACE <span>/</span> ACCOUNTING & PERFORMANCE</div><h2>Trade ledger & reconciliation<span class="heading-dot">.</span></h2><p class="muted">Strict FIFO tax lot accounting, fee breakdowns, and realized returns.</p></div>
+          </div>
+
+          <div class="panel ledger-panel">
+            <div class="panel-heading"><div><h2>Trade ledger</h2><p>Realized performance & turnover · demo sessions</p></div><div class="period-tabs" role="group" aria-label="Accounting period"><button class="active" data-period="overall" type="button" aria-pressed="true">Overall</button><button data-period="today" type="button" aria-pressed="false">Today</button><button data-period="weekly" type="button" aria-pressed="false">Week</button><button data-period="monthly" type="button" aria-pressed="false">Month</button><button data-period="yearly" type="button" aria-pressed="false">Year</button></div></div>
+            <div class="period-summary"><div><span>REALIZED NET P/L</span><strong id="period-pnl">—</strong></div><div><span>BUY TURNOVER</span><strong id="period-buy">—</strong></div><div><span>SELL TURNOVER</span><strong id="period-sell">—</strong></div><div><span>EXECUTED TRADES</span><strong id="period-trades">—</strong></div></div>
+            <div class="table-scroll ledger-scroll"><table class="ledger-table"><thead><tr><th>SESSION</th><th>COMPANY</th><th>SIDE</th><th class="align-right">QTY</th><th class="align-right">PRICE ৳</th><th class="align-right">FEE ৳</th><th class="align-right">NET REALIZED ৳</th><th>BUCKET / SETTLES</th></tr></thead><tbody id="trades-body"></tbody></table></div>
+            <div class="panel-note watchlist-note"><span id="ledger-range">Latest 100 trades shown; totals use the complete ledger.</span><span>Sale turnover is not profit.</span></div>
+          </div>
         </section>
       </div>
 
-      <!-- VIEW 4: TRADE LEDGER -->
-      <div id="view-ledger" class="workspace-view" hidden>
-        <div class="page-heading">
-          <div><div class="eyebrow breadcrumb">WORKSPACE <span>/</span> ACCOUNTING & PERFORMANCE</div><h1>Trade ledger & reconciliation<span class="heading-dot">.</span></h1><p class="muted">Strict FIFO tax lot accounting, fee breakdowns, and realized returns.</p></div>
-        </div>
-
-        <section class="panel ledger-panel section-anchor" id="ledger">
-          <div class="panel-heading"><div><h2>Trade ledger</h2><p>Realized performance & turnover · demo sessions</p></div><div class="period-tabs" role="group" aria-label="Accounting period"><button class="active" data-period="overall" type="button" aria-pressed="true">Overall</button><button data-period="today" type="button" aria-pressed="false">Today</button><button data-period="weekly" type="button" aria-pressed="false">Week</button><button data-period="monthly" type="button" aria-pressed="false">Month</button><button data-period="yearly" type="button" aria-pressed="false">Year</button></div></div>
-          <div class="period-summary"><div><span>REALIZED NET P/L</span><strong id="period-pnl">—</strong></div><div><span>BUY TURNOVER</span><strong id="period-buy">—</strong></div><div><span>SELL TURNOVER</span><strong id="period-sell">—</strong></div><div><span>EXECUTED TRADES</span><strong id="period-trades">—</strong></div></div>
-          <div class="table-scroll ledger-scroll"><table class="ledger-table"><thead><tr><th>SESSION</th><th>COMPANY</th><th>SIDE</th><th class="align-right">QTY</th><th class="align-right">PRICE ৳</th><th class="align-right">FEE ৳</th><th class="align-right">NET REALIZED ৳</th><th>BUCKET / SETTLES</th></tr></thead><tbody id="trades-body"></tbody></table></div>
-          <div class="panel-note watchlist-note"><span id="ledger-range">Latest 100 trades shown; totals use the complete ledger.</span><span>Sale turnover is not profit.</span></div>
-        </section>
-      </div>
-
-      <!-- VIEW 5: DEDICATED SETTINGS PAGE -->
+      <!-- VIEW 2: DEDICATED SETTINGS PAGE (SEPARATE PAGE) -->
       <div id="view-settings" class="workspace-view" hidden>
         <div class="page-heading">
           <div><div class="eyebrow breadcrumb">COCKPIT <span>/</span> CONFIGURATION</div><h1>System Settings & Hermes Brain<span class="heading-dot">.</span></h1><p class="muted">Master automation locks, dual ingestion pipelines, AI brain switcher & fee parameters.</p></div>
@@ -292,10 +300,10 @@
                     <span class="seg-sub">Low-overhead periodic HTTP poll</span>
                   </div>
                 </button>
-                <button class="mode-seg-btn" id="mode-btn-live" data-mode="SIDE_BY_SIDE_LIVE" type="button" title="Method B: Playwright Attached/Headed Live Side-by-Side Browser">
+                <button class="mode-seg-btn" id="mode-btn-live" data-mode="ONSCREEN_LIVE" type="button" title="Method B: Onscreen Live Mode (Playwright Headed CDP Attached)">
                   <span class="mode-icon">🖥</span>
                   <div>
-                    <strong>Method B: Side-by-Side Live</strong>
+                    <strong>Method B: Onscreen Live Mode</strong>
                     <span class="seg-sub">Headed Playwright CDP attached</span>
                   </div>
                 </button>
@@ -313,6 +321,65 @@
                 </div>
               </div>
             </div>
+          </article>
+
+          <!-- Card 2: API Keys, Quotas & Live Telemetry -->
+          <article class="sys-ctrl-card settings-card" id="api-keys-card">
+            <div class="ctrl-card-head">
+              <span class="sys-badge teal-badge">CREDENTIALS & QUOTAS</span>
+              <h3>API Keys, Fallbacks & Usage Telemetry</h3>
+            </div>
+            <p class="muted small">Configures LLM reasoning gateways, notification bots, and daily rate limits. Secrets are isolated with zero-secret LLM context leakage protection.</p>
+
+            <form id="api-keys-form" class="settings-form" style="margin-top: 14px;">
+              <div class="settings-form-row">
+                <label for="key-openrouter">OpenRouter API Key (Primary Reasoning)</label>
+                <div class="key-input-wrap">
+                  <input type="password" id="key-openrouter" placeholder="sk-or-v1-••••••••••••••••" autocomplete="off">
+                  <button type="button" class="key-toggle-btn" data-target="key-openrouter" title="Toggle visibility">👁</button>
+                </div>
+                <span class="field-hint" id="hint-openrouter">Configured: No</span>
+              </div>
+
+              <div class="settings-form-row" style="margin-top: 12px;">
+                <label for="key-gemini">Google Gemini API Key (1st Fallback Brain)</label>
+                <div class="key-input-wrap">
+                  <input type="password" id="key-gemini" placeholder="AIzaSy••••••••••••••••" autocomplete="off">
+                  <button type="button" class="key-toggle-btn" data-target="key-gemini" title="Toggle visibility">👁</button>
+                </div>
+                <span class="field-hint" id="hint-gemini">Configured: No</span>
+              </div>
+
+              <div class="settings-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
+                <div class="settings-form-row">
+                  <label for="key-telegram-token">Telegram Bot Token (Alerts)</label>
+                  <input type="password" id="key-telegram-token" placeholder="bot123456:ABC-••••••••" autocomplete="off">
+                </div>
+                <div class="settings-form-row">
+                  <label for="key-telegram-chat">Telegram Chat ID</label>
+                  <input type="text" id="key-telegram-chat" placeholder="@channel or 12345678" autocomplete="off">
+                </div>
+              </div>
+
+              <div class="settings-form-row" style="margin-top: 14px;">
+                <div class="quota-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <label for="key-daily-limit" style="margin: 0;">Daily External AI Call Limit</label>
+                  <strong id="telemetry-usage-text" class="small">0 / 30 calls used</strong>
+                </div>
+                <div class="quota-bar-wrap" style="height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
+                  <div id="telemetry-quota-bar" style="width: 0%; height: 100%; background: var(--teal); transition: width 0.3s;"></div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <input type="number" id="key-daily-limit" min="5" max="500" value="30" style="width: 90px;">
+                  <span class="muted small">calls / day budget cap</span>
+                </div>
+              </div>
+
+              <div class="form-actions" style="margin-top: 16px; display: flex; gap: 10px; align-items: center;">
+                <button type="submit" class="button primary small-button" id="save-keys-btn">Save API Configuration</button>
+                <span class="save-status-msg" id="keys-save-status"></span>
+              </div>
+            </form>
           </article>
 
           <!-- Card 2: Hermes AI Brain & 3-Tier Fallback Chain -->
@@ -404,15 +471,6 @@
           <div><div class="eyebrow">PORTFOLIO COPILOT</div><h2>Hermes<span class="copilot-spark">✦</span></h2></div>
         </div>
         <div class="chat-header-actions">
-          <div class="model-picker-wrap">
-            <button type="button" class="model-badge-btn" id="hermes-model-btn" title="Switch AI Brain Model (/model)">
-              <span class="brain-spark">🧠</span> <span id="hermes-active-model-name">mimo-v2-flash</span> <span class="badge-caret">▾</span>
-            </button>
-            <div class="model-picker-dropdown" id="model-picker-dropdown" hidden>
-              <div class="dropdown-header">HERMES AI BRAIN</div>
-              <div class="dropdown-list" id="model-dropdown-list"></div>
-            </div>
-          </div>
           <span class="read-only-badge agentic-badge" id="agentic-badge">AGENTIC</span>
           <button type="button" class="panel-ctrl-btn" id="hermes-collapse-btn" title="Minimize / Collapse sidebar" aria-label="Minimize sidebar">⇥</button>
         </div>
@@ -451,8 +509,19 @@
             <button type="button" data-prompt="SQURPHARMA restore koro">Restore company <span>↺</span></button>
           </div>
           <div class="provider-status">
-            <span class="mini-dot muted-dot"></span>
-            <span id="chat-provider">LOCAL AGENTIC ORCHESTRATOR</span>
+            <div class="model-picker-wrap bottom-model-picker">
+              <button type="button" class="bottom-model-btn" id="hermes-bottom-model-btn" title="Switch AI Brain Model (/model)">
+                <span class="status-dot-mini teal">●</span>
+                <span class="muted-label" id="provider-prefix-label">OPENROUTER ·</span>
+                <strong id="hermes-active-model-name">xiaomi/mimo-v2-flash</strong>
+                <span class="badge-caret">▾</span>
+              </button>
+              <div class="model-picker-dropdown bottom-dropdown" id="model-picker-dropdown" hidden>
+                <div class="dropdown-header">HERMES AI BRAIN</div>
+                <div class="dropdown-list" id="model-dropdown-list"></div>
+              </div>
+            </div>
+            <span class="bot-state-pill" id="bot-orchestrator-label">AGENTIC</span>
           </div>
           <form id="chat-form" class="chat-form">
             <label for="chat-input" class="sr-only">Message Hermes</label>
@@ -626,6 +695,69 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Operator Profile Popover / Modal -->
+  <dialog id="operator-modal" class="operator-profile-modal" aria-labelledby="op-title">
+    <div class="modal-backdrop" id="op-backdrop"></div>
+    <div class="modal-dialog small-dialog">
+      <header class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-eyebrow">VERIFIED OPERATOR</div>
+          <h2 id="op-title">Hasibur Rahman</h2>
+        </div>
+        <button type="button" class="modal-close-btn" id="op-close-btn" aria-label="Close modal">×</button>
+      </header>
+      <div class="modal-body">
+        <div class="op-profile-card">
+          <div class="op-avatar-large">HB</div>
+          <div class="op-info">
+            <strong id="op-name">Hasibur Rahman</strong>
+            <span class="muted" id="op-username">01882082502</span>
+            <span class="op-portfolio-badge" id="op-portfolio">Humming Bird (StockNow)</span>
+          </div>
+        </div>
+        <div class="op-details-list">
+          <div class="op-detail-row"><span>Session:</span><strong class="positive">● Verified Active</strong></div>
+          <div class="op-detail-row"><span>Role:</span><strong>Lead Strategy Architect</strong></div>
+          <div class="op-detail-row"><span>Engine Guard:</span><strong>Local Air-Gapped Zero-Secret</strong></div>
+        </div>
+        <div class="op-actions" style="margin-top: 18px; display: flex; gap: 8px;">
+          <button type="button" class="button secondary small-button" id="lock-cockpit-btn" style="flex: 1;">
+            🔒 Lock Cockpit
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Operator Login Gate Overlay Dialog -->
+  <dialog id="login-gate-overlay" class="login-gate-modal" aria-labelledby="login-title">
+    <div class="login-modal-dialog">
+      <div class="login-header">
+        <div class="brand-avatar">HB</div>
+        <h2 id="login-title">Humming Bird Cockpit</h2>
+        <p class="muted">Operator Authentication Gate</p>
+      </div>
+      <form id="login-form" class="login-form">
+        <div class="login-field">
+          <label for="login-username">Operator ID / Phone</label>
+          <input type="text" id="login-username" required placeholder="01882082502" value="01882082502" autocomplete="username">
+        </div>
+        <div class="login-field">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" required placeholder="••••••••••••" autocomplete="current-password">
+        </div>
+        <div id="login-error-msg" class="login-error" hidden></div>
+        <div class="login-actions">
+          <button type="submit" class="button primary" id="login-submit-btn">Unlock Cockpit</button>
+          <button type="button" class="button secondary" id="login-autofill-btn" title="Auto-fill demo credentials">1-Click Auto-fill Demo</button>
+        </div>
+      </form>
+      <div class="login-foot muted small">
+        Default operator: <code>01882082502</code> / <code>Stocknow#909109</code>
       </div>
     </div>
   </dialog>

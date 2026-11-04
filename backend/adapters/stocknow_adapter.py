@@ -73,7 +73,7 @@ class StockNowAdapter:
             "description": (
                 f"Method A: Periodic background polling every {polling_interval_sec}s."
                 if ingestion_mode == "BACKGROUND_POLLING"
-                else "Method B: Playwright Attached/Headed Live Side-by-Side Browser."
+                else "Method B: Onscreen Live Mode (Playwright Headed CDP Attached)."
             ),
         }
 

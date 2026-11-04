@@ -37,6 +37,13 @@ class Settings:
     bucket_anchor: date = date(2024, 1, 7)  # Fixed Sunday; not a resettable weekday.
     openrouter_api_key: str = ""
     openrouter_model: str = "xiaomi/mimo-v2-flash"
+    gemini_api_key: str = ""
+    telegram_bot_token: str = ""
+    telegram_chat_id: str = ""
+    operator_username: str = "01882082502"
+    operator_password: str = "Stocknow#909109"
+    operator_name: str = "Hasibur Rahman"
+    operator_portfolio: str = "Humming Bird (StockNow)"
     chat_daily_call_limit: int = 30
     chat_max_output_tokens: int = 500
     cockpit_api_token: str = ""
@@ -91,6 +98,13 @@ class Settings:
             market_close=time.fromisoformat(os.getenv("MARKET_CLOSE", "14:30")),
             openrouter_api_key=os.getenv("OPENROUTER_API_KEY", "").strip(),
             openrouter_model=os.getenv("OPENROUTER_MODEL", "xiaomi/mimo-v2-flash").strip(),
+            gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip() or os.getenv("GOOGLE_API_KEY", "").strip(),
+            telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN", "").strip(),
+            telegram_chat_id=os.getenv("TELEGRAM_CHAT_ID", "").strip(),
+            operator_username=os.getenv("OPERATOR_USERNAME", "01882082502").strip(),
+            operator_password=os.getenv("OPERATOR_PASSWORD", "Stocknow#909109").strip(),
+            operator_name=os.getenv("OPERATOR_NAME", "Hasibur Rahman").strip(),
+            operator_portfolio=os.getenv("OPERATOR_PORTFOLIO", "Humming Bird (StockNow)").strip(),
             chat_daily_call_limit=int(os.getenv("CHAT_DAILY_CALL_LIMIT", "30")),
             chat_max_output_tokens=int(os.getenv("CHAT_MAX_OUTPUT_TOKENS", "500")),
             cockpit_api_token=os.getenv("COCKPIT_API_TOKEN", "").strip(),

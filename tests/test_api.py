@@ -142,6 +142,13 @@ def test_cockpit_smoke_and_assets(client):
     assert "id=\"fundamentals-grid\"" in html
     assert "id=\"canary-section\"" in html
     assert "category-tabs" in html
+    assert "id=\"header-mode-slider\"" in html
+    assert "id=\"view-dashboard\"" in html
+    assert "id=\"view-settings\"" in html
+    assert "id=\"operator-modal\"" in html
+    assert "id=\"login-gate-overlay\"" in html
+    assert "id=\"api-keys-card\"" in html
+    assert "id=\"hermes-bottom-model-btn\"" in html
     assert client.get("/assets/app.js").status_code == 200
     assert client.get("/assets/styles.css").status_code == 200
     assert client.get("/assets/favicon.svg").status_code == 200
@@ -359,6 +366,71 @@ def test_hermes_models_and_switcher(client):
     assert latest_diff["action"] == "UPDATE_MODEL"
     assert latest_diff["actor"] == "Operator"
     assert any("deepseek/deepseek-chat" in line["text"] for line in latest_diff["diff"]["diff_lines"])
+
+
+def test_auth_operator_login_and_session(client):
+    # Invalid credentials
+    bad = client.post("/api/auth/login", json={"username": "01882082502", "password": "wrong"}).status_code
+    assert bad == 401
+
+    # Valid operator credentials
+    res = client.post("/api/auth/login", json={"username": "01882082502", "password": "Stocknow#909109"})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "ok"
+    assert data["user"]["name"] == "Hasibur Rahman"
+    assert data["user"]["username"] == "01882082502"
+    token = data["token"]
+    assert token.startswith("hb-sess-")
+
+    # Check session endpoint with token
+    sess = client.get("/api/auth/session", headers={"Authorization": f"Bearer {token}"}).json()
+    assert sess["authenticated"] is True
+    assert sess["user"]["username"] == "01882082502"
+
+    # Logout
+    logout = client.post("/api/auth/logout", headers={"Authorization": f"Bearer {token}"}).json()
+    assert logout["status"] == "ok"
+
+
+def test_api_keys_and_telemetry(client):
+    # Fetch keys info
+    keys = client.get("/api/settings/keys").json()
+    assert "openrouter_key_masked" in keys
+    assert "daily_call_limit" in keys
+    assert "daily_calls_used" in keys
+    assert "guardrail_status" in keys
+    assert keys["guardrail_status"] == "ZERO-SECRET-READ ACTIVE"
+
+    # Update keys and limit
+    update_res = client.post("/api/settings/keys", json={
+        "openrouter_key": "sk-or-v1-fake-openrouter-key-12345678",
+        "gemini_key": "AIzaSy-fake-gemini-key-12345678",
+        "telegram_bot_token": "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11",
+        "telegram_chat_id": "987654321",
+        "daily_call_limit": 50,
+    }).json()
+    assert update_res["status"] == "ok"
+    assert len(update_res["updated_fields"]) >= 4
+
+    # Verify updated keys
+    after = client.get("/api/settings/keys").json()
+    assert after["daily_call_limit"] == 50
+    assert after["openrouter_configured"] is True
+    assert after["gemini_configured"] is True
+    assert "sk-o...5678" in after["openrouter_key_masked"]
+
+
+def test_onscreen_live_mode_config(client):
+    res = client.post("/api/automation/config", json={
+        "automation_enabled": True,
+        "ingestion_mode": "ONSCREEN_LIVE",
+        "polling_interval_sec": 60,
+    }).json()
+    assert res["ingestion_mode"] == "ONSCREEN_LIVE"
+    assert res["automation_enabled"] is True
+    assert "Method B: Onscreen Live Mode" in res["adapter"]["description"]
+
 
 
 

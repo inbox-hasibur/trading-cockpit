@@ -289,39 +289,7 @@ function renderMainChart() {
     label.textContent = sessionDate(points[i].date, true); svg.append(label);
   });
 
-  // Plot Buy (B) and Sell (S) markers on the curve
-  const allTrades = state.snapshot.trades || [];
-  points.forEach((pt, i) => {
-    const dateTrades = allTrades.filter((t) => t.date === pt.date || t.trade_on === pt.date);
-    dateTrades.forEach((t) => {
-      const isBuy = t.side === "BUY";
-      const markerG = svgElement("g", { class: "chart-trade-marker" });
-      const mX = x(i);
-      const mY = y(pt.value);
-      markerG.append(svgElement("circle", {
-        cx: mX,
-        cy: mY,
-        r: 6,
-        fill: isBuy ? "#16a34a" : "#dc2626",
-        stroke: "#ffffff",
-        "stroke-width": 1.2,
-      }));
-      const txt = svgElement("text", {
-        x: mX,
-        y: mY + 3,
-        "text-anchor": "middle",
-        fill: "#ffffff",
-        "font-size": 7.5,
-        "font-weight": 800,
-      });
-      txt.textContent = isBuy ? "B" : "S";
-      markerG.append(txt);
-      markerG.title = `${t.side} ${t.symbol} (${t.quantity} shares @ ৳${t.price})`;
-      svg.append(markerG);
-    });
-  });
-
-  // Interactive Crosshair Elements
+  // Interactive Crosshair Elements (No static dots on the curve line - 100% clean curve)
   const crosshairV = svgElement("line", { x1: 0, y1: top, x2: 0, y2: height - bottom, class: "chart-crosshair-line", style: "display:none;" });
   const crosshairH = svgElement("line", { x1: left, y1: 0, x2: width - right, y2: 0, class: "chart-crosshair-line", style: "display:none;" });
   const crosshairDot = svgElement("circle", { cx: 0, cy: 0, r: 4, class: "chart-crosshair-point", style: "display:none;" });
@@ -1775,7 +1743,8 @@ function renderAutomationControlBar() {
     statusText.textContent = enabled ? "AUTOMATION ON" : "AUTOMATION OFF";
   }
 
-  // Segmented mode buttons
+  // Segmented mode buttons (Settings Page)
+  const isLive = mode === "ONSCREEN_LIVE" || mode === "SIDE_BY_SIDE_LIVE";
   const pollingBtn = $("mode-btn-polling");
   const liveBtn = $("mode-btn-live");
   if (pollingBtn) {
@@ -1783,8 +1752,20 @@ function renderAutomationControlBar() {
     pollingBtn.disabled = state.busy;
   }
   if (liveBtn) {
-    liveBtn.classList.toggle("active", mode === "SIDE_BY_SIDE_LIVE");
+    liveBtn.classList.toggle("active", isLive);
     liveBtn.disabled = state.busy;
+  }
+
+  // Header Mode Slider (Portfolio Overview Header)
+  const hdrPolling = $("hdr-mode-polling");
+  const hdrLive = $("hdr-mode-live");
+  if (hdrPolling) {
+    hdrPolling.classList.toggle("active", mode === "BACKGROUND_POLLING");
+    hdrPolling.disabled = state.busy;
+  }
+  if (hdrLive) {
+    hdrLive.classList.toggle("active", isLive);
+    hdrLive.disabled = state.busy;
   }
 
   // Polling Interval Pills
@@ -1819,7 +1800,7 @@ function renderAutomationControlBar() {
   const ovDot = $("overview-sys-dot");
   const ovText = $("overview-sys-text");
   if (ovText && ovDot) {
-    ovText.textContent = `${mode === "BACKGROUND_POLLING" ? "Method A (" + interval + "s)" : "Method B (Live CDP)"} · ${enabled ? "AUTO ON" : "PAUSED"}`;
+    ovText.textContent = `${mode === "BACKGROUND_POLLING" ? "Method A (" + interval + "s)" : "Method B (Onscreen Live)"} · ${enabled ? "AUTO ON" : "PAUSED"}`;
     ovDot.className = `status-dot ${enabled ? "live-dot active" : "amber"}`;
   }
 
@@ -1833,7 +1814,7 @@ function renderAutomationControlBar() {
   // Adapter telemetry details
   const adpMode = $("adp-mode-text");
   if (adpMode) {
-    adpMode.textContent = mode === "BACKGROUND_POLLING" ? `Method A (Polling · ${interval}s)` : "Method B (Side-by-Side Live CDP)";
+    adpMode.textContent = mode === "BACKGROUND_POLLING" ? `Method A (Polling · ${interval}s)` : "Method B (Onscreen Live Mode CDP)";
   }
 }
 
@@ -1852,12 +1833,12 @@ async function setAutomationConfig(newConfig) {
       state.snapshot.adapter = res.adapter;
       renderSnapshot();
     }
-    const modeLabel = res.ingestion_mode === "BACKGROUND_POLLING" ? "Background Polling" : "Side-by-Side Live";
+    const modeLabel = res.ingestion_mode === "BACKGROUND_POLLING" ? "Background Polling" : "Onscreen Live Mode";
     notify(`Automation: ${res.automation_enabled ? "ON" : "OFF"} · ${modeLabel} (${res.polling_interval_sec}s)`);
   });
 }
 
-// Master automation bar event bindings
+// Master automation bar & header mode slider event bindings
 if ($("master-automation-toggle")) {
   $("master-automation-toggle").addEventListener("click", () => {
     if (!state.snapshot) return;
@@ -1870,6 +1851,18 @@ if ($("master-automation-toggle")) {
       ingestion_mode: mode,
       polling_interval_sec: interval,
     });
+  });
+}
+
+if ($("hdr-mode-polling")) {
+  $("hdr-mode-polling").addEventListener("click", () => {
+    setAutomationConfig({ ingestion_mode: "BACKGROUND_POLLING" });
+  });
+}
+
+if ($("hdr-mode-live")) {
+  $("hdr-mode-live").addEventListener("click", () => {
+    setAutomationConfig({ ingestion_mode: "ONSCREEN_LIVE" });
   });
 }
 
@@ -2283,30 +2276,52 @@ async function switchHermesModel(modelId) {
 // --- Multi-View Navigation Router ---
 function switchView(viewName) {
   viewName = (viewName || "overview").replace("#", "");
-  if (viewName === "system-control") viewName = "settings";
-  const validViews = ["overview", "watchlist", "rules", "ledger", "settings"];
-  if (!validViews.includes(viewName)) viewName = "overview";
+  const isSettings = viewName === "settings" || viewName === "system-control";
+  const viewDashboard = $("view-dashboard");
+  const viewSettings = $("view-settings");
 
   // Update nav-rail items
   document.querySelectorAll(".nav-rail .nav-item").forEach((el) => {
     const href = el.getAttribute("href") || "";
     const target = href.replace("#", "");
-    const isActive = target === viewName || (viewName === "settings" && target === "system-control");
-    el.classList.toggle("active", isActive);
+    if (isSettings) {
+      el.classList.toggle("active", target === "settings" || target === "system-control");
+    } else {
+      el.classList.toggle("active", target === viewName || (!viewName && target === "overview"));
+    }
   });
 
-  // Toggle view containers
-  document.querySelectorAll(".workspace-view").forEach((el) => {
-    const isMatch = el.id === `view-${viewName}`;
-    el.classList.toggle("active", isMatch);
-    el.hidden = !isMatch;
-  });
-
-  // Trigger market map render when switching to watchlist
-  if (viewName === "watchlist") {
+  if (isSettings) {
+    if (viewDashboard) {
+      viewDashboard.classList.remove("active");
+      viewDashboard.hidden = true;
+    }
+    if (viewSettings) {
+      viewSettings.classList.add("active");
+      viewSettings.hidden = false;
+    }
+    const workspace = document.querySelector(".workspace");
+    if (workspace) workspace.scrollTo({ top: 0, behavior: "smooth" });
+    loadApiKeysSettings();
+  } else {
+    if (viewSettings) {
+      viewSettings.classList.remove("active");
+      viewSettings.hidden = true;
+    }
+    if (viewDashboard) {
+      viewDashboard.classList.add("active");
+      viewDashboard.hidden = false;
+    }
+    const targetId = viewName || "overview";
+    const targetEl = document.getElementById(targetId);
+    if (targetEl) {
+      targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    // Render treemap and gainers if scrolling to or past watchlist
     setTimeout(() => {
       renderMarketMap();
-    }, 40);
+      renderTopSectorsChart();
+    }, 50);
   }
 }
 
@@ -2338,8 +2353,8 @@ function initViewRouter() {
     });
   }
 
-  // Model Picker Dropdown toggle in Hermes Header
-  const modelBtn = $("hermes-model-btn");
+  // Model Picker Dropdown toggle (Bottom model button above chat input)
+  const modelBtn = $("hermes-bottom-model-btn") || $("hermes-model-btn");
   const modelDrop = $("model-picker-dropdown");
   if (modelBtn && modelDrop) {
     modelBtn.addEventListener("click", (e) => {
@@ -2370,6 +2385,203 @@ function initViewRouter() {
   // Initial view from URL hash or default to overview
   const initialHash = window.location.hash.slice(1) || "overview";
   switchView(initialHash);
+}
+
+// --- API Keys, Quotas & Telemetry Settings ---
+async function loadApiKeysSettings() {
+  try {
+    const data = await api("/api/settings/keys");
+    const hasOr = Boolean(data.openrouter_configured || data.has_openrouter_key || data.openrouter_key_masked);
+    const hasGemini = Boolean(data.gemini_configured || data.has_gemini_key || data.gemini_key_masked);
+    const hintOr = $("hint-openrouter");
+    if (hintOr) hintOr.textContent = hasOr ? "Configured: Yes (Masked)" : "Configured: No (Falling back to Gemini/Local)";
+    const hintGemini = $("hint-gemini");
+    if (hintGemini) hintGemini.textContent = hasGemini ? "Configured: Yes (Masked)" : "Configured: No (Optional fallback)";
+
+    const orInput = $("key-openrouter");
+    if (orInput && hasOr && !orInput.value) {
+      orInput.placeholder = data.openrouter_key_masked || "sk-or-v1-••••••••";
+    }
+    const geminiInput = $("key-gemini");
+    if (geminiInput && hasGemini && !geminiInput.value) {
+      geminiInput.placeholder = data.gemini_key_masked || "AIzaSy••••••••";
+    }
+    const tgToken = $("key-telegram-token");
+    if (tgToken && data.telegram_bot_token_masked && !tgToken.value) {
+      tgToken.placeholder = data.telegram_bot_token_masked;
+    }
+    const tgChat = $("key-telegram-chat");
+    if (tgChat && (data.telegram_chat_id || data.telegram_chat_id_masked) && !tgChat.value) {
+      tgChat.value = data.telegram_chat_id || data.telegram_chat_id_masked || "";
+    }
+    const limitInput = $("key-daily-limit");
+    if (limitInput) limitInput.value = data.daily_call_limit || 30;
+
+    // Telemetry quota bar
+    const callsUsed = data.daily_calls_used !== undefined ? data.daily_calls_used : (data.calls_used_today || 0);
+    const limit = data.daily_call_limit || 30;
+    const pct = Math.min(100, Math.round((callsUsed / limit) * 100));
+    setText("telemetry-usage-text", `${callsUsed} / ${limit} calls used`);
+    const quotaBar = $("telemetry-quota-bar");
+    if (quotaBar) quotaBar.style.width = `${pct}%`;
+  } catch (err) {
+    console.warn("Could not load API keys settings:", err);
+  }
+}
+
+async function saveApiKeysSettings(e) {
+  if (e) e.preventDefault();
+  const orKey = $("key-openrouter")?.value?.trim();
+  const geminiKey = $("key-gemini")?.value?.trim();
+  const tgToken = $("key-telegram-token")?.value?.trim();
+  const tgChat = $("key-telegram-chat")?.value?.trim();
+  const limit = parseInt($("key-daily-limit")?.value || "30", 10);
+
+  const payload = { daily_call_limit: limit };
+  if (orKey) payload.openrouter_key = orKey;
+  if (geminiKey) payload.gemini_key = geminiKey;
+  if (tgToken) payload.telegram_bot_token = tgToken;
+  if (tgChat) payload.telegram_chat_id = tgChat;
+
+  const statusMsg = $("keys-save-status");
+  try {
+    await api("/api/settings/keys", {
+      method: "POST",
+      body: payload,
+    });
+    if (statusMsg) {
+      statusMsg.textContent = "✓ Settings saved securely";
+      statusMsg.className = "save-status-msg success";
+      setTimeout(() => { if (statusMsg) statusMsg.textContent = ""; }, 3000);
+    }
+    notify("API Keys & Quotas updated successfully");
+    if (orKey && $("key-openrouter")) $("key-openrouter").value = "";
+    if (geminiKey && $("key-gemini")) $("key-gemini").value = "";
+    if (tgToken && $("key-telegram-token")) $("key-telegram-token").value = "";
+    loadApiKeysSettings();
+  } catch (err) {
+    if (statusMsg) {
+      statusMsg.textContent = `! ${err.message}`;
+      statusMsg.className = "save-status-msg error";
+    }
+    showError(err.message);
+  }
+}
+
+// --- Operator Profile & Login Gate Authentication ---
+async function checkAuthSession() {
+  try {
+    const res = await api("/api/auth/session");
+    if (res && res.authenticated) {
+      const loginGate = $("login-gate-overlay");
+      if (loginGate && loginGate.open) loginGate.close();
+      const user = res.user || {};
+      setText("op-name", user.name || res.operator_name || "Hasibur Rahman");
+      setText("op-username", user.username || res.operator_username || "01882082502");
+      setText("op-portfolio", user.portfolio || res.linked_portfolio || "Humming Bird (StockNow)");
+      return true;
+    }
+  } catch (err) {
+    console.warn("Auth session check:", err);
+  }
+  return false;
+}
+
+function openOperatorProfile() {
+  const modal = $("operator-modal");
+  if (modal) modal.showModal();
+}
+
+function closeOperatorProfile() {
+  const modal = $("operator-modal");
+  if (modal) modal.close();
+}
+
+async function handleOperatorLogin(e) {
+  if (e) e.preventDefault();
+  const username = $("login-username")?.value?.trim();
+  const password = $("login-password")?.value?.trim();
+  const errEl = $("login-error-msg");
+  if (errEl) errEl.hidden = true;
+
+  try {
+    const res = await api("/api/auth/login", {
+      method: "POST",
+      body: { username, password },
+    });
+    if (res && (res.status === "ok" || res.authenticated)) {
+      const loginGate = $("login-gate-overlay");
+      if (loginGate) loginGate.close();
+      const user = res.user || {};
+      const opName = user.name || res.operator_name || "Hasibur Rahman";
+      notify(`Welcome back, ${opName}!`);
+      checkAuthSession();
+      refresh();
+    }
+  } catch (err) {
+    if (errEl) {
+      errEl.textContent = err.message || "Invalid credentials";
+      errEl.hidden = false;
+    }
+  }
+}
+
+async function handleOperatorLogout() {
+  try {
+    await api("/api/auth/logout", { method: "POST" });
+  } catch (e) {}
+  closeOperatorProfile();
+  const loginGate = $("login-gate-overlay");
+  if (loginGate) loginGate.showModal();
+  notify("Cockpit session locked");
+}
+
+function initAuthAndSettings() {
+  // Bind API keys form
+  const keysForm = $("api-keys-form");
+  if (keysForm) keysForm.addEventListener("submit", saveApiKeysSettings);
+
+  // Key visibility toggles
+  document.querySelectorAll(".key-toggle-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const targetId = btn.dataset.target;
+      const inp = $(targetId);
+      if (inp) {
+        inp.type = inp.type === "password" ? "text" : "password";
+      }
+    });
+  });
+
+  // Bind operator avatar & profile modal
+  const avatarBtn = $("user-avatar-btn");
+  if (avatarBtn) avatarBtn.addEventListener("click", openOperatorProfile);
+
+  const opCloseBtn = $("op-close-btn");
+  if (opCloseBtn) opCloseBtn.addEventListener("click", closeOperatorProfile);
+
+  const opBackdrop = $("op-backdrop");
+  if (opBackdrop) opBackdrop.addEventListener("click", closeOperatorProfile);
+
+  const lockBtn = $("lock-cockpit-btn");
+  if (lockBtn) lockBtn.addEventListener("click", handleOperatorLogout);
+
+  // Bind Login form & 1-click autofill
+  const loginForm = $("login-form");
+  if (loginForm) loginForm.addEventListener("submit", handleOperatorLogin);
+
+  const autofillBtn = $("login-autofill-btn");
+  if (autofillBtn) {
+    autofillBtn.addEventListener("click", () => {
+      const u = $("login-username");
+      const p = $("login-password");
+      if (u) u.value = "01882082502";
+      if (p) p.value = "Stocknow#909109";
+      handleOperatorLogin();
+    });
+  }
+
+  // Check initial session
+  checkAuthSession();
 }
 
 // --- Files Changed & System Audit Diffs ---
@@ -2467,4 +2679,5 @@ initHermesSidebar();
 loadConversations();
 loadHermesModels();
 loadSystemChanges();
+initAuthAndSettings();
 initViewRouter();
