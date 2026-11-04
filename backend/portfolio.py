@@ -111,7 +111,7 @@ DEFAULT_FUNDAMENTALS: dict = {
 
 
 def generate_extended_history(
-    history: list[dict[str, str]], fundamentals: dict, calendar: TradingCalendar, as_of: date
+    history: list[dict[str, str]], fundamentals: dict, calendar: TradingCalendar, as_of: date, session_dates: list[date] | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
     """Generates 7d, 1m, 6m, 1y series for TradingView-style deep trend views."""
     import math
@@ -124,8 +124,19 @@ def generate_extended_history(
     m6_points: list[dict[str, Any]] = []
     y1_points: list[dict[str, Any]] = []
 
+    # Fast O(N) date retrieval instead of repeated O(N^2) calendar loops
+    dates = session_dates
+    if not dates:
+        cur = as_of
+        dates = [cur]
+        for _ in range(240):
+            cur = calendar.add_sessions(cur, -1)
+            dates.append(cur)
+        dates.reverse()
+
     for i in range(240, -1, -1):
-        d = calendar.add_sessions(as_of, -i)
+        idx = 240 - i
+        d = dates[idx] if idx < len(dates) else as_of
         d_str = d.isoformat()
         if d_str in hist_map:
             p = hist_map[d_str]
@@ -225,6 +236,13 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
     balances = bucket_balances(session, state)
     active = calendar.bucket_for(state.clock_date)
 
+    cur_date = state.clock_date
+    session_dates_240 = [cur_date]
+    for _ in range(240):
+        cur_date = calendar.add_sessions(cur_date, -1)
+        session_dates_240.append(cur_date)
+    session_dates_240.reverse()
+
     total_net_value = ZERO
     total_gross_value = ZERO
     total_basis = ZERO
@@ -291,7 +309,7 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
             "quote_on": company.quote_on.isoformat(),
             "source": company.source,
             "history": company.price_history,
-            "extended_history": generate_extended_history(company.price_history, fundamentals, calendar, state.clock_date),
+            "extended_history": generate_extended_history(company.price_history, fundamentals, calendar, state.clock_date, session_dates=session_dates_240),
             "fundamentals": fundamentals,
             "curve": curve_dict,
             "quarantined": company.quarantined or analysis.signal == "CRASH_QUARANTINE",

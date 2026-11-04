@@ -10,12 +10,14 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
+from uuid import uuid4
 
 from backend.database import (
     CanaryThesis,
     CompanyProfile,
+    HermesConversationThread,
     HermesDurableFact,
     HermesSessionMemory,
     HermesUserProfile,
@@ -67,8 +69,59 @@ class HermesMemory:
         )
 
     # -------------------------------------------------------------
-    # Layer 2: Searchable Session History
+    # Layer 2: Searchable Session History & Conversation Threads
     # -------------------------------------------------------------
+    def get_or_create_thread(self, conversation_id: str | None = None, title: str | None = None) -> HermesConversationThread:
+        if conversation_id:
+            thread = self.session.get(HermesConversationThread, conversation_id)
+            if thread:
+                return thread
+        new_id = conversation_id or str(uuid4())
+        thread = HermesConversationThread(
+            id=new_id,
+            title=(title or "General Strategy").strip()[:100],
+        )
+        self.session.add(thread)
+        self.session.flush()
+        return thread
+
+    def list_threads(self) -> list[dict[str, Any]]:
+        threads = list(self.session.scalars(
+            select(HermesConversationThread).order_by(HermesConversationThread.updated_at.desc()).limit(30)
+        ))
+        if not threads:
+            default_t = self.get_or_create_thread(title="General Trading Strategy")
+            threads = [default_t]
+        result = []
+        for t in threads:
+            msg_count = self.session.scalar(
+                select(func.count(HermesSessionMemory.id)).where(HermesSessionMemory.conversation_id == t.id)
+            ) or 0
+            result.append({
+                "id": t.id,
+                "title": t.title,
+                "message_count": msg_count,
+                "created_at": t.created_at,
+                "updated_at": t.updated_at,
+            })
+        return result
+
+    def get_thread_messages(self, conversation_id: str, limit: int = 50) -> list[dict[str, Any]]:
+        msgs = list(self.session.scalars(
+            select(HermesSessionMemory)
+            .where(HermesSessionMemory.conversation_id == conversation_id)
+            .order_by(HermesSessionMemory.id.asc())
+            .limit(limit)
+        ))
+        return [{
+            "id": m.id,
+            "role": m.role,
+            "content": m.content,
+            "date": m.session_date.isoformat(),
+            "action": m.action_taken,
+            "created_at": m.created_at,
+        } for m in msgs]
+
     def record_turn(
         self,
         session_date: date,
@@ -76,9 +129,20 @@ class HermesMemory:
         content: str,
         symbol_mentioned: str | None = None,
         action_taken: str | None = None,
+        conversation_id: str | None = None,
     ) -> None:
         clean_content = redact_secrets(content.strip())[:4000]
+        if conversation_id:
+            thread = self.session.get(HermesConversationThread, conversation_id)
+            if thread:
+                from backend.config import utc_now_iso
+                thread.updated_at = utc_now_iso()
+                if role == "user" and thread.title in {"New Conversation", "General Strategy"}:
+                    thread.title = clean_content[:45] + ("…" if len(clean_content) > 45 else "")
+            else:
+                self.get_or_create_thread(conversation_id, title=clean_content[:45])
         mem = HermesSessionMemory(
+            conversation_id=conversation_id,
             session_date=session_date,
             role=role,
             content=clean_content,

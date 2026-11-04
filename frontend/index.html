@@ -19,6 +19,7 @@
       </a>
       <div class="nav-links">
         <a href="#overview" class="nav-item active" title="Overview" aria-label="Overview"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></a>
+        <a href="#system-control" class="nav-item" id="nav-system-control" title="System Controller & Automation" aria-label="System Controller"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
         <a href="#watchlist" class="nav-item" title="Watchlist" aria-label="Watchlist"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 17 5-6 4 3 8-10M16 4h4v4M3 21h18"/></svg></a>
         <a href="#market-map" class="nav-item" title="Market Map & Sectors" aria-label="Market Map and Sectors"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg></a>
         <a href="#execution" class="nav-item" title="Execution & rules" aria-label="Execution and rules"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-9 12h7l-1 8 10-13h-8l1-7Z"/></svg></a>
@@ -36,7 +37,7 @@
             <strong id="market-status-text">DSE CLOSED</strong>
             <span class="clock-countdown" id="market-countdown-text">Next: 10:00 AM</span>
           </div>
-          <button class="theme-toggle-btn" id="theme-toggle-btn" type="button" title="Switch Theme (Dark / Light / Terminal)">
+          <button class="theme-toggle-btn" id="theme-toggle-btn" type="button" title="Switch Theme (Dark / Light)">
             <span class="theme-icon">◐</span> <span id="theme-name">Dark</span>
           </button>
           <span class="stream-badge" title="Live reactive Server-Sent Events stream connected"><span class="status-dot live-dot" id="live-dot"></span> REALTIME SSE</span>
@@ -53,51 +54,20 @@
           <div class="engine-controls"><button class="button secondary" id="pause-button" type="button" disabled>Pause engine</button><button class="button primary" id="run-cycle" type="button" disabled><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6V4Z"/></svg><span id="run-label">Run automation cycle</span></button></div>
         </div>
 
-        <div class="automation-control-bar" id="automation-control-bar">
-          <div class="control-bar-left">
-            <div class="control-label-group">
-              <span class="eyebrow-small">SYSTEM CONTROLLER</span>
-              <span class="control-bar-title">Master Buy/Sell Automation</span>
-            </div>
-            <button class="automation-master-switch is-active" id="master-automation-toggle" type="button" title="Toggle Master Buy/Sell Automation ON/OFF">
-              <span class="switch-indicator-dot"></span>
-              <strong id="master-automation-status-text">AUTOMATION ON</strong>
-            </button>
-          </div>
-
-          <div class="control-bar-center">
-            <span class="control-sublabel">INGESTION MODE:</span>
-            <div class="segmented-mode-switch" id="ingestion-mode-switch" role="radiogroup" aria-label="Ingestion Mode">
-              <button class="mode-seg-btn active" id="mode-btn-polling" data-mode="BACKGROUND_POLLING" type="button" title="Method A: Periodic background polling">
-                <span class="mode-icon">⏱</span>
-                <span>Method A: Background Polling</span>
-              </button>
-              <button class="mode-seg-btn" id="mode-btn-live" data-mode="SIDE_BY_SIDE_LIVE" type="button" title="Method B: Playwright Attached/Headed Live Side-by-Side Browser">
-                <span class="mode-icon">🖥</span>
-                <span>Method B: Side-by-Side Live</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="control-bar-right">
-            <div class="polling-interval-wrap" id="polling-interval-wrap">
-              <span class="control-sublabel">POLL INTERVAL:</span>
-              <div class="pill-group" id="polling-interval-pills">
-                <button class="pill-btn" data-sec="30" type="button">30s</button>
-                <button class="pill-btn" data-sec="60" type="button">60s</button>
-                <button class="pill-btn active" data-sec="120" type="button">120s</button>
-                <button class="pill-btn" data-sec="180" type="button">180s</button>
-              </div>
-            </div>
-            <div class="adapter-status-badge" id="adapter-status-badge" title="StockNow Adapter Status">
-              <span class="status-dot live-dot" id="adapter-dot"></span>
-              <span id="adapter-status-text">CDP Ready · 120s</span>
-            </div>
-          </div>
-        </div>
-
         <div class="session-bar">
-          <div class="session-meta"><span class="session-icon" aria-hidden="true">◷</span><span class="muted">Demo session</span><strong id="demo-date">Loading…</strong><span class="divider"></span><span id="engine-state" class="state-label">MANUAL CYCLES</span><span class="snapshot-label" id="snapshot-label">Snapshot —</span></div>
+          <div class="session-meta">
+            <span class="session-icon" aria-hidden="true">◷</span>
+            <span class="muted">Demo session</span>
+            <strong id="demo-date">Loading…</strong>
+            <span class="divider"></span>
+            <span id="engine-state" class="state-label">MANUAL CYCLES</span>
+            <span class="snapshot-label" id="snapshot-label">Snapshot —</span>
+            <a href="#system-control" class="system-status-pill" id="overview-sys-link" title="Open System Controller & Ingestion Center">
+              <span class="status-dot live-dot" id="overview-sys-dot"></span>
+              <span id="overview-sys-text">AUTO ON · 120s</span>
+              <span class="pill-arrow">⚙️</span>
+            </a>
+          </div>
           <div class="demo-controls"><label class="sr-only" for="scenario">Next demo scenario</label><select id="scenario"><option value="NORMAL">Normal oscillation</option><option value="RALLY">Rally · +4%</option><option value="PULLBACK">Pullback · −4%</option><option value="CRASH">Crash stress · −22%</option><option value="RECOVERY">Recovery to saved peak</option></select><button class="text-button next-session" id="next-session" type="button" disabled>Next demo session <span aria-hidden="true">→</span></button></div>
         </div>
 
@@ -121,6 +91,95 @@
             <div class="chart-footer"><span><span class="legend-dash"></span> Demo watchlist index</span><span>Price index ≠ portfolio return · TradingView Crosshair</span></div>
           </article>
           <article class="panel buckets-panel"><div class="panel-heading"><div><h2>Rolling capital</h2><p>Three buckets. Settlement respected.</p></div><span class="outline-badge">T+2*</span></div><div class="bucket-stack" id="bucket-stack"></div><div class="panel-note">*Configurable demo assumption, not verified DSE rules.</div></article>
+        </div>
+      </section>
+
+      <!-- Dedicated System Controller & Automation Center -->
+      <section class="panel system-control-panel section-anchor" id="system-control">
+        <div class="panel-heading">
+          <div>
+            <div class="eyebrow breadcrumb">SYSTEM <span>/</span> DUAL INGESTION & CONTROLLER</div>
+            <h2>System automation & ingestion center</h2>
+            <p class="muted">Unified execution lock, dual telemetry ingestion modes, and Playwright CDP bridge.</p>
+          </div>
+          <div class="adapter-status-badge" id="adapter-status-badge" title="StockNow Adapter Status">
+            <span class="status-dot live-dot" id="adapter-dot"></span>
+            <span id="adapter-status-text">CDP Ready · 120s</span>
+          </div>
+        </div>
+
+        <div class="system-control-grid">
+          <!-- Card 1: Master Buy/Sell Automation -->
+          <article class="sys-ctrl-card master-ctrl-card">
+            <div class="ctrl-card-head">
+              <span class="sys-badge teal-badge">MASTER CONTROLLER</span>
+              <h3>Buy / Sell Execution Engine</h3>
+            </div>
+            <p class="muted small">Controls automated order execution across Buckets A, B & C. Pausing blocks paper fills while keeping telemetry alive.</p>
+            <div class="master-switch-row">
+              <button class="automation-master-switch is-active" id="master-automation-toggle" type="button" title="Toggle Master Buy/Sell Automation ON/OFF">
+                <span class="switch-indicator-dot"></span>
+                <strong id="master-automation-status-text">AUTOMATION ON</strong>
+              </button>
+              <span class="circuit-state" id="circuit-state">✓ Normal execution state</span>
+            </div>
+          </article>
+
+          <!-- Card 2: Dual Ingestion Pipeline -->
+          <article class="sys-ctrl-card mode-ctrl-card">
+            <div class="ctrl-card-head">
+              <span class="sys-badge blue-badge">TELEMETRY INGESTION</span>
+              <h3>Dual Ingestion Pipeline</h3>
+            </div>
+            <p class="muted small">Select between lightweight background polling and side-by-side attached live browser mode.</p>
+            <div class="segmented-mode-switch" id="ingestion-mode-switch" role="radiogroup" aria-label="Ingestion Mode">
+              <button class="mode-seg-btn active" id="mode-btn-polling" data-mode="BACKGROUND_POLLING" type="button" title="Method A: Periodic background polling">
+                <span class="mode-icon">⏱</span>
+                <div>
+                  <strong>Method A: Background Polling</strong>
+                  <span class="seg-sub">Low-overhead periodic HTTP poll</span>
+                </div>
+              </button>
+              <button class="mode-seg-btn" id="mode-btn-live" data-mode="SIDE_BY_SIDE_LIVE" type="button" title="Method B: Playwright Attached/Headed Live Side-by-Side Browser">
+                <span class="mode-icon">🖥</span>
+                <div>
+                  <strong>Method B: Side-by-Side Live</strong>
+                  <span class="seg-sub">Headed Playwright CDP attached</span>
+                </div>
+              </button>
+            </div>
+          </article>
+
+          <!-- Card 3: Polling Interval -->
+          <article class="sys-ctrl-card interval-ctrl-card">
+            <div class="ctrl-card-head">
+              <span class="sys-badge">CADENCE CONFIGURATION</span>
+              <h3>Polling Interval (Method A)</h3>
+            </div>
+            <p class="muted small">Configures polling frequency. Active only during DSE trading hours (10:00–14:30 BD time).</p>
+            <div class="polling-interval-wrap" id="polling-interval-wrap">
+              <div class="pill-group" id="polling-interval-pills">
+                <button class="pill-btn" data-sec="30" type="button">30s · Hyper</button>
+                <button class="pill-btn" data-sec="60" type="button">60s · Fast</button>
+                <button class="pill-btn active" data-sec="120" type="button">120s · Standard</button>
+                <button class="pill-btn" data-sec="180" type="button">180s · Relaxed</button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 4: Adapter & CDP Bridge Telemetry -->
+          <article class="sys-ctrl-card bridge-ctrl-card">
+            <div class="ctrl-card-head">
+              <span class="sys-badge amber-badge">SECURITY & PROTOCOL</span>
+              <h3>StockNow Bridge & Guardrails</h3>
+            </div>
+            <div class="adapter-stats-list">
+              <div class="adp-row"><span>Ingestion Mode:</span><strong id="adp-mode-text">Method A (Polling)</strong></div>
+              <div class="adp-row"><span>Browser Engine:</span><strong>Chromium (Playwright CDP)</strong></div>
+              <div class="adp-row"><span>Secret Isolation:</span><strong class="positive">✓ Zero-Secret-Read Guard Active</strong></div>
+              <div class="adp-row"><span>Rollback Support:</span><strong class="positive">✓ SQLite State Checkpointing</strong></div>
+            </div>
+          </article>
         </div>
       </section>
 
@@ -257,24 +316,112 @@
       <footer class="workspace-footer"><span><span class="mini-dot amber"></span> EXPERIMENTAL · DEMO ONLY</span><p>Synthetic data. No broker or BO account connected. No guaranteed returns or recovery.</p><div class="market-clock"><span id="dhaka-clock">—</span> <span>Asia/Dhaka · schedule unverified</span></div></footer>
     </main>
 
-    <aside class="chat-panel" aria-label="Hermes portfolio copilot">
-      <header class="chat-header"><div class="copilot-symbol" aria-hidden="true"><svg viewBox="0 0 30 30"><path d="M15 3v24M3 15h24M6.5 6.5l17 17m0-17-17 17"/><circle cx="15" cy="15" r="5"/></svg></div><div><div class="eyebrow">PORTFOLIO COPILOT</div><h2>Hermes<span class="copilot-spark">✦</span></h2></div><span class="read-only-badge agentic-badge" id="agentic-badge">AGENTIC CO-PILOT</span></header>
-      <div class="chat-context"><span class="mini-dot teal"></span><span>Humming Bird</span><span class="muted">/ Autonomous Share Assistant</span></div>
-      <div class="chat-toolbar">
-        <button type="button" id="rollback-button" class="toolbar-btn rollback-btn" title="Undo the last Hermes mutation (/rollback)">
-          <span aria-hidden="true">↺</span> Rollback (/rollback)
-        </button>
-        <button type="button" id="skills-toggle" class="toolbar-btn skills-btn" title="Inspect Hermes procedural skills and 3-layer memory">
-          <span aria-hidden="true">🧠</span> Skills (<span id="skills-count">4</span>)
-        </button>
+    <aside class="chat-panel" id="hermes-sidebar" aria-label="Hermes portfolio copilot">
+      <div class="hermes-resize-handle" id="hermes-resize-handle" title="Drag to resize Hermes sidebar"></div>
+      <header class="chat-header">
+        <div class="chat-header-title">
+          <div class="copilot-symbol" aria-hidden="true"><svg viewBox="0 0 30 30"><path d="M15 3v24M3 15h24M6.5 6.5l17 17m0-17-17 17"/><circle cx="15" cy="15" r="5"/></svg></div>
+          <div><div class="eyebrow">PORTFOLIO COPILOT</div><h2>Hermes<span class="copilot-spark">✦</span></h2></div>
+        </div>
+        <div class="chat-header-actions">
+          <span class="read-only-badge agentic-badge" id="agentic-badge">AGENTIC CO-PILOT</span>
+          <button type="button" class="panel-ctrl-btn" id="hermes-collapse-btn" title="Minimize / Collapse sidebar" aria-label="Minimize sidebar">⇥</button>
+        </div>
+      </header>
+
+      <div class="chat-context">
+        <span class="mini-dot teal"></span>
+        <span id="active-conv-title">Humming Bird</span>
+        <span class="muted">/ Autonomous Share Assistant</span>
       </div>
 
-      <div id="skills-drawer" class="skills-drawer" hidden>
+      <nav class="hermes-ide-tabs" role="tablist" aria-label="Hermes Panes">
+        <button class="hermes-tab-btn active" id="tab-hermes-chat" data-pane="pane-hermes-chat" role="tab" aria-selected="true" type="button"><span class="tab-icon">💬</span> Chat</button>
+        <button class="hermes-tab-btn" id="tab-hermes-conversations" data-pane="pane-hermes-conversations" role="tab" aria-selected="false" type="button"><span class="tab-icon">📂</span> Topics <span class="tab-count-badge" id="conversations-badge">0</span></button>
+        <button class="hermes-tab-btn" id="tab-hermes-changes" data-pane="pane-hermes-changes" role="tab" aria-selected="false" type="button"><span class="tab-icon">⚡</span> Changes <span class="tab-count-badge" id="changes-badge">0</span></button>
+        <button class="hermes-tab-btn" id="tab-hermes-skills" data-pane="pane-hermes-skills" role="tab" aria-selected="false" type="button"><span class="tab-icon">🧠</span> Skills <span class="tab-count-badge" id="skills-badge">4</span></button>
+      </nav>
+
+      <!-- Pane 1: Chat Stream -->
+      <div class="hermes-pane is-active" id="pane-hermes-chat" role="tabpanel">
+        <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation">
+          <article class="chat-message assistant welcome-message">
+            <div class="message-author"><span class="assistant-avatar">✦</span> HERMES <span class="muted">· AGENTIC ASSISTANT</span></div>
+            <div class="message-body">
+              <strong>A little context. A measured next move.</strong>
+              <p>I am your human-like agentic share assistant. I can explain holdings, monitor curves, execute crash quarantines with 90% profit-lock + 10% canary probes, and verify your market theses over time.</p>
+              <p>Bangla, Banglish, or English—ask or command away.</p>
+              <div class="chat-safety-note">Demo Paper Mode: Hermes executes actions on local simulated holdings with strict ledger reconciliation.</div>
+            </div>
+          </article>
+        </div>
+        <div class="chat-bottom">
+          <div class="quick-prompts">
+            <button type="button" data-prompt="Portfolio kemon ache?">Portfolio status <span>↗</span></button>
+            <button type="button" data-prompt="Ajke SQURPHARMA er khoti hoye geche, 1 month e deulia hoye jabe">Alert bankruptcy threat <span>⚡</span></button>
+            <button type="button" data-prompt="SQURPHARMA restore koro">Restore company <span>↺</span></button>
+          </div>
+          <div class="provider-status">
+            <span class="mini-dot muted-dot"></span>
+            <span id="chat-provider">LOCAL AGENTIC ORCHESTRATOR</span>
+          </div>
+          <form id="chat-form" class="chat-form">
+            <label for="chat-input" class="sr-only">Message Hermes</label>
+            <textarea id="chat-input" rows="2" maxlength="2000" placeholder="Ask status, alert company threat, or command actions…" required></textarea>
+            <div class="chat-input-bottom">
+              <span>বাংলা / Banglish / English</span>
+              <button type="submit" id="chat-send" aria-label="Send message" title="Send message">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 15V5m-4 4 4-4 4 4"/></svg>
+              </button>
+            </div>
+          </form>
+          <p class="chat-footer-note" id="chat-footer-note">Hermes can execute emergency quarantines, canary probes, and rule adjustments.</p>
+        </div>
+      </div>
+
+      <!-- Pane 2: Conversation Topics (Antigravity Human Topic Separator) -->
+      <div class="hermes-pane" id="pane-hermes-conversations" role="tabpanel" hidden>
+        <div class="pane-action-bar">
+          <button type="button" class="new-conv-btn" id="new-conversation-btn">
+            <span class="plus-icon">＋</span> New Conversation
+          </button>
+          <span class="pane-sub-note">Strategy / topic separator for humans. Hermes retains shared cross-conversation skill memory.</span>
+        </div>
+        <div class="conversations-list" id="conversations-list">
+          <div class="empty-state-small">Loading conversations…</div>
+        </div>
+      </div>
+
+      <!-- Pane 3: Files Changed & Checkpoints (Antigravity Style History) -->
+      <div class="hermes-pane" id="pane-hermes-changes" role="tabpanel" hidden>
+        <div class="pane-section-header">
+          <div>
+            <strong>Files Changed</strong>
+            <span class="count-tag" id="files-changed-count-tag">0</span>
+          </div>
+          <button type="button" class="refresh-sub-btn" id="refresh-changes-btn" title="Refresh git modifications">⟳</button>
+        </div>
+        <div class="files-changed-list" id="files-changed-list">
+          <div class="empty-state-small">Scanning workspace changes…</div>
+        </div>
+        <div class="pane-section-header margin-top-md">
+          <strong>State Checkpoints (/rollback)</strong>
+          <button type="button" id="rollback-pane-btn" class="toolbar-btn rollback-btn" title="Undo the last Hermes mutation (/rollback)">
+            <span aria-hidden="true">↺</span> Rollback
+          </button>
+        </div>
+        <div class="changes-checkpoints-list" id="changes-checkpoints-list"></div>
+      </div>
+
+      <!-- Pane 4: Skills & Layer 3 Facts -->
+      <div class="hermes-pane" id="pane-hermes-skills" role="tabpanel" hidden>
         <div class="drawer-header">
           <strong>Hermes Procedural Skills & Memory</strong>
-          <button type="button" id="close-skills" aria-label="Close skills">×</button>
+          <button type="button" id="rollback-skills-btn" class="toolbar-btn rollback-btn" title="Undo the last Hermes mutation (/rollback)">
+            <span aria-hidden="true">↺</span> Rollback
+          </button>
         </div>
-        <div class="drawer-body">
+        <div class="skills-pane-body">
           <div class="drawer-section">
             <span class="drawer-title">PROCEDURAL SKILLS (SKILL_*.md)</span>
             <div id="skills-list" class="skills-list"></div>
@@ -289,13 +436,12 @@
           </div>
         </div>
       </div>
-
-      <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation">
-        <article class="chat-message assistant welcome-message"><div class="message-author"><span class="assistant-avatar">✦</span> HERMES <span class="muted">· AGENTIC ASSISTANT</span></div><div class="message-body"><strong>A little context. A measured next move.</strong><p>I am your human-like agentic share assistant. I can explain holdings, monitor curves, execute crash quarantines with 90% profit-lock + 10% canary probes, and verify your market theses over time.</p><p>Bangla, Banglish, or English—ask or command away.</p><div class="chat-safety-note">Demo Paper Mode: Hermes executes actions on local simulated holdings with strict ledger reconciliation.</div></div></article>
-      </div>
-      <div class="chat-bottom"><div class="quick-prompts"><button type="button" data-prompt="Portfolio kemon ache?">Portfolio status <span>↗</span></button><button type="button" data-prompt="Ajke SQURPHARMA er khoti hoye geche, 1 month e deulia hoye jabe">Alert bankruptcy threat <span>⚡</span></button><button type="button" data-prompt="SQURPHARMA restore koro">Restore company <span>↺</span></button></div><div class="provider-status"><span class="mini-dot muted-dot"></span><span id="chat-provider">LOCAL AGENTIC ORCHESTRATOR</span></div><form id="chat-form" class="chat-form"><label for="chat-input" class="sr-only">Message Hermes</label><textarea id="chat-input" rows="2" maxlength="2000" placeholder="Ask status, alert company threat, or command actions…" required></textarea><div class="chat-input-bottom"><span>বাংলা / Banglish / English</span><button type="submit" id="chat-send" aria-label="Send message" title="Send message"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 15V5m-4 4 4-4 4 4"/></svg></button></div></form><p class="chat-footer-note" id="chat-footer-note">Hermes can execute emergency quarantines, canary probes, and rule adjustments.</p></div>
     </aside>
   </div>
+
+  <button class="floating-hermes-open" id="floating-hermes-open" type="button" title="Open Hermes Agent" hidden>
+    <span class="copilot-spark">✦</span> Hermes Copilot
+  </button>
   <!-- Deep Trend & Fundamental Profile Modal -->
   <dialog id="deep-trend-modal" class="deep-trend-modal" aria-labelledby="modal-company-title">
     <div class="modal-backdrop" id="modal-backdrop"></div>

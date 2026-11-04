@@ -225,6 +225,29 @@ function renderBuckets() {
   $("bucket-stack").replaceChildren(...cards);
 }
 
+function smoothCurvePath(points) {
+  if (!points || points.length === 0) return "";
+  if (points.length === 1) return `M ${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`;
+  if (points.length === 2) {
+    return `M ${points[0].x.toFixed(2)},${points[0].y.toFixed(2)} L ${points[1].x.toFixed(2)},${points[1].y.toFixed(2)}`;
+  }
+  let d = `M ${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i === 0 ? 0 : i - 1];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2 < points.length ? i + 2 : points.length - 1];
+
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+    d += ` C ${cp1x.toFixed(2)},${cp1y.toFixed(2)} ${cp2x.toFixed(2)},${cp2y.toFixed(2)} ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`;
+  }
+  return d;
+}
+
 function renderMainChart() {
   const points = state.snapshot.normalized_curve;
   if (points.length < 2) {
@@ -256,10 +279,26 @@ function renderMainChart() {
     const label = svgElement("text", { x: left - 8, y: y(value) + 3, "text-anchor": "end", class: "chart-axis-label" });
     label.textContent = value.toFixed(1); svg.append(label);
   }
-  const path = points.map((point, i) => `${i ? "L" : "M"}${x(i).toFixed(2)},${y(point.value).toFixed(2)}`).join(" ");
-  svg.append(svgElement("path", { d: `${path} L${x(points.length - 1)},${height - bottom} L${left},${height - bottom} Z`, class: "chart-area" }));
-  svg.append(svgElement("path", { d: path, class: "chart-line" }));
-  svg.append(svgElement("circle", { cx: x(points.length - 1), cy: y(last), r: 3, class: "chart-point" }));
+  const coords = points.map((pt, i) => ({ x: x(i), y: y(pt.value) }));
+  const smoothPath = smoothCurvePath(coords);
+  svg.append(svgElement("path", { d: `${smoothPath} L${x(points.length - 1)},${height - bottom} L${left},${height - bottom} Z`, class: "chart-area" }));
+  svg.append(svgElement("path", { d: smoothPath, class: "chart-line" }));
+
+  // Dynamic session point dots (Finviz / TradingView style)
+  points.forEach((pt, i) => {
+    const dot = svgElement("circle", {
+      cx: x(i),
+      cy: y(pt.value),
+      r: i === points.length - 1 ? 4 : 3,
+      class: i === points.length - 1 ? "chart-point" : "chart-session-dot",
+      fill: "var(--panel)",
+      stroke: "var(--teal)",
+      "stroke-width": 1.6,
+    });
+    dot.style.cursor = "pointer";
+    svg.append(dot);
+  });
+
   [...new Set([0, Math.floor((points.length - 1) / 2), points.length - 1])].forEach((i) => {
     const label = svgElement("text", { x: x(i), y: height - 5, "text-anchor": i === 0 ? "start" : i === points.length - 1 ? "end" : "middle", class: "chart-axis-label" });
     label.textContent = sessionDate(points[i].date, true); svg.append(label);
@@ -375,9 +414,13 @@ function sparkline(history) {
   const values = history.map((point) => Number(point.close));
   if (values.length < 2 || values.some((value) => !Number.isFinite(value) || value <= 0)) return element("span", "muted small", "Invalid data");
   const low = Math.min(...values), high = Math.max(...values);
-  const path = values.map((value, i) => `${i ? "L" : "M"}${(2 + i / (values.length - 1) * 92).toFixed(1)},${(25 - (value - low) / (high - low || 1) * 22).toFixed(1)}`).join(" ");
+  const coords = values.map((val, i) => ({
+    x: 2 + (i / (values.length - 1)) * 92,
+    y: 25 - ((val - low) / (high - low || 1)) * 22,
+  }));
+  const path = smoothCurvePath(coords);
   const svg = svgElement("svg", { viewBox: "0 0 96 28", class: "sparkline", role: "img", "aria-label": "Synthetic recent price curve" });
-  svg.append(svgElement("path", { d: path, class: values[values.length - 1] >= values[0] ? "spark-up" : "spark-down" }));
+  svg.append(svgElement("path", { d: path, class: values[values.length - 1] >= values[0] ? "spark-up" : "spark-down", fill: "none" }));
   return svg;
 }
 
@@ -1069,7 +1112,12 @@ async function sendChat(message) {
   const thinking = addMessage("assistant", "Reading the current paper portfolio…");
   thinking.querySelector(".message-body").classList.add("thinking");
   try {
-    const response = await api("/api/chat", { method: "POST", body: { message, history }, timeout: 35000 });
+    const payload = {
+      message,
+      history,
+      conversation_id: state.activeConversationId || undefined,
+    };
+    const response = await api("/api/chat", { method: "POST", body: payload, timeout: 35000 });
     thinking.remove();
     const article = addMessage("assistant", response.reply, response.provider === "local" ? "local summary" : "OpenRouter");
     if (response.warning) article.append(element("p", "response-warning", response.warning));
@@ -1078,9 +1126,16 @@ async function sendChat(message) {
     setText("chat-footer-note", response.provider === "local" ? "Read-only local summary. No trade or rule changes made." : "External AI used demo portfolio context. No execution tools.");
     state.history.push({ role: "assistant", content: response.reply.slice(0, 2000) });
     state.history = state.history.slice(-8);
+
+    if (response.conversation_id && !state.activeConversationId) {
+      state.activeConversationId = response.conversation_id;
+      localStorage.setItem("humming-bird-active-conv-id", response.conversation_id);
+    }
+
     if (response.agentic_action) {
       await refresh(true);
       notify(`Hermes action: ${response.agentic_action.replaceAll("_", " ")} executed.`);
+      loadSystemChanges();
     }
     $("chat-messages").scrollTop = $("chat-messages").scrollHeight;
   } catch (error) {
@@ -1437,8 +1492,9 @@ function renderDeepTrendChart(company, timeframe = "7d") {
   resLbl.textContent = `RESISTANCE ৳${resistance.toFixed(1)}`;
   svg.append(resLbl);
 
-  // Price Area & Line
-  const pathD = series.map((pt, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(Number(pt.close)).toFixed(1)}`).join(" ");
+  // Price Area & Line with smooth cubic bezier curve
+  const coords = series.map((pt, i) => ({ x: x(i), y: y(Number(pt.close)) }));
+  const pathD = smoothCurvePath(coords);
   svg.append(svgElement("path", {
     d: `${pathD} L${x(series.length - 1).toFixed(1)},${(top + chartH).toFixed(1)} L${left},${(top + chartH).toFixed(1)} Z`,
     fill: "url(#deep-curve-grad)",
@@ -1574,21 +1630,23 @@ function renderDeepTrendChart(company, timeframe = "7d") {
 // --- Theme Switcher Logic ---
 function initTheme() {
   const saved = localStorage.getItem("humming-bird-theme") || "dark";
-  setTheme(saved);
+  const validTheme = saved === "light" ? "light" : "dark";
+  setTheme(validTheme);
 }
 
 function setTheme(theme) {
-  state.theme = theme;
-  document.documentElement.setAttribute("data-theme", theme);
-  try { localStorage.setItem("humming-bird-theme", theme); } catch { /* Optional */ }
+  const cleanTheme = theme === "light" ? "light" : "dark";
+  state.theme = cleanTheme;
+  document.documentElement.setAttribute("data-theme", cleanTheme);
+  try { localStorage.setItem("humming-bird-theme", cleanTheme); } catch { /* Optional */ }
   const nameElem = $("theme-name");
   if (nameElem) {
-    nameElem.textContent = theme === "dark" ? "Dark" : theme === "light" ? "Light" : "Terminal";
+    nameElem.textContent = cleanTheme === "dark" ? "Dark" : "Light";
   }
 }
 
 function toggleTheme() {
-  const next = state.theme === "dark" ? "light" : state.theme === "light" ? "terminal" : "dark";
+  const next = state.theme === "dark" ? "light" : "dark";
   setTheme(next);
 }
 
@@ -1758,6 +1816,27 @@ function renderAutomationControlBar() {
       dot.className = "status-dot live-dot active";
     }
   }
+
+  // Overview quick status pill
+  const ovDot = $("overview-sys-dot");
+  const ovText = $("overview-sys-text");
+  if (ovText && ovDot) {
+    ovText.textContent = `${mode === "BACKGROUND_POLLING" ? "Method A (" + interval + "s)" : "Method B (Live CDP)"} · ${enabled ? "AUTO ON" : "PAUSED"}`;
+    ovDot.className = `status-dot ${enabled ? "live-dot active" : "amber"}`;
+  }
+
+  // Circuit breaker state
+  const circ = $("circuit-state");
+  if (circ) {
+    circ.textContent = enabled ? "✓ Normal execution state" : "⚠ Master buy/sell paused";
+    circ.className = `circuit-state ${enabled ? "" : "paused"}`;
+  }
+
+  // Adapter telemetry details
+  const adpMode = $("adp-mode-text");
+  if (adpMode) {
+    adpMode.textContent = mode === "BACKGROUND_POLLING" ? `Method A (Polling · ${interval}s)` : "Method B (Side-by-Side Live CDP)";
+  }
 }
 
 async function setAutomationConfig(newConfig) {
@@ -1864,6 +1943,294 @@ function initRealtimeStream() {
   }
 }
 
+// --- Hermes IDE Resizable Sidebar, Tabs & Antigravity History ---
+function initHermesSidebar() {
+  const sidebar = $("hermes-sidebar");
+  const resizeHandle = $("hermes-resize-handle");
+  const collapseBtn = $("hermes-collapse-btn");
+  const openBtn = $("floating-hermes-open");
+  const appShell = document.querySelector(".app-shell");
+
+  // Restore saved width
+  const savedWidth = localStorage.getItem("humming-bird-hermes-width");
+  if (savedWidth) {
+    const parsed = parseInt(savedWidth, 10);
+    if (parsed >= 260 && parsed <= 700) {
+      document.documentElement.style.setProperty("--hermes-width", `${parsed}px`);
+    }
+  }
+
+  // Restore collapsed state
+  const isCollapsed = localStorage.getItem("humming-bird-hermes-collapsed") === "true";
+  if (isCollapsed && appShell && openBtn) {
+    appShell.classList.add("hermes-collapsed");
+    openBtn.hidden = false;
+  }
+
+  // Drag Resizing
+  if (resizeHandle && appShell) {
+    let isDragging = false;
+    resizeHandle.addEventListener("mousedown", (e) => {
+      isDragging = true;
+      resizeHandle.classList.add("is-dragging");
+      document.body.style.userSelect = "none";
+      document.body.style.cursor = "col-resize";
+    });
+
+    window.addEventListener("mousemove", (e) => {
+      if (!isDragging) return;
+      const newWidth = Math.max(280, Math.min(650, window.innerWidth - e.clientX));
+      document.documentElement.style.setProperty("--hermes-width", `${newWidth}px`);
+      localStorage.setItem("humming-bird-hermes-width", newWidth);
+    });
+
+    window.addEventListener("mouseup", () => {
+      if (isDragging) {
+        isDragging = false;
+        resizeHandle.classList.remove("is-dragging");
+        document.body.style.userSelect = "";
+        document.body.style.cursor = "";
+      }
+    });
+  }
+
+  // Collapse / Minimize
+  if (collapseBtn && appShell && openBtn) {
+    collapseBtn.addEventListener("click", () => {
+      appShell.classList.add("hermes-collapsed");
+      openBtn.hidden = false;
+      localStorage.setItem("humming-bird-hermes-collapsed", "true");
+    });
+  }
+
+  if (openBtn && appShell) {
+    openBtn.addEventListener("click", () => {
+      appShell.classList.remove("hermes-collapsed");
+      openBtn.hidden = true;
+      localStorage.setItem("humming-bird-hermes-collapsed", "false");
+    });
+  }
+
+  // IDE Tabs
+  const tabs = [
+    { id: "tab-hermes-chat", paneId: "pane-hermes-chat" },
+    { id: "tab-hermes-conversations", paneId: "pane-hermes-conversations", onOpen: loadConversations },
+    { id: "tab-hermes-changes", paneId: "pane-hermes-changes", onOpen: loadSystemChanges },
+    { id: "tab-hermes-skills", paneId: "pane-hermes-skills" },
+  ];
+
+  tabs.forEach(({ id, paneId, onOpen }) => {
+    const tabEl = $(id);
+    if (!tabEl) return;
+    tabEl.addEventListener("click", () => {
+      tabs.forEach((t) => {
+        const b = $(t.id);
+        const p = $(t.paneId);
+        if (b) {
+          b.classList.toggle("active", t.id === id);
+          b.setAttribute("aria-selected", t.id === id ? "true" : "false");
+        }
+        if (p) {
+          p.hidden = t.paneId !== paneId;
+          p.classList.toggle("is-active", t.paneId === paneId);
+        }
+      });
+      if (onOpen) onOpen();
+    });
+  });
+
+  // Rollback buttons
+  ["rollback-pane-btn", "rollback-skills-btn", "rollback-button"].forEach((btnId) => {
+    const btn = $(btnId);
+    if (btn) {
+      btn.addEventListener("click", async () => {
+        try {
+          const res = await api("/api/hermes/rollback", { method: "POST" });
+          await refresh(true);
+          notify(`Rollback applied: ${res.action_reverted} (${res.description})`);
+          loadSystemChanges();
+        } catch (err) {
+          notify(`Rollback failed: ${err.message}`, true);
+        }
+      });
+    }
+  });
+
+  // New conversation button
+  const newConvBtn = $("new-conversation-btn");
+  if (newConvBtn) {
+    newConvBtn.addEventListener("click", createNewConversation);
+  }
+
+  const refreshChangesBtn = $("refresh-changes-btn");
+  if (refreshChangesBtn) {
+    refreshChangesBtn.addEventListener("click", loadSystemChanges);
+  }
+}
+
+// --- Conversations (Human Topic Separator) ---
+state.activeConversationId = localStorage.getItem("humming-bird-active-conv-id") || null;
+
+async function loadConversations() {
+  const container = $("conversations-list");
+  if (!container) return;
+  try {
+    const res = await api("/api/hermes/conversations");
+    const threads = res.conversations || [];
+    setText("conversations-badge", threads.length);
+    if (threads.length === 0) {
+      container.replaceChildren(element("div", "empty-state-small", "No conversation topics yet. Start one!"));
+      return;
+    }
+    const items = threads.map((thread) => {
+      const item = element("div", `conversation-item ${thread.id === state.activeConversationId ? "active" : ""}`);
+      const topRow = element("div", "conv-top-row");
+      const title = element("strong", "conv-title", thread.title || "Untitled Conversation");
+      const time = element("span", "conv-time", formatRelativeTime(thread.updated_at));
+      topRow.append(title, time);
+
+      const sub = element("div", "conv-sub");
+      sub.append(
+        element("span", "", `${thread.message_count} turns`),
+        element("span", "muted", "· Shared memory")
+      );
+
+      item.append(topRow, sub);
+      item.addEventListener("click", () => switchConversation(thread));
+      return item;
+    });
+    container.replaceChildren(...items);
+  } catch (err) {
+    container.replaceChildren(element("div", "empty-state-small", `Failed to load topics: ${err.message}`));
+  }
+}
+
+async function switchConversation(thread) {
+  state.activeConversationId = thread.id;
+  localStorage.setItem("humming-bird-active-conv-id", thread.id);
+  setText("active-conv-title", thread.title);
+
+  // Switch to Chat tab
+  const chatTab = $("tab-hermes-chat");
+  if (chatTab) chatTab.click();
+
+  // Load thread messages
+  try {
+    const res = await api(`/api/hermes/conversations/${thread.id}/messages`);
+    const msgs = res.messages || [];
+    const chatMsgContainer = $("chat-messages");
+    if (chatMsgContainer) {
+      chatMsgContainer.replaceChildren();
+      if (msgs.length === 0) {
+        addMessage("assistant", `Switched to topic: "${thread.title}". How can I assist you with this strategy?`);
+      } else {
+        msgs.forEach((m) => {
+          addMessage(m.role, m.content, m.role === "assistant" ? "Hermes" : "User");
+        });
+      }
+    }
+  } catch (err) {
+    notify(`Failed to load messages: ${err.message}`, true);
+  }
+}
+
+async function createNewConversation() {
+  const title = prompt("Enter topic or strategy title:", `Strategy-${new Date().toLocaleDateString("en-GB")}`);
+  if (!title) return;
+  try {
+    const res = await api("/api/hermes/conversations", {
+      method: "POST",
+      body: { title: title.trim() },
+    });
+    state.activeConversationId = res.id;
+    localStorage.setItem("humming-bird-active-conv-id", res.id);
+    setText("active-conv-title", res.title);
+
+    // Switch to Chat tab and clear
+    const chatTab = $("tab-hermes-chat");
+    if (chatTab) chatTab.click();
+
+    const chatMsgContainer = $("chat-messages");
+    if (chatMsgContainer) {
+      chatMsgContainer.replaceChildren();
+      addMessage("assistant", `Started new conversation topic: "${res.title}". Hermes memory & skills are fully connected.`);
+    }
+    loadConversations();
+  } catch (err) {
+    notify(`Failed to create topic: ${err.message}`, true);
+  }
+}
+
+function formatRelativeTime(isoStr) {
+  if (!isoStr) return "";
+  try {
+    const d = new Date(isoStr);
+    const diffSec = Math.floor((Date.now() - d.getTime()) / 1000);
+    if (diffSec < 60) return "just now";
+    if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m`;
+    if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h`;
+    return `${Math.floor(diffSec / 86400)}d`;
+  } catch {
+    return "";
+  }
+}
+
+// --- Files Changed History (Antigravity Style) ---
+async function loadSystemChanges() {
+  const fileContainer = $("files-changed-list");
+  const cpContainer = $("changes-checkpoints-list");
+  if (!fileContainer) return;
+  try {
+    const res = await api("/api/system/changes");
+    const files = res.files_changed || [];
+    const checkpoints = res.checkpoints || [];
+
+    setText("changes-badge", files.length);
+    setText("files-changed-count-tag", files.length);
+
+    if (files.length === 0) {
+      fileContainer.replaceChildren(element("div", "empty-state-small", "Workspace working tree is clean."));
+    } else {
+      const items = files.map((f) => {
+        const item = element("div", "file-change-item");
+        const chip = element("span", `file-status-chip status-${f.status}`, f.status);
+        const info = element("div", "file-info");
+        info.append(
+          element("span", "file-name", f.name),
+          element("span", "file-folder", f.folder)
+        );
+        item.append(chip, info);
+        return item;
+      });
+      fileContainer.replaceChildren(...items);
+    }
+
+    if (cpContainer) {
+      if (checkpoints.length === 0) {
+        cpContainer.replaceChildren(element("div", "empty-state-small", "No recent state checkpoints."));
+      } else {
+        const cpItems = checkpoints.map((cp) => {
+          const item = element("div", "cp-item");
+          const head = element("div", "cp-head");
+          head.append(
+            element("strong", "", cp.action.replaceAll("_", " ")),
+            element("span", "conv-time", formatRelativeTime(cp.created_at))
+          );
+          const desc = element("div", "cp-desc", cp.description);
+          item.append(head, desc);
+          return item;
+        });
+        cpContainer.replaceChildren(...cpItems);
+      }
+    }
+  } catch (err) {
+    fileContainer.replaceChildren(element("div", "empty-state-small", `Failed to load changes: ${err.message}`));
+  }
+}
+
 updateControls();
 refresh();
 initRealtimeStream();
+initHermesSidebar();
+loadConversations();
+loadSystemChanges();

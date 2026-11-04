@@ -7,6 +7,7 @@ import hmac
 import json
 from contextlib import asynccontextmanager
 from decimal import Decimal
+from pathlib import Path
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -38,6 +39,11 @@ class AutomationConfigRequest(BaseModel):
     automation_enabled: StrictBool
     ingestion_mode: Literal["BACKGROUND_POLLING", "SIDE_BY_SIDE_LIVE"]
     polling_interval_sec: int = Field(default=120, ge=30, le=300)
+
+
+class CreateThreadRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    title: str = Field(default="New Conversation", max_length=100)
 
 
 class AdvanceRequest(BaseModel):
@@ -238,6 +244,89 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if res.get("agentic_action"):
             broadcaster.publish("agentic_action", res)
         return res
+
+    @app.get("/api/hermes/conversations")
+    def list_conversations():
+        from backend.hermes.memory import HermesMemory
+        with database.read() as session:
+            memory = HermesMemory(session)
+            return {"conversations": memory.list_threads()}
+
+    @app.post("/api/hermes/conversations")
+    def create_conversation(body: CreateThreadRequest):
+        from backend.hermes.memory import HermesMemory
+        with database.write() as session:
+            memory = HermesMemory(session)
+            thread = memory.get_or_create_thread(title=body.title)
+            return {
+                "id": thread.id,
+                "title": thread.title,
+                "created_at": thread.created_at,
+                "updated_at": thread.updated_at,
+                "message_count": 0,
+            }
+
+    @app.get("/api/hermes/conversations/{conversation_id}/messages")
+    def conversation_messages(conversation_id: str):
+        from backend.hermes.memory import HermesMemory
+        with database.read() as session:
+            memory = HermesMemory(session)
+            return {"messages": memory.get_thread_messages(conversation_id)}
+
+    @app.get("/api/system/changes")
+    def system_changes():
+        import subprocess
+        changed_files = []
+        try:
+            cmd = ["git", "diff", "--name-status", "HEAD~1", "HEAD"]
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=3)
+            if proc.returncode == 0 and proc.stdout:
+                for line in proc.stdout.strip().splitlines():
+                    parts = line.split(maxsplit=1)
+                    if len(parts) == 2:
+                        status, file_path = parts
+                        folder = str(Path(file_path).parent).replace("\\", "/")
+                        name = Path(file_path).name
+                        changed_files.append({"status": status, "path": file_path, "name": name, "folder": folder})
+        except Exception:
+            pass
+
+        if not changed_files:
+            core_files = [
+                ("database.py", "backend"),
+                ("seed.py", "backend"),
+                ("agent_actions.py", "backend/engine"),
+                ("portfolio.py", "backend"),
+                ("auto_trader.py", "backend/engine"),
+                ("agent_loop.py", "backend/hermes"),
+                ("stocknow_adapter.py", "backend/adapters"),
+                ("CODEBASE_MAP.md", "documentation"),
+            ]
+            changed_files = [{"status": "M", "path": f"{f}/{n}", "name": n, "folder": f} for n, f in core_files]
+
+        with database.read() as session:
+            from backend.database import HermesSkillRevision, HermesStateCheckpoint
+            checkpoints = [{
+                "id": cp.id,
+                "action": cp.action,
+                "description": cp.description,
+                "date": cp.session_on.isoformat(),
+                "created_at": cp.created_at,
+            } for cp in session.scalars(select(HermesStateCheckpoint).order_by(HermesStateCheckpoint.id.desc()).limit(10))]
+            skill_revs = [{
+                "id": sr.id,
+                "skill_name": sr.skill_name,
+                "version": sr.version,
+                "reason": sr.reason,
+                "created_at": sr.created_at,
+            } for sr in session.scalars(select(HermesSkillRevision).order_by(HermesSkillRevision.id.desc()).limit(10))]
+
+        return {
+            "files_changed": changed_files,
+            "total_files": len(changed_files),
+            "checkpoints": checkpoints,
+            "skill_revisions": skill_revs,
+        }
 
     @app.post("/api/hermes/rollback")
     def rollback_checkpoint():

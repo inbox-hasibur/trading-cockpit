@@ -138,16 +138,24 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
    - **TradingView-Style Interactive Crosshairs & Hover Tooltips:** Vertical and horizontal tracking guidelines, date/price inspection, and circular Buy (`B`, green) & Sell (`S`, red) trade execution markers plotted directly on price curves.
    - **Individual Company Deep-Trend View (Modal):** Multi-timeframe trend curves (**7D**, **1M**, **6M**, **1Y**) with horizontal Support Floor (dashed green) and Resistance Ceiling (dashed red) lines, shaded Buy Zone band, and an 8-metric fundamental profile card (P/E, EPS, NAV, Market Cap, Dividend Yield, Paid-up Capital, 52-Week Range, Category).
    - **"What-If" Profit Simulator Slider:** Real-time calculator allowing traders to slide target price up/down and compute simulated gross exit value, 1% DSE brokerage fee, and net pocket cash profit in BDT.
-   - **Multi-Theme Switcher (Dark / Light / Terminal):** High-contrast daylight mode for daytime readability, dark slate default, and retro Matrix cyberpunk monospace terminal mode.
+   - **Theme Switcher (Dark / Light):** High-contrast daylight mode for daytime readability and sleek dark slate default with clean card borders and contrast.
+   - **Smooth Catmull-Rom Dynamic Curves & Point Dots:** Replaced snappy straight lines with smooth cubic bezier spline curves, with individual point dots across every session point and dynamic hover/click telemetry.
    - **DSE Live Market Clock & Countdown:** Topbar live telemetry showing session state (`🟢 DSE OPEN` vs `🔴 DSE CLOSED`) with real-time countdown to next session opening or market close.
 
-9. **Master Automation Controller & Dual Ingestion Mode (`Background Polling` vs `Side-by-Side Live`):**
-   - **Master Buy/Sell Automation Switch:** A dedicated toggle in the Cockpit header (`AUTOMATION ON` vs `AUTOMATION OFF / PAUSED`). Disables evaluation cycles and protects capital on demand without server restart.
+9. **Master Automation Controller & Dedicated System Control Page (`#system-control`):**
+   - **Dedicated Navigation Page:** Moved master automation switch, dual ingestion mode selector, polling interval pills, and StockNow CDP telemetry into its own dedicated page on the left navigation rail, keeping `#overview` clean with a quick status pill.
    - **Dual Ingestion Mode Architecture:**
      - **Method A (`BACKGROUND_POLLING`):** Lightweight periodic data polling (configurable 30s to 300s, default 120s) with interval pill selector (`30s`, `60s`, `120s`, `180s`). Ideal for low-resource VPS, battery saving, or stealth operation.
      - **Method B (`SIDE_BY_SIDE_LIVE`):** Headed, persistent Playwright browser context running alongside the operator on desktop, allowing live DOM/CDP telemetry inspection and immediate event triggers.
    - **Hermes Chat Orchestration:** Operator can command in chat (*"Switch to side by side mode"*, *"Background polling 60s koro"*, *"Turn off buy sell automation"*), with automatic state checkpointing for 1-click `/rollback`.
-   - **AST Codebase X-Ray Radar (`CODEBASE_MAP.md`):** Zero-dependency AST scanner (`scripts/generate_code_map.py`) that indexes all classes, methods, FastAPI routes, DOM elements, and code complexity metrics.
+
+10. **Hermes IDE Resizable Sidebar, Topics & Antigravity History:**
+    - **Resizable Drag Handle (`col-resize`):** Fluid sidebar width adjustment (280px–650px) with `localStorage` persistence like VS Code / Orca IDE.
+    - **Minimize / Collapse Mode:** One-click minimize button with a floating reopen pill (`✦ Hermes`) for maximum dashboard screen real estate.
+    - **Multi-Conversation Topic Manager (`+ New Conversation`):** Human strategy & topic separator (`HermesConversationThread`), enabling distinct conversation threads while Hermes retains unified cross-topic memory and self-improving procedural skills.
+    - **Files Changed & Checkpoints Drawer (Antigravity Look):** Live workspace audit history showing modified and added files with status chips (`[M]`, `[A]`, `[D]`) and recent state checkpoints with 1-click `/rollback`.
+    - **High-Performance Snapshot Engine:** Precomputed $O(N)$ calendar date slices in `portfolio.py`, eliminating the 145,000+ date increment loop and resolving page load delays.
+    - **AST Codebase X-Ray Radar (`CODEBASE_MAP.md`):** Zero-dependency AST scanner (`scripts/generate_code_map.py`) that indexes all classes, methods, FastAPI routes, DOM elements, and code health radar.
 
 ---
 

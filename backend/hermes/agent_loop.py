@@ -430,7 +430,7 @@ class HermesAgentLoop:
 
         return None, {}
 
-    async def run_turn(self, user_message: str, history: list[dict[str, str]]) -> dict[str, Any]:
+    async def run_turn(self, user_message: str, history: list[dict[str, str]], conversation_id: str | None = None) -> dict[str, Any]:
         """Main turn loop: Layered Memory + Skills Injection + Tool Execution + Context Scrubbing."""
         # Clean user input
         safe_message = redact_secrets(user_message.strip())
@@ -452,6 +452,7 @@ class HermesAgentLoop:
                 role="user",
                 content=safe_message,
                 symbol_mentioned=tool_args.get("symbol"),
+                conversation_id=conversation_id,
             )
 
             # Execute tool if detected
@@ -464,6 +465,7 @@ class HermesAgentLoop:
                         content=f"Executed tool: {tool_name} with result {tool_result}",
                         symbol_mentioned=tool_args.get("symbol"),
                         action_taken=tool_name,
+                        conversation_id=conversation_id,
                     )
                 except Exception as exc:
                     tool_result = {"status": "ERROR", "error": str(exc), "tool": tool_name}
@@ -480,6 +482,7 @@ class HermesAgentLoop:
                 "learn_or_patch_skill": "LEARN_SKILL",
                 "execute_manual_order": "MANUAL_ORDER",
                 "update_company_allocation": "UPDATE_ALLOCATION",
+                "set_automation_config": "SET_AUTOMATION_CONFIG",
             }
             return {
                 "reply": reply,
@@ -490,11 +493,14 @@ class HermesAgentLoop:
                 "tool_result": tool_result,
                 "context_date": updated_snapshot["app"]["date"],
                 "context_revision": updated_snapshot["app"]["revision"],
+                "conversation_id": conversation_id,
                 "read_only": False,
             }
 
         # Otherwise: Assemble full layered prompt for conversational response
-        return await self._conversational_inference(safe_message, history, snapshot)
+        res = await self._conversational_inference(safe_message, history, snapshot, conversation_id=conversation_id)
+        res["conversation_id"] = conversation_id
+        return res
 
     def _format_tool_response(self, tool_name: str, tool_res: dict[str, Any], user_msg: str, snapshot: dict) -> str:
         bangla = any("\u0980" <= char <= "\u09ff" for char in user_msg) or any(w in user_msg.lower() for w in ("koro", "deulia", "khoti"))
@@ -612,7 +618,7 @@ class HermesAgentLoop:
 
         return f"DEMO/PAPER · Tool {tool_name} executed successfully."
 
-    async def _conversational_inference(self, message: str, history: list[dict[str, str]], snapshot: dict) -> dict[str, Any]:
+    async def _conversational_inference(self, message: str, history: list[dict[str, str]], snapshot: dict, conversation_id: str | None = None) -> dict[str, Any]:
         """Runs conversational response with Layered Memory and Matched SKILL.md injection."""
         with self.database.read() as session:
             memory = HermesMemory(session)
@@ -646,7 +652,7 @@ class HermesAgentLoop:
 
         # Check OpenRouter credentials & budget
         if not self.settings.openrouter_api_key:
-            return self._local_conversational_fallback(message, snapshot)
+            return self._local_conversational_fallback(message, snapshot, conversation_id=conversation_id)
 
         # External OpenRouter call - check and increment budget
         day = datetime.now(DHAKA).date()
@@ -662,7 +668,7 @@ class HermesAgentLoop:
                 budget.calls += 1
 
         if not allowed:
-            return self._local_conversational_fallback(message, snapshot, warning="Daily external-call allowance reached; using free local agentic summary.")
+            return self._local_conversational_fallback(message, snapshot, warning="Daily external-call allowance reached; using free local agentic summary.", conversation_id=conversation_id)
 
         messages = [{"role": "system", "content": full_system_prompt}]
         for turn in compressed_history:
@@ -692,7 +698,7 @@ class HermesAgentLoop:
                 with self.database.write() as session:
                     state = portfolio_state(session)
                     mem = HermesMemory(session)
-                    mem.record_turn(session_date=state.clock_date, role="assistant", content=clean_reply)
+                    mem.record_turn(session_date=state.clock_date, role="assistant", content=clean_reply, conversation_id=conversation_id)
 
                 return {
                     "reply": clean_reply,
@@ -701,19 +707,20 @@ class HermesAgentLoop:
                     "warning": None,
                     "context_date": snapshot["app"]["date"],
                     "context_revision": snapshot["app"]["revision"],
+                    "conversation_id": conversation_id,
                     "read_only": False,
                 }
         except Exception as exc:
             logger.warning("OpenRouter call failed: %s; falling back to local agent summary.", exc)
-            return self._local_conversational_fallback(message, snapshot, warning=f"OpenRouter unavailable ({exc}); local summary used.")
+            return self._local_conversational_fallback(message, snapshot, warning=f"OpenRouter unavailable ({exc}); local summary used.", conversation_id=conversation_id)
 
-    def _local_conversational_fallback(self, message: str, snapshot: dict, warning: str | None = None) -> dict[str, Any]:
+    def _local_conversational_fallback(self, message: str, snapshot: dict, warning: str | None = None, conversation_id: str | None = None) -> dict[str, Any]:
         from backend.chat import local_summary
         reply = local_summary(message, snapshot)
         with self.database.write() as session:
             state = portfolio_state(session)
             mem = HermesMemory(session)
-            mem.record_turn(session_date=state.clock_date, role="assistant", content=reply)
+            mem.record_turn(session_date=state.clock_date, role="assistant", content=reply, conversation_id=conversation_id)
         return {
             "reply": reply,
             "provider": "local",
@@ -721,5 +728,6 @@ class HermesAgentLoop:
             "warning": warning or "Local summary mode: zero external API cost.",
             "context_date": snapshot["app"]["date"],
             "context_revision": snapshot["app"]["revision"],
+            "conversation_id": conversation_id,
             "read_only": False,
         }

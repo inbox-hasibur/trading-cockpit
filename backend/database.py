@@ -194,9 +194,18 @@ class HermesUserProfile(Base):
     updated_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
 
 
+class HermesConversationThread(Base):
+    __tablename__ = "hermes_conversation_threads"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    title: Mapped[str] = mapped_column(String(120), default="New Conversation")
+    created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
+    updated_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
+
+
 class HermesSessionMemory(Base):
     __tablename__ = "hermes_session_memory"
     id: Mapped[int] = mapped_column(primary_key=True)
+    conversation_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
     session_date: Mapped[date] = mapped_column(Date, index=True)
     role: Mapped[str] = mapped_column(String(16))
     content: Mapped[str] = mapped_column(String(4000))
@@ -302,6 +311,12 @@ class Database:
                     conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN ingestion_mode VARCHAR(32) DEFAULT 'BACKGROUND_POLLING'"))
                 if "polling_interval_sec" not in ps_cols:
                     conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN polling_interval_sec INTEGER DEFAULT 120"))
+                conn.commit()
+
+            result = conn.execute(text("PRAGMA table_info(hermes_session_memory)"))
+            hsm_cols = [row[1] for row in result.fetchall()]
+            if hsm_cols and "conversation_id" not in hsm_cols:
+                conn.execute(text("ALTER TABLE hermes_session_memory ADD COLUMN conversation_id VARCHAR(36)"))
                 conn.commit()
 
     @contextmanager

@@ -302,4 +302,35 @@ def test_generate_code_map_script():
     assert "/api/automation/config" in content
 
 
+def test_hermes_conversations_and_system_changes(client):
+    # 1. Create a conversation thread
+    create_res = client.post("/api/hermes/conversations", json={"title": "Macro Strategy 2026"}).json()
+    conv_id = create_res["id"]
+    assert conv_id
+    assert create_res["title"] == "Macro Strategy 2026"
+
+    # 2. List conversations
+    conv_list = client.get("/api/hermes/conversations").json()
+    assert any(c["id"] == conv_id for c in conv_list["conversations"])
+
+    # 3. Chat with conversation_id
+    chat_res = client.post("/api/chat", json={
+        "message": "Portfolio kemon ache?",
+        "conversation_id": conv_id,
+    }).json()
+    assert chat_res["reply"]
+    assert chat_res["conversation_id"] == conv_id
+
+    # 4. Fetch conversation messages
+    msgs_res = client.get(f"/api/hermes/conversations/{conv_id}/messages").json()
+    assert len(msgs_res["messages"]) >= 2  # user + assistant
+
+    # 5. Check system changes endpoint
+    changes = client.get("/api/system/changes").json()
+    assert "files_changed" in changes
+    assert "checkpoints" in changes
+    assert changes["total_files"] >= 1
+
+
+
 

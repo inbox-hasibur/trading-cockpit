@@ -53,6 +53,7 @@ class ChatRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     message: str = Field(min_length=1, max_length=2000)
     history: list[ChatTurn] = Field(default_factory=list, max_length=8)
+    conversation_id: str | None = None
 
     @field_validator("message")
     @classmethod
@@ -190,4 +191,5 @@ class ChatService:
         return await self.agent_loop.run_turn(
             request.message,
             [turn.model_dump() for turn in request.history],
+            conversation_id=request.conversation_id,
         )
