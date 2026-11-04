@@ -1,0 +1,12 @@
+# Zero-Secret-Read & Sensitive File Isolation for Coding Agents
+**/.env*
+!**/.env.example
+**/auth.json
+**/cookies*
+**/browser_profile/**
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/*.sqlite*
+**/trading-cockpit.zip
+
