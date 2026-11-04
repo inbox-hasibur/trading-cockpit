@@ -162,34 +162,50 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
 ## 5. System Architecture & Tech Stack
 
 ```text
-+-----------------------------------------------------------------------------------+
-|                   HUMMING BIRD WEB COCKPIT (Dark-Mode Terminal)                   |
-|  [Telemetry: Today/Wk/Mo/Yr Gain] [T+2 Buckets A/B/C] [7-Day Company Pulse Cards] |
-|  [Custom Rules & Buy % Controls]                 [Hermes AI Side-Chat (Bangla/EN)]|
-+-----------------------------------------+-----------------------------------------+
-                                          | HTTP / REST / WebSockets
-                                          v
-+-----------------------------------------------------------------------------------+
-|                        FASTAPI QUANT & AUTOMATION BACKEND                         |
-|                                                                                   |
-|  +-----------------------+  +------------------------+  +----------------------+  |
-|  |   CurveAnalyzer       |  |   SequentialSeller     |  |   T2Ledger (A/B/C)   |  |
-|  | - 7-30d Range Reader  |  | - 1% Fee Exact Math    |  | - Sun-Thu Calendar   |  |
-|  | - Sector Rules        |  | - 25% Tiered Scaling   |  | - Tax-Lot Maturity   |  |
-|  | - Crash/Vanish Guard  |  | - 50/50 Pullback Split |  | - Exposure Caps      |  |
-|  +-----------+-----------+  +------------+-----------+  +-----------+----------+  |
-|              \                           |                         /              |
-|               v                          v                        v               |
-|  +-----------------------------------------------------------------------------+  |
-|  |                    AutoTrader Deterministic Orchestrator                    |  |
-|  +-------------------+-------------------------------------+-------------------+  |
-+----------------------|-------------------------------------|----------------------+
-                       |                                     |
-                       v                                     v
-+---------------------------------------------+   +---------------------------------+
-|      MODULAR BROKER ADAPTER LAYER           |   |    SQLITE / SUPABASE LEDGER     |
-| - Sprint 1: Paper / StockNow Seed Engine    |   | - CompanyProfile & Custom Rules |
-| - Sprint 2: Playwright Persistent Context   |   | - TaxLots (T+0, T+1, T+2)       |
-|   & XHR/DOM Sync for `stocknow.com.bd`      |   | - TradeLogs & Audit History     |
-| - v0.3: LankaBangla / Shanta Adapters       |   +---------------------------------+
-+---------------------------------------------+
++-------------------------------------------------------------------------------------------------------+
+|                                    HUMMING BIRD OPERATOR TERMINAL                                     |
+|  [Left Nav Rail]      [Main Dashboard Panels]                             [Hermes IDE Copilot]        |
+|  - #overview          - Financial Telemetry (Today/Wk/Mo/Yr)              - Resizable Width (280-650px)|
+|  - #system-control    - Spline Watchlist Pulse (Catmull-Rom Bezier)       - [💬 Chat] Active Turn     |
+|  - #watchlist         - T+2 Capital Buckets (A, B, C)                     - [📂 Topics] Strategy Tabs |
+|  - #market-map        - Finviz Market Treemap & Gainer Bar Chart          - [⚡ Changes] Audit & Roll |
+|  - #execution         - Deep Trend Modal (7d, 1m, 6m, 1y + Support/Resist)- [🧠 Skills] SKILL_*.md    |
+|  - #ledger            - What-If Profit Simulator & Allocation Controls    - Minimize to ✦ Floating Pill|
++---------------------------------------------------+---------------------------------------------------+
+                                                    | HTTP REST / SSE Stream (/api/stream)
+                                                    v
++-------------------------------------------------------------------------------------------------------+
+|                                  FASTAPI QUANT & AUTOMATION BACKEND                                   |
+|                                                                                                       |
+|  +-------------------------+  +--------------------------+  +--------------------------------------+  |
+|  |     CurveAnalyzer       |  |     SequentialSeller     |  |          T2Ledger (A/B/C)            |  |
+|  | - 7-30d Range Reader    |  | - 1.00% Net Fee Math     |  | - Sunday-Thursday Working Calendar   |  |
+|  | - Sector Classification |  | - 25% Tiered Profit Lock |  | - T+0 -> T+1 -> T+2 Maturity Engine  |  |
+|  | - Crash/Vanish Guard    |  | - 50/50 Pullback Split   |  | - Tax-Lot Cost Basis & Settlement    |  |
+|  +------------+------------+  +------------+-------------+  +-------------------+------------------+  |
+|               \                            |                                    /                     |
+|                v                           v                                   v                      |
+|  +-------------------------------------------------------------------------------------------------+  |
+|  |                              AutoTrader Deterministic Orchestrator                              |  |
+|  |             - Atomic Evaluation Cycles  - Idempotency Locks  - Duplicate Trade Guards           |  |
+|  +-------------------+---------------------------------------------------------+-------------------+  |
+|                      |                                                         |                      |
+|                      v                                                         v                      |
+|  +---------------------------------------+             +-------------------------------------------+  |
+|  |    HERMES AGENTIC SUBSYSTEM           |             |       MODULAR DATA & ADAPTER LAYER        |  |
+|  | - SecretGuard (Zero-Secret Isolation) |             | - Dual Ingestion Pipeline:                |  |
+|  | - SkillsEngine (Versioned SKILL_*.md) |             |   * Method A: Background HTTP Polling     |  |
+|  | - 3-Layer Memory (Profile, Logs, Facts|             |   * Method B: Playwright Headed CDP Live  |  |
+|  | - CheckpointManager (1-Click Rollback)|             | - StockNowAdapter (DSE Fixtures & Sync)   |  |
+|  | - Multi-Thread Conversation Manager   |             | - Broadcaster (SSE Realtime Stream)       |  |
+|  +-------------------+-------------------+             +---------------------+---------------------+  |
++----------------------|-------------------------------------------------------|------------------------+
+                       |                                                       |
+                       v                                                       v
++-------------------------------------------------------------------------------------------------------+
+|                                 SQLITE TRANSACTIONAL LEDGER (WAL MODE)                                 |
+|  - PortfolioState & Automation Config     - CustomRule & CompanyProfile     - TaxLots (T0, T1, T2)   |
+|  - TradeLog & Financial Ledgers           - CanaryHypothesis Theses         - HermesStateCheckpoints |
+|  - HermesSessionMemory & Threads          - HermesSkillRevisions            - HermesDurableFacts     |
++-------------------------------------------------------------------------------------------------------+
+```

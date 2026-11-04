@@ -112,9 +112,17 @@ Copy `backend/.env.example` to `backend/.env` to customize runtime parameters. A
 | `GET` | `/api/portfolio` | Full telemetry snapshot, positions, buckets & audit stream |
 | `POST` | `/api/automation/cycle` | Trigger an atomic evaluation & execution cycle |
 | `POST` | `/api/automation/pause` | Toggle global execution lock |
+| `POST` | `/api/automation/config` | Update Master Automation switch, Ingestion Mode (`BACKGROUND_POLLING` vs `SIDE_BY_SIDE_LIVE`), and polling cadence |
 | `POST` | `/api/demo/advance` | Step simulation clock & regime scenarios |
 | `PATCH` | `/api/companies/{symbol}/allocation` | Update exposure weights & symbol status |
-| `POST` | `/api/chat` | Query the side-panel telemetry assistant |
+| `GET` | `/api/market/map` | Full DSE sector treemap and breadth metrics |
+| `POST` | `/api/chat` | Query or command the Hermes agentic share assistant |
+| `GET` | `/api/hermes/conversations` | List conversation threads (human strategy separator) |
+| `POST` | `/api/hermes/conversations` | Create a new conversation thread |
+| `GET` | `/api/hermes/conversations/{id}/messages` | Retrieve message history for a conversation |
+| `GET` | `/api/system/changes` | Inspect workspace git modifications and state checkpoints |
+| `POST` | `/api/hermes/rollback` | Undo last state mutation via checkpoint rollback |
+| `GET` | `/api/stream` | Server-Sent Events (SSE) live reactive event stream |
 
 ---
 
