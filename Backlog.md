@@ -68,10 +68,15 @@
   - **Canary Theses Observation Board:** Real-time visibility into user-reported threats tracked by Hermes with 10% canary probes.
   - **Hermes Skills & Memory Drawer:** Inspect active procedural skills, version patch counts, durable company facts, and recent checkpoints.
   - **1-Click Rollback Toolbar Button:** Instant undo directly from the sidebar.
-  - **DSE Market Map Treemap Visualizer:** Full DSE sector treemap matching real market breadth, squarified tiles sized by turnover (cr), color-coded by performance (Green/Red/Blue), with one-click drilldown into individual sectors (`< Back`).
+  - **DSE Market Map Treemap Visualizer (Finviz Style):** Full DSE sector treemap matching real market breadth, squarified tiles sized by turnover (cr), color-coded by performance (Green/Red/Blue) with Finviz scale, glowing high-move borders, and one-click drilldown into individual sectors (`< Back`).
   - **Top Sectors By Gainer Stacked Bar Chart:** Pure SVG stacked bar chart with vertical sector labels on the X-axis showing Up, Down, and Unchanged counts per sector with hover tooltips and interactive treemap sync.
-- [x] **Complete Automated Test Suite (19/19 passing):**
-  - Engine tests, settlement calendars, fee basis math, sequential seller tiers, local chat, OpenRouter mock, agentic emergency quarantine & canary exits, watchlist categories, SSE streams, cockpit smoke tests, SecretGuard isolation, on-demand skill loading & self-patching, 3-layer memory, state checkpoint `/rollback`, and DSE Market Map `/api/market/map` payload & visualizer tests.
+  - **TradingView-Style Interactive Crosshairs & Hover Tooltips:** Vertical and horizontal guidelines, session date, rebased index/% change, and circular Buy (`B`, green) & Sell (`S`, red) trade execution markers plotted on charts.
+  - **Individual Company Deep-Trend View (Modal):** Multi-timeframe trend curves (**7D**, **1M**, **6M**, **1Y**) with horizontal Support Floor (green dashed) & Resistance Ceiling (red dashed) lines, shaded Buy Zone band, and an 8-card fundamental company profile (P/E, EPS, NAV, Market Cap, Dividend Yield, Paid-up Capital, 52-Week Range, Category).
+  - **"What-If" Profit Simulator Slider:** Real-time calculator allowing traders to slide target price up/down and compute simulated gross exit value, 1% DSE brokerage fee, and net pocket cash profit in BDT.
+  - **Multi-Theme Switcher (Dark / Light / Terminal):** High-contrast daylight mode for daytime readability, dark slate default, and retro Matrix cyberpunk monospace terminal mode with `localStorage` persistence.
+  - **DSE Live Market Clock & Countdown:** Topbar live telemetry showing session state (`🟢 DSE OPEN` vs `🔴 DSE CLOSED`) with real-time countdown to next session opening or market close.
+- [x] **Complete Automated Test Suite (20/20 passing):**
+  - Engine tests, settlement calendars, fee basis math, sequential seller tiers, local chat, OpenRouter mock, agentic emergency quarantine & canary exits, watchlist categories, SSE streams, cockpit smoke tests, SecretGuard isolation, on-demand skill loading & self-patching, 3-layer memory, state checkpoint `/rollback`, DSE Market Map `/api/market/map` payload & visualizer tests, and company fundamentals/extended history deep trend tests.
 
 ---
 

@@ -30,7 +30,19 @@
     <main class="workspace">
       <header class="topbar">
         <div class="workspace-name"><span class="eyebrow">TRADING COCKPIT</span><span class="workspace-title">Humming Bird <span class="version">v0.01</span></span></div>
-        <div class="topbar-right"><span class="stream-badge" title="Live reactive Server-Sent Events stream connected"><span class="status-dot live-dot" id="live-dot"></span> REALTIME SSE</span><span class="demo-badge"><span class="status-dot"></span> DEMO / PAPER</span><button class="text-button" id="token-button" type="button" title="Set an optional private API token for this browser session">API token</button></div>
+        <div class="topbar-right">
+          <div class="market-clock-widget" id="topbar-clock-widget" title="Dhaka Stock Exchange (DSE) Session Clock">
+            <span class="status-dot clock-dot" id="market-status-dot"></span>
+            <strong id="market-status-text">DSE CLOSED</strong>
+            <span class="clock-countdown" id="market-countdown-text">Next: 10:00 AM</span>
+          </div>
+          <button class="theme-toggle-btn" id="theme-toggle-btn" type="button" title="Switch Theme (Dark / Light / Terminal)">
+            <span class="theme-icon">◐</span> <span id="theme-name">Dark</span>
+          </button>
+          <span class="stream-badge" title="Live reactive Server-Sent Events stream connected"><span class="status-dot live-dot" id="live-dot"></span> REALTIME SSE</span>
+          <span class="demo-badge"><span class="status-dot"></span> DEMO / PAPER</span>
+          <button class="text-button" id="token-button" type="button" title="Set an optional private API token for this browser session">API token</button>
+        </div>
       </header>
 
       <div id="error-banner" class="error-banner" role="alert" hidden><span id="error-text"></span><button type="button" id="dismiss-error" aria-label="Dismiss error">×</button></div>
@@ -59,8 +71,11 @@
           <article class="panel pulse-panel">
             <div class="panel-heading"><div><h2>Watchlist pulse</h2><p>Equal-weight price index · synthetic</p></div><span class="outline-badge" id="curve-sessions">7 sessions</span></div>
             <div class="chart-summary"><strong id="index-value">—</strong><span id="index-change" class="small">—</span><span class="chart-baseline">Rebased to 100</span></div>
-            <div class="main-chart" id="main-chart"><span class="muted">Loading synthetic history…</span></div>
-            <div class="chart-footer"><span><span class="legend-dash"></span> Demo watchlist index</span><span>Price index ≠ portfolio return</span></div>
+            <div class="chart-container-wrap">
+              <div class="main-chart" id="main-chart"><span class="muted">Loading synthetic history…</span></div>
+              <div class="chart-tooltip" id="main-chart-tooltip" hidden></div>
+            </div>
+            <div class="chart-footer"><span><span class="legend-dash"></span> Demo watchlist index</span><span>Price index ≠ portfolio return · TradingView Crosshair</span></div>
           </article>
           <article class="panel buckets-panel"><div class="panel-heading"><div><h2>Rolling capital</h2><p>Three buckets. Settlement respected.</p></div><span class="outline-badge">T+2*</span></div><div class="bucket-stack" id="bucket-stack"></div><div class="panel-note">*Configurable demo assumption, not verified DSE rules.</div></article>
         </div>
@@ -77,17 +92,27 @@
           </div>
           <label class="search-field"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8" cy="8" r="4.5"/><path d="m12 12 4 4"/></svg><input type="search" id="company-search" placeholder="Find a company" aria-label="Find a company"></label>
         </div>
-        <div class="table-scroll"><table class="watchlist-table"><thead><tr><th scope="col">COMPANY</th><th scope="col" class="align-right">PRICE ৳</th><th scope="col" class="align-right">DAY</th><th scope="col">7–15 SESSION CURVE</th><th scope="col">CURVE SIGNAL</th><th scope="col" class="align-right">HELD / MATURE</th><th scope="col" class="align-right">BUY CAP</th></tr></thead><tbody id="watchlist-body"><tr><td colspan="7" class="loading-cell">Loading local portfolio…</td></tr></tbody></table></div>
-        <div class="panel-note watchlist-note"><span>Choose a company to inspect its lots and rules.</span><span>Sector preference is not a safety guarantee.</span></div>
+        <div class="table-scroll"><table class="watchlist-table"><thead><tr><th scope="col">COMPANY</th><th scope="col" class="align-right">PRICE ৳</th><th scope="col" class="align-right">DAY</th><th scope="col">7–15 SESSION CURVE</th><th scope="col">CURVE SIGNAL</th><th scope="col" class="align-right">HELD / MATURE</th><th scope="col" class="align-right">BUY CAP</th><th scope="col" class="align-center">TREND</th></tr></thead><tbody id="watchlist-body"><tr><td colspan="8" class="loading-cell">Loading local portfolio…</td></tr></tbody></table></div>
+        <div class="panel-note watchlist-note"><span>Choose a company to inspect its lots, or click Deep Trend for 7D/1M/6M/1Y curves & fundamentals.</span><span>Sector preference is not a safety guarantee.</span></div>
       </section>
 
       <section class="panel market-map-panel section-anchor" id="market-map">
         <div class="panel-heading">
           <div>
-            <div class="eyebrow">DSE MARKET BREADTH & HEATMAP</div>
+            <div class="eyebrow">DSE MARKET BREADTH & FINVIZ HEATMAP</div>
             <h2>Market Map</h2>
           </div>
           <div class="market-map-controls">
+            <select id="treemap-sector-select" class="treemap-sector-select" aria-label="Filter DSE sector">
+              <option value="ALL">All Sectors</option>
+            </select>
+            <div class="finviz-scale-bar" title="Finviz performance heat scale">
+              <span class="scale-step scale-c3">-3%</span>
+              <span class="scale-step scale-c1">-1%</span>
+              <span class="scale-step scale-0">0%</span>
+              <span class="scale-step scale-g1">+1%</span>
+              <span class="scale-step scale-g3">+3%</span>
+            </div>
             <button id="treemap-back-btn" class="button secondary small-button treemap-back-btn" type="button" style="display: none;">
               <span aria-hidden="true">&lt;</span> Back
             </button>
@@ -127,11 +152,48 @@
 
       <section class="execution-grid section-anchor" id="execution">
         <article class="panel inspector-panel">
-          <div class="panel-heading"><div><div class="eyebrow">POSITION INSPECTOR</div><h2 id="inspector-symbol">BANKASIA</h2></div><span class="outline-badge" id="inspector-sector">BANK</span></div>
+          <div class="panel-heading">
+            <div><div class="eyebrow">POSITION INSPECTOR</div><h2 id="inspector-symbol">BANKASIA</h2></div>
+            <div class="inspector-heading-right">
+              <button class="button secondary small-button deep-trend-btn" id="open-deep-trend" type="button" title="Open TradingView-style Deep Trend & Fundamental Profile">
+                <span aria-hidden="true">⤢</span> Deep Trend
+              </button>
+              <span class="outline-badge" id="inspector-sector">BANK</span>
+            </div>
+          </div>
           <div class="position-stats"><div><span>Open cost basis</span><strong id="inspector-basis">—</strong></div><div><span>Est. net P/L</span><strong id="inspector-pnl">—</strong></div><div><span>Net return</span><strong id="inspector-return">—</strong></div></div>
           <p id="inspector-reason" class="inspector-reason muted">Loading decision context…</p>
           <div class="lots-table-wrap table-scroll"><table class="lots-table"><thead><tr><th>LOT / BUCKET</th><th class="align-right">SHARES</th><th>MATURITY</th><th>SELLING STATE</th><th class="align-right">NET %</th></tr></thead><tbody id="lots-body"></tbody></table></div>
           <div class="tier-controls"><span class="muted small">NET PROFIT TIERS</span><div id="profit-tiers" class="tier-list"></div><span class="muted small" id="pullback-setting">3% pullback → 50/50</span></div>
+
+          <!-- "What-If" Profit Simulator Slider -->
+          <div class="what-if-card" id="what-if-card">
+            <div class="what-if-head">
+              <div>
+                <strong>"What-If" Profit Simulator</strong>
+                <p class="small muted">Simulate net pocket profit after 1% DSE round-trip fee</p>
+              </div>
+              <span class="sim-badge" id="sim-symbol-badge">BANKASIA</span>
+            </div>
+            <div class="what-if-slider-box">
+              <div class="slider-labels">
+                <span>Target: <strong id="what-if-target-price">৳20.00</strong></span>
+                <span id="what-if-target-pct" class="positive">+0.00%</span>
+              </div>
+              <input type="range" id="what-if-slider" min="-30" max="40" step="0.5" value="0" aria-label="Price change percentage slider">
+              <div class="slider-scale"><span>-30%</span><span>-15%</span><span>0%</span><span>+15%</span><span>+30%</span></div>
+            </div>
+            <div class="what-if-stats">
+              <div><span>Target Value</span><strong id="what-if-gross">—</strong></div>
+              <div><span>Fee (~1.0%)</span><strong id="what-if-fee">—</strong></div>
+              <div><span>Net Pocket Profit</span><strong id="what-if-net-pnl" class="positive">—</strong></div>
+              <div><span>Net Return</span><strong id="what-if-return-pct" class="positive">—</strong></div>
+            </div>
+            <div class="what-if-foot muted small">
+              *Applies to mature shares. Breakeven hurdle requires +1.005% gross gain to cover buy + sell fees.
+            </div>
+          </div>
+
           <form id="allocation-form" class="allocation-form"><label for="buy-allocation">Buy cap <span class="muted">% of initial capital</span><input type="number" id="buy-allocation" min="0" max="100" step="0.01" required></label><label class="toggle-label"><input id="company-enabled" type="checkbox"><span>Automation enabled</span></label><button type="submit" class="button secondary small-button" id="save-allocation">Apply</button></form>
           <div class="panel-note">Cap applies to open cost basis, not a new budget on every cycle. Tiers are read-only in Sprint 1.</div>
         </article>
@@ -191,6 +253,103 @@
       <div class="chat-bottom"><div class="quick-prompts"><button type="button" data-prompt="Portfolio kemon ache?">Portfolio status <span>↗</span></button><button type="button" data-prompt="Ajke SQURPHARMA er khoti hoye geche, 1 month e deulia hoye jabe">Alert bankruptcy threat <span>⚡</span></button><button type="button" data-prompt="SQURPHARMA restore koro">Restore company <span>↺</span></button></div><div class="provider-status"><span class="mini-dot muted-dot"></span><span id="chat-provider">LOCAL AGENTIC ORCHESTRATOR</span></div><form id="chat-form" class="chat-form"><label for="chat-input" class="sr-only">Message Hermes</label><textarea id="chat-input" rows="2" maxlength="2000" placeholder="Ask status, alert company threat, or command actions…" required></textarea><div class="chat-input-bottom"><span>বাংলা / Banglish / English</span><button type="submit" id="chat-send" aria-label="Send message" title="Send message"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 15V5m-4 4 4-4 4 4"/></svg></button></div></form><p class="chat-footer-note" id="chat-footer-note">Hermes can execute emergency quarantines, canary probes, and rule adjustments.</p></div>
     </aside>
   </div>
+  <!-- Deep Trend & Fundamental Profile Modal -->
+  <dialog id="deep-trend-modal" class="deep-trend-modal" aria-labelledby="modal-company-title">
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <header class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-eyebrow"><span id="modal-company-sector">TELECOM</span> · <span id="modal-company-category">GSC BLUE-CHIP</span></div>
+          <h2 id="modal-company-title">GP <span class="modal-company-sub" id="modal-company-sub">Grameenphone Ltd.</span></h2>
+          <div class="modal-price-strip">
+            <span class="modal-price" id="modal-price">৳265.00</span>
+            <span class="modal-change positive" id="modal-change">+0.52%</span>
+            <span class="signal-badge tone-positive" id="modal-signal-tag">BUY ZONE</span>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <div class="timeframe-tabs" id="deep-timeframe-tabs" role="tablist" aria-label="Chart timeframe">
+            <button class="active" data-tf="7d" type="button">7D</button>
+            <button data-tf="1m" type="button">1M</button>
+            <button data-tf="6m" type="button">6M</button>
+            <button data-tf="1y" type="button">1Y</button>
+          </div>
+          <button type="button" class="modal-close-btn" id="modal-close-btn" aria-label="Close modal">×</button>
+        </div>
+      </header>
+
+      <div class="modal-body">
+        <!-- Interactive TradingView Style Chart -->
+        <div class="deep-chart-wrap">
+          <div class="deep-chart-header">
+            <div class="chart-legend-items">
+              <span class="legend-item"><i class="leg-color leg-curve"></i> Price Curve</span>
+              <span class="legend-item"><i class="leg-color leg-support"></i> Support Floor</span>
+              <span class="legend-item"><i class="leg-color leg-resistance"></i> Resistance Ceiling</span>
+              <span class="legend-item"><i class="leg-color leg-buy"></i> Buy Marker (B)</span>
+              <span class="legend-item"><i class="leg-color leg-sell"></i> Sell Marker (S)</span>
+            </div>
+            <div class="deep-chart-telemetry">
+              <span>Support: <strong id="deep-support-val">৳260.00</strong></span>
+              <span>Resistance: <strong id="deep-resistance-val">৳275.00</strong></span>
+            </div>
+          </div>
+          <div class="deep-chart-container" id="deep-chart-container">
+            <div id="deep-trend-chart-mount" class="deep-trend-chart-mount"></div>
+            <div id="deep-chart-tooltip" class="deep-chart-tooltip" hidden></div>
+          </div>
+          <div class="deep-chart-footer-note muted small">
+            TradingView-style interactive crosshair · Hover over data points to inspect date, price, % return & executed bot orders.
+          </div>
+        </div>
+
+        <!-- Fundamental Profile (8 Metrics) -->
+        <div class="fundamentals-section">
+          <div class="section-subheading">
+            <h3>Fundamental Company Profile</h3>
+            <span class="small muted">Audited financial & market breadth telemetry</span>
+          </div>
+          <div class="fundamentals-grid" id="fundamentals-grid">
+            <div class="fund-card"><span class="fund-label">P/E RATIO</span><strong id="fund-pe">—</strong></div>
+            <div class="fund-card"><span class="fund-label">EPS (TTM)</span><strong id="fund-eps">—</strong></div>
+            <div class="fund-card"><span class="fund-label">NAV PER SHARE</span><strong id="fund-nav">—</strong></div>
+            <div class="fund-card"><span class="fund-label">MARKET CAP</span><strong id="fund-mcap">—</strong></div>
+            <div class="fund-card"><span class="fund-label">DIVIDEND YIELD</span><strong id="fund-div">—</strong></div>
+            <div class="fund-card"><span class="fund-label">PAID-UP CAPITAL</span><strong id="fund-paidup">—</strong></div>
+            <div class="fund-card"><span class="fund-label">52-WEEK RANGE</span><strong id="fund-52w">—</strong></div>
+            <div class="fund-card"><span class="fund-label">CATEGORY / YEAR</span><strong id="fund-cat">—</strong></div>
+          </div>
+        </div>
+
+        <!-- Embedded What-If Profit Simulator in Modal -->
+        <div class="modal-simulator-section">
+          <div class="what-if-card modal-sim-card">
+            <div class="what-if-head">
+              <div>
+                <strong>"What-If" Profit Simulator</strong>
+                <p class="small muted">Simulate net pocket return for <span id="modal-sim-name">this company</span> after 1% round-trip brokerage fee</p>
+              </div>
+            </div>
+            <div class="what-if-slider-box">
+              <div class="slider-labels">
+                <span>Target Price: <strong id="modal-sim-target-price">৳265.00</strong></span>
+                <span id="modal-sim-target-pct" class="positive">+0.00%</span>
+              </div>
+              <input type="range" id="modal-sim-slider" min="-30" max="40" step="0.5" value="0" aria-label="Target price slider">
+              <div class="slider-scale"><span>-30%</span><span>-15%</span><span>0%</span><span>+15%</span><span>+30%</span></div>
+            </div>
+            <div class="what-if-stats">
+              <div><span>Target Value</span><strong id="modal-sim-gross">—</strong></div>
+              <div><span>Fee (~1.0%)</span><strong id="modal-sim-fee">—</strong></div>
+              <div><span>Net Pocket Profit</span><strong id="modal-sim-net-pnl" class="positive">—</strong></div>
+              <div><span>Net Return %</span><strong id="modal-sim-return-pct" class="positive">—</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 </body>
 </html>

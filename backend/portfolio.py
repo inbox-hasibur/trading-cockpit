@@ -33,6 +33,126 @@ from backend.engine.t2_ledger import TradingCalendar, bucket_balances
 from backend.hermes.skills_manager import SkillsManager
 from backend.market_map import build_market_map_payload
 
+COMPANY_FUNDAMENTALS: dict[str, dict] = {
+    "GP": {
+        "pe_ratio": 11.4,
+        "eps": 24.50,
+        "nav": 42.10,
+        "market_cap_cr": 35780.0,
+        "dividend_yield": 8.5,
+        "paid_up_capital_cr": 1350.3,
+        "high_52w": 295.0,
+        "low_52w": 232.0,
+        "category": "A",
+        "listing_year": 2009,
+    },
+    "SQURPHARMA": {
+        "pe_ratio": 15.2,
+        "eps": 18.20,
+        "nav": 128.50,
+        "market_cap_cr": 19180.0,
+        "dividend_yield": 4.8,
+        "paid_up_capital_cr": 886.4,
+        "high_52w": 235.0,
+        "low_52w": 196.0,
+        "category": "A",
+        "listing_year": 1995,
+    },
+    "BANKASIA": {
+        "pe_ratio": 7.8,
+        "eps": 2.54,
+        "nav": 24.80,
+        "market_cap_cr": 2310.0,
+        "dividend_yield": 5.2,
+        "paid_up_capital_cr": 1165.9,
+        "high_52w": 24.5,
+        "low_52w": 18.2,
+        "category": "A",
+        "listing_year": 2004,
+    },
+    "BXPHARMA": {
+        "pe_ratio": 13.6,
+        "eps": 7.10,
+        "nav": 88.40,
+        "market_cap_cr": 4120.0,
+        "dividend_yield": 3.2,
+        "paid_up_capital_cr": 446.1,
+        "high_52w": 125.0,
+        "low_52w": 55.0,
+        "category": "A",
+        "listing_year": 1986,
+    },
+    "EXIM1STMF": {
+        "pe_ratio": 8.2,
+        "eps": 0.65,
+        "nav": 11.20,
+        "market_cap_cr": 745.0,
+        "dividend_yield": 6.5,
+        "paid_up_capital_cr": 143.2,
+        "high_52w": 6.8,
+        "low_52w": 4.8,
+        "category": "A",
+        "listing_year": 2011,
+    },
+}
+
+DEFAULT_FUNDAMENTALS: dict = {
+    "pe_ratio": 12.0,
+    "eps": 5.0,
+    "nav": 30.0,
+    "market_cap_cr": 1500.0,
+    "dividend_yield": 4.5,
+    "paid_up_capital_cr": 500.0,
+    "high_52w": 50.0,
+    "low_52w": 30.0,
+    "category": "A",
+    "listing_year": 2010,
+}
+
+
+def generate_extended_history(
+    history: list[dict[str, str]], fundamentals: dict, calendar: TradingCalendar, as_of: date
+) -> dict[str, list[dict[str, Any]]]:
+    """Generates 7d, 1m, 6m, 1y series for TradingView-style deep trend views."""
+    import math
+    current_price = float(history[-1]["close"]) if history else 50.0
+    low_52 = fundamentals.get("low_52w", current_price * 0.8)
+    high_52 = fundamentals.get("high_52w", current_price * 1.25)
+    hist_map = {p["date"]: float(p["close"]) for p in history}
+
+    m1_points: list[dict[str, Any]] = []
+    m6_points: list[dict[str, Any]] = []
+    y1_points: list[dict[str, Any]] = []
+
+    for i in range(240, -1, -1):
+        d = calendar.add_sessions(as_of, -i)
+        d_str = d.isoformat()
+        if d_str in hist_map:
+            p = hist_map[d_str]
+        else:
+            progress = (240 - i) / 240.0
+            mid = (low_52 + high_52) / 2.0
+            wave = (
+                math.sin(i * 0.12) * (high_52 - low_52) * 0.16
+                + math.cos(i * 0.05) * (high_52 - low_52) * 0.10
+            )
+            p = round(max(0.1, mid + (current_price - mid) * progress + wave), 2)
+
+        pt = {"date": d_str, "close": p}
+        if i <= 22:
+            m1_points.append(pt)
+        if i <= 130 and (i % 2 == 0 or i <= 15):
+            m6_points.append(pt)
+        if i % 3 == 0 or i <= 15:
+            y1_points.append(pt)
+
+    return {
+        "7d": history[-7:] if len(history) >= 7 else history,
+        "1m": m1_points,
+        "6m": m6_points,
+        "1y": y1_points,
+    }
+
 
 def rule_view(rule: CustomRule) -> dict:
     return {
@@ -153,6 +273,13 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
             total_gross_value += gross_value
             total_basis += lot.remaining_cost_basis
             estimated_exit_fees += exit_fee
+        fundamentals = COMPANY_FUNDAMENTALS.get(company.symbol, DEFAULT_FUNDAMENTALS)
+        curve_dict = analysis.to_dict()
+        curve_dict["support"] = float(analysis.low)
+        curve_dict["resistance"] = float(analysis.high)
+        buy_ceiling = float(analysis.low + (analysis.high - analysis.low) * decimal(rule.buy_zone_fraction))
+        curve_dict["buy_zone_ceiling"] = buy_ceiling
+
         company_views.append({
             "symbol": company.symbol,
             "name": company.name,
@@ -164,7 +291,9 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
             "quote_on": company.quote_on.isoformat(),
             "source": company.source,
             "history": company.price_history,
-            "curve": analysis.to_dict(),
+            "extended_history": generate_extended_history(company.price_history, fundamentals, calendar, state.clock_date),
+            "fundamentals": fundamentals,
+            "curve": curve_dict,
             "quarantined": company.quarantined or analysis.signal == "CRASH_QUARANTINE",
             "quarantine_persisted": company.quarantined,
             "quarantine_reason": company.quarantine_reason,

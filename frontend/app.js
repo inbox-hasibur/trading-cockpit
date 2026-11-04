@@ -20,6 +20,11 @@ const state = {
   activeSector: null,
   period: "overall",
   category: "ALL",
+  theme: "dark",
+  deepTimeframe: "7d",
+  deepCompany: null,
+  simDeltaPct: 0,
+  modalSimDeltaPct: 0,
   busy: false,
   chatBusy: false,
   allocationDirty: false,
@@ -232,17 +237,19 @@ function renderMainChart() {
   $("index-change").classList.toggle("positive", change >= 0);
   $("index-change").classList.toggle("negative", change < 0);
   const width = 700, height = 175, left = 36, right = 12, top = 10, bottom = 28;
+  const chartW = width - left - right;
+  const chartH = height - top - bottom;
   const values = points.map((point) => point.value);
   const min = Math.min(...values) - 1, max = Math.max(...values) + 1;
-  const x = (i) => left + i / (points.length - 1) * (width - left - right);
-  const y = (value) => top + (max - value) / (max - min) * (height - top - bottom);
+  const x = (i) => left + (i / (points.length - 1)) * chartW;
+  const y = (value) => top + ((max - value) / (max - min)) * chartH;
   const svg = svgElement("svg", { viewBox: `0 0 ${width} ${height}`, preserveAspectRatio: "none", role: "img", "aria-label": "Synthetic normalized watchlist price index. Not portfolio performance." });
   const defs = svgElement("defs");
   const gradient = svgElement("linearGradient", { id: "chart-gradient", x1: "0", x2: "0", y1: "0", y2: "1" });
-  gradient.append(svgElement("stop", { offset: "0%", "stop-color": "#5de4c7", "stop-opacity": ".16" }), svgElement("stop", { offset: "100%", "stop-color": "#5de4c7", "stop-opacity": "0" }));
+  gradient.append(svgElement("stop", { offset: "0%", "stop-color": "#5de4c7", "stop-opacity": ".18" }), svgElement("stop", { offset: "100%", "stop-color": "#5de4c7", "stop-opacity": "0" }));
   defs.append(gradient); svg.append(defs);
   for (let i = 0; i < 4; i += 1) {
-    const value = min + (max - min) * i / 3;
+    const value = min + ((max - min) * i) / 3;
     svg.append(svgElement("line", { x1: left, y1: y(value), x2: width - right, y2: y(value), class: "chart-grid" }));
     const label = svgElement("text", { x: left - 8, y: y(value) + 3, "text-anchor": "end", class: "chart-axis-label" });
     label.textContent = value.toFixed(1); svg.append(label);
@@ -255,6 +262,110 @@ function renderMainChart() {
     const label = svgElement("text", { x: x(i), y: height - 5, "text-anchor": i === 0 ? "start" : i === points.length - 1 ? "end" : "middle", class: "chart-axis-label" });
     label.textContent = sessionDate(points[i].date, true); svg.append(label);
   });
+
+  // Plot Buy (B) and Sell (S) markers on the curve
+  const allTrades = state.snapshot.trades || [];
+  points.forEach((pt, i) => {
+    const dateTrades = allTrades.filter((t) => t.date === pt.date || t.trade_on === pt.date);
+    dateTrades.forEach((t) => {
+      const isBuy = t.side === "BUY";
+      const markerG = svgElement("g", { class: "chart-trade-marker" });
+      const mX = x(i);
+      const mY = y(pt.value);
+      markerG.append(svgElement("circle", {
+        cx: mX,
+        cy: mY,
+        r: 6,
+        fill: isBuy ? "#16a34a" : "#dc2626",
+        stroke: "#ffffff",
+        "stroke-width": 1.2,
+      }));
+      const txt = svgElement("text", {
+        x: mX,
+        y: mY + 3,
+        "text-anchor": "middle",
+        fill: "#ffffff",
+        "font-size": 7.5,
+        "font-weight": 800,
+      });
+      txt.textContent = isBuy ? "B" : "S";
+      markerG.append(txt);
+      markerG.title = `${t.side} ${t.symbol} (${t.quantity} shares @ ৳${t.price})`;
+      svg.append(markerG);
+    });
+  });
+
+  // Interactive Crosshair Elements
+  const crosshairV = svgElement("line", { x1: 0, y1: top, x2: 0, y2: height - bottom, class: "chart-crosshair-line", style: "display:none;" });
+  const crosshairH = svgElement("line", { x1: left, y1: 0, x2: width - right, y2: 0, class: "chart-crosshair-line", style: "display:none;" });
+  const crosshairDot = svgElement("circle", { cx: 0, cy: 0, r: 4, class: "chart-crosshair-point", style: "display:none;" });
+  svg.append(crosshairV, crosshairH, crosshairDot);
+
+  // Mouse overlay rect for TradingView-style hover tracking
+  const overlay = svgElement("rect", {
+    x: left,
+    y: top,
+    width: chartW,
+    height: chartH,
+    fill: "transparent",
+    style: "cursor: crosshair;",
+  });
+
+  overlay.addEventListener("mousemove", (e) => {
+    const chartContainer = $("main-chart");
+    if (!chartContainer) return;
+    const rect = chartContainer.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const normX = Math.max(0, Math.min(chartW, mouseX - left));
+    const closestIdx = Math.min(points.length - 1, Math.max(0, Math.round((normX / chartW) * (points.length - 1))));
+    const pt = points[closestIdx];
+
+    const ptX = x(closestIdx);
+    const ptY = y(pt.value);
+
+    crosshairV.setAttribute("x1", ptX);
+    crosshairV.setAttribute("x2", ptX);
+    crosshairV.style.display = "block";
+
+    crosshairH.setAttribute("y1", ptY);
+    crosshairH.setAttribute("y2", ptY);
+    crosshairH.style.display = "block";
+
+    crosshairDot.setAttribute("cx", ptX);
+    crosshairDot.setAttribute("cy", ptY);
+    crosshairDot.style.display = "block";
+
+    const chgFromBase = ((pt.value / points[0].value - 1) * 100);
+    const dateTrades = allTrades.filter((t) => t.date === pt.date || t.trade_on === pt.date);
+    let tradeNote = "";
+    if (dateTrades.length) {
+      tradeNote = `<div style="margin-top:4px;border-top:1px solid var(--soft-line);padding-top:3px;">
+        ${dateTrades.map((t) => `<strong style="color:${t.side === "BUY" ? "#22c55e" : "#ef4444"}">${t.side}</strong> ${t.symbol} ${t.quantity} qty @ ৳${t.price}`).join("<br>")}
+      </div>`;
+    }
+
+    const tooltip = $("main-chart-tooltip");
+    if (tooltip) {
+      tooltip.innerHTML = `
+        <div style="font-weight:700;color:var(--teal);">${sessionDate(pt.date)}</div>
+        <div style="font-size:11px;font-weight:600;margin-top:2px;">Rebased: ${pt.value.toFixed(2)} (${chgFromBase >= 0 ? "+" : ""}${chgFromBase.toFixed(2)}%)</div>
+        ${tradeNote}
+      `;
+      tooltip.hidden = false;
+      tooltip.style.left = `${Math.min(rect.width - 90, Math.max(90, ptX))}px`;
+      tooltip.style.top = `${Math.max(20, ptY - 10)}px`;
+    }
+  });
+
+  overlay.addEventListener("mouseleave", () => {
+    crosshairV.style.display = "none";
+    crosshairH.style.display = "none";
+    crosshairDot.style.display = "none";
+    const tooltip = $("main-chart-tooltip");
+    if (tooltip) tooltip.hidden = true;
+  });
+
+  svg.append(overlay);
   $("main-chart").replaceChildren(svg);
 }
 
@@ -316,11 +427,20 @@ function renderWatchlist() {
     position.append(element("span", "", company.holding_qty), element("span", "muted", `/ ${company.mature_qty}`));
     const allocation = cell(`${company.rule.buy_allocation_pct}%`, "align-right allocation-value");
     allocation.title = company.rule.enabled ? "Maximum open cost basis as % of initial capital" : "Automation disabled";
-    row.append(companyCell, cell(numberFormat.format(company.price), "align-right"), day, chart, signal, position, allocation);
+    const actionCell = cell(undefined, "align-center");
+    const trendBtn = element("button", "button secondary small-button deep-trend-btn", "Trend ⤢");
+    trendBtn.type = "button";
+    trendBtn.title = `View ${company.symbol} Deep Trend & Fundamentals`;
+    trendBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openDeepTrendModal(company.symbol);
+    });
+    actionCell.append(trendBtn);
+    row.append(companyCell, cell(numberFormat.format(company.price), "align-right"), day, chart, signal, position, allocation, actionCell);
     row.addEventListener("click", () => selectCompany(company.symbol));
     return row;
   });
-  if (!rows.length) { const row = element("tr"); const td = cell("No matching companies in this category.", "loading-cell"); td.colSpan = 7; row.append(td); rows.push(row); }
+  if (!rows.length) { const row = element("tr"); const td = cell("No matching companies in this category.", "loading-cell"); td.colSpan = 8; row.append(td); rows.push(row); }
   $("watchlist-body").replaceChildren(...rows);
 }
 
@@ -446,6 +566,18 @@ function renderMarketMap() {
   const backBtn = $("treemap-back-btn");
   const activeView = $("treemap-active-view");
 
+  const sectorSelect = $("treemap-sector-select");
+  if (sectorSelect && sectorSelect.options.length <= 1) {
+    sectors.forEach((s) => {
+      const opt = element("option", "", s.name);
+      opt.value = s.name;
+      sectorSelect.append(opt);
+    });
+  }
+  if (sectorSelect) {
+    sectorSelect.value = state.activeSector || "ALL";
+  }
+
   setText("treemap-turnover-badge", `Turnover: ${mm.total_turnover_cr} cr`);
 
   const width = container.clientWidth || 920;
@@ -481,9 +613,10 @@ function renderMarketMap() {
 
       if (c.change > 0) {
         tile.classList.add("tile-up");
-        if (c.change >= 3.0) tile.classList.add("tile-strong");
+        if (c.change >= 3.0) tile.classList.add("tile-strong", "finviz-glow-up");
       } else if (c.change < 0) {
         tile.classList.add("tile-down");
+        if (c.change <= -2.0) tile.classList.add("finviz-glow-down");
       } else {
         tile.classList.add("tile-eql");
       }
@@ -502,10 +635,16 @@ function renderMarketMap() {
           e,
           `<div class="tt-title">${sector.name}</div>
            <div class="tt-row"><strong style="color:#fff;">${c.symbol}</strong> <span>৳${c.price}</span></div>
-           <div class="tt-row"><span class="tt-bullet" style="background:${c.change > 0 ? "#22c55e" : c.change < 0 ? "#ef4444" : "#3b82f6"}"></span> ${c.change > 0 ? "+" : ""}${c.change.toFixed(2)}% · ${c.turnover_cr.toFixed(2)}cr turnover</div>`
+           <div class="tt-row"><span class="tt-bullet" style="background:${c.change > 0 ? "#22c55e" : c.change < 0 ? "#ef4444" : "#3b82f6"}"></span> ${c.change > 0 ? "+" : ""}${c.change.toFixed(2)}% · ${c.turnover_cr.toFixed(2)}cr turnover</div>
+           <div class="tt-row muted small" style="margin-top:3px;">Click to view Deep Trend & Profile ↗</div>`
         );
       });
       tile.addEventListener("mouseleave", hideTreemapTooltip);
+
+      // In single sector drilldown, clicking tile opens Deep Trend modal
+      tile.addEventListener("click", () => {
+        openDeepTrendModal(c.symbol);
+      });
 
       container.append(tile);
     });
@@ -548,9 +687,10 @@ function renderMarketMap() {
 
         if (c.change > 0) {
           tile.classList.add("tile-up");
-          if (c.change >= 3.0) tile.classList.add("tile-strong");
+          if (c.change >= 3.0) tile.classList.add("tile-strong", "finviz-glow-up");
         } else if (c.change < 0) {
           tile.classList.add("tile-down");
+          if (c.change <= -2.0) tile.classList.add("finviz-glow-down");
         } else {
           tile.classList.add("tile-eql");
         }
@@ -857,6 +997,7 @@ function renderInspector() {
     $("buy-allocation").value = company.rule.buy_allocation_pct;
     $("company-enabled").checked = company.rule.enabled;
   }
+  updateWhatIfSimulator(company);
 }
 
 function renderDecisions() {
@@ -1045,9 +1186,515 @@ window.addEventListener("resize", () => {
   }
 });
 
-function tickClock() { setText("dhaka-clock", clockFormat.format(new Date())); }
+// --- "What-If" Profit Simulator Logic ---
+function updateWhatIfSimulator(company) {
+  if (!company) {
+    company = (state.snapshot && state.snapshot.companies)
+      ? state.snapshot.companies.find((c) => c.symbol === state.selectedSymbol)
+      : null;
+  }
+  if (!company) return;
+
+  const slider = $("what-if-slider");
+  const deltaPct = slider ? Number(slider.value) : 0;
+  const currentPrice = Number(company.price);
+  const targetPrice = currentPrice * (1 + deltaPct / 100);
+
+  const matureQty = company.mature_qty || company.holding_qty || 100;
+  const costBasis = (company.cost_basis && company.holding_qty)
+    ? (company.cost_basis / company.holding_qty) * matureQty
+    : currentPrice * matureQty;
+
+  const grossExit = targetPrice * matureQty;
+  const buyFee = costBasis * 0.005;
+  const sellFee = grossExit * 0.005;
+  const totalFees = buyFee + sellFee;
+  const netProfit = grossExit - costBasis - totalFees;
+  const netReturnPct = costBasis > 0 ? (netProfit / costBasis) * 100 : 0;
+
+  if ($("sim-symbol-badge")) setText("sim-symbol-badge", `${company.symbol} (${matureQty} sh)`);
+  if ($("what-if-target-price")) setText("what-if-target-price", `৳${targetPrice.toFixed(2)}`);
+  if ($("what-if-target-pct")) {
+    setText("what-if-target-pct", `${deltaPct >= 0 ? "+" : ""}${deltaPct.toFixed(2)}%`);
+    $("what-if-target-pct").className = deltaPct >= 0 ? "positive" : "negative";
+  }
+
+  if ($("what-if-gross")) setText("what-if-gross", currency(grossExit));
+  if ($("what-if-fee")) setText("what-if-fee", currency(totalFees));
+  if ($("what-if-net-pnl")) {
+    setText("what-if-net-pnl", currency(netProfit, true));
+    $("what-if-net-pnl").className = netProfit >= 0 ? "positive" : "negative";
+  }
+  if ($("what-if-return-pct")) {
+    setText("what-if-return-pct", percentage(netReturnPct));
+    $("what-if-return-pct").className = netReturnPct >= 0 ? "positive" : "negative";
+  }
+}
+
+function updateModalSimulator(company) {
+  if (!company) return;
+  const slider = $("modal-sim-slider");
+  const deltaPct = slider ? Number(slider.value) : 0;
+  const currentPrice = Number(company.price);
+  const targetPrice = currentPrice * (1 + deltaPct / 100);
+
+  const matureQty = company.mature_qty || company.holding_qty || 100;
+  const costBasis = (company.cost_basis && company.holding_qty)
+    ? (company.cost_basis / company.holding_qty) * matureQty
+    : currentPrice * matureQty;
+
+  const grossExit = targetPrice * matureQty;
+  const buyFee = costBasis * 0.005;
+  const sellFee = grossExit * 0.005;
+  const totalFees = buyFee + sellFee;
+  const netProfit = grossExit - costBasis - totalFees;
+  const netReturnPct = costBasis > 0 ? (netProfit / costBasis) * 100 : 0;
+
+  if ($("modal-sim-name")) setText("modal-sim-name", `${company.symbol} (${matureQty} mature shares)`);
+  if ($("modal-sim-target-price")) setText("modal-sim-target-price", `৳${targetPrice.toFixed(2)}`);
+  if ($("modal-sim-target-pct")) {
+    setText("modal-sim-target-pct", `${deltaPct >= 0 ? "+" : ""}${deltaPct.toFixed(2)}%`);
+    $("modal-sim-target-pct").className = deltaPct >= 0 ? "positive" : "negative";
+  }
+
+  if ($("modal-sim-gross")) setText("modal-sim-gross", currency(grossExit));
+  if ($("modal-sim-fee")) setText("modal-sim-fee", currency(totalFees));
+  if ($("modal-sim-net-pnl")) {
+    setText("modal-sim-net-pnl", currency(netProfit, true));
+    $("modal-sim-net-pnl").className = netProfit >= 0 ? "positive" : "negative";
+  }
+  if ($("modal-sim-return-pct")) {
+    setText("modal-sim-return-pct", percentage(netReturnPct));
+    $("modal-sim-return-pct").className = netReturnPct >= 0 ? "positive" : "negative";
+  }
+}
+
+// --- Individual Company Deep-Trend View & Fundamentals Modal ---
+function openDeepTrendModal(symbol) {
+  if (!state.snapshot || !state.snapshot.companies) return;
+  const company = state.snapshot.companies.find((c) => c.symbol === symbol)
+    || state.snapshot.companies[0];
+  if (!company) return;
+
+  state.deepCompany = company;
+  const modal = $("deep-trend-modal");
+  if (!modal) return;
+
+  if ($("modal-company-title")) {
+    setText("modal-company-title", `${company.symbol} `);
+    const sub = element("span", "modal-company-sub", company.name);
+    $("modal-company-title").append(sub);
+  }
+
+  if ($("modal-company-sector")) setText("modal-company-sector", company.sector.replaceAll("_", " "));
+  const catCode = company.watchlist_category || "GSC";
+  if ($("modal-company-category")) setText("modal-company-category", catLabels[catCode] || catCode);
+
+  if ($("modal-price")) setText("modal-price", currency(company.price));
+  const dayChg = (company.curve && company.curve.day_change_pct) || 0;
+  if ($("modal-change")) {
+    setText("modal-change", percentage(dayChg));
+    $("modal-change").className = `modal-change ${dayChg >= 0 ? "positive" : "negative"}`;
+  }
+
+  const signal = (company.curve && company.curve.signal) || "MID_RANGE";
+  if ($("modal-signal-tag")) {
+    setText("modal-signal-tag", signal.replaceAll("_", " "));
+    $("modal-signal-tag").className = `signal-badge tone-${tone(signal)}`;
+  }
+
+  const f = company.fundamentals || {};
+  if ($("fund-pe")) setText("fund-pe", f.pe_ratio ? f.pe_ratio.toFixed(1) : "—");
+  if ($("fund-eps")) setText("fund-eps", f.eps ? `৳${f.eps.toFixed(2)}` : "—");
+  if ($("fund-nav")) setText("fund-nav", f.nav ? `৳${f.nav.toFixed(2)}` : "—");
+  if ($("fund-mcap")) setText("fund-mcap", f.market_cap_cr ? `${numberFormat.format(f.market_cap_cr)} cr` : "—");
+  if ($("fund-div")) setText("fund-div", f.dividend_yield ? `${f.dividend_yield.toFixed(1)}%` : "—");
+  if ($("fund-paidup")) setText("fund-paidup", f.paid_up_capital_cr ? `${numberFormat.format(f.paid_up_capital_cr)} cr` : "—");
+  if ($("fund-52w")) setText("fund-52w", f.low_52w && f.high_52w ? `৳${f.low_52w} — ৳${f.high_52w}` : "—");
+  if ($("fund-cat")) setText("fund-cat", f.category ? `Category ${f.category} (${f.listing_year || "—"})` : "—");
+
+  document.querySelectorAll("#deep-timeframe-tabs button").forEach((b) => {
+    b.classList.toggle("active", b.dataset.tf === state.deepTimeframe);
+  });
+
+  renderDeepTrendChart(company, state.deepTimeframe);
+  updateModalSimulator(company);
+
+  if (typeof modal.showModal === "function") {
+    modal.showModal();
+  } else {
+    modal.setAttribute("open", "");
+  }
+}
+
+function closeDeepTrendModal() {
+  const modal = $("deep-trend-modal");
+  if (!modal) return;
+  if (typeof modal.close === "function") {
+    modal.close();
+  } else {
+    modal.removeAttribute("open");
+  }
+}
+
+function renderDeepTrendChart(company, timeframe = "7d") {
+  const mount = $("deep-trend-chart-mount");
+  if (!mount || !company) return;
+
+  const ext = company.extended_history || {};
+  let series = ext[timeframe] || company.history || [];
+  if (series.length < 2) series = company.history || [];
+  if (series.length < 2) {
+    mount.innerHTML = `<div class="muted small" style="display:grid;place-items:center;height:100%;">Insufficient historical curve points.</div>`;
+    return;
+  }
+
+  const width = 880, height = 240, left = 55, right = 15, top = 20, bottom = 30;
+  const chartW = width - left - right;
+  const chartH = height - top - bottom;
+
+  const closes = series.map((pt) => Number(pt.close));
+  const support = Number(company.curve.support || company.curve.low || Math.min(...closes));
+  const resistance = Number(company.curve.resistance || company.curve.high || Math.max(...closes));
+  const buyCeiling = Number(company.curve.buy_zone_ceiling || support);
+
+  if ($("deep-support-val")) setText("deep-support-val", `৳${support.toFixed(2)}`);
+  if ($("deep-resistance-val")) setText("deep-resistance-val", `৳${resistance.toFixed(2)}`);
+
+  const minVal = Math.min(...closes, support) * 0.985;
+  const maxVal = Math.max(...closes, resistance) * 1.015;
+  const range = maxVal - minVal || 1;
+
+  const x = (i) => left + (i / (series.length - 1)) * chartW;
+  const y = (val) => top + ((maxVal - val) / range) * chartH;
+
+  const svg = svgElement("svg", {
+    viewBox: `0 0 ${width} ${height}`,
+    preserveAspectRatio: "none",
+    class: "deep-trend-svg",
+  });
+
+  const defs = svgElement("defs");
+  const grad = svgElement("linearGradient", { id: "deep-curve-grad", x1: "0", y1: "0", x2: "0", y2: "1" });
+  grad.append(
+    svgElement("stop", { offset: "0%", "stop-color": "#5de4c7", "stop-opacity": "0.22" }),
+    svgElement("stop", { offset: "100%", "stop-color": "#5de4c7", "stop-opacity": "0" })
+  );
+  defs.append(grad);
+  svg.append(defs);
+
+  // Background Gridlines
+  for (let step = 0; step <= 4; step++) {
+    const val = minVal + (range * step) / 4;
+    const yPos = y(val);
+    svg.append(svgElement("line", { x1: left, y1: yPos, x2: width - right, y2: yPos, stroke: "var(--chart-grid)", "stroke-width": 1, "stroke-dasharray": "2 3" }));
+    const lbl = svgElement("text", { x: left - 8, y: yPos + 3, "text-anchor": "end", fill: "var(--muted)", "font-size": 9.5 });
+    lbl.textContent = `৳${val.toFixed(1)}`;
+    svg.append(lbl);
+  }
+
+  // Shaded Buy Zone band: [support, buyCeiling]
+  if (buyCeiling > support) {
+    const yTop = Math.min(y(support), y(buyCeiling));
+    const bandH = Math.abs(y(support) - y(buyCeiling));
+    svg.append(svgElement("rect", {
+      x: left,
+      y: yTop,
+      width: chartW,
+      height: bandH,
+      fill: "rgba(34, 197, 94, 0.08)",
+      stroke: "none",
+    }));
+  }
+
+  // Horizontal Support line (dashed green)
+  svg.append(svgElement("line", {
+    x1: left,
+    y1: y(support),
+    x2: width - right,
+    y2: y(support),
+    stroke: "#22c55e",
+    "stroke-width": 1.5,
+    "stroke-dasharray": "4 4",
+  }));
+  const supLbl = svgElement("text", { x: width - right - 4, y: y(support) - 4, "text-anchor": "end", fill: "#22c55e", "font-size": 9, "font-weight": 700 });
+  supLbl.textContent = `SUPPORT ৳${support.toFixed(1)}`;
+  svg.append(supLbl);
+
+  // Horizontal Resistance line (dashed red)
+  svg.append(svgElement("line", {
+    x1: left,
+    y1: y(resistance),
+    x2: width - right,
+    y2: y(resistance),
+    stroke: "#ef4444",
+    "stroke-width": 1.5,
+    "stroke-dasharray": "4 4",
+  }));
+  const resLbl = svgElement("text", { x: width - right - 4, y: y(resistance) - 4, "text-anchor": "end", fill: "#ef4444", "font-size": 9, "font-weight": 700 });
+  resLbl.textContent = `RESISTANCE ৳${resistance.toFixed(1)}`;
+  svg.append(resLbl);
+
+  // Price Area & Line
+  const pathD = series.map((pt, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(Number(pt.close)).toFixed(1)}`).join(" ");
+  svg.append(svgElement("path", {
+    d: `${pathD} L${x(series.length - 1).toFixed(1)},${(top + chartH).toFixed(1)} L${left},${(top + chartH).toFixed(1)} Z`,
+    fill: "url(#deep-curve-grad)",
+  }));
+  svg.append(svgElement("path", {
+    d: pathD,
+    fill: "none",
+    stroke: "var(--teal)",
+    "stroke-width": 2.2,
+  }));
+
+  // X Axis Session Dates
+  const sampleIndices = [...new Set([0, Math.floor((series.length - 1) / 3), Math.floor((series.length - 1) * 2 / 3), series.length - 1])];
+  sampleIndices.forEach((idx) => {
+    const xPos = x(idx);
+    const dateLbl = svgElement("text", {
+      x: xPos,
+      y: height - 8,
+      "text-anchor": idx === 0 ? "start" : idx === series.length - 1 ? "end" : "middle",
+      fill: "var(--muted)",
+      "font-size": 9.5,
+    });
+    dateLbl.textContent = sessionDate(series[idx].date, true);
+    svg.append(dateLbl);
+  });
+
+  // Bot Order Markers (B = Buy in green, S = Sell in red)
+  const companyTrades = (state.snapshot.trades || []).filter((t) => t.symbol === company.symbol);
+  series.forEach((pt, idx) => {
+    const tradesOnDate = companyTrades.filter((t) => t.date === pt.date || t.trade_on === pt.date);
+    tradesOnDate.forEach((t) => {
+      const isBuy = t.side === "BUY";
+      const markerX = x(idx);
+      const markerY = y(Number(pt.close));
+
+      const markerG = svgElement("g", { class: "chart-trade-marker" });
+      markerG.append(svgElement("circle", {
+        cx: markerX,
+        cy: markerY,
+        r: 7,
+        fill: isBuy ? "#16a34a" : "#dc2626",
+        stroke: "#ffffff",
+        "stroke-width": 1.5,
+      }));
+      const textM = svgElement("text", {
+        x: markerX,
+        y: markerY + 3.5,
+        "text-anchor": "middle",
+        fill: "#ffffff",
+        "font-size": 8.5,
+        "font-weight": 800,
+      });
+      textM.textContent = isBuy ? "B" : "S";
+      markerG.append(textM);
+      markerG.title = `${t.side} ${t.quantity} shares @ ৳${t.price} (${t.reason || ""})`;
+      svg.append(markerG);
+    });
+  });
+
+  // Crosshair vertical & horizontal lines & tracking dot
+  const crosshairV = svgElement("line", { x1: 0, y1: top, x2: 0, y2: top + chartH, class: "chart-crosshair-line", style: "display:none;" });
+  const crosshairH = svgElement("line", { x1: left, y1: 0, x2: width - right, y2: 0, class: "chart-crosshair-line", style: "display:none;" });
+  const crosshairPoint = svgElement("circle", { cx: 0, cy: 0, r: 4, class: "chart-crosshair-point", style: "display:none;" });
+  svg.append(crosshairV, crosshairH, crosshairPoint);
+
+  // Overlay for mouse events
+  const overlay = svgElement("rect", {
+    x: left,
+    y: top,
+    width: chartW,
+    height: chartH,
+    fill: "transparent",
+    style: "cursor: crosshair;",
+  });
+
+  overlay.addEventListener("mousemove", (e) => {
+    const rect = mount.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const normX = Math.max(0, Math.min(chartW, mouseX - left));
+    const closestIdx = Math.min(series.length - 1, Math.max(0, Math.round((normX / chartW) * (series.length - 1))));
+    const pt = series[closestIdx];
+    const val = Number(pt.close);
+
+    const ptX = x(closestIdx);
+    const ptY = y(val);
+
+    crosshairV.setAttribute("x1", ptX);
+    crosshairV.setAttribute("x2", ptX);
+    crosshairV.style.display = "block";
+
+    crosshairH.setAttribute("y1", ptY);
+    crosshairH.setAttribute("y2", ptY);
+    crosshairH.style.display = "block";
+
+    crosshairPoint.setAttribute("cx", ptX);
+    crosshairPoint.setAttribute("cy", ptY);
+    crosshairPoint.style.display = "block";
+
+    const chgFromStart = ((val / Number(series[0].close) - 1) * 100);
+    const dateTrades = companyTrades.filter((t) => t.date === pt.date || t.trade_on === pt.date);
+    let tradeNote = "";
+    if (dateTrades.length) {
+      tradeNote = `<div style="margin-top:4px;border-top:1px solid var(--soft-line);padding-top:3px;">
+        ${dateTrades.map((t) => `<strong style="color:${t.side === "BUY" ? "#22c55e" : "#ef4444"}">${t.side}</strong> ${t.quantity} qty @ ৳${t.price}`).join("<br>")}
+      </div>`;
+    }
+
+    const tooltip = $("deep-chart-tooltip");
+    if (tooltip) {
+      tooltip.innerHTML = `
+        <div style="font-weight:700;color:var(--teal);">${sessionDate(pt.date)}</div>
+        <div style="font-size:12px;font-weight:600;margin-top:2px;">Close: ৳${val.toFixed(2)} (${chgFromStart >= 0 ? "+" : ""}${chgFromStart.toFixed(2)}%)</div>
+        ${tradeNote}
+      `;
+      tooltip.hidden = false;
+      tooltip.style.left = `${Math.min(rect.width - 100, Math.max(100, ptX))}px`;
+      tooltip.style.top = `${Math.max(30, ptY - 10)}px`;
+    }
+  });
+
+  overlay.addEventListener("mouseleave", () => {
+    crosshairV.style.display = "none";
+    crosshairH.style.display = "none";
+    crosshairPoint.style.display = "none";
+    const tooltip = $("deep-chart-tooltip");
+    if (tooltip) tooltip.hidden = true;
+  });
+
+  svg.append(overlay);
+  mount.replaceChildren(svg);
+}
+
+// --- Theme Switcher Logic ---
+function initTheme() {
+  const saved = localStorage.getItem("humming-bird-theme") || "dark";
+  setTheme(saved);
+}
+
+function setTheme(theme) {
+  state.theme = theme;
+  document.documentElement.setAttribute("data-theme", theme);
+  try { localStorage.setItem("humming-bird-theme", theme); } catch { /* Optional */ }
+  const nameElem = $("theme-name");
+  if (nameElem) {
+    nameElem.textContent = theme === "dark" ? "Dark" : theme === "light" ? "Light" : "Terminal";
+  }
+}
+
+function toggleTheme() {
+  const next = state.theme === "dark" ? "light" : state.theme === "light" ? "terminal" : "dark";
+  setTheme(next);
+}
+
+// --- DSE Live Market Clock & Countdown ---
+function tickMarketClock() {
+  const dot = $("market-status-dot");
+  const statusTxt = $("market-status-text");
+  const countdownTxt = $("market-countdown-text");
+  if (!dot || !statusTxt || !countdownTxt) return;
+
+  const now = new Date();
+  const dhakaStr = now.toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
+  const dhakaDate = new Date(dhakaStr);
+
+  const dayOfWeek = dhakaDate.getDay();
+  const hours = dhakaDate.getHours();
+  const minutes = dhakaDate.getMinutes();
+  const seconds = dhakaDate.getSeconds();
+  const totalMinutes = hours * 60 + minutes;
+
+  const openMinutes = 10 * 60;
+  const closeMinutes = 14 * 60 + 30;
+
+  const isTradingDay = dayOfWeek >= 0 && dayOfWeek <= 4;
+
+  if (isTradingDay && totalMinutes >= openMinutes && totalMinutes < closeMinutes) {
+    dot.className = "status-dot clock-dot open";
+    setText("market-status-text", "DSE OPEN");
+    const diffSec = (closeMinutes * 60) - (totalMinutes * 60 + seconds);
+    const remH = Math.floor(diffSec / 3600);
+    const remM = Math.floor((diffSec % 3600) / 60);
+    const remS = diffSec % 60;
+    setText("market-countdown-text", `Closes in ${String(remH).padStart(2, "0")}h ${String(remM).padStart(2, "0")}m ${String(remS).padStart(2, "0")}s`);
+  } else {
+    dot.className = "status-dot clock-dot closed";
+    setText("market-status-text", "DSE CLOSED");
+
+    let daysToAdd = 0;
+    if (isTradingDay && totalMinutes < openMinutes) {
+      daysToAdd = 0;
+    } else {
+      if (dayOfWeek === 4) daysToAdd = 3;
+      else if (dayOfWeek === 5) daysToAdd = 2;
+      else if (dayOfWeek === 6) daysToAdd = 1;
+      else daysToAdd = 1;
+    }
+
+    const nextSession = new Date(dhakaDate);
+    nextSession.setDate(nextSession.getDate() + daysToAdd);
+    nextSession.setHours(10, 0, 0, 0);
+
+    const diffMs = nextSession.getTime() - dhakaDate.getTime();
+    if (diffMs > 0) {
+      const diffSec = Math.floor(diffMs / 1000);
+      const remH = Math.floor(diffSec / 3600);
+      const remM = Math.floor((diffSec % 3600) / 60);
+      const remS = diffSec % 60;
+      setText("market-countdown-text", `Next: ${remH}h ${remM}m ${remS}s`);
+    } else {
+      setText("market-countdown-text", "Opens at 10:00 AM");
+    }
+  }
+}
+
+// --- Wire Event Handlers ---
+if ($("theme-toggle-btn")) {
+  $("theme-toggle-btn").addEventListener("click", toggleTheme);
+}
+if ($("open-deep-trend")) {
+  $("open-deep-trend").addEventListener("click", () => openDeepTrendModal(state.selectedSymbol));
+}
+if ($("modal-close-btn")) {
+  $("modal-close-btn").addEventListener("click", closeDeepTrendModal);
+}
+if ($("modal-backdrop")) {
+  $("modal-backdrop").addEventListener("click", closeDeepTrendModal);
+}
+document.querySelectorAll("#deep-timeframe-tabs button").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    state.deepTimeframe = btn.dataset.tf;
+    document.querySelectorAll("#deep-timeframe-tabs button").forEach((b) => b.classList.toggle("active", b === btn));
+    if (state.deepCompany) renderDeepTrendChart(state.deepCompany, state.deepTimeframe);
+  });
+});
+
+if ($("what-if-slider")) {
+  $("what-if-slider").addEventListener("input", () => updateWhatIfSimulator());
+}
+if ($("modal-sim-slider")) {
+  $("modal-sim-slider").addEventListener("input", () => {
+    if (state.deepCompany) updateModalSimulator(state.deepCompany);
+  });
+}
+if ($("treemap-sector-select")) {
+  $("treemap-sector-select").addEventListener("change", (e) => {
+    const val = e.target.value;
+    state.activeSector = val === "ALL" ? null : val;
+    renderMarketMap();
+  });
+}
+
+function tickClock() {
+  setText("dhaka-clock", clockFormat.format(new Date()));
+  tickMarketClock();
+}
 tickClock();
 setInterval(tickClock, 1000);
+initTheme();
 setInterval(() => { if (!document.hidden && !state.busy && !state.allocationDirty) refresh(true); }, 20000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden && !state.busy) refresh(true); });
 function initRealtimeStream() {

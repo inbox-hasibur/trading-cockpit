@@ -135,11 +135,45 @@ def test_cockpit_smoke_and_assets(client):
     assert "id=\"market-map\"" in html
     assert "id=\"treemap-container\"" in html
     assert "id=\"sector-gainer-chart\"" in html
+    assert "id=\"topbar-clock-widget\"" in html
+    assert "id=\"theme-toggle-btn\"" in html
+    assert "id=\"what-if-card\"" in html
+    assert "id=\"deep-trend-modal\"" in html
+    assert "id=\"fundamentals-grid\"" in html
     assert "id=\"canary-section\"" in html
     assert "category-tabs" in html
     assert client.get("/assets/app.js").status_code == 200
     assert client.get("/assets/styles.css").status_code == 200
     assert client.get("/assets/favicon.svg").status_code == 200
+
+
+def test_company_fundamentals_and_extended_history(client):
+    snap = client.get("/api/portfolio").json()
+    companies = {c["symbol"]: c for c in snap["companies"]}
+
+    # Check fundamentals
+    assert "GP" in companies
+    gp = companies["GP"]
+    assert "fundamentals" in gp
+    fund = gp["fundamentals"]
+    assert fund["pe_ratio"] > 0
+    assert fund["eps"] > 0
+    assert fund["nav"] > 0
+    assert fund["market_cap_cr"] > 1000
+
+    # Check curve support / resistance
+    assert "support" in gp["curve"]
+    assert "resistance" in gp["curve"]
+    assert gp["curve"]["resistance"] >= gp["curve"]["support"]
+
+    # Check extended history horizons
+    assert "extended_history" in gp
+    ext = gp["extended_history"]
+    assert {"7d", "1m", "6m", "1y"} <= set(ext.keys())
+    assert len(ext["7d"]) >= 2
+    assert len(ext["1m"]) >= 10
+    assert len(ext["6m"]) >= 20
+    assert len(ext["1y"]) >= 30
 
 
 def test_market_map_endpoint_and_portfolio_snapshot(client):
