@@ -306,13 +306,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         with database.read() as session:
             from backend.database import HermesSkillRevision, HermesStateCheckpoint
+            raw_checkpoints = list(session.scalars(select(HermesStateCheckpoint).order_by(HermesStateCheckpoint.id.desc()).limit(20)))
             checkpoints = [{
                 "id": cp.id,
                 "action": cp.action,
+                "actor": getattr(cp, "actor", "Hermes Agent"),
                 "description": cp.description,
                 "date": cp.session_on.isoformat(),
                 "created_at": cp.created_at,
-            } for cp in session.scalars(select(HermesStateCheckpoint).order_by(HermesStateCheckpoint.id.desc()).limit(10))]
+                "diff": cp.diff_payload or {
+                    "action": cp.action,
+                    "actor": getattr(cp, "actor", "Hermes Agent"),
+                    "summary": cp.description,
+                    "diff_lines": [
+                        {"type": "del", "text": f"- action: {cp.action}"},
+                        {"type": "add", "text": f"+ action: {cp.action} -> {cp.description}"},
+                    ],
+                },
+            } for cp in raw_checkpoints]
             skill_revs = [{
                 "id": sr.id,
                 "skill_name": sr.skill_name,
@@ -322,10 +333,75 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             } for sr in session.scalars(select(HermesSkillRevision).order_by(HermesSkillRevision.id.desc()).limit(10))]
 
         return {
+            "changes": checkpoints,
             "files_changed": changed_files,
-            "total_files": len(changed_files),
+            "total_files": max(len(changed_files), len(checkpoints)),
             "checkpoints": checkpoints,
             "skill_revisions": skill_revs,
+        }
+
+    @app.get("/api/hermes/models")
+    def hermes_models():
+        import os
+        from backend.database import portfolio_state
+        with database.read() as session:
+            state = portfolio_state(session)
+            active = getattr(state, "active_model", settings.openrouter_model)
+        available = [
+            {"id": "xiaomi/mimo-v2-flash", "name": "Xiaomi MiMo-v2-Flash (Ultra Fast / Free)", "tier": 1},
+            {"id": "deepseek/deepseek-chat", "name": "DeepSeek V3 (Deep Reasoning)", "tier": 1},
+            {"id": "meta-llama/llama-3.3-70b-instruct", "name": "Llama 3.3 70B (High Precision)", "tier": 1},
+            {"id": "google/gemini-2.0-flash-001", "name": "Gemini 2.0 Flash (Fast Analysis)", "tier": 1},
+            {"id": "anthropic/claude-3.5-sonnet", "name": "Claude 3.5 Sonnet (Elite Quant)", "tier": 1},
+            {"id": "google/gemini-2.5-flash", "name": "Google Gemini 2.5 Flash (1st Fallback)", "tier": 2},
+            {"id": "local-quant-brain", "name": "Local Deterministic Quant Brain ($0 Offline)", "tier": 3},
+        ]
+        fallback_chain = [
+            {"tier": 1, "name": "Primary Brain", "target": active, "status": "ACTIVE" if settings.openrouter_api_key else "STANDBY"},
+            {"tier": 2, "name": "1st Fallback", "target": "google/gemini-2.5-flash", "status": "READY" if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") else "OFFLINE"},
+            {"tier": 3, "name": "2nd Fallback", "target": "Local Deterministic Quant Brain", "status": "ALWAYS AVAILABLE"},
+        ]
+        return {
+            "active_model": active,
+            "models": available,
+            "fallback_chain": fallback_chain,
+        }
+
+    @app.post("/api/hermes/model")
+    def set_hermes_model(payload: dict):
+        new_model = str(payload.get("model", "")).strip()
+        if not new_model:
+            raise HTTPException(422, "Model id cannot be empty.")
+        from backend.database import portfolio_state
+        from backend.hermes.agent_loop import CheckpointManager
+        with database.write() as session:
+            state = portfolio_state(session)
+            old_model = getattr(state, "active_model", settings.openrouter_model)
+            state.active_model = new_model
+            diff_payload = {
+                "action": "UPDATE_MODEL",
+                "actor": "Operator",
+                "summary": f"Switched AI brain model to {new_model}",
+                "before": {"active_model": old_model},
+                "after": {"active_model": new_model},
+                "diff_lines": [
+                    {"type": "del", "text": f"- active_model: {old_model}"},
+                    {"type": "add", "text": f"+ active_model: {new_model}"},
+                ],
+            }
+            CheckpointManager.create_checkpoint(
+                session,
+                state,
+                action="UPDATE_MODEL",
+                description=f"Hermes AI Brain switched to {new_model}",
+                diff_payload=diff_payload,
+                actor="Operator",
+            )
+        broadcaster.publish("automation_config", {"active_model": new_model})
+        return {
+            "status": "ok",
+            "active_model": new_model,
+            "message": f"Hermes brain model successfully switched to {new_model}",
         }
 
     @app.post("/api/hermes/rollback")

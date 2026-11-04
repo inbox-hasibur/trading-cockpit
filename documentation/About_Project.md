@@ -149,11 +149,27 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
      - **Method B (`SIDE_BY_SIDE_LIVE`):** Headed, persistent Playwright browser context running alongside the operator on desktop, allowing live DOM/CDP telemetry inspection and immediate event triggers.
    - **Hermes Chat Orchestration:** Operator can command in chat (*"Switch to side by side mode"*, *"Background polling 60s koro"*, *"Turn off buy sell automation"*), with automatic state checkpointing for 1-click `/rollback`.
 
-10. **Hermes IDE Resizable Sidebar, Topics & Antigravity History:**
+10. **Multi-View Navigation & Dedicated Settings Page:**
+    - **5-View Left Navigation Rail:** True view-switching via Left Nav Rail across 5 distinct views, eliminating the giant vertical scroll:
+      1. `#overview`: Financial telemetry, rebased Watchlist pulse curve, 3-Bucket rolling capital, and Decision stream.
+      2. `#watchlist`: Multi-tier company watchlist, Position inspector with maturity lots, DSE Market Map Treemap with Finviz heat scale, and Top Sectors by Gainer chart.
+      3. `#rules`: Strategy Rules, "What-If" profit simulator, custom buy cap form, sequential profit tiers (+1.5%, +3.5%, +6.0%), 50/50 pullback setting, and Canary Theses observation board.
+      4. `#ledger`: Accounting periods (Overall, Today, Week, Month, Year) and full FIFO tax lot execution table.
+      5. `#settings`: Master Buy/Sell automation switch, Method A vs Method B ingestion pipeline, polling cadence pills, Hermes AI brain model selector & 3-tier fallback chain display, fee structure & settlement rules, and appearance preferences.
+    - **Fixed Viewport Lock Architecture:** Locked outer viewport (`height: 100vh; overflow: hidden;`) with middle `.workspace` scrolling independently (`height: 100vh; overflow-y: auto;`). Left nav rail and right Hermes assistant stay 100% viewport-fixed at all times, never scrolling off screen.
+    - **Continuous Smooth Curves Without Point Dots:** Pure continuous cubic bezier curves without static session dots, paired with continuous pixel-level hover interpolation so crosshairs glide smoothly with pixel precision.
+    - **Rebuilt Hermes `[Changes]` Tab as System & Rule Diff Review:** Visual GitHub/IDE-style structured Before vs. After diff cards (`.diff-card`) featuring red deleted lines (`[-] Previous`) and green added lines (`[+] Updated`), actor badges, timestamps, and 1-click `/rollback`.
+    - **3-Tier AI Brain Switcher (`/model`):**
+      - **Tier 1:** User-selected OpenRouter model (`xiaomi/mimo-v2-flash`, `deepseek/deepseek-chat`, `meta-llama/llama-3.3-70b-instruct`, `anthropic/claude-3.5-sonnet`, `google/gemini-2.0-flash-001`). Switchable via `/model <name>` in chat or UI dropdown picker in header & settings.
+      - **Tier 2:** 1st Fallback — Free Google Gemini API (`google/gemini-2.5-flash`).
+      - **Tier 3:** 2nd Fallback — Deterministic Local Quant Brain ($0 offline).
+      - API endpoints: `GET /api/hermes/models` and `POST /api/hermes/model`.
+    - **Exhaustive Light Mode Daylight Uniformity:** Complete elimination of hardcoded dark background artifacts across tables, cards, canvases, and sidebars.
+
+11. **Hermes IDE Resizable Sidebar, Topics & Antigravity History:**
     - **Resizable Drag Handle (`col-resize`):** Fluid sidebar width adjustment (280px–650px) with `localStorage` persistence like VS Code / Orca IDE.
     - **Minimize / Collapse Mode:** One-click minimize button with a floating reopen pill (`✦ Hermes`) for maximum dashboard screen real estate.
     - **Multi-Conversation Topic Manager (`+ New Conversation`):** Human strategy & topic separator (`HermesConversationThread`), enabling distinct conversation threads while Hermes retains unified cross-topic memory and self-improving procedural skills.
-    - **Files Changed & Checkpoints Drawer (Antigravity Look):** Live workspace audit history showing modified and added files with status chips (`[M]`, `[A]`, `[D]`) and recent state checkpoints with 1-click `/rollback`.
     - **High-Performance Snapshot Engine:** Precomputed $O(N)$ calendar date slices in `portfolio.py`, eliminating the 145,000+ date increment loop and resolving page load delays.
     - **AST Codebase X-Ray Radar (`CODEBASE_MAP.md`):** Zero-dependency AST scanner (`scripts/generate_code_map.py`) that indexes all classes, methods, FastAPI routes, DOM elements, and code health radar.
 
@@ -164,13 +180,13 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
 ```text
 +-------------------------------------------------------------------------------------------------------+
 |                                    HUMMING BIRD OPERATOR TERMINAL                                     |
-|  [Left Nav Rail]      [Main Dashboard Panels]                             [Hermes IDE Copilot]        |
-|  - #overview          - Financial Telemetry (Today/Wk/Mo/Yr)              - Resizable Width (280-650px)|
-|  - #system-control    - Spline Watchlist Pulse (Catmull-Rom Bezier)       - [💬 Chat] Active Turn     |
-|  - #watchlist         - T+2 Capital Buckets (A, B, C)                     - [📂 Topics] Strategy Tabs |
-|  - #market-map        - Finviz Market Treemap & Gainer Bar Chart          - [⚡ Changes] Audit & Roll |
-|  - #execution         - Deep Trend Modal (7d, 1m, 6m, 1y + Support/Resist)- [🧠 Skills] SKILL_*.md    |
-|  - #ledger            - What-If Profit Simulator & Allocation Controls    - Minimize to ✦ Floating Pill|
+|  [Left Nav Rail]      [Multi-View Workspace Containers]                   [Hermes IDE Copilot]        |
+|  - 1: #overview       - View 1: Overview (Telemetry, Pulse, Buckets, Strm)- Sticky Viewport (100vh)   |
+|  - 2: #watchlist      - View 2: Watchlist & DSE Market Treemap Heatmap    - Brain Selector (🧠 /model)|
+|  - 3: #rules          - View 3: Strategy Rules, What-If & Canary Theses   - [💬 Chat] Active Turn     |
+|  - 4: #ledger         - View 4: Trade Ledger & FIFO Tax Lots              - [📂 Topics] Strategy Tabs |
+|  - 5: #settings       - View 5: Dedicated Settings & AI Brain Switcher    - [⚡ Changes] Diff Review  |
+|                       - Independent Scrolling Workspace (100vh)           - [🧠 Skills] SKILL_*.md    |
 +---------------------------------------------------+---------------------------------------------------+
                                                     | HTTP REST / SSE Stream (/api/stream)
                                                     v

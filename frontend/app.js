@@ -284,21 +284,6 @@ function renderMainChart() {
   svg.append(svgElement("path", { d: `${smoothPath} L${x(points.length - 1)},${height - bottom} L${left},${height - bottom} Z`, class: "chart-area" }));
   svg.append(svgElement("path", { d: smoothPath, class: "chart-line" }));
 
-  // Dynamic session point dots (Finviz / TradingView style)
-  points.forEach((pt, i) => {
-    const dot = svgElement("circle", {
-      cx: x(i),
-      cy: y(pt.value),
-      r: i === points.length - 1 ? 4 : 3,
-      class: i === points.length - 1 ? "chart-point" : "chart-session-dot",
-      fill: "var(--panel)",
-      stroke: "var(--teal)",
-      "stroke-width": 1.6,
-    });
-    dot.style.cursor = "pointer";
-    svg.append(dot);
-  });
-
   [...new Set([0, Math.floor((points.length - 1) / 2), points.length - 1])].forEach((i) => {
     const label = svgElement("text", { x: x(i), y: height - 5, "text-anchor": i === 0 ? "start" : i === points.length - 1 ? "end" : "middle", class: "chart-axis-label" });
     label.textContent = sessionDate(points[i].date, true); svg.append(label);
@@ -342,7 +327,7 @@ function renderMainChart() {
   const crosshairDot = svgElement("circle", { cx: 0, cy: 0, r: 4, class: "chart-crosshair-point", style: "display:none;" });
   svg.append(crosshairV, crosshairH, crosshairDot);
 
-  // Mouse overlay rect for TradingView-style hover tracking
+  // Mouse overlay rect for continuous TradingView-style hover tracking
   const overlay = svgElement("rect", {
     x: left,
     y: top,
@@ -358,11 +343,15 @@ function renderMainChart() {
     const rect = chartContainer.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const normX = Math.max(0, Math.min(chartW, mouseX - left));
-    const closestIdx = Math.min(points.length - 1, Math.max(0, Math.round((normX / chartW) * (points.length - 1))));
-    const pt = points[closestIdx];
+    const t = normX / chartW;
+    const continuousIdx = t * (points.length - 1);
+    const i0 = Math.floor(continuousIdx);
+    const i1 = Math.min(points.length - 1, i0 + 1);
+    const frac = continuousIdx - i0;
+    const interpolatedVal = points[i0].value + frac * (points[i1].value - points[i0].value);
 
-    const ptX = x(closestIdx);
-    const ptY = y(pt.value);
+    const ptX = left + normX;
+    const ptY = y(interpolatedVal);
 
     crosshairV.setAttribute("x1", ptX);
     crosshairV.setAttribute("x2", ptX);
@@ -376,7 +365,10 @@ function renderMainChart() {
     crosshairDot.setAttribute("cy", ptY);
     crosshairDot.style.display = "block";
 
-    const chgFromBase = ((pt.value / points[0].value - 1) * 100);
+    const closestIdx = Math.min(points.length - 1, Math.max(0, Math.round(continuousIdx)));
+    const pt = points[closestIdx];
+
+    const chgFromBase = ((interpolatedVal / points[0].value - 1) * 100);
     const dateTrades = allTrades.filter((t) => t.date === pt.date || t.trade_on === pt.date);
     let tradeNote = "";
     if (dateTrades.length) {
@@ -389,7 +381,7 @@ function renderMainChart() {
     if (tooltip) {
       tooltip.innerHTML = `
         <div style="font-weight:700;color:var(--teal);">${sessionDate(pt.date)}</div>
-        <div style="font-size:11px;font-weight:600;margin-top:2px;">Rebased: ${pt.value.toFixed(2)} (${chgFromBase >= 0 ? "+" : ""}${chgFromBase.toFixed(2)}%)</div>
+        <div style="font-size:11px;font-weight:600;margin-top:2px;">Rebased: ${interpolatedVal.toFixed(2)} (${chgFromBase >= 0 ? "+" : ""}${chgFromBase.toFixed(2)}%)</div>
         ${tradeNote}
       `;
       tooltip.hidden = false;
@@ -1574,11 +1566,14 @@ function renderDeepTrendChart(company, timeframe = "7d") {
     const rect = mount.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const normX = Math.max(0, Math.min(chartW, mouseX - left));
-    const closestIdx = Math.min(series.length - 1, Math.max(0, Math.round((normX / chartW) * (series.length - 1))));
-    const pt = series[closestIdx];
-    const val = Number(pt.close);
+    const t = normX / chartW;
+    const continuousIdx = t * (series.length - 1);
+    const i0 = Math.floor(continuousIdx);
+    const i1 = Math.min(series.length - 1, i0 + 1);
+    const frac = continuousIdx - i0;
+    const val = Number(series[i0].close) + frac * (Number(series[i1].close) - Number(series[i0].close));
 
-    const ptX = x(closestIdx);
+    const ptX = left + normX;
     const ptY = y(val);
 
     crosshairV.setAttribute("x1", ptX);
@@ -1592,6 +1587,9 @@ function renderDeepTrendChart(company, timeframe = "7d") {
     crosshairPoint.setAttribute("cx", ptX);
     crosshairPoint.setAttribute("cy", ptY);
     crosshairPoint.style.display = "block";
+
+    const closestIdx = Math.min(series.length - 1, Math.max(0, Math.round(continuousIdx)));
+    const pt = series[closestIdx];
 
     const chgFromStart = ((val / Number(series[0].close) - 1) * 100);
     const dateTrades = companyTrades.filter((t) => t.date === pt.date || t.trade_on === pt.date);
@@ -2175,34 +2173,267 @@ function formatRelativeTime(isoStr) {
   }
 }
 
-// --- Files Changed History (Antigravity Style) ---
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+async function executeRollback() {
+  if (state.busy) return;
+  state.busy = true;
+  updateControls();
+  try {
+    const res = await api("/api/hermes/rollback", { method: "POST" });
+    if (res.status === "EMPTY") {
+      notify("No previous state checkpoints available to rollback.", true);
+    } else {
+      notify(`✓ Successfully rolled back: ${res.rolled_back_action || "Last mutation"}`);
+      await refresh();
+      await loadSystemChanges();
+      await loadHermesModels();
+    }
+  } catch (err) {
+    notify(`Rollback failed: ${err.message}`, true);
+  } finally {
+    state.busy = false;
+    updateControls();
+  }
+}
+
+// --- Hermes AI Brain Model Switcher (3-Tier Fallback) ---
+async function loadHermesModels() {
+  try {
+    const data = await api("/api/hermes/models");
+    const active = data.active_model;
+    const models = data.models || [];
+    const chain = data.fallback_chain || [];
+
+    const shortName = active.split("/").pop();
+    setText("hermes-active-model-name", shortName);
+
+    // Sync dropdown menu
+    const dropdownList = $("model-dropdown-list");
+    if (dropdownList) {
+      dropdownList.innerHTML = models.map((m) => {
+        const isCur = m.id === active;
+        return `
+          <button type="button" class="model-opt-btn ${isCur ? "is-active" : ""}" data-model="${m.id}">
+            <span>${escapeHtml(m.name)}</span>
+            <span class="model-tier-tag">T${m.tier}</span>
+          </button>
+        `;
+      }).join("");
+
+      dropdownList.querySelectorAll(".model-opt-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const modId = btn.dataset.model;
+          switchHermesModel(modId);
+          const drop = $("model-picker-dropdown");
+          if (drop) drop.hidden = true;
+        });
+      });
+    }
+
+    // Sync Settings select
+    const select = $("settings-model-select");
+    if (select) {
+      select.value = active;
+    }
+
+    // Update settings fallback chain display
+    const tier1Label = $("tier1-label");
+    if (tier1Label) tier1Label.textContent = active;
+
+    const tier2Badge = $("tier2-badge");
+    if (tier2Badge && chain[1]) {
+      tier2Badge.textContent = chain[1].status;
+      tier2Badge.className = `chain-status-badge ${chain[1].status === "READY" ? "live" : "standby"}`;
+    }
+  } catch (err) {
+    console.warn("Failed to load Hermes models:", err);
+  }
+}
+
+async function switchHermesModel(modelId) {
+  if (!modelId || state.busy) return;
+  state.busy = true;
+  updateControls();
+  try {
+    const res = await api("/api/hermes/model", {
+      method: "POST",
+      body: JSON.stringify({ model: modelId }),
+    });
+    notify(`🧠 AI Brain switched to ${modelId}`);
+    await refresh();
+    await loadHermesModels();
+    await loadSystemChanges();
+  } catch (err) {
+    notify(`Failed to switch model: ${err.message}`, true);
+  } finally {
+    state.busy = false;
+    updateControls();
+  }
+}
+
+// --- Multi-View Navigation Router ---
+function switchView(viewName) {
+  viewName = (viewName || "overview").replace("#", "");
+  if (viewName === "system-control") viewName = "settings";
+  const validViews = ["overview", "watchlist", "rules", "ledger", "settings"];
+  if (!validViews.includes(viewName)) viewName = "overview";
+
+  // Update nav-rail items
+  document.querySelectorAll(".nav-rail .nav-item").forEach((el) => {
+    const href = el.getAttribute("href") || "";
+    const target = href.replace("#", "");
+    const isActive = target === viewName || (viewName === "settings" && target === "system-control");
+    el.classList.toggle("active", isActive);
+  });
+
+  // Toggle view containers
+  document.querySelectorAll(".workspace-view").forEach((el) => {
+    const isMatch = el.id === `view-${viewName}`;
+    el.classList.toggle("active", isMatch);
+    el.hidden = !isMatch;
+  });
+
+  // Trigger market map render when switching to watchlist
+  if (viewName === "watchlist") {
+    setTimeout(() => {
+      renderMarketMap();
+    }, 40);
+  }
+}
+
+function initViewRouter() {
+  window.addEventListener("hashchange", () => {
+    const hash = window.location.hash.slice(1);
+    if (hash) switchView(hash);
+  });
+
+  document.querySelectorAll(".nav-rail .nav-item").forEach((el) => {
+    el.addEventListener("click", (e) => {
+      const href = el.getAttribute("href");
+      if (href && href.startsWith("#")) {
+        e.preventDefault();
+        const target = href.slice(1);
+        window.location.hash = target;
+        switchView(target);
+      }
+    });
+  });
+
+  // Quick link in Overview session bar
+  const sysLink = $("overview-sys-link");
+  if (sysLink) {
+    sysLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      window.location.hash = "settings";
+      switchView("settings");
+    });
+  }
+
+  // Model Picker Dropdown toggle in Hermes Header
+  const modelBtn = $("hermes-model-btn");
+  const modelDrop = $("model-picker-dropdown");
+  if (modelBtn && modelDrop) {
+    modelBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      modelDrop.hidden = !modelDrop.hidden;
+    });
+    document.addEventListener("click", (e) => {
+      if (!modelDrop.contains(e.target) && e.target !== modelBtn) {
+        modelDrop.hidden = true;
+      }
+    });
+  }
+
+  // Model select in Settings page
+  const settingsModelSelect = $("settings-model-select");
+  if (settingsModelSelect) {
+    settingsModelSelect.addEventListener("change", (e) => {
+      switchHermesModel(e.target.value);
+    });
+  }
+
+  // Rollback buttons
+  const rbPaneBtn = $("rollback-pane-btn");
+  if (rbPaneBtn) rbPaneBtn.addEventListener("click", executeRollback);
+  const rbSkillsBtn = $("rollback-skills-btn");
+  if (rbSkillsBtn) rbSkillsBtn.addEventListener("click", executeRollback);
+
+  // Initial view from URL hash or default to overview
+  const initialHash = window.location.hash.slice(1) || "overview";
+  switchView(initialHash);
+}
+
+// --- Files Changed & System Audit Diffs ---
 async function loadSystemChanges() {
   const fileContainer = $("files-changed-list");
+  const diffContainer = $("changes-diff-list");
   const cpContainer = $("changes-checkpoints-list");
-  if (!fileContainer) return;
   try {
     const res = await api("/api/system/changes");
+    const changes = res.changes || [];
     const files = res.files_changed || [];
     const checkpoints = res.checkpoints || [];
 
-    setText("changes-badge", files.length);
+    const totalCount = Math.max(changes.length, files.length);
+    setText("changes-badge", totalCount);
+    setText("changes-badge-count", changes.length);
     setText("files-changed-count-tag", files.length);
 
-    if (files.length === 0) {
-      fileContainer.replaceChildren(element("div", "empty-state-small", "Workspace working tree is clean."));
-    } else {
-      const items = files.map((f) => {
-        const item = element("div", "file-change-item");
-        const chip = element("span", `file-status-chip status-${f.status}`, f.status);
-        const info = element("div", "file-info");
-        info.append(
-          element("span", "file-name", f.name),
-          element("span", "file-folder", f.folder)
-        );
-        item.append(chip, info);
-        return item;
-      });
-      fileContainer.replaceChildren(...items);
+    // Render structured audit diffs
+    if (diffContainer) {
+      if (changes.length === 0) {
+        diffContainer.replaceChildren(element("div", "empty-state-small", "No recent system or rule changes recorded. Checkpoints are logged automatically on every mutation."));
+      } else {
+        diffContainer.innerHTML = changes.map((c) => {
+          const diff = c.diff || {};
+          const diffLines = diff.diff_lines || [];
+          const linesHtml = diffLines.map((l) => `<div class="diff-line ${l.type === "del" ? "diff-del" : "diff-add"}">${escapeHtml(l.text)}</div>`).join("");
+          return `
+            <article class="diff-card">
+              <div class="diff-card-head">
+                <div class="diff-head-meta">
+                  <span class="diff-action-tag">${escapeHtml(c.action || "MUTATION")}</span>
+                  <span class="diff-actor-tag">${escapeHtml(c.actor || "Hermes Agent")}</span>
+                  <span class="diff-time">${escapeHtml(formatRelativeTime(c.created_at) || c.date || "")}</span>
+                </div>
+                <button type="button" class="diff-revert-btn" onclick="executeRollback()" title="Undo mutation (/rollback)">↺ Rollback</button>
+              </div>
+              <div class="diff-card-body">
+                <div class="diff-summary-text">${escapeHtml(c.description || diff.summary || "")}</div>
+                <div class="diff-lines-wrap">${linesHtml || `<div class="diff-line diff-add">+ ${escapeHtml(c.description)}</div>`}</div>
+              </div>
+            </article>
+          `;
+        }).join("");
+      }
+    }
+
+    if (fileContainer) {
+      if (files.length === 0) {
+        fileContainer.replaceChildren(element("div", "empty-state-small", "Workspace working tree is clean."));
+      } else {
+        const items = files.map((f) => {
+          const item = element("div", "file-change-item");
+          const chip = element("span", `file-status-chip status-${f.status}`, f.status);
+          const info = element("div", "file-info");
+          info.append(
+            element("span", "file-name", f.name),
+            element("span", "file-folder", f.folder)
+          );
+          item.append(chip, info);
+          return item;
+        });
+        fileContainer.replaceChildren(...items);
+      }
     }
 
     if (cpContainer) {
@@ -2224,7 +2455,8 @@ async function loadSystemChanges() {
       }
     }
   } catch (err) {
-    fileContainer.replaceChildren(element("div", "empty-state-small", `Failed to load changes: ${err.message}`));
+    if (diffContainer) diffContainer.replaceChildren(element("div", "empty-state-small", `Failed to load changes: ${err.message}`));
+    if (fileContainer) fileContainer.replaceChildren(element("div", "empty-state-small", `Failed to load changes: ${err.message}`));
   }
 }
 
@@ -2233,4 +2465,6 @@ refresh();
 initRealtimeStream();
 initHermesSidebar();
 loadConversations();
+loadHermesModels();
 loadSystemChanges();
+initViewRouter();

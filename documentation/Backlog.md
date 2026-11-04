@@ -88,12 +88,33 @@
     - API endpoint: `POST /api/automation/config` with real-time SSE broadcast.
     - Dedicated Cockpit UI Page & Status Link: Master toggle (`AUTOMATION ON` vs `AUTOMATION OFF / PAUSED`), Dual Ingestion Mode segmented toggle (Method A: Background Polling vs Method B: Side-by-Side Live), polling interval pill selector (`30s`, `60s`, `120s`, `180s`), and live adapter status badge.
     - Hermes agentic tool `set_automation_config` with `/rollback` checkpointing and natural Bangla/Banglish command support (*"Switch to side by side mode"*, *"Background polling 60s koro"*, *"Turn off buy sell automation"*).
+  - **Multi-View Navigation & Dedicated Settings Page:**
+    - True view-switching via Left Nav Rail across 5 distinct views (`#overview`, `#watchlist`, `#rules`, `#ledger`, `#settings`), eliminating the giant vertical scroll:
+      1. **Overview (`#overview`):** Telemetry cards, Watchlist pulse rebased chart, 3-Bucket rolling capital, and Decision stream.
+      2. **Watchlist & Market Map (`#watchlist`):** 3-Tier company watchlist table, Position inspector with maturity lots, DSE Market Map Treemap with Finviz heat scale, and Top Sectors by Gainer chart.
+      3. **Strategy Rules & Allocation (`#rules`):** "What-If" profit simulator, custom buy cap form, sequential profit tiers (+1.5%, +3.5%, +6.0%), 50/50 pullback rules, and Canary Theses observation board.
+      4. **Trade Ledger (`#ledger`):** Accounting periods (Overall, Today, Week, Month, Year) and full FIFO tax lot execution table.
+      5. **Dedicated Settings Page (`#settings`):** Master Buy/Sell automation switch, Method A vs Method B ingestion pipeline, polling cadence pills, Hermes AI brain model selector & 3-tier fallback chain display, fee structure & settlement rules, and appearance preferences.
+  - **Fixed Viewport Lock Architecture (Sticky Hermes & Nav Rail):**
+    - Locked outer viewport (`height: 100vh; overflow: hidden;`) with middle `.workspace` scrolling independently (`height: 100vh; overflow-y: auto;`). Left nav rail and right Hermes assistant stay 100% viewport-fixed at all times, never scrolling off screen.
+  - **Continuous Smooth Curves Without Point Dots:**
+    - Eliminated static dots along the price curve in `renderMainChart()` and `renderDeepTrendChart()`.
+    - Implemented continuous pixel-level hover interpolation so crosshairs glide smoothly with pixel precision without discrete session hopping.
+  - **Rebuilt Hermes `[Changes]` Tab as System & Rule Diff Review:**
+    - Replaced raw git files list with visual GitHub/IDE-style structured Before vs. After diff cards (`.diff-card`) featuring red deleted lines (`[-] Previous`) and green added lines (`[+] Updated`), actor badges, timestamps, and 1-click `/rollback`.
+  - **3-Tier AI Brain Switcher (`/model`) in Hermes Header & Settings:**
+    - **Tier 1:** User-selected OpenRouter model (e.g. `xiaomi/mimo-v2-flash`, `deepseek/deepseek-chat`, `meta-llama/llama-3.3-70b-instruct`, `anthropic/claude-3.5-sonnet`, `google/gemini-2.0-flash-001`). Switchable via `/model <name>` in chat or UI dropdown picker in header & settings.
+    - **Tier 2:** 1st Fallback — Free Google Gemini API (`google/gemini-2.5-flash`).
+    - **Tier 3:** 2nd Fallback — Deterministic Local Quant Brain ($0 offline).
+    - API endpoints: `GET /api/hermes/models` and `POST /api/hermes/model`.
+  - **Exhaustive Light Mode Daylight Uniformity:**
+    - Eliminated all hardcoded dark background artifacts (`#0b1220`, `#111c26`, `#0f1721`, etc.) across watchlist tables, position inspectors, DSE market map containers, stacked bar charts, modals, settings, and diff review cards.
 - [x] **AST Codebase X-Ray & Architecture Radar (`scripts/generate_code_map.py` -> `documentation/CODEBASE_MAP.md`):**
   - Zero-dependency stdlib script scanning Python AST, class methods, FastAPI routes, DOM elements, and code health radar.
 - [x] **Repository Documentation Reorganization:**
   - All architecture specs moved to `documentation/` (`About_Project.md`, `Backlog.md`, `CODEBASE_MAP.md`), keeping only `README.md` at repo root.
-- [x] **Complete Automated Test Suite (24/24 passing):**
-  - Engine tests, settlement calendars, fee basis math, sequential seller tiers, local chat, OpenRouter mock, agentic emergency quarantine & canary exits, watchlist categories, SSE streams, cockpit smoke tests, SecretGuard isolation, on-demand skill loading & self-patching, 3-layer memory, state checkpoint `/rollback`, DSE Market Map `/api/market/map` payload & visualizer tests, company fundamentals/extended history deep trend tests, dual-mode automation controller API tests, Hermes conversation threads & messages, and system changes tests.
+- [x] **Complete Automated Test Suite (25/25 passing):**
+  - Engine tests, settlement calendars, fee basis math, sequential seller tiers, local chat, OpenRouter mock, agentic emergency quarantine & canary exits, watchlist categories, SSE streams, cockpit smoke tests, SecretGuard isolation, on-demand skill loading & self-patching, 3-layer memory, state checkpoint `/rollback`, DSE Market Map `/api/market/map` payload & visualizer tests, company fundamentals/extended history deep trend tests, dual-mode automation controller API tests, Hermes conversation threads & messages, system changes diff endpoint, and AI brain model switcher tests.
 
 ---
 

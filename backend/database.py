@@ -51,6 +51,7 @@ class PortfolioState(Base):
     automation_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     ingestion_mode: Mapped[str] = mapped_column(String(32), default="BACKGROUND_POLLING")
     polling_interval_sec: Mapped[int] = mapped_column(Integer, default=120)
+    active_model: Mapped[str] = mapped_column(String(64), default="xiaomi/mimo-v2-flash")
     calendar_holidays: Mapped[list[str]] = mapped_column(JSON, default=list)
     bucket_anchor: Mapped[date] = mapped_column(Date)
     created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
@@ -231,6 +232,8 @@ class HermesStateCheckpoint(Base):
     action: Mapped[str] = mapped_column(String(64))
     description: Mapped[str] = mapped_column(String(500))
     snapshot_payload: Mapped[dict[str, Any]] = mapped_column(JSON)
+    diff_payload: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    actor: Mapped[str] = mapped_column(String(32), default="Hermes Agent")
     session_on: Mapped[date] = mapped_column(Date)
     reverted: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
@@ -311,12 +314,23 @@ class Database:
                     conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN ingestion_mode VARCHAR(32) DEFAULT 'BACKGROUND_POLLING'"))
                 if "polling_interval_sec" not in ps_cols:
                     conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN polling_interval_sec INTEGER DEFAULT 120"))
+                if "active_model" not in ps_cols:
+                    conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN active_model VARCHAR(64) DEFAULT 'xiaomi/mimo-v2-flash'"))
                 conn.commit()
 
             result = conn.execute(text("PRAGMA table_info(hermes_session_memory)"))
             hsm_cols = [row[1] for row in result.fetchall()]
             if hsm_cols and "conversation_id" not in hsm_cols:
                 conn.execute(text("ALTER TABLE hermes_session_memory ADD COLUMN conversation_id VARCHAR(36)"))
+                conn.commit()
+
+            result = conn.execute(text("PRAGMA table_info(hermes_state_checkpoints)"))
+            cp_cols = [row[1] for row in result.fetchall()]
+            if cp_cols:
+                if "diff_payload" not in cp_cols:
+                    conn.execute(text("ALTER TABLE hermes_state_checkpoints ADD COLUMN diff_payload JSON"))
+                if "actor" not in cp_cols:
+                    conn.execute(text("ALTER TABLE hermes_state_checkpoints ADD COLUMN actor VARCHAR(32) DEFAULT 'Hermes Agent'"))
                 conn.commit()
 
     @contextmanager

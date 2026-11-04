@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal
+import os
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -412,6 +413,7 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
             "automation_enabled": getattr(state, "automation_enabled", not state.paused),
             "ingestion_mode": getattr(state, "ingestion_mode", "BACKGROUND_POLLING"),
             "polling_interval_sec": getattr(state, "polling_interval_sec", 120),
+            "active_model": getattr(state, "active_model", settings.openrouter_model),
             "active_bucket": active, "created_at": state.created_at,
         },
         "market_clock": {
@@ -461,6 +463,12 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
             "skills": active_skills,
             "checkpoints": recent_checkpoints,
             "durable_facts": durable_facts,
+            "active_model": getattr(state, "active_model", settings.openrouter_model),
+            "fallback_chain": [
+                {"tier": 1, "name": "Primary Brain", "target": getattr(state, "active_model", settings.openrouter_model), "status": "ACTIVE" if settings.openrouter_api_key else "STANDBY"},
+                {"tier": 2, "name": "1st Fallback", "target": "google/gemini-2.5-flash", "status": "READY" if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") else "OFFLINE"},
+                {"tier": 3, "name": "2nd Fallback", "target": "Local Deterministic Quant Brain", "status": "ALWAYS AVAILABLE"},
+            ],
         },
         "latest_cycle": latest.result if latest else None,
         "market_map": build_market_map_payload(),

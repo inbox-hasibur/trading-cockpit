@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import time
 from datetime import datetime
 from decimal import Decimal
@@ -67,7 +68,15 @@ Respond in the operator's language (Bangla, Banglish, or English), clearly, conc
 
 class CheckpointManager:
     @staticmethod
-    def create_checkpoint(session: Session, state: PortfolioState, action: str, description: str, symbol: str | None = None) -> HermesStateCheckpoint:
+    def create_checkpoint(
+        session: Session,
+        state: PortfolioState,
+        action: str,
+        description: str,
+        symbol: str | None = None,
+        diff_payload: dict[str, Any] | None = None,
+        actor: str = "Hermes Agent",
+    ) -> HermesStateCheckpoint:
         payload: dict[str, Any] = {
             "action": action,
             "description": description,
@@ -101,6 +110,8 @@ class CheckpointManager:
             action=action,
             description=description,
             snapshot_payload=payload,
+            diff_payload=diff_payload,
+            actor=actor,
             session_on=state.clock_date,
             reverted=False,
         )
@@ -162,15 +173,29 @@ class HermesAgentLoop:
         self.transport: httpx.AsyncBaseTransport | None = None
 
     def execute_tool(self, tool_name: str, args: dict[str, Any], session: Session, state: PortfolioState) -> dict[str, Any]:
-        """Deterministic execution of Hermes Agent tools with automatic checkpointing."""
+        """Deterministic execution of Hermes Agent tools with automatic checkpointing and rule diff tracking."""
         memory = HermesMemory(session)
         calendar = TradingCalendar(self.settings.holidays, self.settings.bucket_anchor)
 
         if tool_name == "report_company_threat":
             symbol = args["symbol"].upper()
             thesis = args["thesis"]
+            comp = session.get(CompanyProfile, symbol)
+            diff_lines = [
+                {"type": "del", "text": f"{symbol} quarantined: False"},
+                {"type": "add", "text": f"{symbol} quarantined: True (CRASH_QUARANTINE) | 90% profit-lock + 10% canary probe"},
+            ]
             CheckpointManager.create_checkpoint(
-                session, state, "REPORT_THREAT", f"Threat quarantine & 90/10 canary probe for {symbol}: {thesis}", symbol
+                session, state, "REPORT_THREAT", f"Threat quarantine & 90/10 canary probe for {symbol}: {thesis}", symbol,
+                diff_payload={
+                    "action": "REPORT_THREAT",
+                    "actor": "Hermes Agent",
+                    "summary": f"Emergency quarantine & 90/10 canary for {symbol}: {thesis[:90]}",
+                    "before": {"symbol": symbol, "quarantined": False},
+                    "after": {"symbol": symbol, "quarantined": True, "thesis": thesis},
+                    "diff_lines": diff_lines,
+                },
+                actor="Hermes Agent",
             )
             result = emergency_quarantine_and_canary(session, state, self.settings, symbol, thesis)
             memory.record_fact(symbol, f"Operator threat alert: {thesis}. 90% profit locked, 10% canary retained.", "CANARY_PROBE", "HIGH")
@@ -179,7 +204,22 @@ class HermesAgentLoop:
         elif tool_name == "restore_quarantined_company":
             symbol = args["symbol"].upper()
             reason = args.get("reason", "Operator instructed restoration")
-            CheckpointManager.create_checkpoint(session, state, "RESTORE_QUARANTINE", f"Restore {symbol} from quarantine", symbol)
+            diff_lines = [
+                {"type": "del", "text": f"{symbol} quarantined: True"},
+                {"type": "add", "text": f"{symbol} quarantined: False | Restored to active watchlist"},
+            ]
+            CheckpointManager.create_checkpoint(
+                session, state, "RESTORE_QUARANTINE", f"Restore {symbol} from quarantine", symbol,
+                diff_payload={
+                    "action": "RESTORE_QUARANTINE",
+                    "actor": "Hermes Agent",
+                    "summary": f"Restored {symbol} from quarantine to active watchlist",
+                    "before": {"symbol": symbol, "quarantined": True},
+                    "after": {"symbol": symbol, "quarantined": False, "reason": reason},
+                    "diff_lines": diff_lines,
+                },
+                actor="Hermes Agent",
+            )
             result = restore_quarantine(session, state, symbol, reason)
             memory.record_fact(symbol, f"Restored from quarantine: {reason}", "STATUS", "HIGH")
             return {"status": "SUCCESS", "tool": tool_name, "result": result}
@@ -192,12 +232,28 @@ class HermesAgentLoop:
             comp = session.get(CompanyProfile, symbol)
             if not comp:
                 raise ValueError(f"Company {symbol} not found.")
-            CheckpointManager.create_checkpoint(session, state, "SET_WATCHLIST_TIER", f"Move {symbol} to {tier}", symbol)
+            old_tier = getattr(comp, "watchlist_category", "GSC")
+            diff_lines = [
+                {"type": "del", "text": f"{symbol} watchlist_category: {old_tier}"},
+                {"type": "add", "text": f"{symbol} watchlist_category: {tier}"},
+            ]
+            CheckpointManager.create_checkpoint(
+                session, state, "SET_WATCHLIST_TIER", f"Move {symbol} to {tier}", symbol,
+                diff_payload={
+                    "action": "SET_WATCHLIST_TIER",
+                    "actor": "Hermes Agent",
+                    "summary": f"Moved {symbol} from tier {old_tier} to {tier}",
+                    "before": {"symbol": symbol, "watchlist_category": old_tier},
+                    "after": {"symbol": symbol, "watchlist_category": tier},
+                    "diff_lines": diff_lines,
+                },
+                actor="Hermes Agent",
+            )
             comp.watchlist_category = tier
             state.rules_revision += 1
             session.flush()
             memory.record_fact(symbol, f"Classified into tier {tier}", "WATCHLIST_CATEGORY", "HIGH")
-            return {"status": "SUCCESS", "tool": tool_name, "symbol": symbol, "tier": tier}
+            return {"status": "SUCCESS", "tool": tool_name, "symbol": symbol, "tier": tier, "old_tier": old_tier}
 
         elif tool_name == "update_company_allocation":
             symbol = args["symbol"].upper()
@@ -206,7 +262,23 @@ class HermesAgentLoop:
             rule = session.get(CustomRule, symbol)
             if not rule:
                 raise ValueError(f"Rule for {symbol} not found.")
-            CheckpointManager.create_checkpoint(session, state, "UPDATE_ALLOCATION", f"Set {symbol} allocation to {pct}%", symbol)
+            old_alloc = str(rule.buy_allocation_pct)
+            diff_lines = [
+                {"type": "del", "text": f"{symbol} buy_allocation_pct: {old_alloc}% | enabled: {rule.enabled}"},
+                {"type": "add", "text": f"{symbol} buy_allocation_pct: {pct}% | enabled: {enabled}"},
+            ]
+            CheckpointManager.create_checkpoint(
+                session, state, "UPDATE_ALLOCATION", f"Set {symbol} allocation to {pct}%", symbol,
+                diff_payload={
+                    "action": "UPDATE_ALLOCATION",
+                    "actor": "Hermes Agent",
+                    "summary": f"Adjusted {symbol} buy cap from {old_alloc}% to {pct}%",
+                    "before": {"symbol": symbol, "buy_allocation_pct": old_alloc, "enabled": rule.enabled},
+                    "after": {"symbol": symbol, "buy_allocation_pct": str(pct), "enabled": enabled},
+                    "diff_lines": diff_lines,
+                },
+                actor="Hermes Agent",
+            )
             before = {"buy_allocation_pct": float(rule.buy_allocation_pct), "enabled": rule.enabled}
             rule.buy_allocation_pct = pct
             rule.enabled = enabled
@@ -221,7 +293,17 @@ class HermesAgentLoop:
             side = args.get("side", "BUY").upper()
             qty = int(args.get("quantity", 0))
             if side == "BUY":
-                CheckpointManager.create_checkpoint(session, state, "MANUAL_BUY", f"Manual buy {qty} shares of {symbol}", symbol)
+                CheckpointManager.create_checkpoint(
+                    session, state, "MANUAL_BUY", f"Manual buy {qty} shares of {symbol}", symbol,
+                    diff_payload={
+                        "action": "MANUAL_BUY",
+                        "actor": "Operator via Hermes",
+                        "summary": f"Executed manual buy of {qty} shares for {symbol}",
+                        "before": {}, "after": {"symbol": symbol, "qty": qty},
+                        "diff_lines": [{"type": "add", "text": f"BUY {qty} shares of {symbol}"}],
+                    },
+                    actor="Operator",
+                )
                 res = execute_agentic_buy(session, state, self.settings, symbol, requested_qty=qty if qty > 0 else None)
                 return {"status": "SUCCESS", "tool": tool_name, "result": res}
             else:
@@ -231,6 +313,21 @@ class HermesAgentLoop:
             skill_name = args["skill_name"]
             lesson_md = args["lesson_markdown"]
             reason = args.get("reason", "Autonomous learning from market event")
+            diff_lines = [
+                {"type": "del", "text": f"SKILL_{skill_name}.md: previous version"},
+                {"type": "add", "text": f"SKILL_{skill_name}.md: revision patched | reason: {reason}"},
+            ]
+            CheckpointManager.create_checkpoint(
+                session, state, "LEARN_SKILL", f"Learn/patch skill {skill_name}: {reason}",
+                diff_payload={
+                    "action": "LEARN_SKILL",
+                    "actor": "Hermes Learner",
+                    "summary": f"Patched procedural skill {skill_name} ({reason})",
+                    "before": {"skill": skill_name}, "after": {"skill": skill_name, "reason": reason},
+                    "diff_lines": diff_lines,
+                },
+                actor="Hermes Autonomous Learner",
+            )
             res = self.skills_mgr.learn_or_patch_skill(skill_name, lesson_md, reason, session, state.clock_date)
             return {"status": "SUCCESS", "tool": tool_name, "result": res}
 
@@ -247,9 +344,25 @@ class HermesAgentLoop:
             if not (30 <= interval <= 300):
                 raise ValueError(f"Polling interval must be between 30 and 300 seconds, got {interval}")
 
+            old_enabled = getattr(state, "automation_enabled", True)
+            old_mode = getattr(state, "ingestion_mode", "BACKGROUND_POLLING")
+            old_interval = getattr(state, "polling_interval_sec", 120)
+            diff_lines = [
+                {"type": "del", "text": f"automation: {'ON' if old_enabled else 'OFF'} | mode: {old_mode} | interval: {old_interval}s"},
+                {"type": "add", "text": f"automation: {'ON' if enabled else 'OFF'} | mode: {mode} | interval: {interval}s"},
+            ]
             CheckpointManager.create_checkpoint(
                 session, state, "SET_AUTOMATION_CONFIG",
-                f"Set automation enabled={enabled}, mode={mode}, interval={interval}s"
+                f"Set automation enabled={enabled}, mode={mode}, interval={interval}s",
+                diff_payload={
+                    "action": "SET_AUTOMATION_CONFIG",
+                    "actor": "Operator via Hermes",
+                    "summary": f"Configured automation to {'ON' if enabled else 'OFF'}, {mode} ({interval}s)",
+                    "before": {"automation_enabled": old_enabled, "ingestion_mode": old_mode, "polling_interval_sec": old_interval},
+                    "after": {"automation_enabled": enabled, "ingestion_mode": mode, "polling_interval_sec": interval},
+                    "diff_lines": diff_lines,
+                },
+                actor="Operator",
             )
             state.automation_enabled = enabled
             state.paused = not enabled
@@ -263,6 +376,53 @@ class HermesAgentLoop:
                 "automation_enabled": state.automation_enabled,
                 "ingestion_mode": state.ingestion_mode,
                 "polling_interval_sec": state.polling_interval_sec,
+            }
+
+        elif tool_name == "set_ai_model":
+            target_model = args.get("model", "").strip()
+            available = [
+                "xiaomi/mimo-v2-flash",
+                "deepseek/deepseek-chat",
+                "xiaomi/mimo-v2-pro",
+                "google/gemini-2.5-flash",
+                "anthropic/claude-3.5-haiku",
+                "meta-llama/llama-3.3-70b-instruct",
+            ]
+            if not target_model:
+                curr = getattr(state, "active_model", self.settings.openrouter_model)
+                return {
+                    "status": "INFO",
+                    "tool": tool_name,
+                    "current_model": curr,
+                    "available_models": available,
+                }
+
+            old_model = getattr(state, "active_model", self.settings.openrouter_model)
+            diff_lines = [
+                {"type": "del", "text": f"active_brain_model: {old_model}"},
+                {"type": "add", "text": f"active_brain_model: {target_model}"},
+            ]
+            CheckpointManager.create_checkpoint(
+                session, state, "SET_AI_MODEL",
+                f"Switch Hermes primary brain to {target_model}",
+                diff_payload={
+                    "action": "SET_AI_MODEL",
+                    "actor": "Operator",
+                    "summary": f"Switched AI model from {old_model} to {target_model}",
+                    "before": {"active_model": old_model},
+                    "after": {"active_model": target_model},
+                    "diff_lines": diff_lines,
+                },
+                actor="Operator",
+            )
+            state.active_model = target_model
+            state.rules_revision += 1
+            session.flush()
+            return {
+                "status": "SUCCESS",
+                "tool": tool_name,
+                "old_model": old_model,
+                "active_model": target_model,
             }
 
         elif tool_name == "evaluate_canary_theses":
@@ -301,6 +461,12 @@ class HermesAgentLoop:
         """High-precision intent detector for Bangla, Banglish & English agent commands."""
         text = message.strip()
         text_lower = text.lower()
+
+        # 0. Model command
+        if text.startswith("/model") or text_lower.startswith("switch model") or text_lower.startswith("model change"):
+            parts = text.split(maxsplit=1)
+            target = parts[1].strip() if len(parts) > 1 else ""
+            return "set_ai_model", {"model": target}
 
         # 1. Rollback command
         if text_lower in {"/rollback", "rollback", "undo", "undo last action", "undo koro", "ager obosthay nao"}:
@@ -483,6 +649,7 @@ class HermesAgentLoop:
                 "execute_manual_order": "MANUAL_ORDER",
                 "update_company_allocation": "UPDATE_ALLOCATION",
                 "set_automation_config": "SET_AUTOMATION_CONFIG",
+                "set_ai_model": "SET_AI_MODEL",
             }
             return {
                 "reply": reply,
@@ -616,6 +783,33 @@ class HermesAgentLoop:
                 f"State checkpoint saved. Type `/rollback` to undo."
             )
 
+        if tool_name == "set_ai_model":
+            if tool_res.get("status") == "INFO":
+                return (
+                    f"DEMO/PAPER · [Hermes Brain & Models 🧠]\n"
+                    f"বর্তমান সক্রিয় মডেল: `{tool_res['current_model']}`\n"
+                    f"উপলব্ধ মডেলসমূহ: {', '.join(tool_res['available_models'])}\n"
+                    f"মডেল পরিবর্তন করতে লিখুন: `/model <model_name>` (যেমন `/model deepseek/deepseek-chat`)"
+                    if bangla else
+                    f"DEMO/PAPER · [Hermes Brain & Models 🧠]\n"
+                    f"Active Model: `{tool_res['current_model']}`\n"
+                    f"Available Models: {', '.join(tool_res['available_models'])}\n"
+                    f"To switch model, type: `/model <name>` (e.g. `/model deepseek/deepseek-chat`)"
+                )
+            return (
+                f"DEMO/PAPER · [Hermes Brain Model Switched 🧠]\n"
+                f"✅ প্রাথমিক এআই মডেল সফলভাবে পরিবর্তন করা হয়েছে:\n"
+                f"- **পূর্ববর্তী মডেল**: `{tool_res['old_model']}`\n"
+                f"- **নতুন সক্রিয় মডেল**: `{tool_res['active_model']}`\n"
+                f"Fallback চেইন: 1st Fallback: Free Google Gemini API → 2nd Fallback: Local Deterministic Brain.\n"
+                f"স্টেট চেকপয়েন্ট সেভ করা হয়েছে (রিভার্ট করতে `/rollback` লিখুন)।"
+                if bangla else
+                f"DEMO/PAPER · [Hermes Brain Model Switched 🧠]\n"
+                f"Switched primary AI brain from `{tool_res['old_model']}` to `{tool_res['active_model']}`.\n"
+                f"Fallback Chain: 1st Fallback: Free Gemini API -> 2nd Fallback: Local Deterministic Brain.\n"
+                f"State checkpoint saved. Type `/rollback` to revert."
+            )
+
         return f"DEMO/PAPER · Tool {tool_name} executed successfully."
 
     async def _conversational_inference(self, message: str, history: list[dict[str, str]], snapshot: dict, conversation_id: str | None = None) -> dict[str, Any]:
@@ -650,11 +844,7 @@ class HermesAgentLoop:
         # Final scrubbing
         full_system_prompt = redact_secrets(full_system_prompt)
 
-        # Check OpenRouter credentials & budget
-        if not self.settings.openrouter_api_key:
-            return self._local_conversational_fallback(message, snapshot, conversation_id=conversation_id)
-
-        # External OpenRouter call - check and increment budget
+        # Tier 1 & Tier 2 budget enforcement
         day = datetime.now(DHAKA).date()
         allowed = True
         with self.database.write() as session:
@@ -668,51 +858,92 @@ class HermesAgentLoop:
                 budget.calls += 1
 
         if not allowed:
-            return self._local_conversational_fallback(message, snapshot, warning="Daily external-call allowance reached; using free local agentic summary.", conversation_id=conversation_id)
+            return self._local_conversational_fallback(
+                message,
+                snapshot,
+                warning="Daily external call budget reached. Running offline on Local Deterministic Quant Brain.",
+                conversation_id=conversation_id,
+            )
 
+        # Tier 1: User-selected OpenRouter model
+        target_model = snapshot.get("app", {}).get("active_model") or self.settings.openrouter_model
         messages = [{"role": "system", "content": full_system_prompt}]
         for turn in compressed_history:
             messages.append({"role": turn["role"], "content": redact_secrets(turn["content"])})
         messages.append({"role": "user", "content": message})
 
-        try:
-            async with httpx.AsyncClient(timeout=httpx.Timeout(25, connect=5), transport=self.transport) as client:
-                resp = await client.post(
-                    OPENROUTER_URL,
-                    headers={
-                        "Authorization": f"Bearer {self.settings.openrouter_api_key}",
-                        "Content-Type": "application/json",
-                        "X-Title": "Humming Bird Trading Cockpit",
-                    },
-                    json={
-                        "model": self.settings.openrouter_model,
-                        "messages": messages,
-                        "temperature": 0.2,
-                        "max_tokens": self.settings.chat_max_output_tokens,
-                    },
-                )
-                resp.raise_for_status()
-                reply_text = resp.json()["choices"][0]["message"]["content"]
-                clean_reply = redact_secrets(reply_text.strip()[:12000])
+        if self.settings.openrouter_api_key:
+            try:
+                async with httpx.AsyncClient(timeout=httpx.Timeout(25, connect=5), transport=self.transport) as client:
+                    resp = await client.post(
+                        OPENROUTER_URL,
+                        headers={
+                            "Authorization": f"Bearer {self.settings.openrouter_api_key}",
+                            "Content-Type": "application/json",
+                            "X-Title": "Humming Bird Trading Cockpit",
+                        },
+                        json={
+                            "model": target_model,
+                            "messages": messages,
+                            "temperature": 0.2,
+                            "max_tokens": self.settings.chat_max_output_tokens,
+                        },
+                    )
+                    resp.raise_for_status()
+                    reply_text = resp.json()["choices"][0]["message"]["content"]
+                    clean_reply = redact_secrets(reply_text.strip()[:12000])
 
-                with self.database.write() as session:
-                    state = portfolio_state(session)
-                    mem = HermesMemory(session)
-                    mem.record_turn(session_date=state.clock_date, role="assistant", content=clean_reply, conversation_id=conversation_id)
+                    with self.database.write() as session:
+                        state = portfolio_state(session)
+                        mem = HermesMemory(session)
+                        mem.record_turn(session_date=state.clock_date, role="assistant", content=clean_reply, conversation_id=conversation_id)
 
-                return {
-                    "reply": clean_reply,
-                    "provider": "openrouter",
-                    "model": self.settings.openrouter_model,
-                    "warning": None,
-                    "context_date": snapshot["app"]["date"],
-                    "context_revision": snapshot["app"]["revision"],
-                    "conversation_id": conversation_id,
-                    "read_only": False,
-                }
-        except Exception as exc:
-            logger.warning("OpenRouter call failed: %s; falling back to local agent summary.", exc)
-            return self._local_conversational_fallback(message, snapshot, warning=f"OpenRouter unavailable ({exc}); local summary used.", conversation_id=conversation_id)
+                    return {
+                        "reply": clean_reply,
+                        "provider": "openrouter",
+                        "model": target_model,
+                        "warning": None,
+                        "context_date": snapshot["app"]["date"],
+                        "context_revision": snapshot["app"]["revision"],
+                        "conversation_id": conversation_id,
+                        "read_only": False,
+                    }
+            except Exception as exc:
+                logger.warning("Tier 1 OpenRouter failed: %s; falling back to Tier 2 Gemini.", exc)
+
+        # Tier 2: 1st Fallback — Free Google Gemini API
+        gemini_key = os.getenv("GEMINI_API_KEY", "").strip() or os.getenv("GOOGLE_API_KEY", "").strip()
+        if gemini_key:
+            try:
+                gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+                prompt_text = f"{full_system_prompt}\n\nOperator message: {message}"
+                async with httpx.AsyncClient(timeout=httpx.Timeout(20, connect=5), transport=self.transport) as client:
+                    resp = await client.post(
+                        gemini_url,
+                        json={"contents": [{"parts": [{"text": prompt_text}]}]},
+                    )
+                    resp.raise_for_status()
+                    g_reply = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
+                    clean_reply = redact_secrets(g_reply.strip()[:12000])
+                    with self.database.write() as session:
+                        state = portfolio_state(session)
+                        mem = HermesMemory(session)
+                        mem.record_turn(session_date=state.clock_date, role="assistant", content=clean_reply, conversation_id=conversation_id)
+                    return {
+                        "reply": clean_reply,
+                        "provider": "gemini",
+                        "model": "google/gemini-2.5-flash",
+                        "warning": "Served via 1st Fallback: Free Google Gemini API",
+                        "context_date": snapshot["app"]["date"],
+                        "context_revision": snapshot["app"]["revision"],
+                        "conversation_id": conversation_id,
+                        "read_only": False,
+                    }
+            except Exception as exc:
+                logger.warning("Tier 2 Gemini fallback failed: %s; falling back to Tier 3 Local Brain.", exc)
+
+        # Tier 3: 2nd Fallback — Deterministic Local Quant Brain ($0 offline)
+        return self._local_conversational_fallback(message, snapshot, conversation_id=conversation_id)
 
     def _local_conversational_fallback(self, message: str, snapshot: dict, warning: str | None = None, conversation_id: str | None = None) -> dict[str, Any]:
         from backend.chat import local_summary

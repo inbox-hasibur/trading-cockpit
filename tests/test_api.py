@@ -329,7 +329,37 @@ def test_hermes_conversations_and_system_changes(client):
     changes = client.get("/api/system/changes").json()
     assert "files_changed" in changes
     assert "checkpoints" in changes
+    assert "changes" in changes
     assert changes["total_files"] >= 1
+    if changes["changes"]:
+        first_c = changes["changes"][0]
+        assert "diff" in first_c
+        assert "actor" in first_c
+
+
+def test_hermes_models_and_switcher(client):
+    # Get available models
+    models_res = client.get("/api/hermes/models").json()
+    assert "active_model" in models_res
+    assert len(models_res["models"]) >= 5
+    assert len(models_res["fallback_chain"]) == 3
+
+    # Switch model via API
+    switch_res = client.post("/api/hermes/model", json={"model": "deepseek/deepseek-chat"}).json()
+    assert switch_res["status"] == "ok"
+    assert switch_res["active_model"] == "deepseek/deepseek-chat"
+
+    # Verify model is updated in portfolio snapshot
+    snap = client.get("/api/portfolio").json()
+    assert snap["hermes"]["active_model"] == "deepseek/deepseek-chat"
+
+    # Verify checkpoint diff was recorded for model switch
+    changes = client.get("/api/system/changes").json()
+    latest_diff = changes["changes"][0]
+    assert latest_diff["action"] == "UPDATE_MODEL"
+    assert latest_diff["actor"] == "Operator"
+    assert any("deepseek/deepseek-chat" in line["text"] for line in latest_diff["diff"]["diff_lines"])
+
 
 
 
