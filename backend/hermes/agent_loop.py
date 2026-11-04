@@ -72,6 +72,9 @@ class CheckpointManager:
             "description": description,
             "date": state.clock_date.isoformat(),
             "rules_revision": state.rules_revision,
+            "automation_enabled": getattr(state, "automation_enabled", True),
+            "ingestion_mode": getattr(state, "ingestion_mode", "BACKGROUND_POLLING"),
+            "polling_interval_sec": getattr(state, "polling_interval_sec", 120),
             "companies": {},
             "rules": {},
         }
@@ -130,6 +133,14 @@ class CheckpointManager:
             if rule:
                 rule.buy_allocation_pct = decimal(rdata["buy_allocation_pct"])
                 rule.enabled = rdata["enabled"]
+
+        if "automation_enabled" in payload:
+            state.automation_enabled = payload["automation_enabled"]
+            state.paused = not state.automation_enabled
+        if "ingestion_mode" in payload:
+            state.ingestion_mode = payload["ingestion_mode"]
+        if "polling_interval_sec" in payload:
+            state.polling_interval_sec = payload["polling_interval_sec"]
 
         cp.reverted = True
         state.rules_revision += 1
@@ -225,6 +236,33 @@ class HermesAgentLoop:
         elif tool_name == "rollback_last_checkpoint":
             res = CheckpointManager.rollback_last(session, state)
             return {"status": "SUCCESS", "tool": tool_name, "result": res}
+
+        elif tool_name == "set_automation_config":
+            enabled = bool(args.get("automation_enabled", getattr(state, "automation_enabled", True)))
+            mode = args.get("ingestion_mode", getattr(state, "ingestion_mode", "BACKGROUND_POLLING"))
+            interval = int(args.get("polling_interval_sec", getattr(state, "polling_interval_sec", 120)))
+            if mode not in {"BACKGROUND_POLLING", "SIDE_BY_SIDE_LIVE"}:
+                raise ValueError(f"Invalid ingestion mode: {mode}")
+            if not (30 <= interval <= 300):
+                raise ValueError(f"Polling interval must be between 30 and 300 seconds, got {interval}")
+
+            CheckpointManager.create_checkpoint(
+                session, state, "SET_AUTOMATION_CONFIG",
+                f"Set automation enabled={enabled}, mode={mode}, interval={interval}s"
+            )
+            state.automation_enabled = enabled
+            state.paused = not enabled
+            state.ingestion_mode = mode
+            state.polling_interval_sec = interval
+            state.rules_revision += 1
+            session.flush()
+            return {
+                "status": "SUCCESS",
+                "tool": tool_name,
+                "automation_enabled": state.automation_enabled,
+                "ingestion_mode": state.ingestion_mode,
+                "polling_interval_sec": state.polling_interval_sec,
+            }
 
         elif tool_name == "evaluate_canary_theses":
             updates = check_canary_theses(session, state)
@@ -329,6 +367,64 @@ class HermesAgentLoop:
                 "skill_name": f"learned_rule_{matched_sym.lower() if matched_sym else 'general'}",
                 "lesson_markdown": message,
                 "reason": "Operator taught a new trading rule via chat",
+            }
+
+        # 9. Master Automation & Ingestion Mode Controls
+        current_app = snapshot.get("app", {})
+        curr_enabled = current_app.get("automation_enabled", not current_app.get("paused", False))
+        curr_mode = current_app.get("ingestion_mode", "BACKGROUND_POLLING")
+        curr_interval = current_app.get("polling_interval_sec", 120)
+
+        # Mode switch: Side-by-side live browser
+        if any(w in text_lower for w in ("side by side", "side-by-side", "headed live", "live browser mode", "playwright mode")):
+            return "set_automation_config", {
+                "automation_enabled": True,
+                "ingestion_mode": "SIDE_BY_SIDE_LIVE",
+                "polling_interval_sec": curr_interval,
+            }
+
+        # Mode switch: Background polling
+        if any(w in text_lower for w in ("background polling", "polling mode", "periodic polling")):
+            digits = "".join(ch for ch in text if ch.isdigit())
+            interval = int(digits) if digits and 30 <= int(digits) <= 300 else curr_interval
+            return "set_automation_config", {
+                "automation_enabled": True,
+                "ingestion_mode": "BACKGROUND_POLLING",
+                "polling_interval_sec": interval,
+            }
+
+        # Polling interval change without explicit mode mention
+        if "polling" in text_lower and ("interval" in text_lower or "sec" in text_lower or "second" in text_lower or "s koro" in text_lower):
+            digits = "".join(ch for ch in text if ch.isdigit())
+            if digits and 30 <= int(digits) <= 300:
+                return "set_automation_config", {
+                    "automation_enabled": curr_enabled,
+                    "ingestion_mode": curr_mode,
+                    "polling_interval_sec": int(digits),
+                }
+
+        # Master Automation Toggle OFF
+        off_patterns = (
+            "turn off buy sell automation", "turn off automation", "stop automation", "automation off",
+            "disable automation", "automation bondho", "automation thamao", "automation paused"
+        )
+        if any(p in text_lower for p in off_patterns):
+            return "set_automation_config", {
+                "automation_enabled": False,
+                "ingestion_mode": curr_mode,
+                "polling_interval_sec": curr_interval,
+            }
+
+        # Master Automation Toggle ON
+        on_patterns = (
+            "turn on buy sell automation", "turn on automation", "start automation", "automation on",
+            "enable automation", "automation chalu", "automation start", "resume automation"
+        )
+        if any(p in text_lower for p in on_patterns):
+            return "set_automation_config", {
+                "automation_enabled": True,
+                "ingestion_mode": curr_mode,
+                "polling_interval_sec": curr_interval,
             }
 
         return None, {}
@@ -489,6 +585,28 @@ class HermesAgentLoop:
                 f"DEMO/PAPER · [Manual Order Executed]\n"
                 f"✅ {res['symbol']}-এর {res['quantity']} টি শেয়ার ৳{res['price']:,.2f} দরে কেনা হয়েছে "
                 f"(মোট খরচ: ৳{res['cost']:,.2f}, বাকেট {res['bucket']})।"
+            )
+
+        if tool_name == "set_automation_config":
+            enabled_str = "চালু (ON)" if tool_res["automation_enabled"] else "বন্ধ (OFF/Paused)"
+            mode_desc = (
+                "Background Polling (মেথড A)" if tool_res["ingestion_mode"] == "BACKGROUND_POLLING"
+                else "Side-by-Side Live Browser (মেথড B)"
+            )
+            return (
+                f"DEMO/PAPER · [Automation Configuration Updated ⚙️]\n"
+                f"✅ সিস্টেম কনফিগারেশন সফলভাবে আপডেট করা হয়েছে:\n"
+                f"- **Buy/Sell Automation**: {enabled_str}\n"
+                f"- **Ingestion Mode**: {mode_desc}\n"
+                f"- **Polling Interval**: {tool_res['polling_interval_sec']} সেকেন্ড\n"
+                f"স্টেট চেকপয়েন্ট সেভ করা হয়েছে (পূর্বের অবস্থায় ফিরতে `/rollback` কমান্ড ব্যবহার করুন)।"
+                if bangla else
+                f"DEMO/PAPER · [Automation Configuration Updated]\n"
+                f"✅ Automation config updated:\n"
+                f"- **Buy/Sell Automation**: {'ON' if tool_res['automation_enabled'] else 'OFF (Paused)'}\n"
+                f"- **Ingestion Mode**: {tool_res['ingestion_mode']}\n"
+                f"- **Polling Interval**: {tool_res['polling_interval_sec']}s\n"
+                f"State checkpoint saved. Type `/rollback` to undo."
             )
 
         return f"DEMO/PAPER · Tool {tool_name} executed successfully."

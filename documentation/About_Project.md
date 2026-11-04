@@ -141,6 +141,14 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
    - **Multi-Theme Switcher (Dark / Light / Terminal):** High-contrast daylight mode for daytime readability, dark slate default, and retro Matrix cyberpunk monospace terminal mode.
    - **DSE Live Market Clock & Countdown:** Topbar live telemetry showing session state (`🟢 DSE OPEN` vs `🔴 DSE CLOSED`) with real-time countdown to next session opening or market close.
 
+9. **Master Automation Controller & Dual Ingestion Mode (`Background Polling` vs `Side-by-Side Live`):**
+   - **Master Buy/Sell Automation Switch:** A dedicated toggle in the Cockpit header (`AUTOMATION ON` vs `AUTOMATION OFF / PAUSED`). Disables evaluation cycles and protects capital on demand without server restart.
+   - **Dual Ingestion Mode Architecture:**
+     - **Method A (`BACKGROUND_POLLING`):** Lightweight periodic data polling (configurable 30s to 300s, default 120s) with interval pill selector (`30s`, `60s`, `120s`, `180s`). Ideal for low-resource VPS, battery saving, or stealth operation.
+     - **Method B (`SIDE_BY_SIDE_LIVE`):** Headed, persistent Playwright browser context running alongside the operator on desktop, allowing live DOM/CDP telemetry inspection and immediate event triggers.
+   - **Hermes Chat Orchestration:** Operator can command in chat (*"Switch to side by side mode"*, *"Background polling 60s koro"*, *"Turn off buy sell automation"*), with automatic state checkpointing for 1-click `/rollback`.
+   - **AST Codebase X-Ray Radar (`CODEBASE_MAP.md`):** Zero-dependency AST scanner (`scripts/generate_code_map.py`) that indexes all classes, methods, FastAPI routes, DOM elements, and code complexity metrics.
+
 ---
 
 ## 5. System Architecture & Tech Stack

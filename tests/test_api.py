@@ -206,4 +206,100 @@ def test_market_map_endpoint_and_portfolio_snapshot(client):
     assert snap["market_map"]["total_turnover_cr"] == data["total_turnover_cr"]
 
 
+def test_automation_config_endpoint(client):
+    # 1. Switch to SIDE_BY_SIDE_LIVE mode
+    res = client.post("/api/automation/config", json={
+        "automation_enabled": True,
+        "ingestion_mode": "SIDE_BY_SIDE_LIVE",
+        "polling_interval_sec": 60,
+    })
+    assert res.status_code == 200
+    data = res.json()
+    assert data["automation_enabled"] is True
+    assert data["paused"] is False
+    assert data["ingestion_mode"] == "SIDE_BY_SIDE_LIVE"
+    assert data["polling_interval_sec"] == 60
+    assert data["adapter"]["mode"] == "SIDE_BY_SIDE_LIVE"
+
+    snap = client.get("/api/portfolio").json()
+    assert snap["app"]["ingestion_mode"] == "SIDE_BY_SIDE_LIVE"
+    assert snap["app"]["automation_enabled"] is True
+    assert snap["adapter"]["mode"] == "SIDE_BY_SIDE_LIVE"
+
+    # 2. Switch back to BACKGROUND_POLLING mode with 180s
+    res2 = client.post("/api/automation/config", json={
+        "automation_enabled": True,
+        "ingestion_mode": "BACKGROUND_POLLING",
+        "polling_interval_sec": 180,
+    })
+    assert res2.status_code == 200
+    assert res2.json()["ingestion_mode"] == "BACKGROUND_POLLING"
+    assert res2.json()["polling_interval_sec"] == 180
+
+    # 3. Disable automation (Master OFF)
+    res3 = client.post("/api/automation/config", json={
+        "automation_enabled": False,
+        "ingestion_mode": "BACKGROUND_POLLING",
+        "polling_interval_sec": 120,
+    })
+    assert res3.status_code == 200
+    assert res3.json()["automation_enabled"] is False
+    assert res3.json()["paused"] is True
+    assert client.post("/api/automation/cycle").status_code == 409
+
+    # 4. Input validation (interval out of bounds or invalid mode)
+    assert client.post("/api/automation/config", json={
+        "automation_enabled": True,
+        "ingestion_mode": "BACKGROUND_POLLING",
+        "polling_interval_sec": 10,  # Below 30
+    }).status_code == 422
+
+    assert client.post("/api/automation/config", json={
+        "automation_enabled": True,
+        "ingestion_mode": "INVALID_MODE",
+        "polling_interval_sec": 120,
+    }).status_code == 422
+
+
+def test_hermes_automation_config_chat_and_rollback(client):
+    # 1. Instruct Hermes to switch to side by side mode
+    chat_res = client.post("/api/chat", json={"message": "Switch to side by side mode"}).json()
+    assert chat_res["tool_executed"] == "set_automation_config"
+    assert chat_res["tool_result"]["ingestion_mode"] == "SIDE_BY_SIDE_LIVE"
+
+    snap = client.get("/api/portfolio").json()
+    assert snap["app"]["ingestion_mode"] == "SIDE_BY_SIDE_LIVE"
+
+    # 2. Instruct Hermes to switch to 60s background polling
+    chat_res2 = client.post("/api/chat", json={"message": "Background polling 60s koro"}).json()
+    assert chat_res2["tool_executed"] == "set_automation_config"
+    assert chat_res2["tool_result"]["ingestion_mode"] == "BACKGROUND_POLLING"
+    assert chat_res2["tool_result"]["polling_interval_sec"] == 60
+
+    snap2 = client.get("/api/portfolio").json()
+    assert snap2["app"]["ingestion_mode"] == "BACKGROUND_POLLING"
+    assert snap2["app"]["polling_interval_sec"] == 60
+
+    # 3. Rollback the last checkpoint
+    rollback_res = client.post("/api/hermes/rollback").json()
+    assert rollback_res["action_reverted"] == "SET_AUTOMATION_CONFIG"
+
+    snap3 = client.get("/api/portfolio").json()
+    assert snap3["app"]["ingestion_mode"] == "SIDE_BY_SIDE_LIVE"
+
+
+def test_generate_code_map_script():
+    from scripts.generate_code_map import generate_markdown, OUTPUT_FILE
+    generate_markdown()
+    assert OUTPUT_FILE.exists()
+    content = OUTPUT_FILE.read_text(encoding="utf-8")
+    assert "# 🗺️ Codebase AST Map & System Architecture Radar" in content
+    assert "Repository Topology & File Metrics" in content
+    assert "Database Schema X-Ray" in content
+    assert "FastAPI Route Registry" in content
+    assert "Code Health & Complexity Radar" in content
+    assert "PortfolioState" in content
+    assert "/api/automation/config" in content
+
+
 

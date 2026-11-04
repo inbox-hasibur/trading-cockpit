@@ -48,6 +48,9 @@ class PortfolioState(Base):
     revision: Mapped[int] = mapped_column(Integer, default=1)
     rules_revision: Mapped[int] = mapped_column(Integer, default=1)
     paused: Mapped[bool] = mapped_column(Boolean, default=False)
+    automation_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    ingestion_mode: Mapped[str] = mapped_column(String(32), default="BACKGROUND_POLLING")
+    polling_interval_sec: Mapped[int] = mapped_column(Integer, default=120)
     calendar_holidays: Mapped[list[str]] = mapped_column(JSON, default=list)
     bucket_anchor: Mapped[date] = mapped_column(Date)
     created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
@@ -288,6 +291,17 @@ class Database:
             cols = [row[1] for row in result.fetchall()]
             if "watchlist_category" not in cols:
                 conn.execute(text("ALTER TABLE company_profiles ADD COLUMN watchlist_category VARCHAR(32) DEFAULT 'GSC'"))
+                conn.commit()
+
+            result = conn.execute(text("PRAGMA table_info(portfolio_state)"))
+            ps_cols = [row[1] for row in result.fetchall()]
+            if ps_cols:
+                if "automation_enabled" not in ps_cols:
+                    conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN automation_enabled BOOLEAN DEFAULT 1"))
+                if "ingestion_mode" not in ps_cols:
+                    conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN ingestion_mode VARCHAR(32) DEFAULT 'BACKGROUND_POLLING'"))
+                if "polling_interval_sec" not in ps_cols:
+                    conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN polling_interval_sec INTEGER DEFAULT 120"))
                 conn.commit()
 
     @contextmanager

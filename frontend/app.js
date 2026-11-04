@@ -145,6 +145,7 @@ function updateControls() {
     $("pause-button").classList.toggle("pause-active", paused);
     setText("engine-state", paused ? "ENGINE PAUSED" : "MANUAL CYCLES");
     $("engine-state").classList.toggle("paused", paused);
+    renderAutomationControlBar();
   }
 }
 
@@ -192,6 +193,7 @@ function renderSnapshot() {
   renderWatchlist();
   renderMarketMap();
   renderTopSectorsChart();
+  renderAutomationControlBar();
   renderInspector();
   renderDecisions();
   renderCanaryTheses();
@@ -1697,6 +1699,146 @@ setInterval(tickClock, 1000);
 initTheme();
 setInterval(() => { if (!document.hidden && !state.busy && !state.allocationDirty) refresh(true); }, 20000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden && !state.busy) refresh(true); });
+function renderAutomationControlBar() {
+  if (!state.snapshot) return;
+  const app = state.snapshot.app || {};
+  const adapter = state.snapshot.adapter || {};
+  const enabled = app.automation_enabled !== undefined ? Boolean(app.automation_enabled) : !app.paused;
+  const mode = app.ingestion_mode || "BACKGROUND_POLLING";
+  const interval = Number(app.polling_interval_sec || 120);
+
+  // Master switch
+  const masterBtn = $("master-automation-toggle");
+  if (masterBtn) {
+    masterBtn.classList.toggle("is-active", enabled);
+    masterBtn.classList.toggle("is-paused", !enabled);
+    masterBtn.disabled = state.busy;
+  }
+  const statusText = $("master-automation-status-text");
+  if (statusText) {
+    statusText.textContent = enabled ? "AUTOMATION ON" : "AUTOMATION OFF";
+  }
+
+  // Segmented mode buttons
+  const pollingBtn = $("mode-btn-polling");
+  const liveBtn = $("mode-btn-live");
+  if (pollingBtn) {
+    pollingBtn.classList.toggle("active", mode === "BACKGROUND_POLLING");
+    pollingBtn.disabled = state.busy;
+  }
+  if (liveBtn) {
+    liveBtn.classList.toggle("active", mode === "SIDE_BY_SIDE_LIVE");
+    liveBtn.disabled = state.busy;
+  }
+
+  // Polling Interval Pills
+  const intervalWrap = $("polling-interval-wrap");
+  const isPollingActive = enabled && mode === "BACKGROUND_POLLING";
+  if (intervalWrap) {
+    intervalWrap.classList.toggle("disabled", !isPollingActive);
+  }
+  document.querySelectorAll("#polling-interval-pills .pill-btn").forEach((pill) => {
+    const pillSec = Number(pill.dataset.sec);
+    pill.classList.toggle("active", pillSec === interval);
+    pill.disabled = state.busy || !isPollingActive;
+  });
+
+  // Adapter status badge
+  const dot = $("adapter-dot");
+  const adpText = $("adapter-status-text");
+  if (adpText && dot) {
+    if (!enabled) {
+      adpText.textContent = "Engine Paused";
+      dot.className = "status-dot amber";
+    } else if (mode === "BACKGROUND_POLLING") {
+      adpText.textContent = `Polling Active · ${interval}s`;
+      dot.className = "status-dot live-dot active";
+    } else {
+      adpText.textContent = "CDP Attached · Live";
+      dot.className = "status-dot live-dot active";
+    }
+  }
+}
+
+async function setAutomationConfig(newConfig) {
+  if (state.busy) return;
+  await mutate(async () => {
+    const res = await api("/api/automation/config", {
+      method: "POST",
+      body: newConfig,
+    });
+    if (state.snapshot) {
+      state.snapshot.app.automation_enabled = res.automation_enabled;
+      state.snapshot.app.paused = res.paused;
+      state.snapshot.app.ingestion_mode = res.ingestion_mode;
+      state.snapshot.app.polling_interval_sec = res.polling_interval_sec;
+      state.snapshot.adapter = res.adapter;
+      renderSnapshot();
+    }
+    const modeLabel = res.ingestion_mode === "BACKGROUND_POLLING" ? "Background Polling" : "Side-by-Side Live";
+    notify(`Automation: ${res.automation_enabled ? "ON" : "OFF"} · ${modeLabel} (${res.polling_interval_sec}s)`);
+  });
+}
+
+// Master automation bar event bindings
+if ($("master-automation-toggle")) {
+  $("master-automation-toggle").addEventListener("click", () => {
+    if (!state.snapshot) return;
+    const app = state.snapshot.app || {};
+    const enabled = app.automation_enabled !== undefined ? Boolean(app.automation_enabled) : !app.paused;
+    const mode = app.ingestion_mode || "BACKGROUND_POLLING";
+    const interval = Number(app.polling_interval_sec || 120);
+    setAutomationConfig({
+      automation_enabled: !enabled,
+      ingestion_mode: mode,
+      polling_interval_sec: interval,
+    });
+  });
+}
+
+if ($("mode-btn-polling")) {
+  $("mode-btn-polling").addEventListener("click", () => {
+    if (!state.snapshot) return;
+    const app = state.snapshot.app || {};
+    const enabled = app.automation_enabled !== undefined ? Boolean(app.automation_enabled) : !app.paused;
+    const interval = Number(app.polling_interval_sec || 120);
+    setAutomationConfig({
+      automation_enabled: enabled,
+      ingestion_mode: "BACKGROUND_POLLING",
+      polling_interval_sec: interval,
+    });
+  });
+}
+
+if ($("mode-btn-live")) {
+  $("mode-btn-live").addEventListener("click", () => {
+    if (!state.snapshot) return;
+    const app = state.snapshot.app || {};
+    const enabled = app.automation_enabled !== undefined ? Boolean(app.automation_enabled) : !app.paused;
+    const interval = Number(app.polling_interval_sec || 120);
+    setAutomationConfig({
+      automation_enabled: enabled,
+      ingestion_mode: "SIDE_BY_SIDE_LIVE",
+      polling_interval_sec: interval,
+    });
+  });
+}
+
+document.querySelectorAll("#polling-interval-pills .pill-btn").forEach((pill) => {
+  pill.addEventListener("click", () => {
+    if (!state.snapshot) return;
+    const app = state.snapshot.app || {};
+    const enabled = app.automation_enabled !== undefined ? Boolean(app.automation_enabled) : !app.paused;
+    const mode = app.ingestion_mode || "BACKGROUND_POLLING";
+    const sec = Number(pill.dataset.sec);
+    setAutomationConfig({
+      automation_enabled: enabled,
+      ingestion_mode: mode,
+      polling_interval_sec: sec,
+    });
+  });
+});
+
 function initRealtimeStream() {
   if (typeof EventSource === "undefined") return;
   try {
@@ -1709,6 +1851,7 @@ function initRealtimeStream() {
     source.addEventListener("advance", () => { if (!state.busy && !state.allocationDirty) refresh(true); });
     source.addEventListener("allocation", () => { if (!state.busy && !state.allocationDirty) refresh(true); });
     source.addEventListener("pause", () => { if (!state.busy && !state.allocationDirty) refresh(true); });
+    source.addEventListener("automation_config", () => { if (!state.busy && !state.allocationDirty) refresh(true); });
     source.addEventListener("agentic_action", () => { if (!state.busy && !state.allocationDirty) refresh(true); });
     source.addEventListener("rollback", () => { if (!state.busy && !state.allocationDirty) refresh(true); });
     source.addEventListener("market_map", () => { if (!state.busy && !state.allocationDirty) refresh(true); });

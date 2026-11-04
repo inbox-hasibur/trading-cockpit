@@ -391,6 +391,9 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
             "name": state.name, "version": VERSION, "mode": "DEMO", "source": "SYNTHETIC",
             "date": state.clock_date.isoformat(), "revision": state.revision,
             "rules_revision": state.rules_revision, "paused": state.paused,
+            "automation_enabled": getattr(state, "automation_enabled", not state.paused),
+            "ingestion_mode": getattr(state, "ingestion_mode", "BACKGROUND_POLLING"),
+            "polling_interval_sec": getattr(state, "polling_interval_sec", 120),
             "active_bucket": active, "created_at": state.created_at,
         },
         "market_clock": {
@@ -462,6 +465,10 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
             "external_calls_remaining": max(0, settings.chat_daily_call_limit - used_calls),
         },
         "connections": {"stocknow": False, "brokerage": False, "bo_account": False, "telegram": False},
+        "adapter": adapter.get_adapter_status(
+            getattr(state, "ingestion_mode", "BACKGROUND_POLLING"),
+            getattr(state, "polling_interval_sec", 120),
+        ),
         "notice": "All prices/scenarios/trades are synthetic. No live orders. No guaranteed recovery or returns.",
     }
 

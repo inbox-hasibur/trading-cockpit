@@ -27,7 +27,7 @@ def test_secret_guard_isolation_and_redaction():
         SecretGuard.assert_safe_path("backend/data/hummingbird.db")
 
     # Safe files are permitted
-    safe_path = Path("About_Project.md")
+    safe_path = Path("documentation/About_Project.md")
     assert SecretGuard.assert_safe_path(safe_path) == safe_path.resolve()
 
     # 2. Token scrubbing

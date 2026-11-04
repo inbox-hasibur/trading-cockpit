@@ -62,6 +62,21 @@ class StockNowAdapter:
     async def execute_order(self, *_args, **_kwargs):
         raise LiveIntegrationNotImplemented("No connected virtual or real orders in Sprint 1.")
 
+    def get_adapter_status(self, ingestion_mode: str = "BACKGROUND_POLLING", polling_interval_sec: int = 120) -> dict:
+        return {
+            "mode": ingestion_mode,
+            "polling_interval_sec": polling_interval_sec,
+            "connected": False,
+            "cdp_attached": False,
+            "ready": True,
+            "source": "DEMO_SYNTHETIC",
+            "description": (
+                f"Method A: Periodic background polling every {polling_interval_sec}s."
+                if ingestion_mode == "BACKGROUND_POLLING"
+                else "Method B: Playwright Attached/Headed Live Side-by-Side Browser."
+            ),
+        }
+
 
 class StockNowBrowserSession:
     """Opt-in persistent browser foundation, not a login or order implementation.

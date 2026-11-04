@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, StrictBool
 from sqlalchemy import select
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from backend.adapters.stocknow_adapter import StockNowAdapter
 from backend.chat import ChatRequest, ChatService
 from backend.config import ROOT, VERSION, Settings
 from backend.database import CustomRule, Database, RuleAudit, portfolio_state
@@ -30,6 +31,13 @@ from backend.seed import seed_demo
 class PauseRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     paused: StrictBool
+
+
+class AutomationConfigRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    automation_enabled: StrictBool
+    ingestion_mode: Literal["BACKGROUND_POLLING", "SIDE_BY_SIDE_LIVE"]
+    polling_interval_sec: int = Field(default=120, ge=30, le=300)
 
 
 class AdvanceRequest(BaseModel):
@@ -154,8 +162,30 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         with database.write() as session:
             state = portfolio_state(session)
             state.paused = body.paused
-            res = {"paused": state.paused, "mode": "DEMO"}
+            state.automation_enabled = not body.paused
+            res = {"paused": state.paused, "automation_enabled": state.automation_enabled, "mode": "DEMO"}
             broadcaster.publish("pause", res)
+            return res
+
+    @app.post("/api/automation/config")
+    def automation_config(body: AutomationConfigRequest):
+        with database.write() as session:
+            state = portfolio_state(session)
+            state.automation_enabled = body.automation_enabled
+            state.paused = not body.automation_enabled
+            state.ingestion_mode = body.ingestion_mode
+            state.polling_interval_sec = body.polling_interval_sec
+            adapter = StockNowAdapter()
+            adapter_status = adapter.get_adapter_status(state.ingestion_mode, state.polling_interval_sec)
+            res = {
+                "automation_enabled": state.automation_enabled,
+                "paused": state.paused,
+                "ingestion_mode": state.ingestion_mode,
+                "polling_interval_sec": state.polling_interval_sec,
+                "adapter": adapter_status,
+                "mode": "DEMO",
+            }
+            broadcaster.publish("automation_config", res)
             return res
 
     @app.post("/api/demo/advance")

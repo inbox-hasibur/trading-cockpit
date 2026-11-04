@@ -75,6 +75,15 @@
   - **"What-If" Profit Simulator Slider:** Real-time calculator allowing traders to slide target price up/down and compute simulated gross exit value, 1% DSE brokerage fee, and net pocket cash profit in BDT.
   - **Multi-Theme Switcher (Dark / Light / Terminal):** High-contrast daylight mode for daytime readability, dark slate default, and retro Matrix cyberpunk monospace terminal mode with `localStorage` persistence.
   - **DSE Live Market Clock & Countdown:** Topbar live telemetry showing session state (`🟢 DSE OPEN` vs `🔴 DSE CLOSED`) with real-time countdown to next session opening or market close.
+  - **Master Automation Controller & Dual Ingestion Mode (`Background Polling` vs `Side-by-Side Live`):**
+    - Database schema & persistence: `automation_enabled`, `ingestion_mode`, `polling_interval_sec` in `PortfolioState`.
+    - API endpoint: `POST /api/automation/config` with real-time SSE broadcast.
+    - Cockpit UI Control Bar: Master toggle (`AUTOMATION ON` vs `AUTOMATION OFF / PAUSED`), Dual Ingestion Mode segmented toggle (Method A: Background Polling vs Method B: Side-by-Side Live), polling interval pill selector (`30s`, `60s`, `120s`, `180s`), and live adapter status badge.
+    - Hermes agentic tool `set_automation_config` with `/rollback` checkpointing and natural Bangla/Banglish command support (*"Switch to side by side mode"*, *"Background polling 60s koro"*, *"Turn off buy sell automation"*).
+- [x] **AST Codebase X-Ray & Architecture Radar (`scripts/generate_code_map.py` -> `documentation/CODEBASE_MAP.md`):**
+  - Zero-dependency stdlib script scanning Python AST, class methods, FastAPI routes, DOM elements, and code health radar.
+- [x] **Repository Documentation Reorganization:**
+  - All architecture specs moved to `documentation/` (`About_Project.md`, `Backlog.md`, `CODEBASE_MAP.md`), keeping only `README.md` at repo root.
 - [x] **Complete Automated Test Suite (20/20 passing):**
   - Engine tests, settlement calendars, fee basis math, sequential seller tiers, local chat, OpenRouter mock, agentic emergency quarantine & canary exits, watchlist categories, SSE streams, cockpit smoke tests, SecretGuard isolation, on-demand skill loading & self-patching, 3-layer memory, state checkpoint `/rollback`, DSE Market Map `/api/market/map` payload & visualizer tests, and company fundamentals/extended history deep trend tests.
 

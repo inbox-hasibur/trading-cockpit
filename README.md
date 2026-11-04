@@ -118,6 +118,18 @@ Copy `backend/.env.example` to `backend/.env` to customize runtime parameters. A
 
 ---
 
+## ◈ Documentation
+
+Comprehensive system architecture, mathematical formulas, trading rules, and telemetry maps are maintained in [`documentation/`](documentation/):
+
+| Document | Purpose |
+| :--- | :--- |
+| [**About_Project.md**](documentation/About_Project.md) | DSE Sun–Thu market hours, T+2 settlement pipeline, 3-tier GSC watchlist framework, 90/10 Canary probe, and Dual-Mode Ingestion mechanics. |
+| [**Backlog.md**](documentation/Backlog.md) | Sprint deliverables, Hermes agent milestones, and technical audit trail. |
+| [**CODEBASE_MAP.md**](documentation/CODEBASE_MAP.md) | Standard-library AST X-Ray: file metrics, dependency graphs, database schema, route registry, DOM topology, and Code Health Radar. |
+
+---
+
 ## ◈ Verification Suite
 
 Run the deterministic test suite (accounting, state transitions, and API contracts):

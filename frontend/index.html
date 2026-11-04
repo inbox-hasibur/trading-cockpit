@@ -53,6 +53,49 @@
           <div class="engine-controls"><button class="button secondary" id="pause-button" type="button" disabled>Pause engine</button><button class="button primary" id="run-cycle" type="button" disabled><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6V4Z"/></svg><span id="run-label">Run automation cycle</span></button></div>
         </div>
 
+        <div class="automation-control-bar" id="automation-control-bar">
+          <div class="control-bar-left">
+            <div class="control-label-group">
+              <span class="eyebrow-small">SYSTEM CONTROLLER</span>
+              <span class="control-bar-title">Master Buy/Sell Automation</span>
+            </div>
+            <button class="automation-master-switch is-active" id="master-automation-toggle" type="button" title="Toggle Master Buy/Sell Automation ON/OFF">
+              <span class="switch-indicator-dot"></span>
+              <strong id="master-automation-status-text">AUTOMATION ON</strong>
+            </button>
+          </div>
+
+          <div class="control-bar-center">
+            <span class="control-sublabel">INGESTION MODE:</span>
+            <div class="segmented-mode-switch" id="ingestion-mode-switch" role="radiogroup" aria-label="Ingestion Mode">
+              <button class="mode-seg-btn active" id="mode-btn-polling" data-mode="BACKGROUND_POLLING" type="button" title="Method A: Periodic background polling">
+                <span class="mode-icon">⏱</span>
+                <span>Method A: Background Polling</span>
+              </button>
+              <button class="mode-seg-btn" id="mode-btn-live" data-mode="SIDE_BY_SIDE_LIVE" type="button" title="Method B: Playwright Attached/Headed Live Side-by-Side Browser">
+                <span class="mode-icon">🖥</span>
+                <span>Method B: Side-by-Side Live</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="control-bar-right">
+            <div class="polling-interval-wrap" id="polling-interval-wrap">
+              <span class="control-sublabel">POLL INTERVAL:</span>
+              <div class="pill-group" id="polling-interval-pills">
+                <button class="pill-btn" data-sec="30" type="button">30s</button>
+                <button class="pill-btn" data-sec="60" type="button">60s</button>
+                <button class="pill-btn active" data-sec="120" type="button">120s</button>
+                <button class="pill-btn" data-sec="180" type="button">180s</button>
+              </div>
+            </div>
+            <div class="adapter-status-badge" id="adapter-status-badge" title="StockNow Adapter Status">
+              <span class="status-dot live-dot" id="adapter-dot"></span>
+              <span id="adapter-status-text">CDP Ready · 120s</span>
+            </div>
+          </div>
+        </div>
+
         <div class="session-bar">
           <div class="session-meta"><span class="session-icon" aria-hidden="true">◷</span><span class="muted">Demo session</span><strong id="demo-date">Loading…</strong><span class="divider"></span><span id="engine-state" class="state-label">MANUAL CYCLES</span><span class="snapshot-label" id="snapshot-label">Snapshot —</span></div>
           <div class="demo-controls"><label class="sr-only" for="scenario">Next demo scenario</label><select id="scenario"><option value="NORMAL">Normal oscillation</option><option value="RALLY">Rally · +4%</option><option value="PULLBACK">Pullback · −4%</option><option value="CRASH">Crash stress · −22%</option><option value="RECOVERY">Recovery to saved peak</option></select><button class="text-button next-session" id="next-session" type="button" disabled>Next demo session <span aria-hidden="true">→</span></button></div>
