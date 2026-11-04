@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-04 17:39:16 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-04 18:21:18 UTC**.
 
 ---
 
@@ -9,17 +9,17 @@
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
 | `.py` | 28 | 5,811 | Python Core Kernel, Engine & Hermes Agent |
-| `.css` | 1 | 3,374 | Custom Dark / Light / Terminal Design System |
-| `.js` | 1 | 2,683 | Vanilla ES6+ Reactive Terminal Controller |
-| `.md` | 9 | 1,529 | Architecture & Strategy Documentation |
-| `.html` | 1 | 767 | Single Page Application DOM Structure |
+| `.css` | 1 | 3,986 | Custom Dark / Light / Terminal Design System |
+| `.js` | 1 | 2,799 | Vanilla ES6+ Reactive Terminal Controller |
+| `.md` | 9 | 1,535 | Architecture & Strategy Documentation |
+| `.html` | 1 | 825 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
 | `.cursorignore` | 1 | 12 | Configuration / Asset |
 | `.opencodeignore` | 1 | 12 | Configuration / Asset |
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **47** | **14,222** | *Entire Humming Bird Repository* |
+| **TOTAL** | **47** | **15,014** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -668,7 +668,7 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 
 ### Key DOM Identifiers (`frontend/index.html`)
 
-Identified **222** distinct element IDs in the UI shell. Key controller anchors:
+Identified **228** distinct element IDs in the UI shell. Key controller anchors:
 
 `#overview`, `#watchlist`, `#market-map`, `#master-automation-toggle`, `#mode-btn-polling`, `#mode-btn-live`, `#polling-interval-pills`, `#main-chart`, `#bucket-stack`, `#what-if-slider`, `#theme-toggle-btn`, `#topbar-clock-widget`
 
@@ -704,25 +704,25 @@ Identified **222** distinct element IDs in the UI shell. Key controller anchors:
 | `percentage()` | `L59` | Reactive DOM rendering / event controller |
 | `sessionDate()` | `L64` | Reactive DOM rendering / event controller |
 | `setText()` | `L68` | Reactive DOM rendering / event controller |
-| `setPnl()` | `L70` | Reactive DOM rendering / event controller |
-| `tone()` | `L77` | Reactive DOM rendering / event controller |
-| `badge()` | `L84` | Reactive DOM rendering / event controller |
-| `notify()` | `L91` | Reactive DOM rendering / event controller |
-| `showError()` | `L99` | Reactive DOM rendering / event controller |
-| `api()` | `L105` | Reactive DOM rendering / event controller |
-| `updateControls()` | `L130` | Reactive DOM rendering / event controller |
-| `refresh()` | `L152` | Reactive DOM rendering / event controller |
-| `mutate()` | `L165` | Reactive DOM rendering / event controller |
-| `renderSnapshot()` | `L174` | Reactive DOM rendering / event controller |
-| `renderBuckets()` | `L209` | Reactive DOM rendering / event controller |
-| `smoothCurvePath()` | `L228` | Reactive DOM rendering / event controller |
-| `renderMainChart()` | `L251` | Reactive DOM rendering / event controller |
-| `sparkline()` | `L373` | Reactive DOM rendering / event controller |
-| `cell()` | `L387` | Reactive DOM rendering / event controller |
-| `selectCompany()` | `L389` | Reactive DOM rendering / event controller |
-| `renderWatchlist()` | `L396` | Reactive DOM rendering / event controller |
-| `squarify()` | `L453` | Reactive DOM rendering / event controller |
-| `layoutRow()` | `L463` | Reactive DOM rendering / event controller |
+| `setPnl()` | `L73` | Reactive DOM rendering / event controller |
+| `tone()` | `L81` | Reactive DOM rendering / event controller |
+| `badge()` | `L88` | Reactive DOM rendering / event controller |
+| `notify()` | `L95` | Reactive DOM rendering / event controller |
+| `showError()` | `L105` | Reactive DOM rendering / event controller |
+| `api()` | `L112` | Reactive DOM rendering / event controller |
+| `updateControls()` | `L137` | Reactive DOM rendering / event controller |
+| `refresh()` | `L159` | Reactive DOM rendering / event controller |
+| `mutate()` | `L172` | Reactive DOM rendering / event controller |
+| `renderSnapshot()` | `L181` | Reactive DOM rendering / event controller |
+| `renderBuckets()` | `L216` | Reactive DOM rendering / event controller |
+| `smoothCurvePath()` | `L235` | Reactive DOM rendering / event controller |
+| `renderMainChart()` | `L258` | Reactive DOM rendering / event controller |
+| `sparkline()` | `L380` | Reactive DOM rendering / event controller |
+| `cell()` | `L394` | Reactive DOM rendering / event controller |
+| `selectCompany()` | `L396` | Reactive DOM rendering / event controller |
+| `renderWatchlist()` | `L403` | Reactive DOM rendering / event controller |
+| `squarify()` | `L460` | Reactive DOM rendering / event controller |
+| `layoutRow()` | `L470` | Reactive DOM rendering / event controller |
 
 ---
 
@@ -773,4 +773,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 24 Python modules inspected, 23 FastAPI endpoints registered, 14,222 total LOC indexed.
+> **Audit Summary:** 24 Python modules inspected, 23 FastAPI endpoints registered, 15,014 total LOC indexed.

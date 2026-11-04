@@ -111,8 +111,10 @@
         </section>
 
         <!-- SECTION 2: WATCHLIST & MARKET MAP -->
-        <div class="page-heading section-heading" style="margin-top: 36px;">
-          <div><div class="eyebrow breadcrumb">WORKSPACE <span>/</span> WATCHLIST & MARKET MAP</div><h2>Company Watchlist & Market Map<span class="heading-dot">.</span></h2><p class="muted">Live 3-tier company tracking, lot inspector, and Finviz-style DSE heatmap breadth.</p></div>
+        <div class="section-heading-block" id="watchlist-header">
+          <div class="breadcrumb">WORKSPACE <span>/</span> WATCHLIST & MARKET MAP</div>
+          <h2>Company Watchlist & Market Map<span class="heading-dot">.</span></h2>
+          <p class="muted">Live 3-tier company tracking, lot inspector, and Finviz-style DSE heatmap breadth.</p>
         </div>
 
         <section class="panel watchlist-panel section-anchor" id="watchlist">
@@ -202,9 +204,11 @@
         </section>
 
         <!-- SECTION 3: STRATEGY RULES & ALLOCATION -->
-        <section id="rules" class="section-anchor" style="margin-top: 36px;">
-          <div class="page-heading section-heading">
-            <div><div class="eyebrow breadcrumb">WORKSPACE <span>/</span> STRATEGY RULES & ALLOCATION</div><h2>Strategy Rules & Allocation<span class="heading-dot">.</span></h2><p class="muted">Sequential profit tiers (+1.5%, +3.5%, +6.0%), 50/50 pullback execution, and canary hypotheses.</p></div>
+        <section id="rules" class="section-anchor">
+          <div class="section-heading-block">
+            <div class="breadcrumb">WORKSPACE <span>/</span> STRATEGY RULES & ALLOCATION</div>
+            <h2>Strategy Rules & Allocation<span class="heading-dot">.</span></h2>
+            <p class="muted">Sequential profit tiers (+1.5%, +3.5%, +6.0%), 50/50 pullback execution, and canary hypotheses.</p>
           </div>
 
           <div class="rules-view-grid">
@@ -254,9 +258,11 @@
         </section>
 
         <!-- SECTION 4: TRADE LEDGER -->
-        <section id="ledger" class="section-anchor" style="margin-top: 36px;">
-          <div class="page-heading section-heading">
-            <div><div class="eyebrow breadcrumb">WORKSPACE <span>/</span> ACCOUNTING & PERFORMANCE</div><h2>Trade ledger & reconciliation<span class="heading-dot">.</span></h2><p class="muted">Strict FIFO tax lot accounting, fee breakdowns, and realized returns.</p></div>
+        <section id="ledger" class="section-anchor">
+          <div class="section-heading-block">
+            <div class="breadcrumb">WORKSPACE <span>/</span> ACCOUNTING & PERFORMANCE</div>
+            <h2>Trade ledger & reconciliation<span class="heading-dot">.</span></h2>
+            <p class="muted">Strict FIFO tax lot accounting, fee breakdowns, and realized returns.</p>
           </div>
 
           <div class="panel ledger-panel">
@@ -282,43 +288,72 @@
               <h3>Buy / Sell Execution Engine</h3>
             </div>
             <p class="muted small">Controls automated order execution across Buckets A, B & C. Pausing blocks paper fills while keeping telemetry alive.</p>
-            <div class="master-switch-row">
-              <button class="automation-master-switch is-active" id="master-automation-toggle" type="button" title="Toggle Master Buy/Sell Automation ON/OFF">
+
+            <div class="modern-toggle-box">
+              <div class="toggle-meta-group">
+                <span class="toggle-title">Master Buy/Sell Automation</span>
+                <span class="circuit-state" id="circuit-state">✓ Normal execution state</span>
+              </div>
+              <label class="ios-switch" title="Toggle Master Buy/Sell Automation">
+                <input type="checkbox" id="master-automation-toggle-input" checked>
+                <span class="ios-slider"></span>
+              </label>
+              <!-- Keep legacy button for test compatibility -->
+              <button class="automation-master-switch is-active" id="master-automation-toggle" type="button" style="display:none;" title="Toggle Master Buy/Sell Automation ON/OFF">
                 <span class="switch-indicator-dot"></span>
                 <strong id="master-automation-status-text">AUTOMATION ON</strong>
               </button>
-              <span class="circuit-state" id="circuit-state">✓ Normal execution state</span>
             </div>
 
-            <div class="settings-subgroup" style="margin-top: 18px;">
-              <span class="settings-sub-label">TELEMETRY INGESTION PIPELINE</span>
-              <div class="segmented-mode-switch" id="ingestion-mode-switch" role="radiogroup" aria-label="Ingestion Mode">
-                <button class="mode-seg-btn active" id="mode-btn-polling" data-mode="BACKGROUND_POLLING" type="button" title="Method A: Periodic background polling">
-                  <span class="mode-icon">⏱</span>
-                  <div>
-                    <strong>Method A: Background Polling</strong>
-                    <span class="seg-sub">Low-overhead periodic HTTP poll</span>
+            <div class="settings-subgroup" style="margin-top: 20px;">
+              <div class="subgroup-heading">
+                <span class="settings-sub-label">TELEMETRY INGESTION PIPELINE</span>
+                <span class="mode-indicator-pill" id="current-mode-pill">Method A Active</span>
+              </div>
+              <div class="segmented-mode-tiles" id="ingestion-mode-switch" role="radiogroup" aria-label="Ingestion Mode">
+                <button class="mode-tile-btn active" id="mode-btn-polling" data-mode="BACKGROUND_POLLING" type="button">
+                  <div class="tile-icon-box">⏱</div>
+                  <div class="tile-content">
+                    <div class="tile-title-row">
+                      <strong>Method A: Background Polling</strong>
+                      <span class="tile-badge">Low Overhead</span>
+                    </div>
+                    <span class="tile-desc">Periodic HTTP telemetry polling with configurable cycle</span>
                   </div>
                 </button>
-                <button class="mode-seg-btn" id="mode-btn-live" data-mode="ONSCREEN_LIVE" type="button" title="Method B: Onscreen Live Mode (Playwright Headed CDP Attached)">
-                  <span class="mode-icon">🖥</span>
-                  <div>
-                    <strong>Method B: Onscreen Live Mode</strong>
-                    <span class="seg-sub">Headed Playwright CDP attached</span>
+                <button class="mode-tile-btn" id="mode-btn-live" data-mode="ONSCREEN_LIVE" type="button">
+                  <div class="tile-icon-box">🖥</div>
+                  <div class="tile-content">
+                    <div class="tile-title-row">
+                      <strong>Method B: Onscreen Live Mode</strong>
+                      <span class="tile-badge live-tag">Playwright CDP</span>
+                    </div>
+                    <span class="tile-desc">Real-time attached headed browser session with live DOM</span>
                   </div>
                 </button>
               </div>
             </div>
 
-            <div class="settings-subgroup" style="margin-top: 16px;">
-              <span class="settings-sub-label">POLLING INTERVAL (METHOD A)</span>
-              <div class="polling-interval-wrap" id="polling-interval-wrap">
-                <div class="pill-group" id="polling-interval-pills">
-                  <button class="pill-btn" data-sec="30" type="button">30s · Hyper</button>
-                  <button class="pill-btn" data-sec="60" type="button">60s · Fast</button>
-                  <button class="pill-btn active" data-sec="120" type="button">120s · Standard</button>
-                  <button class="pill-btn" data-sec="180" type="button">180s · Relaxed</button>
+            <div class="settings-subgroup" style="margin-top: 18px;" id="polling-interval-wrap">
+              <div class="subgroup-heading">
+                <span class="settings-sub-label">POLLING INTERVAL (METHOD A)</span>
+                <strong id="polling-interval-display" class="slider-val-tag">120s</strong>
+              </div>
+              <div class="slider-row-wrap">
+                <input type="range" id="polling-range-slider" min="30" max="300" step="30" value="120" class="styled-range-slider" aria-label="Polling interval slider">
+                <div class="slider-range-labels">
+                  <span>30s · Hyper</span>
+                  <span>60s</span>
+                  <span>120s · Standard</span>
+                  <span>180s</span>
+                  <span>300s · Relaxed</span>
                 </div>
+              </div>
+              <div class="pill-group" id="polling-interval-pills" style="margin-top: 10px;">
+                <button class="pill-btn" data-sec="30" type="button">30s · Hyper</button>
+                <button class="pill-btn" data-sec="60" type="button">60s · Fast</button>
+                <button class="pill-btn active" data-sec="120" type="button">120s · Standard</button>
+                <button class="pill-btn" data-sec="180" type="button">180s · Relaxed</button>
               </div>
             </div>
           </article>
@@ -327,56 +362,70 @@
           <article class="sys-ctrl-card settings-card" id="api-keys-card">
             <div class="ctrl-card-head">
               <span class="sys-badge teal-badge">CREDENTIALS & QUOTAS</span>
-              <h3>API Keys, Fallbacks & Usage Telemetry</h3>
+              <h3>API Keys & Live Telemetry</h3>
             </div>
-            <p class="muted small">Configures LLM reasoning gateways, notification bots, and daily rate limits. Secrets are isolated with zero-secret LLM context leakage protection.</p>
+            <p class="muted small">Configures LLM reasoning gateways, notification bots, and daily rate limits with Zero-Secret LLM isolation.</p>
 
             <form id="api-keys-form" class="settings-form" style="margin-top: 14px;">
-              <div class="settings-form-row">
-                <label for="key-openrouter">OpenRouter API Key (Primary Reasoning)</label>
-                <div class="key-input-wrap">
+              <div class="modern-field-group">
+                <div class="field-label-row">
+                  <label for="key-openrouter">OpenRouter API Key (Primary Reasoning)</label>
+                  <span class="key-status-badge" id="hint-openrouter">Checking…</span>
+                </div>
+                <div class="key-input-box">
+                  <span class="field-icon">🔑</span>
                   <input type="password" id="key-openrouter" placeholder="sk-or-v1-••••••••••••••••" autocomplete="off">
                   <button type="button" class="key-toggle-btn" data-target="key-openrouter" title="Toggle visibility">👁</button>
                 </div>
-                <span class="field-hint" id="hint-openrouter">Configured: No</span>
               </div>
 
-              <div class="settings-form-row" style="margin-top: 12px;">
-                <label for="key-gemini">Google Gemini API Key (1st Fallback Brain)</label>
-                <div class="key-input-wrap">
+              <div class="modern-field-group" style="margin-top: 12px;">
+                <div class="field-label-row">
+                  <label for="key-gemini">Google Gemini API Key (1st Fallback Brain)</label>
+                  <span class="key-status-badge" id="hint-gemini">Checking…</span>
+                </div>
+                <div class="key-input-box">
+                  <span class="field-icon">🧠</span>
                   <input type="password" id="key-gemini" placeholder="AIzaSy••••••••••••••••" autocomplete="off">
                   <button type="button" class="key-toggle-btn" data-target="key-gemini" title="Toggle visibility">👁</button>
                 </div>
-                <span class="field-hint" id="hint-gemini">Configured: No</span>
               </div>
 
               <div class="settings-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
-                <div class="settings-form-row">
-                  <label for="key-telegram-token">Telegram Bot Token (Alerts)</label>
-                  <input type="password" id="key-telegram-token" placeholder="bot123456:ABC-••••••••" autocomplete="off">
+                <div class="modern-field-group">
+                  <label for="key-telegram-token" class="simple-label">Telegram Bot Token</label>
+                  <div class="key-input-box compact">
+                    <span class="field-icon">🤖</span>
+                    <input type="password" id="key-telegram-token" placeholder="bot123456:••••" autocomplete="off">
+                  </div>
                 </div>
-                <div class="settings-form-row">
-                  <label for="key-telegram-chat">Telegram Chat ID</label>
-                  <input type="text" id="key-telegram-chat" placeholder="@channel or 12345678" autocomplete="off">
+                <div class="modern-field-group">
+                  <label for="key-telegram-chat" class="simple-label">Telegram Chat ID</label>
+                  <div class="key-input-box compact">
+                    <span class="field-icon">💬</span>
+                    <input type="text" id="key-telegram-chat" placeholder="@channel / 123456" autocomplete="off">
+                  </div>
                 </div>
               </div>
 
-              <div class="settings-form-row" style="margin-top: 14px;">
-                <div class="quota-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                  <label for="key-daily-limit" style="margin: 0;">Daily External AI Call Limit</label>
+              <div class="modern-quota-box" style="margin-top: 14px;">
+                <div class="quota-header">
+                  <label for="key-daily-limit" style="margin: 0; font-weight: 600;">Daily External AI Call Limit</label>
                   <strong id="telemetry-usage-text" class="small">0 / 30 calls used</strong>
                 </div>
-                <div class="quota-bar-wrap" style="height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
-                  <div id="telemetry-quota-bar" style="width: 0%; height: 100%; background: var(--teal); transition: width 0.3s;"></div>
+                <div class="quota-bar-track">
+                  <div id="telemetry-quota-bar" class="quota-bar-fill" style="width: 0%;"></div>
                 </div>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                  <input type="number" id="key-daily-limit" min="5" max="500" value="30" style="width: 90px;">
-                  <span class="muted small">calls / day budget cap</span>
+                <div class="quota-slider-row">
+                  <input type="range" id="daily-limit-slider" min="5" max="300" step="5" value="30" class="styled-range-slider" aria-label="Daily external call limit slider">
+                  <input type="number" id="key-daily-limit" min="5" max="500" value="30" class="quota-num-input" aria-label="Daily limit number">
                 </div>
               </div>
 
-              <div class="form-actions" style="margin-top: 16px; display: flex; gap: 10px; align-items: center;">
-                <button type="submit" class="button primary small-button" id="save-keys-btn">Save API Configuration</button>
+              <div class="form-actions" style="margin-top: 18px; display: flex; gap: 12px; align-items: center;">
+                <button type="submit" class="button primary modern-save-btn" id="save-keys-btn">
+                  <span>💾</span> Save API Configuration
+                </button>
                 <span class="save-status-msg" id="keys-save-status"></span>
               </div>
             </form>
@@ -522,6 +571,7 @@
               </div>
             </div>
             <span class="bot-state-pill" id="bot-orchestrator-label">AGENTIC</span>
+            <span id="chat-provider" class="provider-info-label" style="display:none;">LOCAL AGENTIC ORCHESTRATOR</span>
           </div>
           <form id="chat-form" class="chat-form">
             <label for="chat-input" class="sr-only">Message Hermes</label>
@@ -699,34 +749,42 @@
     </div>
   </dialog>
 
-  <!-- Operator Profile Popover / Modal -->
-  <dialog id="operator-modal" class="operator-profile-modal" aria-labelledby="op-title">
-    <div class="modal-backdrop" id="op-backdrop"></div>
-    <div class="modal-dialog small-dialog">
-      <header class="modal-header">
-        <div class="modal-title-wrap">
-          <div class="modal-eyebrow">VERIFIED OPERATOR</div>
+  <!-- Operator Profile Modal -->
+  <dialog id="operator-modal" class="operator-profile-dialog" aria-labelledby="op-title">
+    <div class="op-card-box">
+      <header class="op-card-header">
+        <div class="op-title-area">
+          <span class="op-eyebrow-tag">VERIFIED OPERATOR PROFILE</span>
           <h2 id="op-title">Hasibur Rahman</h2>
         </div>
-        <button type="button" class="modal-close-btn" id="op-close-btn" aria-label="Close modal">×</button>
+        <button type="button" class="op-modal-close" id="op-close-btn" aria-label="Close profile">×</button>
       </header>
-      <div class="modal-body">
-        <div class="op-profile-card">
-          <div class="op-avatar-large">HB</div>
-          <div class="op-info">
-            <strong id="op-name">Hasibur Rahman</strong>
-            <span class="muted" id="op-username">01882082502</span>
-            <span class="op-portfolio-badge" id="op-portfolio">Humming Bird (StockNow)</span>
+      <div class="op-card-body">
+        <div class="op-identity-card">
+          <div class="op-avatar-badge">HB</div>
+          <div class="op-identity-meta">
+            <strong id="op-name" class="op-name-text">Hasibur Rahman</strong>
+            <span class="op-phone-text" id="op-username">01882082502</span>
+            <span class="op-badge-pill" id="op-portfolio">Humming Bird (StockNow)</span>
           </div>
         </div>
-        <div class="op-details-list">
-          <div class="op-detail-row"><span>Session:</span><strong class="positive">● Verified Active</strong></div>
-          <div class="op-detail-row"><span>Role:</span><strong>Lead Strategy Architect</strong></div>
-          <div class="op-detail-row"><span>Engine Guard:</span><strong>Local Air-Gapped Zero-Secret</strong></div>
+        <div class="op-specs-list">
+          <div class="op-spec-row">
+            <span class="op-spec-label">SESSION STATUS</span>
+            <strong class="op-spec-val positive">● Verified Active</strong>
+          </div>
+          <div class="op-spec-row">
+            <span class="op-spec-label">ASSIGNED ROLE</span>
+            <strong class="op-spec-val">Lead Strategy Architect</strong>
+          </div>
+          <div class="op-spec-row">
+            <span class="op-spec-label">SECURITY ENCLAVE</span>
+            <strong class="op-spec-val">Zero-Secret-Read Guard Active</strong>
+          </div>
         </div>
-        <div class="op-actions" style="margin-top: 18px; display: flex; gap: 8px;">
-          <button type="button" class="button secondary small-button" id="lock-cockpit-btn" style="flex: 1;">
-            🔒 Lock Cockpit
+        <div class="op-card-actions">
+          <button type="button" class="button secondary op-lock-btn" id="lock-cockpit-btn">
+            🔒 Lock Cockpit Session
           </button>
         </div>
       </div>

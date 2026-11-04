@@ -65,10 +65,14 @@ function sessionDate(value, short = false) {
   return (short ? shortDateFormat : sessionFormat).format(new Date(`${value}T12:00:00+06:00`));
 }
 
-function setText(id, text) { $(id).textContent = String(text); }
+function setText(id, text) {
+  const node = $(id);
+  if (node) node.textContent = String(text);
+}
 
 function setPnl(id, value, asPercentage = false) {
   const node = $(id);
+  if (!node) return;
   node.textContent = asPercentage ? percentage(value) : currency(value, true);
   node.classList.toggle("positive", value >= 0);
   node.classList.toggle("negative", value < 0);
@@ -90,15 +94,18 @@ function badge(action, label) {
 
 function notify(message, error = false) {
   clearTimeout(state.toastTimer);
-  $("toast").textContent = message;
-  $("toast").classList.toggle("error", error);
-  $("toast").hidden = false;
-  state.toastTimer = setTimeout(() => { $("toast").hidden = true; }, 5500);
+  const toast = $("toast");
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.toggle("error", error);
+  toast.hidden = false;
+  state.toastTimer = setTimeout(() => { toast.hidden = true; }, 5500);
 }
 
 function showError(message, withToast = true) {
   setText("error-text", message);
-  $("error-banner").hidden = false;
+  const banner = $("error-banner");
+  if (banner) banner.hidden = false;
   if (withToast) notify(message, true);
 }
 
@@ -1742,6 +1749,11 @@ function renderAutomationControlBar() {
   if (statusText) {
     statusText.textContent = enabled ? "AUTOMATION ON" : "AUTOMATION OFF";
   }
+  const toggleInput = $("master-automation-toggle-input");
+  if (toggleInput) {
+    toggleInput.checked = enabled;
+    toggleInput.disabled = state.busy;
+  }
 
   // Segmented mode buttons (Settings Page)
   const isLive = mode === "ONSCREEN_LIVE" || mode === "SIDE_BY_SIDE_LIVE";
@@ -1754,6 +1766,10 @@ function renderAutomationControlBar() {
   if (liveBtn) {
     liveBtn.classList.toggle("active", isLive);
     liveBtn.disabled = state.busy;
+  }
+  const modePill = $("current-mode-pill");
+  if (modePill) {
+    modePill.textContent = mode === "BACKGROUND_POLLING" ? "Method A Active" : "Method B Active";
   }
 
   // Header Mode Slider (Portfolio Overview Header)
@@ -1768,11 +1784,20 @@ function renderAutomationControlBar() {
     hdrLive.disabled = state.busy;
   }
 
-  // Polling Interval Pills
+  // Polling Range Slider & Interval Pills
   const intervalWrap = $("polling-interval-wrap");
   const isPollingActive = enabled && mode === "BACKGROUND_POLLING";
   if (intervalWrap) {
     intervalWrap.classList.toggle("disabled", !isPollingActive);
+  }
+  const rangeSlider = $("polling-range-slider");
+  if (rangeSlider) {
+    rangeSlider.value = interval;
+    rangeSlider.disabled = state.busy || !isPollingActive;
+  }
+  const intervalDisplay = $("polling-interval-display");
+  if (intervalDisplay) {
+    intervalDisplay.textContent = `${interval}s`;
   }
   document.querySelectorAll("#polling-interval-pills .pill-btn").forEach((pill) => {
     const pillSec = Number(pill.dataset.sec);
@@ -1854,6 +1879,20 @@ if ($("master-automation-toggle")) {
   });
 }
 
+if ($("master-automation-toggle-input")) {
+  $("master-automation-toggle-input").addEventListener("change", (e) => {
+    if (!state.snapshot) return;
+    const app = state.snapshot.app || {};
+    const mode = app.ingestion_mode || "BACKGROUND_POLLING";
+    const interval = Number(app.polling_interval_sec || 120);
+    setAutomationConfig({
+      automation_enabled: e.target.checked,
+      ingestion_mode: mode,
+      polling_interval_sec: interval,
+    });
+  });
+}
+
 if ($("hdr-mode-polling")) {
   $("hdr-mode-polling").addEventListener("click", () => {
     setAutomationConfig({ ingestion_mode: "BACKGROUND_POLLING" });
@@ -1868,44 +1907,39 @@ if ($("hdr-mode-live")) {
 
 if ($("mode-btn-polling")) {
   $("mode-btn-polling").addEventListener("click", () => {
-    if (!state.snapshot) return;
-    const app = state.snapshot.app || {};
-    const enabled = app.automation_enabled !== undefined ? Boolean(app.automation_enabled) : !app.paused;
-    const interval = Number(app.polling_interval_sec || 120);
-    setAutomationConfig({
-      automation_enabled: enabled,
-      ingestion_mode: "BACKGROUND_POLLING",
-      polling_interval_sec: interval,
-    });
+    setAutomationConfig({ ingestion_mode: "BACKGROUND_POLLING" });
   });
 }
 
 if ($("mode-btn-live")) {
   $("mode-btn-live").addEventListener("click", () => {
-    if (!state.snapshot) return;
-    const app = state.snapshot.app || {};
-    const enabled = app.automation_enabled !== undefined ? Boolean(app.automation_enabled) : !app.paused;
-    const interval = Number(app.polling_interval_sec || 120);
-    setAutomationConfig({
-      automation_enabled: enabled,
-      ingestion_mode: "SIDE_BY_SIDE_LIVE",
-      polling_interval_sec: interval,
+    setAutomationConfig({ ingestion_mode: "ONSCREEN_LIVE" });
+  });
+}
+
+const pollingSlider = $("polling-range-slider");
+if (pollingSlider) {
+  pollingSlider.addEventListener("input", (e) => {
+    const sec = Number(e.target.value);
+    const disp = $("polling-interval-display");
+    if (disp) disp.textContent = `${sec}s`;
+    document.querySelectorAll("#polling-interval-pills .pill-btn").forEach((pill) => {
+      pill.classList.toggle("active", Number(pill.dataset.sec) === sec);
     });
+  });
+  pollingSlider.addEventListener("change", (e) => {
+    setAutomationConfig({ polling_interval_sec: Number(e.target.value) });
   });
 }
 
 document.querySelectorAll("#polling-interval-pills .pill-btn").forEach((pill) => {
   pill.addEventListener("click", () => {
-    if (!state.snapshot) return;
-    const app = state.snapshot.app || {};
-    const enabled = app.automation_enabled !== undefined ? Boolean(app.automation_enabled) : !app.paused;
-    const mode = app.ingestion_mode || "BACKGROUND_POLLING";
     const sec = Number(pill.dataset.sec);
-    setAutomationConfig({
-      automation_enabled: enabled,
-      ingestion_mode: mode,
-      polling_interval_sec: sec,
-    });
+    const slider = $("polling-range-slider");
+    if (slider) slider.value = sec;
+    const disp = $("polling-interval-display");
+    if (disp) disp.textContent = `${sec}s`;
+    setAutomationConfig({ polling_interval_sec: sec });
   });
 });
 
@@ -2338,6 +2372,9 @@ function initViewRouter() {
         e.preventDefault();
         const target = href.slice(1);
         window.location.hash = target;
+        if (typeof window.setNavClickScrolling === "function") {
+          window.setNavClickScrolling();
+        }
         switchView(target);
       }
     });
@@ -2394,9 +2431,15 @@ async function loadApiKeysSettings() {
     const hasOr = Boolean(data.openrouter_configured || data.has_openrouter_key || data.openrouter_key_masked);
     const hasGemini = Boolean(data.gemini_configured || data.has_gemini_key || data.gemini_key_masked);
     const hintOr = $("hint-openrouter");
-    if (hintOr) hintOr.textContent = hasOr ? "Configured: Yes (Masked)" : "Configured: No (Falling back to Gemini/Local)";
+    if (hintOr) {
+      hintOr.textContent = hasOr ? "● Connected (Masked)" : "○ Not set";
+      hintOr.className = `key-status-badge ${hasOr ? "configured" : "empty"}`;
+    }
     const hintGemini = $("hint-gemini");
-    if (hintGemini) hintGemini.textContent = hasGemini ? "Configured: Yes (Masked)" : "Configured: No (Optional fallback)";
+    if (hintGemini) {
+      hintGemini.textContent = hasGemini ? "● Connected (Masked)" : "○ Not set";
+      hintGemini.className = `key-status-badge ${hasGemini ? "configured" : "empty"}`;
+    }
 
     const orInput = $("key-openrouter");
     if (orInput && hasOr && !orInput.value) {
@@ -2414,8 +2457,11 @@ async function loadApiKeysSettings() {
     if (tgChat && (data.telegram_chat_id || data.telegram_chat_id_masked) && !tgChat.value) {
       tgChat.value = data.telegram_chat_id || data.telegram_chat_id_masked || "";
     }
+    const limitVal = data.daily_call_limit || 30;
     const limitInput = $("key-daily-limit");
-    if (limitInput) limitInput.value = data.daily_call_limit || 30;
+    if (limitInput) limitInput.value = limitVal;
+    const limitSlider = $("daily-limit-slider");
+    if (limitSlider) limitSlider.value = limitVal;
 
     // Telemetry quota bar
     const callsUsed = data.daily_calls_used !== undefined ? data.daily_calls_used : (data.calls_used_today || 0);
@@ -2541,8 +2587,8 @@ function initAuthAndSettings() {
   const keysForm = $("api-keys-form");
   if (keysForm) keysForm.addEventListener("submit", saveApiKeysSettings);
 
-  // Key visibility toggles
-  document.querySelectorAll(".key-toggle-btn").forEach((btn) => {
+  // Key visibility toggles (.key-toggle-btn and .key-toggle-reveal)
+  document.querySelectorAll(".key-toggle-btn, .key-toggle-reveal").forEach((btn) => {
     btn.addEventListener("click", () => {
       const targetId = btn.dataset.target;
       const inp = $(targetId);
@@ -2551,6 +2597,18 @@ function initAuthAndSettings() {
       }
     });
   });
+
+  // Sync daily quota limit slider & number input
+  const dailySlider = $("daily-limit-slider");
+  const dailyInput = $("key-daily-limit");
+  if (dailySlider && dailyInput) {
+    dailySlider.addEventListener("input", (e) => {
+      dailyInput.value = e.target.value;
+    });
+    dailyInput.addEventListener("input", (e) => {
+      dailySlider.value = e.target.value;
+    });
+  }
 
   // Bind operator avatar & profile modal
   const avatarBtn = $("user-avatar-btn");
@@ -2561,6 +2619,13 @@ function initAuthAndSettings() {
 
   const opBackdrop = $("op-backdrop");
   if (opBackdrop) opBackdrop.addEventListener("click", closeOperatorProfile);
+
+  const opModal = $("operator-modal");
+  if (opModal) {
+    opModal.addEventListener("click", (e) => {
+      if (e.target === opModal) closeOperatorProfile();
+    });
+  }
 
   const lockBtn = $("lock-cockpit-btn");
   if (lockBtn) lockBtn.addEventListener("click", handleOperatorLogout);
@@ -2672,6 +2737,56 @@ async function loadSystemChanges() {
   }
 }
 
+// --- ScrollSpy for Continuous Dashboard Sections ---
+function initScrollSpy() {
+  const workspace = document.querySelector(".workspace");
+  if (!workspace) return;
+  const sectionIds = ["overview", "watchlist", "rules", "ledger"];
+  let isNavClicking = false;
+  let clickTimeout = null;
+
+  window.setNavClickScrolling = () => {
+    isNavClicking = true;
+    if (clickTimeout) clearTimeout(clickTimeout);
+    clickTimeout = setTimeout(() => { isNavClicking = false; }, 850);
+  };
+
+  function updateActiveNav(activeId) {
+    document.querySelectorAll(".nav-rail .nav-item").forEach((item) => {
+      const href = item.getAttribute("href") || "";
+      const target = href.replace("#", "");
+      if (sectionIds.includes(target)) {
+        item.classList.toggle("active", target === activeId);
+      }
+    });
+  }
+
+  workspace.addEventListener("scroll", () => {
+    const dashboardView = $("view-dashboard");
+    if (!dashboardView || dashboardView.hidden || isNavClicking) return;
+
+    if (workspace.scrollTop + workspace.clientHeight >= workspace.scrollHeight - 45) {
+      updateActiveNav("ledger");
+      return;
+    }
+
+    const workspaceRect = workspace.getBoundingClientRect();
+    let currentSection = sectionIds[0];
+
+    for (const id of sectionIds) {
+      const el = document.getElementById(id);
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        if (rect.top - workspaceRect.top <= 180) {
+          currentSection = id;
+        }
+      }
+    }
+
+    updateActiveNav(currentSection);
+  }, { passive: true });
+}
+
 updateControls();
 refresh();
 initRealtimeStream();
@@ -2681,3 +2796,4 @@ loadHermesModels();
 loadSystemChanges();
 initAuthAndSettings();
 initViewRouter();
+initScrollSpy();
