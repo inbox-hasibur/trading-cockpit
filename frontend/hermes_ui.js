@@ -827,6 +827,60 @@ function initHermesChatListeners() {
   if (rbPaneBtn) rbPaneBtn.addEventListener("click", executeRollback);
   const rbSkillsBtn = $("rollback-skills-btn");
   if (rbSkillsBtn) rbSkillsBtn.addEventListener("click", executeRollback);
+
+  // StockNow Live Session Action Buttons
+  const btnLaunch = $("btn-stocknow-launch");
+  if (btnLaunch) {
+    btnLaunch.addEventListener("click", async () => {
+      try {
+        btnLaunch.disabled = true;
+        btnLaunch.textContent = "Launching…";
+        const res = await api("/api/stocknow/session", { method: "POST", body: { action: "launch", mode: "ONSCREEN_LIVE" } });
+        notify(res.connected ? "StockNow live browser launched (READY)." : (res.reason || "Browser launched."));
+      } catch (err) {
+        notify("Failed to launch browser: " + err.message, true);
+      } finally {
+        btnLaunch.disabled = false;
+        btnLaunch.textContent = "Launch Live Browser";
+      }
+    });
+  }
+
+  const btnAuth = $("btn-stocknow-auth");
+  if (btnAuth) {
+    btnAuth.addEventListener("click", async () => {
+      try {
+        btnAuth.disabled = true;
+        btnAuth.textContent = "Checking…";
+        const res = await api("/api/stocknow/session", { method: "POST", body: { action: "check_auth" } });
+        notify(res.message || "Auth checked.");
+      } catch (err) {
+        notify("Auth check failed: " + err.message, true);
+      } finally {
+        btnAuth.disabled = false;
+        btnAuth.textContent = "Check / Auto-Login";
+      }
+    });
+  }
+
+  const btnSync = $("btn-stocknow-sync");
+  if (btnSync) {
+    btnSync.addEventListener("click", async () => {
+      try {
+        btnSync.disabled = true;
+        btnSync.textContent = "Syncing…";
+        const res = await api("/api/stocknow/sync-market", { method: "POST", body: {} });
+        const count = res.result?.synced_count ?? 0;
+        notify(`Synchronized ${count} live DSE quotes into database.`);
+        if (typeof refresh === "function") await refresh();
+      } catch (err) {
+        notify("Sync failed: " + err.message, true);
+      } finally {
+        btnSync.disabled = false;
+        btnSync.textContent = "Sync Live Prices";
+      }
+    });
+  }
 }
 
 // Wrap initHermesSidebar to also init chat listeners and active conversation

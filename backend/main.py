@@ -249,7 +249,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(build_hermes_router(database, settings, chat, broadcaster))
     app.include_router(build_auth_settings_router(database, settings, broadcaster))
-    app.include_router(build_stocknow_router(settings, broadcaster, stocknow_client))
+    app.include_router(build_stocknow_router(database, settings, broadcaster, stocknow_client))
 
     @app.get("/api/stream")
     async def event_stream(request: Request):

@@ -119,19 +119,27 @@
 
 ---
 
-### 🔌 Sprint 2: Live `stocknow.com.bd` Virtual Portfolio Automation ("Humming Bird")
+### 🔌 Sprint 2 (Active): Live `stocknow.com.bd` Virtual Portfolio Automation ("Humming Bird")
 
-- [ ] **Persistent Playwright Session Manager:**
-  - Launch Chromium with a persistent local profile (`user_data_dir`) so the user logs into `stocknow.com.bd` once and stays authenticated across sessions.
-- [ ] **Network (XHR/JSON) & DOM Reconnaissance:**
-  - Intercept background API responses from StockNow to fetch real-time DSE prices, 7–30 day historical closes, and virtual portfolio holdings at sub-second speed.
-- [ ] **"Humming Bird" Virtual Portfolio Sync:**
+- [x] **Step 2.1: Persistent Playwright Session, Auto-Login & Network Sniffer:**
+  - Launch Chromium with a persistent local profile (`Path.home() / ".hummingbird_stocknow_profile"`) outside OneDrive to prevent sync locks.
+  - Dual-mode browser lifecycle (`ONSCREEN_LIVE` headed vs `BACKGROUND_POLLING` headless).
+  - Passive XHR/JSON response sniffer (`page.on("response", ...)`) capturing DSE market telemetry and portfolio payloads without spam.
+  - Zero-secret auto-login helper (`ensure_authenticated`) with masked phone display and `SecretGuard` protection.
+  - REST endpoints (`GET /api/stocknow/status`, `POST /api/stocknow/session`) with real-time SSE broadcasts.
+- [x] **Step 2.2: Live DSE Quote & 7–30 Day Curve Sync Engine:**
+  - Modular sync engine (`backend/adapters/stocknow_market_sync.py`) extracting quotes and historical curves from sniffer cache or active DOM.
+  - SQLite database sync (`sync_live_market_to_db`) updating `CompanyProfile` rows, reconciling curve observations, and activating `"STOCKNOW_LIVE"` source tag.
+  - REST endpoint `POST /api/stocknow/sync-market` with SSE portfolio refresh broadcast.
+  - Hermes agentic tool `control_stocknow_session` with natural language Bangla/English command execution (*"Launch StockNow browser"*, *"StockNow login check koro"*, *"Sync live market prices"*).
+  - UI action buttons in `#settings` StockNow Bridge card (`Launch Live Browser`, `Check / Auto-Login`, `Sync Live Prices`).
+- [ ] **Step 2.3: "Humming Bird" Virtual Portfolio & Holdings Sync:**
   - Automatically bind to the user's **"Humming Bird"** portfolio on StockNow.
   - Sync virtual cash balance, existing share quantities, buy prices, and transaction history into the local SQLite T+2 ledger.
-- [ ] **Automated Virtual Order Execution:**
+- [ ] **Step 2.4: Automated Virtual Order Execution:**
   - Execute automated Buy and Sequential Sell orders directly on `stocknow.com.bd`'s "Humming Bird" portfolio when triggered by `auto_trader.py`.
   - Verify order acknowledgement and reconcile local tax lots against StockNow's portfolio table.
-- [ ] **DSE Market-Hours Scheduler:**
+- [ ] **Step 2.5: DSE Market-Hours Scheduler:**
   - Automated background loop running Sunday–Thursday from **10:00 AM to 2:30 PM (`Asia/Dhaka`)** with configurable polling intervals.
 
 ---

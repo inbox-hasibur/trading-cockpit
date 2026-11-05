@@ -338,6 +338,108 @@ def handle_evaluate_canary_theses(
     return {"status": "SUCCESS", "tool": "evaluate_canary_theses", "updates": updates}
 
 
+def handle_control_stocknow_session(
+    args: dict[str, Any],
+    session: Session,
+    state: PortfolioState,
+    settings: Settings,
+    checkpoint_mgr: Any,
+) -> dict[str, Any]:
+    action = args.get("action", "check_auth")
+    mode = args.get("mode", "ONSCREEN_LIVE")
+
+    from backend.adapters.stocknow_client import StockNowLiveClient
+    from backend.adapters.stocknow_market_sync import (
+        extract_quotes_from_stocknow,
+        sync_live_market_to_db,
+    )
+    from backend.database import Database
+
+    client = StockNowLiveClient(ingestion_mode=mode)
+    database = Database(settings.database_url)
+
+    diff_lines = [
+        {"type": "add", "text": f"StockNow live session action: {action}"},
+    ]
+
+    action_result: dict[str, Any] = {}
+    if action == "launch":
+        try:
+            import asyncio
+            try:
+                asyncio.get_running_loop()
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    action_result = pool.submit(asyncio.run, client.launch(mode=mode)).result()
+            except RuntimeError:
+                action_result = asyncio.run(client.launch(mode=mode))
+        except Exception as exc:
+            action_result = {"connected": False, "state": "ERROR", "reason": str(exc)}
+    elif action == "check_auth":
+        try:
+            import asyncio
+            phone = getattr(settings, "operator_phone", settings.operator_username)
+            password = settings.operator_password
+            try:
+                asyncio.get_running_loop()
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    action_result = pool.submit(asyncio.run, client.ensure_authenticated(phone, password)).result()
+            except RuntimeError:
+                action_result = asyncio.run(client.ensure_authenticated(phone, password))
+        except Exception as exc:
+            action_result = {"authenticated": False, "state": "ERROR", "reason": str(exc)}
+    elif action in ("sync_market", "sync_prices", "sync"):
+        try:
+            injected = args.get("payload")
+            from backend.adapters.stocknow_market_sync import extract_quotes_from_payload
+            if injected is not None:
+                quotes = extract_quotes_from_payload(injected)
+            else:
+                import asyncio
+                try:
+                    asyncio.get_running_loop()
+                    import concurrent.futures
+                    with concurrent.futures.ThreadPoolExecutor() as pool:
+                        quotes = pool.submit(asyncio.run, extract_quotes_from_stocknow(client)).result()
+                except RuntimeError:
+                    quotes = asyncio.run(extract_quotes_from_stocknow(client))
+            action_result = sync_live_market_to_db(session, quotes, session_date=state.clock_date)
+        except Exception as exc:
+            action_result = {"success": False, "error": str(exc)}
+    elif action == "close":
+        try:
+            import asyncio
+            try:
+                asyncio.get_running_loop()
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    action_result = pool.submit(asyncio.run, client.close()).result()
+            except RuntimeError:
+                action_result = asyncio.run(client.close())
+        except Exception as exc:
+            action_result = {"state": "CLOSED", "reason": str(exc)}
+
+    checkpoint_mgr.create_checkpoint(
+        session, state, "STOCKNOW_CONTROL", f"StockNow session action: {action}", None,
+        diff_payload={
+            "action": action,
+            "actor": "Hermes Agent",
+            "summary": f"Executed StockNow command: {action}",
+            "result": action_result,
+            "diff_lines": diff_lines,
+        },
+        actor="Hermes Agent",
+    )
+
+    return {
+        "status": "SUCCESS",
+        "tool": "control_stocknow_session",
+        "action": action,
+        "result": action_result,
+    }
+
+
 # ==============================================================================
 # Central Tool Dispatcher Function
 # ==============================================================================
@@ -373,6 +475,8 @@ def dispatch_tool(
         return handle_set_ai_model(args, session, state, settings, checkpoint_mgr)
     elif tool_name == "evaluate_canary_theses":
         return handle_evaluate_canary_theses(session, state, skills_mgr)
+    elif tool_name == "control_stocknow_session":
+        return handle_control_stocknow_session(args, session, state, settings, checkpoint_mgr)
     else:
         raise ValueError(f"Unknown tool: {tool_name}")
 
@@ -553,6 +657,41 @@ def format_tool_response(tool_name: str, tool_res: dict[str, Any], user_msg: str
     if tool_name == "set_ai_model":
         return _fmt_ai_model(tool_res, bangla)
 
+    if tool_name == "control_stocknow_session":
+        action = tool_res.get("action", "")
+        res = tool_res.get("result", {})
+        if action == "launch":
+            connected = res.get("connected", False)
+            return (
+                f"DEMO/PAPER · [StockNow Session]\n"
+                f"✅ StockNow লাইভ ব্রাউজার {'চালু করা হয়েছে (READY)' if connected else 'স্টার্ট করা হয়েছে'}।"
+                if bangla
+                else f"DEMO/PAPER · StockNow live browser session {'launched (READY)' if connected else 'initiated'}."
+            )
+        elif action == "check_auth":
+            auth = res.get("authenticated", False)
+            msg = res.get("message", "লগইন চেক সম্পন্ন")
+            return (
+                f"DEMO/PAPER · [StockNow Auth]\n"
+                f"✅ StockNow লগইন স্টেটাস: {'লগইন ভেরিফাইড (READY)' if auth else msg}।"
+                if bangla
+                else f"DEMO/PAPER · StockNow authentication: {'Authenticated (READY)' if auth else msg}."
+            )
+        elif action in ("sync_market", "sync_prices", "sync"):
+            count = res.get("synced_count", 0)
+            syms = ", ".join(res.get("symbols", [])) if res.get("symbols") else "none"
+            return (
+                f"DEMO/PAPER · [StockNow Market Sync]\n"
+                f"✅ StockNow থেকে {count} টি কোম্পানির লাইভ DSE প্রাইস ও কার্ভ ডেটাবেজে সিঙ্ক করা হয়েছে ({syms})।"
+                if bangla
+                else f"DEMO/PAPER · Synchronized {count} live DSE quotes & curves from StockNow ({syms})."
+            )
+        return (
+            f"DEMO/PAPER · StockNow সেশন অ্যাকশন '{action}' সম্পন্ন হয়েছে।"
+            if bangla
+            else f"DEMO/PAPER · StockNow session action '{action}' executed."
+        )
+
     return f"DEMO/PAPER · Tool {tool_name} executed successfully."
 
 
@@ -570,6 +709,28 @@ def detect_intent_and_tool(message: str, snapshot: dict) -> tuple[str | None, di
         parts = text.split(maxsplit=1)
         target = parts[1].strip() if len(parts) > 1 else ""
         return "set_ai_model", {"model": target}
+
+    # 0.1 StockNow Live Session Commands
+    launch_words = (
+        "launch stocknow", "open stocknow", "stocknow browser", "live browser", "launch browser",
+        "stocknow open koro", "browser kholo", "browser open koro", "start stocknow", "launch live browser"
+    )
+    if any(w in text_lower for w in launch_words):
+        return "control_stocknow_session", {"action": "launch", "mode": "ONSCREEN_LIVE"}
+
+    auth_words = (
+        "stocknow login", "check login", "login check", "stocknow auth",
+        "stocknow login check koro", "auto login", "login check koro", "check stocknow login", "check / auto-login"
+    )
+    if any(w in text_lower for w in auth_words):
+        return "control_stocknow_session", {"action": "check_auth"}
+
+    sync_words = (
+        "sync live market", "sync market", "sync stocknow", "sync live prices", "sync live",
+        "live price sync koro", "market sync koro", "sync live market prices", "price sync koro", "sync koro"
+    )
+    if any(w in text_lower for w in sync_words):
+        return "control_stocknow_session", {"action": "sync_market"}
 
     # 1. Rollback command
     if text_lower in {"/rollback", "rollback", "undo", "undo last action", "undo koro", "ager obosthay nao"}:

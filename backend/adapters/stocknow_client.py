@@ -375,3 +375,4 @@ class StockNowLiveClient:
             "last_sync_at": self.last_sync_at,
             "last_error": self.last_error,
         }
+

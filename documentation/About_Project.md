@@ -184,6 +184,18 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
     - **High-Performance Snapshot Engine:** Precomputed $O(N)$ calendar date slices in `portfolio.py`, eliminating the 145,000+ date increment loop and resolving page load delays.
     - **AST Codebase X-Ray Radar (`CODEBASE_MAP.md`):** Zero-dependency AST scanner (`scripts/generate_code_map.py`) that indexes all classes, methods, FastAPI routes, DOM elements, and code health radar.
 
+12. **Sprint 2: StockNow Live Adapter & Real-Time Sync Engine:**
+    - **Step 2.1 (Persistent Playwright Session & Auto-Login):**
+      - Launches Chromium with persistent profile in `~/.hummingbird_stocknow_profile` (strictly outside OneDrive to avoid cloud sync LevelDB locks).
+      - Zero-secret auto-login helper (`ensure_authenticated`) with masked phone display and `SecretGuard` protection.
+      - Passive XHR/JSON sniffer capturing all background market API responses without additional network overhead.
+    - **Step 2.2 (Live DSE Quote & 7–30 Day Curve Sync):**
+      - Dedicated sync engine (`stocknow_market_sync.py`) extracting quotes and historical curves from sniffer cache or active DOM.
+      - Synchronizes live prices into SQLite `CompanyProfile` records, reconciling curve observations and updating `source="STOCKNOW_LIVE"`.
+      - REST API endpoint `POST /api/stocknow/sync-market` broadcasting realtime portfolio updates via SSE.
+      - Hermes conversational tool `control_stocknow_session` (*"Launch StockNow browser"*, *"StockNow login check koro"*, *"Sync live market prices"*).
+      - 1-Click UI controls in Settings (`Launch Live Browser`, `Check / Auto-Login`, `Sync Live Prices`).
+
 ---
 
 ## 5. System Architecture & Tech Stack

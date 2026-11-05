@@ -37,8 +37,8 @@ class StockNowAdapter:
             raise LiveIntegrationNotImplemented("StockNow connection is a gated Sprint 2 feature.")
 
     def quote(self, company: CompanyProfile, as_of: date) -> DemoQuote:
-        if not company.source.startswith("DEMO_"):
-            raise QuoteError("This adapter only accepts explicitly synthetic data.")
+        if not (company.source.startswith("DEMO_") or company.source == "STOCKNOW_LIVE"):
+            raise QuoteError("This adapter only accepts explicitly synthetic data or verified StockNow live quotes.")
         if company.quote_on != as_of:
             raise QuoteError("Quote date does not match the current demo session.")
         if not company.last_price.is_finite() or company.last_price <= ZERO:
@@ -49,11 +49,12 @@ class StockNowAdapter:
                 raise QuoteError("Quote and final history observation do not reconcile.")
         except (IndexError, KeyError, TypeError, ArithmeticError) as exc:
             raise QuoteError("Quote history is invalid.") from exc
-        return DemoQuote(company.symbol, company.last_price, company.price_history, as_of)
+        quote_source = "STOCKNOW_LIVE" if company.source == "STOCKNOW_LIVE" else "DEMO_PAPER"
+        return DemoQuote(company.symbol, company.last_price, company.price_history, as_of, source=quote_source)
 
     def paper_fill(self, quote: DemoQuote, quantity: int) -> Decimal:
-        if quantity <= 0 or quote.source != "DEMO_PAPER":
-            raise ValueError("Only positive synthetic paper fills are allowed.")
+        if quantity <= 0 or quote.source not in ("DEMO_PAPER", "STOCKNOW_LIVE"):
+            raise ValueError("Only positive paper fills are allowed.")
         return quote.unit_price  # No simulated liquidity/slippage: disclosed in UI/docs.
 
     async def read_virtual_portfolio(self):
