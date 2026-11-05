@@ -145,6 +145,8 @@ function updateControls() {
   const ready = Boolean(state.snapshot);
   $("run-cycle").disabled = !ready || state.busy || state.snapshot.app.paused;
   $("pause-button").disabled = !ready || state.busy;
+  const topbarInput = $("topbar-automation-toggle-input");
+  if (topbarInput) topbarInput.disabled = !ready || state.busy;
   $("next-session").disabled = !ready || state.busy;
   $("scenario").disabled = state.busy;
   $("save-allocation").disabled = !ready || state.busy;
@@ -621,7 +623,7 @@ function renderAutomationControlBar() {
   const mode = app.ingestion_mode || "BACKGROUND_POLLING";
   const interval = Number(app.polling_interval_sec || 120);
 
-  // Master switch
+  // Master switch (Settings)
   const masterBtn = $("master-automation-toggle");
   if (masterBtn) {
     masterBtn.classList.toggle("is-active", enabled);
@@ -630,12 +632,25 @@ function renderAutomationControlBar() {
   }
   const statusText = $("master-automation-status-text");
   if (statusText) {
-    statusText.textContent = enabled ? "AUTOMATION ON" : "AUTOMATION OFF";
+    statusText.textContent = enabled ? "ON" : "OFF";
+    statusText.className = `toggle-status-plain ${enabled ? "is-on" : "is-off"}`;
   }
   const toggleInput = $("master-automation-toggle-input");
   if (toggleInput) {
     toggleInput.checked = enabled;
     toggleInput.disabled = state.busy;
+  }
+
+  // Topbar Engine Switch
+  const topbarInput = $("topbar-automation-toggle-input");
+  if (topbarInput) {
+    topbarInput.checked = enabled;
+    topbarInput.disabled = state.busy;
+  }
+  const topbarStatusText = $("topbar-engine-status-text");
+  if (topbarStatusText) {
+    topbarStatusText.textContent = enabled ? "Engine ON" : "Engine OFF";
+    topbarStatusText.className = `engine-switch-label ${enabled ? "is-active" : "is-paused"}`;
   }
 
   // Segmented mode buttons (Settings Page)
@@ -764,6 +779,20 @@ if ($("master-automation-toggle")) {
 
 if ($("master-automation-toggle-input")) {
   $("master-automation-toggle-input").addEventListener("change", (e) => {
+    if (!state.snapshot) return;
+    const app = state.snapshot.app || {};
+    const mode = app.ingestion_mode || "BACKGROUND_POLLING";
+    const interval = Number(app.polling_interval_sec || 120);
+    setAutomationConfig({
+      automation_enabled: e.target.checked,
+      ingestion_mode: mode,
+      polling_interval_sec: interval,
+    });
+  });
+}
+
+if ($("topbar-automation-toggle-input")) {
+  $("topbar-automation-toggle-input").addEventListener("change", (e) => {
     if (!state.snapshot) return;
     const app = state.snapshot.app || {};
     const mode = app.ingestion_mode || "BACKGROUND_POLLING";

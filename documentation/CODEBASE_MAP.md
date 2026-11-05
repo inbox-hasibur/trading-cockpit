@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 13:38:09 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 14:03:37 UTC**.
 
 ---
 
@@ -8,18 +8,18 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.css` | 2 | 6,600 | Custom Dark / Light / Terminal Design System |
+| `.css` | 2 | 6,705 | Custom Dark / Light / Terminal Design System |
 | `.py` | 31 | 6,041 | Python Core Kernel, Engine & Hermes Agent |
-| `.js` | 3 | 2,909 | Vanilla ES6+ Reactive Terminal Controller |
+| `.js` | 3 | 2,938 | Vanilla ES6+ Reactive Terminal Controller |
 | `.md` | 10 | 1,666 | Architecture & Strategy Documentation |
-| `.html` | 1 | 830 | Single Page Application DOM Structure |
+| `.html` | 1 | 837 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
 | `.cursorignore` | 1 | 12 | Configuration / Asset |
 | `.opencodeignore` | 1 | 12 | Configuration / Asset |
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **54** | **18,104** | *Entire Humming Bird Repository* |
+| **TOTAL** | **54** | **18,245** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -727,7 +727,7 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 
 ### Key DOM Identifiers (`frontend/index.html`)
 
-Identified **227** distinct element IDs in the UI shell. Key controller anchors:
+Identified **229** distinct element IDs in the UI shell. Key controller anchors:
 
 `#overview`, `#watchlist`, `#market-map`, `#master-automation-toggle`, `#mode-btn-polling`, `#mode-btn-live`, `#polling-interval-pills`, `#main-chart`, `#bucket-stack`, `#what-if-slider`, `#theme-toggle-btn`, `#topbar-clock-widget`
 
@@ -736,8 +736,8 @@ Identified **227** distinct element IDs in the UI shell. Key controller anchors:
 
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
-| `styles.css` | 4283 | Core design tokens, layout & widgets |
-| `theme_light_hermes.css` | 2317 | Daylight overrides & Hermes IDE sidebar |
+| `styles.css` | 4362 | Core design tokens, layout & widgets |
+| `theme_light_hermes.css` | 2343 | Daylight overrides & Hermes IDE sidebar |
 
 
 ### Frontend API Contract Invocations (`frontend/*.js`)
@@ -778,29 +778,29 @@ Identified **227** distinct element IDs in the UI shell. Key controller anchors:
 | `showError()` | `app.js` | `L112` | Reactive DOM rendering / event controller |
 | `api()` | `app.js` | `L119` | Reactive DOM rendering / event controller |
 | `updateControls()` | `app.js` | `L144` | Reactive DOM rendering / event controller |
-| `refresh()` | `app.js` | `L166` | Reactive DOM rendering / event controller |
-| `mutate()` | `app.js` | `L179` | Reactive DOM rendering / event controller |
-| `renderSnapshot()` | `app.js` | `L188` | Reactive DOM rendering / event controller |
-| `renderBuckets()` | `app.js` | `L223` | Reactive DOM rendering / event controller |
-| `cell()` | `app.js` | `L242` | Reactive DOM rendering / event controller |
-| `selectCompany()` | `app.js` | `L244` | Reactive DOM rendering / event controller |
-| `renderWatchlist()` | `app.js` | `L251` | Reactive DOM rendering / event controller |
-| `renderCanaryTheses()` | `app.js` | `L307` | Reactive DOM rendering / event controller |
-| `renderInspector()` | `app.js` | `L341` | Reactive DOM rendering / event controller |
-| `renderDecisions()` | `app.js` | `L376` | Reactive DOM rendering / event controller |
-| `renderLedger()` | `app.js` | `L393` | Reactive DOM rendering / event controller |
-| `initTheme()` | `app.js` | `L519` | Reactive DOM rendering / event controller |
-| `setTheme()` | `app.js` | `L525` | Reactive DOM rendering / event controller |
-| `toggleTheme()` | `app.js` | `L536` | Reactive DOM rendering / event controller |
-| `tickMarketClock()` | `app.js` | `L542` | Reactive DOM rendering / event controller |
-| `tickClock()` | `app.js` | `L607` | Reactive DOM rendering / event controller |
-| `renderAutomationControlBar()` | `app.js` | `L616` | Reactive DOM rendering / event controller |
-| `setAutomationConfig()` | `app.js` | `L729` | Reactive DOM rendering / event controller |
-| `initRealtimeStream()` | `app.js` | `L829` | Reactive DOM rendering / event controller |
-| `switchView()` | `app.js` | `L855` | Reactive DOM rendering / event controller |
-| `initViewRouter()` | `app.js` | `L906` | Reactive DOM rendering / event controller |
-| `initScrollSpy()` | `app.js` | `L972` | Reactive DOM rendering / event controller |
-| `updateActiveNav()` | `app.js` | `L985` | Reactive DOM rendering / event controller |
+| `refresh()` | `app.js` | `L168` | Reactive DOM rendering / event controller |
+| `mutate()` | `app.js` | `L181` | Reactive DOM rendering / event controller |
+| `renderSnapshot()` | `app.js` | `L190` | Reactive DOM rendering / event controller |
+| `renderBuckets()` | `app.js` | `L225` | Reactive DOM rendering / event controller |
+| `cell()` | `app.js` | `L244` | Reactive DOM rendering / event controller |
+| `selectCompany()` | `app.js` | `L246` | Reactive DOM rendering / event controller |
+| `renderWatchlist()` | `app.js` | `L253` | Reactive DOM rendering / event controller |
+| `renderCanaryTheses()` | `app.js` | `L309` | Reactive DOM rendering / event controller |
+| `renderInspector()` | `app.js` | `L343` | Reactive DOM rendering / event controller |
+| `renderDecisions()` | `app.js` | `L378` | Reactive DOM rendering / event controller |
+| `renderLedger()` | `app.js` | `L395` | Reactive DOM rendering / event controller |
+| `initTheme()` | `app.js` | `L521` | Reactive DOM rendering / event controller |
+| `setTheme()` | `app.js` | `L527` | Reactive DOM rendering / event controller |
+| `toggleTheme()` | `app.js` | `L538` | Reactive DOM rendering / event controller |
+| `tickMarketClock()` | `app.js` | `L544` | Reactive DOM rendering / event controller |
+| `tickClock()` | `app.js` | `L609` | Reactive DOM rendering / event controller |
+| `renderAutomationControlBar()` | `app.js` | `L618` | Reactive DOM rendering / event controller |
+| `setAutomationConfig()` | `app.js` | `L744` | Reactive DOM rendering / event controller |
+| `initRealtimeStream()` | `app.js` | `L858` | Reactive DOM rendering / event controller |
+| `switchView()` | `app.js` | `L884` | Reactive DOM rendering / event controller |
+| `initViewRouter()` | `app.js` | `L935` | Reactive DOM rendering / event controller |
+| `initScrollSpy()` | `app.js` | `L1001` | Reactive DOM rendering / event controller |
+| `updateActiveNav()` | `app.js` | `L1014` | Reactive DOM rendering / event controller |
 | `smoothCurvePath()` | `charts.js` | `L8` | Reactive DOM rendering / event controller |
 | `renderMainChart()` | `charts.js` | `L31` | Reactive DOM rendering / event controller |
 | `sparkline()` | `charts.js` | `L153` | Reactive DOM rendering / event controller |
@@ -891,4 +891,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 27 Python modules inspected, 10 FastAPI endpoints registered, 18,104 total LOC indexed.
+> **Audit Summary:** 27 Python modules inspected, 10 FastAPI endpoints registered, 18,245 total LOC indexed.

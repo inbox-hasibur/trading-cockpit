@@ -2315,3 +2315,29 @@ body.is-resizing-hermes .app-shell {
   color: #050811 !important;
   font-weight: 700 !important;
 }
+
+/* Light Theme Engine Switch & Status Plain */
+[data-theme="light"] .header-engine-switch {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .engine-switch-label.is-active {
+  color: #047857 !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="light"] .engine-switch-label.is-paused {
+  color: #b45309 !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="light"] .toggle-status-plain.is-on {
+  color: #047857 !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="light"] .toggle-status-plain.is-off {
+  color: #b91c1c !important;
+  font-weight: 700 !important;
+}

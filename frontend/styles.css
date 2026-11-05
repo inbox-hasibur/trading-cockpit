@@ -3824,6 +3824,85 @@ button.local-avatar:hover {
   transform: translateX(24px);
 }
 
+.toggle-control-side {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toggle-status-plain {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transition: color 0.2s ease;
+  user-select: none;
+}
+
+.toggle-status-plain.is-on {
+  color: #10b981 !important;
+}
+
+.toggle-status-plain.is-off {
+  color: #ef4444 !important;
+}
+
+/* Header Engine Switch (Topbar slider) */
+.header-engine-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  min-height: 35px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.engine-switch-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.engine-switch-label.is-active {
+  color: #10b981;
+}
+
+.engine-switch-label.is-paused {
+  color: #eab308;
+}
+
+.topbar-switch {
+  width: 44px;
+  height: 24px;
+}
+
+.topbar-switch .ios-slider {
+  border-radius: 24px;
+}
+
+.topbar-switch .ios-slider:before {
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+}
+
+.topbar-switch input:checked + .ios-slider:before {
+  transform: translateX(20px);
+}
+
 
 /* ==========================================================================
    Card 1: Telemetry Ingestion Pipeline & Polling Slider
