@@ -586,11 +586,26 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             },
         )
 
+    class DevStaticFiles(StaticFiles):
+        async def get_response(self, path: str, scope):
+            response = await super().get_response(path, scope)
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+            return response
+
     @app.get("/", include_in_schema=False)
     def cockpit():
-        return FileResponse(ROOT / "frontend/index.html", headers={"Cache-Control": "no-cache"})
+        return FileResponse(
+            ROOT / "frontend/index.html",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0",
+            },
+        )
 
-    app.mount("/assets", StaticFiles(directory=ROOT / "frontend", check_dir=False), name="assets")
+    app.mount("/assets", DevStaticFiles(directory=ROOT / "frontend", check_dir=False), name="assets")
     return app
 
 

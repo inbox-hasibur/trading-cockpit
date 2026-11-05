@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 11:05:00 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 11:24:27 UTC**.
 
 ---
 
@@ -8,10 +8,10 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 28 | 5,811 | Python Core Kernel, Engine & Hermes Agent |
+| `.py` | 28 | 5,826 | Python Core Kernel, Engine & Hermes Agent |
 | `.css` | 1 | 4,987 | Custom Dark / Light / Terminal Design System |
 | `.js` | 1 | 2,805 | Vanilla ES6+ Reactive Terminal Controller |
-| `.md` | 10 | 1,531 | Architecture & Strategy Documentation |
+| `.md` | 10 | 1,539 | Architecture & Strategy Documentation |
 | `.html` | 1 | 830 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
 | `.cursorignore` | 1 | 12 | Configuration / Asset |
@@ -19,7 +19,7 @@
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **48** | **16,022** | *Entire Humming Bird Repository* |
+| **TOTAL** | **48** | **16,045** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -483,6 +483,7 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | `AdvanceRequest` | `L64–L66` | `BaseModel` | — | 0 |
 | `AllocationRequest` | `L69–L72` | `BaseModel` | — | 0 |
 | `EventBroadcaster` | `L75–L92` | `object` | — | 4 |
+| `DevStaticFiles` | `L589–L595` | `StaticFiles` | — | 1 |
 
 
 **Methods in `EventBroadcaster`:**
@@ -495,11 +496,18 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | `publish` | `L87–L92` | `(self, event_type: str, data: dict...)` | — | — | `list`, `put_nowait` |
 
 
+**Methods in `DevStaticFiles`:**
+
+| Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `get_response` | `L590–L595` | `(self, path: str, scope...)` | — | — | `get_response`, `super` |
+
+
 #### Standalone Functions
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `create_app` | `L95–L594` | `(settings: Settings | None=None...)` | `FastAPI` | — | `AutoTrader`, `ChatService`, `Database`, `EventBroadcaster` |
+| `create_app` | `L95–L609` | `(settings: Settings | None=None...)` | `FastAPI` | — | `AutoTrader`, `ChatService`, `Database`, `DevStaticFiles` |
 | `lifespan` | `L103–L110` | `(_app: FastAPI...)` | — | — | `create_schema`, `dispose`, `seed_demo`, `write` |
 | `local_security` | `L124–L162` | `(request: Request, call_next...)` | — | — | `JSONResponse`, `call_next`, `compare_digest`, `encode` |
 | `health` | `L165–L166` | `(...)` | — | — | `get` |
@@ -526,7 +534,7 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | `update_api_keys` | `L512–L559` | `(body: KeysSettingsRequest...)` | — | — | `__setattr__`, `append`, `create_checkpoint`, `join` |
 | `event_stream` | `L562–L587` | `(request: Request...)` | — | — | `StreamingResponse`, `generator`, `get`, `subscribe` |
 | `generator` | `L565–L577` | `(...)` | — | — | `dumps`, `get`, `is_disconnected`, `unsubscribe` |
-| `cockpit` | `L590–L591` | `(...)` | — | — | `FileResponse`, `get` |
+| `cockpit` | `L598–L606` | `(...)` | — | — | `FileResponse`, `get` |
 
 
 ---
@@ -660,7 +668,7 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 | `GET` | `/api/settings/keys` | `get_api_keys` | `L473` | Route endpoint |
 | `POST` | `/api/settings/keys` | `update_api_keys` | `L512` | Route endpoint |
 | `GET` | `/api/stream` | `event_stream` | `L562` | Route endpoint |
-| `GET` | `/` | `cockpit` | `L590` | Route endpoint |
+| `GET` | `/` | `cockpit` | `L598` | Route endpoint |
 
 ---
 
@@ -755,7 +763,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/hermes/memory.py` | `format_layer_3_prompt` | 17 | 5 | Acceptable; well-scoped logic |
 | `backend/hermes/secret_guard.py` | `redact_secrets` | 11 | 4 | Acceptable; well-scoped logic |
 | `backend/hermes/skills_manager.py` | `match_skills` | 22 | 4 | Acceptable; well-scoped logic |
-| `backend/main.py` | `create_app` | 500 | 5 | Decompose into sub-functions |
+| `backend/main.py` | `create_app` | 515 | 5 | Decompose into sub-functions |
 | `backend/main.py` | `local_security` | 39 | 4 | Acceptable; well-scoped logic |
 | `backend/main.py` | `system_changes` | 65 | 5 | Acceptable; well-scoped logic |
 | `backend/main.py` | `event_stream` | 26 | 4 | Acceptable; well-scoped logic |
@@ -773,4 +781,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 24 Python modules inspected, 23 FastAPI endpoints registered, 16,022 total LOC indexed.
+> **Audit Summary:** 24 Python modules inspected, 23 FastAPI endpoints registered, 16,045 total LOC indexed.
