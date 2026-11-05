@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 19:08:19 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 23:35:25 UTC**.
 
 ---
 
