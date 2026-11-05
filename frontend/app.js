@@ -1976,14 +1976,28 @@ function initHermesSidebar() {
   const openBtn = $("floating-hermes-open");
   const appShell = document.querySelector(".app-shell");
 
+  const applyWidth = (widthPx) => {
+    const clamped = Math.min(640, Math.max(280, widthPx));
+    document.documentElement.style.setProperty("--hermes-width", `${clamped}px`);
+    if (appShell) {
+      appShell.style.setProperty("--hermes-width", `${clamped}px`);
+    }
+    if (sidebar) {
+      sidebar.style.removeProperty("width");
+      sidebar.style.removeProperty("max-width");
+    }
+    return clamped;
+  };
+
   // Restore saved width
   const savedWidth = localStorage.getItem("humming-bird-hermes-width");
-  if (savedWidth && sidebar) {
+  if (savedWidth) {
     const parsed = parseInt(savedWidth, 10);
-    if (parsed >= 300 && parsed <= 640) {
-      sidebar.style.width = `${parsed}px`;
-      document.documentElement.style.setProperty("--hermes-width", `${parsed}px`);
+    if (parsed >= 280 && parsed <= 640) {
+      applyWidth(parsed);
     }
+  } else {
+    applyWidth(380);
   }
 
   // Restore collapsed state
@@ -1997,10 +2011,9 @@ function initHermesSidebar() {
   if (resizer && sidebar) {
     let lastWidth = 380;
     const onMouseMove = (e) => {
-      const newWidth = Math.min(640, Math.max(300, window.innerWidth - e.clientX));
-      lastWidth = newWidth;
-      sidebar.style.width = `${newWidth}px`;
-      document.documentElement.style.setProperty("--hermes-width", `${newWidth}px`);
+      // Calculate width from the right edge of viewport to mouse position
+      const newWidth = window.innerWidth - e.clientX;
+      lastWidth = applyWidth(newWidth);
     };
 
     const onMouseUp = () => {
