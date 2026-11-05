@@ -427,35 +427,39 @@ class HermesAgentLoop:
                 logger.warning("Tier 1 OpenRouter failed: %s; falling back to Tier 2 Gemini.", exc)
 
         # Tier 2: 1st Fallback — Free Google Gemini API
-        gemini_key = os.getenv("GEMINI_API_KEY", "").strip() or os.getenv("GOOGLE_API_KEY", "").strip()
+        gemini_key = getattr(self.settings, "gemini_api_key", "").strip()
         if gemini_key:
-            try:
-                gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
-                prompt_text = f"{full_system_prompt}\n\nOperator message: {message}"
-                async with httpx.AsyncClient(timeout=httpx.Timeout(20, connect=5), transport=self.transport) as client:
-                    resp = await client.post(
-                        gemini_url,
-                        json={"contents": [{"parts": [{"text": prompt_text}]}]},
-                    )
-                    resp.raise_for_status()
-                    g_reply = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
-                    clean_reply = redact_secrets(g_reply.strip()[:12000])
-                    with self.database.write() as session:
-                        state = portfolio_state(session)
-                        mem = HermesMemory(session)
-                        mem.record_turn(session_date=state.clock_date, role="assistant", content=clean_reply, conversation_id=conversation_id)
-                    return {
-                        "reply": clean_reply,
-                        "provider": "gemini",
-                        "model": "google/gemini-2.5-flash",
-                        "warning": "Served via 1st Fallback: Free Google Gemini API",
-                        "context_date": snapshot["app"]["date"],
-                        "context_revision": snapshot["app"]["revision"],
-                        "conversation_id": conversation_id,
-                        "read_only": False,
-                    }
-            except Exception as exc:
-                logger.warning("Tier 2 Gemini fallback failed: %s; falling back to Tier 3 Local Brain.", exc)
+            # Candidate models: gemini-3.1-flash-lite (fastest, ~1.5s), gemini-3.5-flash
+            for g_model in ("gemini-3.1-flash-lite", "gemini-3.5-flash"):
+                try:
+                    gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/{g_model}:generateContent?key={gemini_key}"
+                    prompt_text = f"{full_system_prompt}\n\nOperator message: {message}"
+                    async with httpx.AsyncClient(timeout=httpx.Timeout(15, connect=5), transport=self.transport) as client:
+                        resp = await client.post(
+                            gemini_url,
+                            json={"contents": [{"parts": [{"text": prompt_text}]}]},
+                        )
+                        if resp.status_code == 200:
+                            g_reply = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
+                            clean_reply = redact_secrets(g_reply.strip()[:12000])
+                            with self.database.write() as session:
+                                state = portfolio_state(session)
+                                mem = HermesMemory(session)
+                                mem.record_turn(session_date=state.clock_date, role="assistant", content=clean_reply, conversation_id=conversation_id)
+                            return {
+                                "reply": clean_reply,
+                                "provider": "gemini",
+                                "model": f"google/{g_model}",
+                                "warning": f"Served via 1st Fallback: Google Gemini API ({g_model})",
+                                "context_date": snapshot["app"]["date"],
+                                "context_revision": snapshot["app"]["revision"],
+                                "conversation_id": conversation_id,
+                                "read_only": False,
+                            }
+                        else:
+                            logger.warning("Gemini model %s returned status %s: %s", g_model, resp.status_code, resp.text[:100])
+                except Exception as exc:
+                    logger.warning("Tier 2 Gemini fallback (%s) failed: %s; trying next candidate.", g_model, exc)
 
         # Tier 3: 2nd Fallback — Deterministic Local Quant Brain ($0 offline)
         return self._local_conversational_fallback(message, snapshot, conversation_id=conversation_id)

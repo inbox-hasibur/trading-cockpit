@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 15:40:28 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 15:52:55 UTC**.
 
 ---
 
@@ -8,7 +8,7 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 40 | 8,709 | Python Core Kernel, Engine & Hermes Agent |
+| `.py` | 40 | 8,713 | Python Core Kernel, Engine & Hermes Agent |
 | `.css` | 2 | 6,720 | Custom Dark / Light / Terminal Design System |
 | `.js` | 3 | 3,175 | Vanilla ES6+ Reactive Terminal Controller |
 | `.md` | 10 | 1,840 | Architecture & Strategy Documentation |
@@ -19,7 +19,7 @@
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **63** | **21,351** | *Entire Humming Bird Repository* |
+| **TOTAL** | **63** | **21,355** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -449,7 +449,7 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
 | `CheckpointManager` | `L62–L222` | `object` | — | 2 |
-| `HermesAgentLoop` | `L225–L479` | `object` | — | 8 |
+| `HermesAgentLoop` | `L225–L483` | `object` | — | 8 |
 
 
 **Methods in `CheckpointManager`:**
@@ -470,8 +470,8 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | `detect_intent_and_tool` | `L250–L252` | `(self, message: str, snapshot: dict...)` | `tuple[str | None, dict[str, Any]]` | High-precision intent detector for Bangla, Banglish & English agent commands. | `detect_intent_and_tool` |
 | `run_turn` | `L254–L325` | `(self, user_message: str, history: l...)` | `dict[str, Any]` | Main turn loop: Layered Memory + Skills Injection + Tool Execution + Context Scrubbing. | `HermesMemory`, `_conversational_inference`, `_format_tool_response`, `build_snapshot` |
 | `_format_tool_response` | `L327–L328` | `(self, tool_name: str, tool_res: dic...)` | `str` | — | `format_tool_response` |
-| `_conversational_inference` | `L330–L461` | `(self, message: str, history: list[d...)` | `dict[str, Any]` | Runs conversational response with Layered Memory and Matched SKILL.md injection. | `AsyncClient`, `ChatBudget`, `HermesMemory`, `Timeout` |
-| `_local_conversational_fallback` | `L463–L479` | `(self, message: str, snapshot: dict,...)` | `dict[str, Any]` | — | `HermesMemory`, `local_summary`, `portfolio_state`, `record_turn` |
+| `_conversational_inference` | `L330–L465` | `(self, message: str, history: list[d...)` | `dict[str, Any]` | Runs conversational response with Layered Memory and Matched SKILL.md injection. | `AsyncClient`, `ChatBudget`, `HermesMemory`, `Timeout` |
+| `_local_conversational_fallback` | `L467–L483` | `(self, message: str, snapshot: dict,...)` | `dict[str, Any]` | — | `HermesMemory`, `local_summary`, `portfolio_state`, `record_turn` |
 
 
 ---
@@ -985,7 +985,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/engine/t2_ledger.py` | `bucket_balances` | 31 | 4 | Acceptable; well-scoped logic |
 | `backend/hermes/agent_loop.py` | `rollback_last` | 104 | 3 | Decompose into sub-functions |
 | `backend/hermes/agent_loop.py` | `run_turn` | 72 | 4 | Acceptable; well-scoped logic |
-| `backend/hermes/agent_loop.py` | `_conversational_inference` | 132 | 4 | Decompose into sub-functions |
+| `backend/hermes/agent_loop.py` | `_conversational_inference` | 136 | 6 | Decompose into sub-functions |
 | `backend/hermes/memory.py` | `record_turn` | 29 | 4 | Acceptable; well-scoped logic |
 | `backend/hermes/memory.py` | `search_sessions` | 28 | 4 | Acceptable; well-scoped logic |
 | `backend/hermes/memory.py` | `format_layer_3_prompt` | 17 | 5 | Acceptable; well-scoped logic |
@@ -1019,4 +1019,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 32 Python modules inspected, 10 FastAPI endpoints registered, 21,351 total LOC indexed.
+> **Audit Summary:** 32 Python modules inspected, 10 FastAPI endpoints registered, 21,355 total LOC indexed.
