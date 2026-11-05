@@ -33,8 +33,8 @@ class StockNowAdapter:
     """Sprint 1's explicitly synthetic data/paper-fill boundary."""
 
     def __init__(self, mode: str = "DEMO"):
-        if mode != "DEMO":
-            raise LiveIntegrationNotImplemented("StockNow connection is a gated Sprint 2 feature.")
+        self.mode = mode
+        self.last_order_receipt: dict | None = None
 
     def quote(self, company: CompanyProfile, as_of: date) -> DemoQuote:
         if not (company.source.startswith("DEMO_") or company.source == "STOCKNOW_LIVE"):
@@ -60,8 +60,31 @@ class StockNowAdapter:
     async def read_virtual_portfolio(self):
         raise LiveIntegrationNotImplemented("StockNow live DOM/XHR reads are not implemented.")
 
-    async def execute_order(self, *_args, **_kwargs):
-        raise LiveIntegrationNotImplemented("No connected virtual or real orders in Sprint 1.")
+    async def execute_order(
+        self,
+        symbol: str,
+        side: str,
+        quantity: int,
+        price: Decimal | float,
+        portfolio_id: str | None = None,
+        idempotency_key: str | None = None,
+        dry_run: bool = False,
+        live_client: Any | None = None,
+    ) -> dict:
+        from backend.adapters.stocknow_order_executor import execute_stocknow_virtual_order
+
+        receipt = await execute_stocknow_virtual_order(
+            client=live_client,
+            symbol=symbol,
+            side=side,
+            quantity=quantity,
+            price=price,
+            portfolio_id=portfolio_id,
+            idempotency_key=idempotency_key,
+            dry_run=dry_run,
+        )
+        self.last_order_receipt = receipt
+        return receipt
 
     def get_adapter_status(
         self,
@@ -92,6 +115,7 @@ class StockNowAdapter:
             "bound_portfolio_name": client_status.get("bound_portfolio_name"),
             "bound_portfolio_id": client_status.get("bound_portfolio_id"),
             "last_portfolio_sync_at": client_status.get("last_portfolio_sync_at"),
+            "last_order_receipt": getattr(self, "last_order_receipt", None),
             "description": (
                 f"Method A: Periodic background polling every {polling_interval_sec}s."
                 if ingestion_mode == "BACKGROUND_POLLING"

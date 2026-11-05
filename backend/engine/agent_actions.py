@@ -279,6 +279,109 @@ def execute_agentic_buy(
     }
 
 
+def execute_agentic_sell(
+    session: Session,
+    state: PortfolioState,
+    settings: Settings,
+    symbol: str,
+    requested_qty: int,
+) -> dict:
+    if requested_qty <= 0:
+        raise ValueError(f"Requested sell quantity must be positive, got {requested_qty}.")
+    calendar = TradingCalendar(settings.holidays, settings.bucket_anchor)
+    company = session.get(CompanyProfile, symbol.upper())
+    if company is None:
+        raise ValueError(f"Company {symbol} not found.")
+
+    mature_lots = list(session.scalars(
+        select(TaxLot)
+        .where(
+            TaxLot.symbol == company.symbol,
+            TaxLot.remaining_qty > 0,
+            TaxLot.matures_on <= state.clock_date,
+        )
+        .order_by(TaxLot.id)
+    ))
+    mature_qty = sum(lot.remaining_qty for lot in mature_lots)
+    if mature_qty <= 0:
+        immature_lots = list(session.scalars(
+            select(TaxLot).where(TaxLot.symbol == company.symbol, TaxLot.remaining_qty > 0)
+        ))
+        if immature_lots:
+            earliest = min(lot.matures_on for lot in immature_lots)
+            raise ValueError(f"Cannot sell {company.symbol}: shares are settlement-locked until {earliest.isoformat()} (T+2 lock).")
+        raise ValueError(f"Cannot sell {company.symbol}: no open shares held.")
+
+    if requested_qty > mature_qty:
+        raise ValueError(f"Cannot sell {requested_qty} shares of {company.symbol}: only {mature_qty} mature shares available.")
+
+    unit_price = company.last_price
+
+    # Verify no net-loss exit across mature lots to be sold
+    remaining = requested_qty
+    for lot in mature_lots:
+        if remaining <= 0:
+            break
+        sell_slice = min(lot.remaining_qty, remaining)
+        proceeds, _fee = sale_amount(sell_slice, unit_price, settings.sell_fee_rate)
+        cost_slice = allocated_basis(lot.remaining_cost_basis, lot.remaining_qty, sell_slice)
+        if proceeds < cost_slice:
+            net_ret = (proceeds / cost_slice - 1) * Decimal("100")
+            raise ValueError(
+                f"Cannot sell {company.symbol} at ৳{unit_price}: net return is {float(net_ret):.2f}% (net loss). Strict No-Loss policy holds."
+            )
+        remaining -= sell_slice
+
+    remaining = requested_qty
+    total_proceeds = ZERO
+    total_pnl = ZERO
+    for lot in mature_lots:
+        if remaining <= 0:
+            break
+        sell_slice = min(lot.remaining_qty, remaining)
+        proceeds, fee = sale_amount(sell_slice, unit_price, settings.sell_fee_rate)
+        cost_slice = allocated_basis(lot.remaining_cost_basis, lot.remaining_qty, sell_slice)
+        lot_pnl = max(ZERO, proceeds - cost_slice)
+
+        lot.remaining_qty -= sell_slice
+        lot.remaining_cost_basis -= cost_slice
+        remaining -= sell_slice
+        total_proceeds += proceeds
+        total_pnl += lot_pnl
+
+        trade = TradeLog(
+            trade_key=f"AGENT_SELL:{cycle_key(state)}:{lot.id}:{uuid4().hex[:6]}",
+            cycle_id=None,
+            lot_id=lot.id,
+            symbol=company.symbol,
+            side="SELL",
+            quantity=sell_slice,
+            price=unit_price,
+            gross_amount=money(sell_slice * unit_price),
+            fee=fee,
+            net_cash_change=proceeds,
+            realized_pnl=lot_pnl,
+            bucket=lot.bucket,
+            trade_on=state.clock_date,
+            settles_on=calendar.add_sessions(state.clock_date, company.settlement_days),
+            reason=f"Hermes Agentic sell execution requested by user/assistant.",
+            source="HERMES_AGENTIC",
+        )
+        session.add(trade)
+
+    session.flush()
+    assert_ledger(session, state)
+
+    return {
+        "symbol": company.symbol,
+        "side": "SELL",
+        "quantity": requested_qty,
+        "price": float(unit_price),
+        "proceeds": float(total_proceeds),
+        "realized_pnl": float(total_pnl),
+    }
+
+
 def cycle_key(state: PortfolioState) -> str:
     return f"{state.clock_date}:{state.revision}:{state.rules_revision}"
 

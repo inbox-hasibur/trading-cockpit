@@ -142,9 +142,13 @@
   - API endpoint `POST /api/stocknow/sync-portfolio` with real-time SSE snapshot broadcast.
   - Hermes agentic tool dispatch with Bangla/English natural commands (*"Sync Humming Bird portfolio"*, *"Humming Bird portfolio sync koro"*).
   - UI control button in `#settings` StockNow Bridge card (`Sync "Humming Bird" Portfolio`).
-- [ ] **Step 2.4: Automated Virtual Order Execution:**
-  - Execute automated Buy and Sequential Sell orders directly on `stocknow.com.bd`'s "Humming Bird" portfolio when triggered by `auto_trader.py`.
-  - Verify order acknowledgement and reconcile local tax lots against StockNow's portfolio table.
+- [x] **Step 2.4: Automated Virtual Order Execution on StockNow ("Humming Bird"):**
+  - Dedicated virtual order executor (`stocknow_order_executor.py`) supporting live browser DOM automation and paper verified execution.
+  - Idempotency deduplication preventing accidental double-fills across retry loops or rapid commands.
+  - Updated `StockNowAdapter.execute_order()` delegating to virtual order execution and exposing `last_order_receipt`.
+  - REST endpoint `POST /api/stocknow/execute-order` with CheckpointManager state snapshot for 1-click `/rollback`.
+  - Strict enforcement of T+2 maturity lock and 1% fee math (blocking immature and net-loss sells under Strict No-Loss policy).
+  - Hermes conversational Buy and Matured Sell execution (*"Buy 10 GP"*, *"GP 10 ta share kine felo"*, *"Sell 5 SQURPHARMA"*) with StockNow virtual order receipt confirmation.
 - [ ] **Step 2.5: DSE Market-Hours Scheduler:**
   - Automated background loop running Sunday–Thursday from **10:00 AM to 2:30 PM (`Asia/Dhaka`)** with configurable polling intervals.
 

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.config import Settings
@@ -16,6 +17,8 @@ from backend.database import (
     CustomRule,
     PortfolioState,
     RuleAudit,
+    TaxLot,
+    TradeLog,
 )
 from backend.engine.agent_actions import (
     check_canary_theses,
@@ -180,21 +183,73 @@ def handle_execute_manual_order(
     symbol = args["symbol"].upper()
     side = args.get("side", "BUY").upper()
     qty = int(args.get("quantity", 0))
-    if side != "BUY":
-        raise ValueError("Manual sell execution uses sequential profit-taking engine.")
+
+    if side not in ("BUY", "SELL"):
+        raise ValueError(f"Unsupported manual order side '{side}'. Must be BUY or SELL.")
+
+    lots = session.scalars(select(TaxLot)).all()
+    trades = session.scalars(select(TradeLog)).all()
+    lots_snap = [
+        {
+            "id": l.id, "symbol": l.symbol, "bucket": l.bucket, "acquired_on": l.acquired_on.isoformat(),
+            "matures_on": l.matures_on.isoformat(), "original_qty": l.original_qty, "remaining_qty": l.remaining_qty,
+            "buy_price": str(l.buy_price), "buy_fee": str(l.buy_fee), "original_cost_basis": str(l.original_cost_basis),
+            "remaining_cost_basis": str(l.remaining_cost_basis), "cycle_base_qty": l.cycle_base_qty,
+            "next_tier": l.next_tier, "last_sale_revision": l.last_sale_revision, "peak_price": str(l.peak_price),
+            "phase": l.phase, "recovery_anchor": str(l.recovery_anchor) if l.recovery_anchor else None,
+        }
+        for l in lots
+    ]
+    trades_snap = [
+        {
+            "id": t.id, "trade_key": t.trade_key, "cycle_id": t.cycle_id, "lot_id": t.lot_id, "symbol": t.symbol,
+            "side": t.side, "quantity": t.quantity, "price": str(t.price), "gross_amount": str(t.gross_amount),
+            "fee": str(t.fee), "net_cash_change": str(t.net_cash_change), "realized_pnl": str(t.realized_pnl),
+            "bucket": t.bucket, "trade_on": t.trade_on.isoformat(), "settles_on": t.settles_on.isoformat(),
+            "reason": t.reason, "source": t.source,
+        }
+        for t in trades
+    ]
 
     checkpoint_mgr.create_checkpoint(
-        session, state, "MANUAL_BUY", f"Manual buy {qty} shares of {symbol}", symbol,
+        session, state, f"MANUAL_{side}", f"Manual {side} {qty} shares of {symbol}", symbol,
         diff_payload={
-            "action": "MANUAL_BUY",
+            "action": f"MANUAL_{side}",
             "actor": "Operator via Hermes",
-            "summary": f"Executed manual buy of {qty} shares for {symbol}",
-            "before": {}, "after": {"symbol": symbol, "qty": qty},
-            "diff_lines": [{"type": "add", "text": f"BUY {qty} shares of {symbol}"}],
+            "summary": f"Executed manual {side} of {qty} shares for {symbol}",
+            "before": {}, "after": {"symbol": symbol, "side": side, "qty": qty},
+            "diff_lines": [{"type": "add", "text": f"{side} {qty} shares of {symbol}"}],
         },
         actor="Operator",
+        extra_snapshot={
+            "portfolio_lots": lots_snap,
+            "portfolio_trades": trades_snap,
+            "initial_capital": str(state.initial_capital),
+        },
     )
-    res = execute_agentic_buy(session, state, settings, symbol, requested_qty=qty if qty > 0 else None)
+
+    from backend.engine.agent_actions import execute_agentic_buy, execute_agentic_sell
+    from backend.adapters.stocknow_order_executor import execute_stocknow_virtual_order
+
+    if side == "BUY":
+        res = execute_agentic_buy(session, state, settings, symbol, requested_qty=qty if qty > 0 else None)
+    else:
+        res = execute_agentic_sell(session, state, settings, symbol, requested_qty=qty)
+
+    import asyncio
+    try:
+        receipt = asyncio.run(execute_stocknow_virtual_order(
+            symbol=symbol, side=side, quantity=res["quantity"], price=res["price"], dry_run=True
+        ))
+    except RuntimeError:
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            receipt = pool.submit(
+                asyncio.run,
+                execute_stocknow_virtual_order(symbol=symbol, side=side, quantity=res["quantity"], price=res["price"], dry_run=True)
+            ).result()
+
+    res["receipt"] = receipt
     return {"status": "SUCCESS", "tool": "execute_manual_order", "result": res}
 
 
@@ -663,11 +718,41 @@ def format_tool_response(tool_name: str, tool_res: dict[str, Any], user_msg: str
 
     if tool_name == "execute_manual_order":
         res = tool_res["result"]
-        return (
-            f"DEMO/PAPER · [Manual Order Executed]\n"
-            f"✅ {res['symbol']}-এর {res['quantity']} টি শেয়ার ৳{res['price']:,.2f} দরে কেনা হয়েছে "
-            f"(মোট খরচ: ৳{res['cost']:,.2f}, বাকেট {res['bucket']})।"
-        )
+        side = res.get("side", "BUY")
+        sym = res["symbol"]
+        qty = res["quantity"]
+        pr = res["price"]
+        receipt = res.get("receipt", {})
+        oid = receipt.get("order_id", "N/A")
+        emode = receipt.get("execution_mode", "PAPER_VERIFIED")
+        if side == "BUY":
+            cost = res.get("cost", 0.0)
+            bucket = res.get("bucket", "A")
+            return (
+                f"DEMO/PAPER · [Manual Buy Executed]\n"
+                f"✅ {sym}-এর {qty} টি শেয়ার ৳{pr:,.2f} দরে কেনা হয়েছে (মোট খরচ: ৳{cost:,.2f}, বাকেট {bucket})。\n"
+                f"• StockNow ভার্চুয়াল রসিদ: {oid} ({emode})"
+                if bangla
+                else (
+                    f"DEMO/PAPER · [Manual Buy Executed]\n"
+                    f"✅ Bought {qty} shares of {sym} at ৳{pr:,.2f} (Total: ৳{cost:,.2f}, Bucket {bucket}).\n"
+                    f"• StockNow Virtual Receipt: {oid} ({emode})"
+                )
+            )
+        else:
+            proceeds = res.get("proceeds", 0.0)
+            pnl = res.get("realized_pnl", 0.0)
+            return (
+                f"DEMO/PAPER · [Manual Matured Sell Executed]\n"
+                f"✅ {sym}-এর {qty} টি ম্যাচিউরড শেয়ার ৳{pr:,.2f} দরে বিক্রি করা হয়েছে (মোট আদায়: ৳{proceeds:,.2f}, প্রফিট: +৳{pnl:,.2f})。\n"
+                f"• StockNow ভার্চুয়াল রসিদ: {oid} ({emode})"
+                if bangla
+                else (
+                    f"DEMO/PAPER · [Manual Matured Sell Executed]\n"
+                    f"✅ Sold {qty} mature shares of {sym} at ৳{pr:,.2f} (Net proceeds: ৳{proceeds:,.2f}, Realized P/L: +৳{pnl:,.2f}).\n"
+                    f"• StockNow Virtual Receipt: {oid} ({emode})"
+                )
+            )
 
     if tool_name == "set_automation_config":
         return _fmt_automation_config(tool_res, bangla)
@@ -832,11 +917,18 @@ def detect_intent_and_tool(message: str, snapshot: dict) -> tuple[str | None, di
                 pass
 
     # 7. Explicit Buy
-    buy_words = ("buy koro", "share kino", "explicitly buy", "kine dao", "buy now")
+    buy_words = ("buy koro", "share kino", "explicitly buy", "kine dao", "buy now", "kine felo", "kino", "buy")
     if matched_sym and any(w in text_lower for w in buy_words):
         digits = "".join(ch for ch in text if ch.isdigit())
         qty = int(digits) if digits else 0
         return "execute_manual_order", {"symbol": matched_sym, "side": "BUY", "quantity": qty}
+
+    # 7.1 Explicit Sell
+    sell_words = ("sell koro", "share becho", "explicitly sell", "beche dao", "sell now", "bikri koro", "becho", "sell")
+    if matched_sym and any(w in text_lower for w in sell_words):
+        digits = "".join(ch for ch in text if ch.isdigit())
+        qty = int(digits) if digits else 0
+        return "execute_manual_order", {"symbol": matched_sym, "side": "SELL", "quantity": qty}
 
     # 8. Learning / Teaching a lesson
     learn_words = ("mone rakhba", "lesson:", "remember this:", "notun rule:", "sikhe rakho")

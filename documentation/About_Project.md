@@ -204,6 +204,13 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
       - REST endpoint `POST /api/stocknow/sync-portfolio` broadcasting real-time snapshot via SSE.
       - Hermes conversational command (*"Sync Humming Bird portfolio"*, *"Humming Bird portfolio sync koro"*).
       - 1-Click UI action button in Settings (`Sync "Humming Bird" Portfolio`).
+    - **Step 2.4 (Automated Virtual Order Execution on StockNow "Humming Bird"):**
+      - Dedicated order executor (`stocknow_order_executor.py`) supporting live browser DOM automation and paper verified fills.
+      - Idempotency deduplication preventing duplicate trade executions on retries.
+      - Delegated `StockNowAdapter.execute_order()` tracking `last_order_receipt` in telemetry status.
+      - REST API endpoint `POST /api/stocknow/execute-order` with CheckpointManager state snapshot for 1-click `/rollback`.
+      - Strict T+2 maturity lock and 1% fee math enforcement (rejecting immature and net-loss sells under Strict No-Loss policy).
+      - Hermes conversational Buy and Matured Sell execution (*"Buy 10 GP"*, *"GP 10 ta share kine felo"*, *"Sell 5 SQURPHARMA"*) attaching StockNow virtual receipts.
 
 ---
 
