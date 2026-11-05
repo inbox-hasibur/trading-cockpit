@@ -537,18 +537,22 @@ function renderMarketMap() {
       if (t.w < 65 || t.h < 45) tile.classList.add("tile-small");
       if (t.w < 45 || t.h < 32) tile.classList.add("tile-tiny");
 
-      tile.append(
-        element("span", "tile-symbol", c.symbol),
-        element("span", "tile-change", `${c.change > 0 ? "+" : ""}${c.change.toFixed(2)}%`),
-        element("span", "tile-turnover", `${c.turnover_cr.toFixed(2)}cr`)
-      );
+      if (t.w >= 36 && t.h >= 22) {
+        tile.append(element("span", "tile-symbol", c.symbol));
+        if (t.w >= 56 && t.h >= 34) {
+          tile.append(
+            element("span", "tile-change", `${c.change > 0 ? "+" : ""}${c.change.toFixed(2)}%`),
+            element("span", "tile-turnover", `${c.turnover_cr.toFixed(2)}cr`)
+          );
+        }
+      }
 
       tile.addEventListener("mousemove", (e) => {
         showTreemapTooltip(
           e,
           `<div class="tt-title">${sector.name}</div>
            <div class="tt-row"><strong class="tt-symbol">${c.symbol}</strong> <span>৳${c.price}</span></div>
-           <div class="tt-row"><span class="tt-bullet" style="background:${c.change > 0 ? "#22c55e" : c.change < 0 ? "#ef4444" : "#3b82f6"}"></span> ${c.change > 0 ? "+" : ""}${c.change.toFixed(2)}% · ${c.turnover_cr.toFixed(2)}cr turnover</div>
+           <div class="tt-row"><span class="tt-bullet" style="background:${c.change > 0 ? "#22c55e" : c.change < 0 ? "#ef4444" : "var(--tile-neutral, #64748b)"}"></span> ${c.change > 0 ? "+" : ""}${c.change.toFixed(2)}% · ${c.turnover_cr.toFixed(2)}cr turnover</div>
            <div class="tt-row muted small" style="margin-top:3px;">Click to view Deep Trend & Profile ↗</div>`
         );
       });
@@ -611,18 +615,22 @@ function renderMarketMap() {
         if (ct.w < 65 || ct.h < 45) tile.classList.add("tile-small");
         if (ct.w < 45 || ct.h < 32) tile.classList.add("tile-tiny");
 
-        tile.append(
-          element("span", "tile-symbol", c.symbol),
-          element("span", "tile-change", `${c.change > 0 ? "+" : ""}${c.change.toFixed(2)}%`),
-          element("span", "tile-turnover", `${c.turnover_cr.toFixed(2)}cr`)
-        );
+        if (ct.w >= 36 && ct.h >= 22) {
+          tile.append(element("span", "tile-symbol", c.symbol));
+          if (ct.w >= 56 && ct.h >= 34) {
+            tile.append(
+              element("span", "tile-change", `${c.change > 0 ? "+" : ""}${c.change.toFixed(2)}%`),
+              element("span", "tile-turnover", `${c.turnover_cr.toFixed(2)}cr`)
+            );
+          }
+        }
 
         tile.addEventListener("mousemove", (e) => {
           showTreemapTooltip(
             e,
             `<div class="tt-title">${sector.name}</div>
              <div class="tt-row"><strong class="tt-symbol">${c.symbol}</strong> <span>৳${c.price}</span></div>
-             <div class="tt-row"><span class="tt-bullet" style="background:${c.change > 0 ? "#22c55e" : c.change < 0 ? "#ef4444" : "#3b82f6"}"></span> ${c.change > 0 ? "+" : ""}${c.change.toFixed(2)}% · ${c.turnover_cr.toFixed(2)}cr</div>
+             <div class="tt-row"><span class="tt-bullet" style="background:${c.change > 0 ? "#22c55e" : c.change < 0 ? "#ef4444" : "var(--tile-neutral, #64748b)"}"></span> ${c.change > 0 ? "+" : ""}${c.change.toFixed(2)}% · ${c.turnover_cr.toFixed(2)}cr</div>
              <div class="tt-row muted">Sector total: ${sector.turnover_cr} cr</div>`
           );
         });
@@ -742,7 +750,7 @@ function renderTopSectorsChart() {
       );
     }
 
-    // Eql segment (top, blue #5b5bd6)
+    // Eql segment (top, neutral slate var(--tile-neutral, #475569))
     if (hEql > 0) {
       group.append(
         svgElement("rect", {
@@ -750,7 +758,7 @@ function renderTopSectorsChart() {
           y: yEql.toFixed(1),
           width: barW.toFixed(1),
           height: hEql.toFixed(1),
-          fill: "#5b5bd6",
+          fill: "var(--tile-neutral, #475569)",
           rx: "2",
         })
       );
@@ -763,7 +771,7 @@ function renderTopSectorsChart() {
         `<div class="tt-title">${d.sector}</div>
          <div class="tt-row"><span class="tt-bullet" style="background:#22c55e"></span> Up: <strong>${d.up}</strong></div>
          <div class="tt-row"><span class="tt-bullet" style="background:#ef4444"></span> Down: <strong>${d.down}</strong></div>
-         <div class="tt-row"><span class="tt-bullet" style="background:#5b5bd6"></span> Eql: <strong>${d.eql}</strong></div>
+         <div class="tt-row"><span class="tt-bullet" style="background:var(--tile-neutral, #64748b)"></span> Eql: <strong>${d.eql}</strong></div>
          <div class="tt-row muted">Turnover: ${d.turnover_cr} cr (${d.total} companies)</div>`
       );
     });

@@ -543,6 +543,31 @@ window.addEventListener("resize", () => {
   }
 });
 
+function initMarketMapResizeObserver() {
+  const target = $("market-map") || $("treemap-container");
+  if (target && typeof ResizeObserver !== "undefined") {
+    let rAF = null;
+    let lastW = 0;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const cr = entry.contentRect;
+        if (cr && Math.round(cr.width) !== lastW) {
+          lastW = Math.round(cr.width);
+          if (rAF) cancelAnimationFrame(rAF);
+          rAF = requestAnimationFrame(() => {
+            if (state.snapshot && state.snapshot.market_map) {
+              renderMarketMap();
+              renderTopSectorsChart();
+            }
+          });
+        }
+      }
+    });
+    ro.observe(target);
+  }
+}
+initMarketMapResizeObserver();
+
 // --- Theme Switcher Logic ---
 function initTheme() {
   const saved = localStorage.getItem("humming-bird-theme") || "dark";

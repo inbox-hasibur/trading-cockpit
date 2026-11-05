@@ -617,12 +617,26 @@ async function loadApiKeysSettings() {
       geminiInput.placeholder = data.gemini_key_masked || "AIzaSy••••••••";
     }
     const tgToken = $("key-telegram-token");
-    if (tgToken && data.telegram_bot_token_masked && !tgToken.value) {
-      tgToken.placeholder = data.telegram_bot_token_masked;
+    if (tgToken) {
+      if (data.telegram_bot_token_masked && !tgToken.value) {
+        tgToken.placeholder = data.telegram_bot_token_masked;
+      } else if (!tgToken.value) {
+        tgToken.placeholder = "123456789:ABC... (optional)";
+      }
+      if (!data.telegram_bot_token_masked && !tgToken.value) {
+        tgToken.value = "";
+      }
     }
     const tgChat = $("key-telegram-chat");
-    if (tgChat && (data.telegram_chat_id || data.telegram_chat_id_masked) && !tgChat.value) {
-      tgChat.value = data.telegram_chat_id || data.telegram_chat_id_masked || "";
+    if (tgChat) {
+      if (data.telegram_chat_id_masked && !tgChat.value) {
+        tgChat.placeholder = data.telegram_chat_id_masked;
+      } else if (!tgChat.value) {
+        tgChat.placeholder = "Chat ID (optional)";
+      }
+      if (!data.telegram_chat_id && !data.telegram_chat_id_masked) {
+        tgChat.value = "";
+      }
     }
     const limitVal = data.daily_call_limit || 30;
     const limitInput = $("key-daily-limit");
@@ -659,25 +673,37 @@ async function saveApiKeysSettings(e) {
   if (tgChat) payload.telegram_chat_id = tgChat;
 
   const statusMsg = $("keys-save-status");
+  const saveBtn = $("btn-save-api-keys") || $("save-keys-btn");
   try {
     await api("/api/settings/keys", {
       method: "POST",
       body: payload,
     });
     if (statusMsg) {
-      statusMsg.textContent = "✓ Settings saved securely";
+      statusMsg.textContent = "Saved ✓";
       statusMsg.className = "save-status-msg success";
-      setTimeout(() => { if (statusMsg) statusMsg.textContent = ""; }, 3000);
+    }
+    if (saveBtn) {
+      saveBtn.disabled = true;
     }
     notify("API Keys & Quotas updated successfully");
     if (orKey && $("key-openrouter")) $("key-openrouter").value = "";
     if (geminiKey && $("key-gemini")) $("key-gemini").value = "";
     if (tgToken && $("key-telegram-token")) $("key-telegram-token").value = "";
-    loadApiKeysSettings();
+    await loadApiKeysSettings();
+    setTimeout(() => {
+      if (statusMsg && statusMsg.textContent === "Saved ✓") {
+        statusMsg.textContent = "";
+        statusMsg.className = "save-status-msg";
+      }
+    }, 2000);
   } catch (err) {
     if (statusMsg) {
-      statusMsg.textContent = `! ${err.message}`;
+      statusMsg.textContent = err.message || "Failed to save configuration";
       statusMsg.className = "save-status-msg error";
+    }
+    if (saveBtn) {
+      saveBtn.disabled = false;
     }
     showError(err.message);
   }
@@ -751,10 +777,29 @@ async function handleOperatorLogout() {
   notify("Cockpit session locked");
 }
 
+function markKeysDirty() {
+  const saveBtn = $("btn-save-api-keys") || $("save-keys-btn");
+  const statusMsg = $("keys-save-status");
+  if (saveBtn) saveBtn.disabled = false;
+  if (statusMsg) {
+    statusMsg.textContent = "Unsaved changes";
+    statusMsg.className = "save-status-msg dirty";
+  }
+}
+
 function initAuthAndSettings() {
-  // Bind API keys form
+  // Bind API keys form and dirty state
   const keysForm = $("api-keys-form");
-  if (keysForm) keysForm.addEventListener("submit", saveApiKeysSettings);
+  const saveBtn = $("btn-save-api-keys") || $("save-keys-btn");
+  if (saveBtn) saveBtn.disabled = true;
+
+  if (keysForm) {
+    keysForm.addEventListener("submit", saveApiKeysSettings);
+    keysForm.querySelectorAll("input").forEach((inp) => {
+      inp.addEventListener("input", markKeysDirty);
+      inp.addEventListener("change", markKeysDirty);
+    });
+  }
 
   // Key visibility toggles (.key-toggle-btn and .key-toggle-reveal)
   document.querySelectorAll(".key-toggle-btn, .key-toggle-reveal").forEach((btn) => {

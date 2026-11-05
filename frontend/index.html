@@ -195,7 +195,7 @@
             <div id="treemap-tooltip" class="treemap-tooltip" hidden></div>
           </div>
           <div class="panel-note treemap-note">
-            <span>Click any sector to drill down. Green = Up, Red = Down, Blue = Unchanged (0.00%). Size reflects turnover.</span>
+            <span>Click any sector to drill down. Green = Up, Red = Down, Slate = Unchanged (0.00%). Size reflects turnover.</span>
             <span>Data derived from DSE real-time market breadth.</span>
           </div>
 
@@ -305,7 +305,10 @@
 
             <div class="modern-toggle-box">
               <div class="toggle-meta-group">
-                <span class="toggle-title">Master Buy/Sell Automation</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="toggle-title">Master Buy/Sell Automation</span>
+                  <span class="autosave-tag">Auto-saved</span>
+                </div>
                 <span class="circuit-state" id="circuit-state">✓ Normal execution state</span>
               </div>
               <div class="toggle-control-side">
@@ -321,7 +324,10 @@
 
             <div class="settings-subgroup" style="margin-top: 20px;">
               <div class="subgroup-heading">
-                <span class="settings-sub-label">TELEMETRY INGESTION PIPELINE</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="settings-sub-label">TELEMETRY INGESTION PIPELINE</span>
+                  <span class="autosave-tag">Auto-saved</span>
+                </div>
                 <span class="mode-indicator-pill" id="current-mode-pill">Method A Active</span>
               </div>
               <div class="segmented-mode-tiles" id="ingestion-mode-switch" role="radiogroup" aria-label="Ingestion Mode">
@@ -350,7 +356,10 @@
 
             <div class="settings-subgroup" style="margin-top: 18px;" id="polling-interval-wrap">
               <div class="subgroup-heading">
-                <span class="settings-sub-label">POLLING INTERVAL (METHOD A)</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="settings-sub-label">POLLING INTERVAL (METHOD A)</span>
+                  <span class="autosave-tag">Auto-saved</span>
+                </div>
                 <strong id="polling-interval-display" class="slider-val-tag">120s</strong>
               </div>
               <div class="slider-row-wrap">
@@ -410,14 +419,14 @@
                   <label for="key-telegram-token" class="simple-label">Telegram Bot Token</label>
                   <div class="key-input-box compact">
                     <span class="field-icon">🤖</span>
-                    <input type="password" id="key-telegram-token" class="secret-input" placeholder="bot123456:••••" autocomplete="off">
+                    <input type="password" id="key-telegram-token" class="secret-input" placeholder="123456789:ABC... (optional)" autocomplete="off">
                   </div>
                 </div>
                 <div class="modern-field-group">
                   <label for="key-telegram-chat" class="simple-label">Telegram Chat ID</label>
                   <div class="key-input-box compact">
                     <span class="field-icon">💬</span>
-                    <input type="text" id="key-telegram-chat" class="secret-input" placeholder="@channel / 123456" autocomplete="off">
+                    <input type="text" id="key-telegram-chat" class="secret-input" placeholder="Chat ID (optional)" autocomplete="off">
                   </div>
                 </div>
               </div>
@@ -437,7 +446,7 @@
               </div>
 
               <div class="form-actions" style="margin-top: 18px; display: flex; gap: 12px; align-items: center;">
-                <button type="submit" class="button primary modern-save-btn" id="save-keys-btn">
+                <button type="submit" class="button primary modern-save-btn" id="btn-save-api-keys">
                   <span>💾</span> Save API Configuration
                 </button>
                 <span class="save-status-msg" id="keys-save-status"></span>

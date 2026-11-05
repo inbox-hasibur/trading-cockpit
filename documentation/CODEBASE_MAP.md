@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 18:53:43 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 19:08:19 UTC**.
 
 ---
 
@@ -9,17 +9,17 @@
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
 | `.py` | 42 | 10,300 | Python Core Kernel, Engine & Hermes Agent |
-| `.css` | 2 | 6,849 | Custom Dark / Light / Terminal Design System |
-| `.js` | 3 | 3,407 | Vanilla ES6+ Reactive Terminal Controller |
-| `.md` | 10 | 2,038 | Architecture & Strategy Documentation |
-| `.html` | 1 | 844 | Single Page Application DOM Structure |
+| `.css` | 2 | 6,896 | Custom Dark / Light / Terminal Design System |
+| `.js` | 3 | 3,485 | Vanilla ES6+ Reactive Terminal Controller |
+| `.md` | 10 | 2,041 | Architecture & Strategy Documentation |
+| `.html` | 1 | 853 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
 | `.cursorignore` | 1 | 12 | Configuration / Asset |
 | `.opencodeignore` | 1 | 12 | Configuration / Asset |
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **65** | **23,496** | *Entire Humming Bird Repository* |
+| **TOTAL** | **65** | **23,633** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -929,39 +929,40 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 | `--teal` | Color | `#5de4c7` | `#0d9488` |
 | `--teal-bg` | Surface / Background | `#15362f` | `#ccfbf1` |
 | `--text` | Typography | `#e5edf5` | `#050811` |
+| `--tile-neutral` | Color | `#334155` | `#cbd5e1` |
 
 
 ### Component CSS Selector Map
 
 | Component Selector | Stylesheet File | Line | Display | Grid / Layout | Position | Background / Color | Flex Wrap |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `.app-shell` | [`frontend/styles.css`](/frontend/styles.css#L180) | `L180` | `grid` | `64px minmax(0, 1fr) var(--hermes-width)` | — | — | — |
-| `.nav-rail` | [`frontend/styles.css`](/frontend/styles.css#L193) | `L193` | `flex` | — | — | `var(--nav-bg)` | — |
-| `.workspace` | [`frontend/styles.css`](/frontend/styles.css#L246) | `L246` | — | — | `relative` | — | — |
-| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L270) | `L270` | `flex` | — | `sticky` | `rgba(10, 16, 24, 0.88)` | `nowrap` |
-| `.topbar-right` | [`frontend/styles.css`](/frontend/styles.css#L306) | `L306` | `flex` | — | — | — | `nowrap` |
-| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L316) | `L316` | `flex` | — | — | — | `nowrap` |
-| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L325) | `L325` | — | — | — | — | — |
-| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L332) | `L332` | — | — | — | — | — |
-| `.engine-controls` | [`frontend/styles.css`](/frontend/styles.css#L370) | `L370` | `flex` | — | — | — | — |
-| `.session-bar` | [`frontend/styles.css`](/frontend/styles.css#L406) | `L406` | `flex` | — | — | `#0e161f` | `wrap` |
-| `.metric-card` | [`frontend/styles.css`](/frontend/styles.css#L458) | `L458` | — | — | — | `var(--panel)` | — |
-| `.skills-drawer` | [`frontend/styles.css`](/frontend/styles.css#L1939) | `L1939` | — | — | — | `#0c141d` | — |
-| `.session-bar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L55) | `L55` | — | — | — | `#ffffff` | — |
-| `.metric-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L81) | `L81` | — | — | — | `#ffffff` | — |
-| `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L448) | `L448` | — | — | — | `#f8fafc !important` | — |
-| `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L502) | `L502` | — | — | — | `#ffffff !important` | — |
-| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L541) | `L541` | — | — | — | `#ffffff !important` | — |
-| `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L729) | `L729` | — | — | — | `#ccfbf1 !important` | — |
-| `.topbar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L791) | `L791` | — | — | — | `rgba(226, 232, 240, 0.92)` | — |
-| `#hermes-resizer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L814) | `L814` | — | — | `absolute` | `transparent` | — |
-| `.app-shell` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L855) | `L855` | — | — | — | — | — |
-| `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L964) | `L964` | — | — | — | — | — |
-| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1271) | `L1271` | — | — | — | `var(--panel)` | — |
-| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1400) | `L1400` | — | — | `absolute` | `var(--panel)` | — |
-| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1414) | `L1414` | — | — | — | `#ffffff` | — |
-| `.workspace` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1537) | `L1537` | — | — | — | — | — |
-| `.skills-drawer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1828) | `L1828` | — | — | — | `#ffffff !important` | — |
+| `.app-shell` | [`frontend/styles.css`](/frontend/styles.css#L181) | `L181` | `grid` | `64px minmax(0, 1fr) var(--hermes-width)` | — | — | — |
+| `.nav-rail` | [`frontend/styles.css`](/frontend/styles.css#L194) | `L194` | `flex` | — | — | `var(--nav-bg)` | — |
+| `.workspace` | [`frontend/styles.css`](/frontend/styles.css#L247) | `L247` | — | — | `relative` | — | — |
+| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L271) | `L271` | `flex` | — | `sticky` | `rgba(10, 16, 24, 0.88)` | `nowrap` |
+| `.topbar-right` | [`frontend/styles.css`](/frontend/styles.css#L307) | `L307` | `flex` | — | — | — | `nowrap` |
+| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L317) | `L317` | `flex` | — | — | — | `nowrap` |
+| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L326) | `L326` | — | — | — | — | — |
+| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L333) | `L333` | — | — | — | — | — |
+| `.engine-controls` | [`frontend/styles.css`](/frontend/styles.css#L371) | `L371` | `flex` | — | — | — | — |
+| `.session-bar` | [`frontend/styles.css`](/frontend/styles.css#L407) | `L407` | `flex` | — | — | `#0e161f` | `wrap` |
+| `.metric-card` | [`frontend/styles.css`](/frontend/styles.css#L459) | `L459` | — | — | — | `var(--panel)` | — |
+| `.skills-drawer` | [`frontend/styles.css`](/frontend/styles.css#L1942) | `L1942` | — | — | — | `#0c141d` | — |
+| `.session-bar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L56) | `L56` | — | — | — | `#ffffff` | — |
+| `.metric-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L82) | `L82` | — | — | — | `#ffffff` | — |
+| `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L449) | `L449` | — | — | — | `#f8fafc !important` | — |
+| `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L503) | `L503` | — | — | — | `#ffffff !important` | — |
+| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L542) | `L542` | — | — | — | `#ffffff !important` | — |
+| `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L730) | `L730` | — | — | — | `#ccfbf1 !important` | — |
+| `.topbar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L792) | `L792` | — | — | — | `rgba(226, 232, 240, 0.92)` | — |
+| `#hermes-resizer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L815) | `L815` | — | — | `absolute` | `transparent` | — |
+| `.app-shell` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L856) | `L856` | — | — | — | — | — |
+| `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L965) | `L965` | — | — | — | — | — |
+| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1272) | `L1272` | — | — | — | `var(--panel)` | — |
+| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1401) | `L1401` | — | — | `absolute` | `var(--panel)` | — |
+| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1415) | `L1415` | — | — | — | `#ffffff` | — |
+| `.workspace` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1538) | `L1538` | — | — | — | — | — |
+| `.skills-drawer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1829) | `L1829` | — | — | — | `#ffffff !important` | — |
 
 
 ### Key DOM Identifiers (`frontend/index.html`)
@@ -975,8 +976,8 @@ Identified **234** distinct element IDs in the UI shell. Key controller anchors:
 
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
-| `styles.css` | 4467 | Core design tokens, layout & widgets |
-| `theme_light_hermes.css` | 2382 | Daylight overrides & Hermes IDE sidebar |
+| `styles.css` | 4497 | Core design tokens, layout & widgets |
+| `theme_light_hermes.css` | 2399 | Daylight overrides & Hermes IDE sidebar |
 
 
 ### Frontend API Contract Invocations (`frontend/*.js`)
@@ -1031,18 +1032,19 @@ Identified **234** distinct element IDs in the UI shell. Key controller anchors:
 | `renderInspector()` | `app.js` | `L369` | Reactive DOM rendering / event controller |
 | `renderDecisions()` | `app.js` | `L404` | Reactive DOM rendering / event controller |
 | `renderLedger()` | `app.js` | `L421` | Reactive DOM rendering / event controller |
-| `initTheme()` | `app.js` | `L547` | Reactive DOM rendering / event controller |
-| `setTheme()` | `app.js` | `L553` | Reactive DOM rendering / event controller |
-| `toggleTheme()` | `app.js` | `L564` | Reactive DOM rendering / event controller |
-| `tickMarketClock()` | `app.js` | `L570` | Reactive DOM rendering / event controller |
-| `tickClock()` | `app.js` | `L635` | Reactive DOM rendering / event controller |
-| `renderAutomationControlBar()` | `app.js` | `L644` | Reactive DOM rendering / event controller |
-| `setAutomationConfig()` | `app.js` | `L770` | Reactive DOM rendering / event controller |
-| `initRealtimeStream()` | `app.js` | `L887` | Reactive DOM rendering / event controller |
-| `switchView()` | `app.js` | `L913` | Reactive DOM rendering / event controller |
-| `initViewRouter()` | `app.js` | `L964` | Reactive DOM rendering / event controller |
-| `initScrollSpy()` | `app.js` | `L1030` | Reactive DOM rendering / event controller |
-| `updateActiveNav()` | `app.js` | `L1043` | Reactive DOM rendering / event controller |
+| `initMarketMapResizeObserver()` | `app.js` | `L546` | Reactive DOM rendering / event controller |
+| `initTheme()` | `app.js` | `L572` | Reactive DOM rendering / event controller |
+| `setTheme()` | `app.js` | `L578` | Reactive DOM rendering / event controller |
+| `toggleTheme()` | `app.js` | `L589` | Reactive DOM rendering / event controller |
+| `tickMarketClock()` | `app.js` | `L595` | Reactive DOM rendering / event controller |
+| `tickClock()` | `app.js` | `L660` | Reactive DOM rendering / event controller |
+| `renderAutomationControlBar()` | `app.js` | `L669` | Reactive DOM rendering / event controller |
+| `setAutomationConfig()` | `app.js` | `L795` | Reactive DOM rendering / event controller |
+| `initRealtimeStream()` | `app.js` | `L912` | Reactive DOM rendering / event controller |
+| `switchView()` | `app.js` | `L938` | Reactive DOM rendering / event controller |
+| `initViewRouter()` | `app.js` | `L989` | Reactive DOM rendering / event controller |
+| `initScrollSpy()` | `app.js` | `L1055` | Reactive DOM rendering / event controller |
+| `updateActiveNav()` | `app.js` | `L1068` | Reactive DOM rendering / event controller |
 | `smoothCurvePath()` | `charts.js` | `L8` | Reactive DOM rendering / event controller |
 | `getBezierPointAtContinuousIndex()` | `charts.js` | `L31` | Reactive DOM rendering / event controller |
 | `renderMainChart()` | `charts.js` | `L63` | Reactive DOM rendering / event controller |
@@ -1053,14 +1055,14 @@ Identified **234** distinct element IDs in the UI shell. Key controller anchors:
 | `showTreemapTooltip()` | `charts.js` | `L455` | Reactive DOM rendering / event controller |
 | `hideTreemapTooltip()` | `charts.js` | `L468` | Reactive DOM rendering / event controller |
 | `renderMarketMap()` | `charts.js` | `L473` | Reactive DOM rendering / event controller |
-| `renderTopSectorsChart()` | `charts.js` | `L644` | Reactive DOM rendering / event controller |
-| `renderGainerChart()` | `charts.js` | `L804` | Reactive DOM rendering / event controller |
-| `updateWhatIfSimulator()` | `charts.js` | `L809` | Reactive DOM rendering / event controller |
-| `updateModalSimulator()` | `charts.js` | `L853` | Reactive DOM rendering / event controller |
-| `openDeepTrendModal()` | `charts.js` | `L892` | Reactive DOM rendering / event controller |
-| `closeDeepTrendModal()` | `charts.js` | `L949` | Reactive DOM rendering / event controller |
-| `renderDeepTrendChart()` | `charts.js` | `L959` | Reactive DOM rendering / event controller |
-| `initCharts()` | `charts.js` | `L1241` | Reactive DOM rendering / event controller |
+| `renderTopSectorsChart()` | `charts.js` | `L652` | Reactive DOM rendering / event controller |
+| `renderGainerChart()` | `charts.js` | `L812` | Reactive DOM rendering / event controller |
+| `updateWhatIfSimulator()` | `charts.js` | `L817` | Reactive DOM rendering / event controller |
+| `updateModalSimulator()` | `charts.js` | `L861` | Reactive DOM rendering / event controller |
+| `openDeepTrendModal()` | `charts.js` | `L900` | Reactive DOM rendering / event controller |
+| `closeDeepTrendModal()` | `charts.js` | `L957` | Reactive DOM rendering / event controller |
+| `renderDeepTrendChart()` | `charts.js` | `L967` | Reactive DOM rendering / event controller |
+| `initCharts()` | `charts.js` | `L1249` | Reactive DOM rendering / event controller |
 | `renderHermesSkills()` | `hermes_ui.js` | `L8` | Reactive DOM rendering / event controller |
 | `formatChatMarkdown()` | `hermes_ui.js` | `L52` | Reactive DOM rendering / event controller |
 | `addMessage()` | `hermes_ui.js` | `L93` | Reactive DOM rendering / event controller |
@@ -1075,15 +1077,16 @@ Identified **234** distinct element IDs in the UI shell. Key controller anchors:
 | `loadHermesModels()` | `hermes_ui.js` | `L468` | Reactive DOM rendering / event controller |
 | `switchHermesModel()` | `hermes_ui.js` | `L542` | Reactive DOM rendering / event controller |
 | `loadApiKeysSettings()` | `hermes_ui.js` | `L595` | Reactive DOM rendering / event controller |
-| `saveApiKeysSettings()` | `hermes_ui.js` | `L647` | Reactive DOM rendering / event controller |
-| `checkAuthSession()` | `hermes_ui.js` | `L687` | Reactive DOM rendering / event controller |
-| `openOperatorProfile()` | `hermes_ui.js` | `L705` | Reactive DOM rendering / event controller |
-| `closeOperatorProfile()` | `hermes_ui.js` | `L710` | Reactive DOM rendering / event controller |
-| `handleOperatorLogin()` | `hermes_ui.js` | `L715` | Reactive DOM rendering / event controller |
-| `handleOperatorLogout()` | `hermes_ui.js` | `L744` | Reactive DOM rendering / event controller |
-| `initAuthAndSettings()` | `hermes_ui.js` | `L754` | Reactive DOM rendering / event controller |
-| `loadSystemChanges()` | `hermes_ui.js` | `L822` | Reactive DOM rendering / event controller |
-| `initHermesChatListeners()` | `hermes_ui.js` | `L910` | Reactive DOM rendering / event controller |
+| `saveApiKeysSettings()` | `hermes_ui.js` | `L661` | Reactive DOM rendering / event controller |
+| `checkAuthSession()` | `hermes_ui.js` | `L713` | Reactive DOM rendering / event controller |
+| `openOperatorProfile()` | `hermes_ui.js` | `L731` | Reactive DOM rendering / event controller |
+| `closeOperatorProfile()` | `hermes_ui.js` | `L736` | Reactive DOM rendering / event controller |
+| `handleOperatorLogin()` | `hermes_ui.js` | `L741` | Reactive DOM rendering / event controller |
+| `handleOperatorLogout()` | `hermes_ui.js` | `L770` | Reactive DOM rendering / event controller |
+| `markKeysDirty()` | `hermes_ui.js` | `L780` | Reactive DOM rendering / event controller |
+| `initAuthAndSettings()` | `hermes_ui.js` | `L790` | Reactive DOM rendering / event controller |
+| `loadSystemChanges()` | `hermes_ui.js` | `L867` | Reactive DOM rendering / event controller |
+| `initHermesChatListeners()` | `hermes_ui.js` | `L955` | Reactive DOM rendering / event controller |
 
 ---
 
@@ -1163,4 +1166,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 23,496 total LOC indexed.
+> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 23,633 total LOC indexed.

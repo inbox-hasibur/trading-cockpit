@@ -47,6 +47,7 @@
   --red-bg: #35232c;
   --amber: #e4bb73;
   --blue: #8dacf0;
+  --tile-neutral: #334155;
   --radius: 10px;
   --chart-grid: #1c2837;
   --chart-crosshair: #5de4c7;
@@ -690,7 +691,9 @@ select {
 }
 
 input::placeholder, textarea::placeholder {
-  color: #63768b;
+  font-style: italic;
+  color: var(--dim);
+  opacity: 0.7;
 }
 
 .table-scroll {
@@ -2125,7 +2128,7 @@ input[type=checkbox] {
 }
 
 .treemap-tile.tile-eql {
-  background: #2563eb; /* Blue for 0.00% matching screenshot */
+  background: var(--tile-neutral, #334155);
   color: #ffffff;
 }
 
@@ -2272,7 +2275,7 @@ input[type=checkbox] {
 }
 
 .legend-swatch.eql {
-  background: #5b5bd6;
+  background: var(--tile-neutral, #475569);
 }
 
 .sector-gainer-chart-wrap {
@@ -2570,7 +2573,7 @@ input[type=checkbox] {
 }
 
 .scale-0 {
-  background: #2563eb;
+  background: var(--tile-neutral, #334155);
 }
 
 .scale-g1 {
@@ -3801,8 +3804,28 @@ button.local-avatar:hover {
   color: #10b981;
 }
 
+.save-status-msg.dirty {
+  color: #f59e0b;
+}
+
 .save-status-msg.error {
   color: var(--red);
+}
+
+.autosave-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--teal, #14b8a6);
+  background: rgba(20, 184, 166, 0.12);
+  border: 1px solid rgba(20, 184, 166, 0.25);
+  line-height: 1.4;
+  vertical-align: middle;
 }
 
 
@@ -4445,6 +4468,13 @@ button.local-avatar:hover {
 .modern-save-btn:hover {
   filter: brightness(1.1);
   transform: translateY(-1px);
+}
+
+.modern-save-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
 }
 
 
