@@ -646,7 +646,7 @@ function renderMarketMap() {
         showTreemapTooltip(
           e,
           `<div class="tt-title">${sector.name}</div>
-           <div class="tt-row"><strong style="color:#fff;">${c.symbol}</strong> <span>৳${c.price}</span></div>
+           <div class="tt-row"><strong class="tt-symbol">${c.symbol}</strong> <span>৳${c.price}</span></div>
            <div class="tt-row"><span class="tt-bullet" style="background:${c.change > 0 ? "#22c55e" : c.change < 0 ? "#ef4444" : "#3b82f6"}"></span> ${c.change > 0 ? "+" : ""}${c.change.toFixed(2)}% · ${c.turnover_cr.toFixed(2)}cr turnover</div>
            <div class="tt-row muted small" style="margin-top:3px;">Click to view Deep Trend & Profile ↗</div>`
         );
@@ -720,7 +720,7 @@ function renderMarketMap() {
           showTreemapTooltip(
             e,
             `<div class="tt-title">${sector.name}</div>
-             <div class="tt-row"><strong style="color:#fff;">${c.symbol}</strong> <span>৳${c.price}</span></div>
+             <div class="tt-row"><strong class="tt-symbol">${c.symbol}</strong> <span>৳${c.price}</span></div>
              <div class="tt-row"><span class="tt-bullet" style="background:${c.change > 0 ? "#22c55e" : c.change < 0 ? "#ef4444" : "#3b82f6"}"></span> ${c.change > 0 ? "+" : ""}${c.change.toFixed(2)}% · ${c.turnover_cr.toFixed(2)}cr</div>
              <div class="tt-row muted">Sector total: ${sector.turnover_cr} cr</div>`
           );

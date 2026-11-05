@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 04:39:13 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 10:43:24 UTC**.
 
 ---
 
@@ -9,7 +9,7 @@
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
 | `.py` | 28 | 5,811 | Python Core Kernel, Engine & Hermes Agent |
-| `.css` | 1 | 4,584 | Custom Dark / Light / Terminal Design System |
+| `.css` | 1 | 4,764 | Custom Dark / Light / Terminal Design System |
 | `.js` | 1 | 2,805 | Vanilla ES6+ Reactive Terminal Controller |
 | `.md` | 10 | 1,531 | Architecture & Strategy Documentation |
 | `.html` | 1 | 830 | Single Page Application DOM Structure |
@@ -19,7 +19,7 @@
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **48** | **15,619** | *Entire Humming Bird Repository* |
+| **TOTAL** | **48** | **15,799** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -773,4 +773,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 24 Python modules inspected, 23 FastAPI endpoints registered, 15,619 total LOC indexed.
+> **Audit Summary:** 24 Python modules inspected, 23 FastAPI endpoints registered, 15,799 total LOC indexed.
