@@ -1306,6 +1306,29 @@ body.is-resizing-hermes * {
   flex-wrap: wrap;
   margin-bottom: 14px;
 }
+.quick-prompts button {
+  border: 1px solid #2b3a49;
+  background: #131e29;
+  border-radius: 5px;
+  color: #98aec3;
+  padding: 6px 8px;
+  font-size: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.quick-prompts button:hover {
+  border-color: #4c6b64;
+  color: var(--teal);
+  background: #172431;
+}
+.quick-prompts span {
+  color: #56736e;
+  margin-left: 4px;
+}
 .provider-status {
   display: flex;
   align-items: center;
@@ -4761,6 +4784,9 @@ button.local-avatar:hover {
   background: #ccfbf1 !important;
   border-color: #0d9488 !important;
   color: #0f766e !important;
+}
+[data-theme="light"] .quick-prompts span {
+  color: #0d9488 !important;
 }
 [data-theme="light"] .bottom-model-btn {
   color: #050811 !important;
