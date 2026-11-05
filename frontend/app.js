@@ -124,7 +124,7 @@ async function api(path, { method = "GET", body, headers = {}, timeout = 35000 }
   if (state.token) requestHeaders.Authorization = `Bearer ${state.token}`;
   try {
     const response = await fetch(path, {
-      method, headers: requestHeaders, body: body === undefined ? undefined : JSON.stringify(body),
+      method, headers: requestHeaders, body: body === undefined ? undefined : (typeof body === "string" ? body : JSON.stringify(body)),
       signal: controller.signal, cache: "no-store", credentials: "same-origin",
     });
     let data;

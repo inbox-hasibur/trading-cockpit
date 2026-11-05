@@ -264,3 +264,41 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
 |  - HermesSessionMemory & Threads          - HermesSkillRevisions            - HermesDurableFacts     |
 +-------------------------------------------------------------------------------------------------------+
 ```
+
+---
+
+## 6. Hermes 3-Tier Brain Architecture & Gemini Multi-Key Rotation
+
+Hermes operates on a resilient 3-Tier AI model execution architecture designed for zero disruption, sub-second latency, and automatic quota rollback:
+
+### 3-Tier Execution Hierarchy
+1. **Tier 1 — Primary Reasoning Brain (OpenRouter):**
+   - High-precision reasoning and quantitative market analysis.
+   - Catalog:
+     - `xiaomi/mimo-v2.6-pro` (*Xiaomi MiMo-v2.6-Pro — Primary Brain default*)
+     - `xiaomi/mimo-v2.6-flash` (*Xiaomi MiMo-v2.6-Flash — Ultra Fast*)
+     - `deepseek/deepseek-chat` (*DeepSeek V3 / 4.1 Flash — Deep Reasoning*)
+     - `deepseek/deepseek-r1` (*DeepSeek R1 — Reasoning / Math*)
+     - `meta-llama/llama-3.3-70b-instruct` (*Llama 3.3 70B — High Precision*)
+     - `anthropic/claude-3.5-sonnet` (*Claude 3.5 Sonnet — Elite Quant*)
+2. **Tier 2 — 1st Fallback & Direct Execution (Google Gemini API):**
+   - Instant failover when OpenRouter fails, experiences rate limits, or has exhausted credits.
+   - Can also be directly selected as the Primary Brain for $0 external API cost.
+   - Tested & verified Gemini 3.x models:
+     - `google/gemini-3.1-flash-lite` (*Fastest response, ~1.5s, fluent Banglish & English*)
+     - `google/gemini-3.5-flash` (*Balanced deep analysis & stability*)
+     - `google/gemini-3.8-flash` (*Latest preview capabilities*)
+     - `google/gemini-3.7-flash` (*Hybrid reasoning*)
+3. **Tier 3 — 2nd Fallback (Local Deterministic Quant Brain):**
+   - Always available, $0 offline fallback generating rule-based portfolio summaries and deterministic trade advice directly from SQLite state.
+
+### Multi-Key Gemini Rotation & 429 Rollback
+- Operators can configure multiple Gemini API keys (comma-separated in `GEMINI_API_KEY` or `GEMINI_API_KEYS`, e.g. `key1, key2, key3`).
+- If an active key returns HTTP 429 (Resource Exhausted / Quota Limit), 403, 503, or connection timeout, Hermes automatically logs a warning and rolls back / rotates immediately to the next configured key without interrupting the operator.
+- Settings page API key viewer displays masked active key status (e.g. `AIza...1234, AIza...5678 (2 keys active)`).
+
+### Seamless Model Switching
+- **Conversational Chat Command:** `/model <name>` supports full model IDs as well as colloquial aliases (`/model mimov2.6 pro`, `/model deepseek 4.1 flash`, `/model gemini lite`, `/model local`).
+- **UI Bottom Drop-Up Menu:** Dedicated `#hermes-model-trigger` with active provider indicator (`OPENROUTER ·`, `GEMINI ·`, `LOCAL ·`).
+- **Settings View Selector:** `#settings-model-select` dropdown with synchronized fallback chain status badges.
+- Every model switch automatically records a state checkpoint for 1-click `/rollback`.

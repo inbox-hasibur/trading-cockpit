@@ -340,12 +340,17 @@ def handle_set_ai_model(
 ) -> dict[str, Any]:
     target_model = args.get("model", "").strip()
     available = [
-        "xiaomi/mimo-v2-flash",
+        "xiaomi/mimo-v2.6-pro",
+        "xiaomi/mimo-v2.6-flash",
         "deepseek/deepseek-chat",
-        "xiaomi/mimo-v2-pro",
-        "google/gemini-2.5-flash",
-        "anthropic/claude-3.5-haiku",
+        "deepseek/deepseek-r1",
         "meta-llama/llama-3.3-70b-instruct",
+        "anthropic/claude-3.5-sonnet",
+        "google/gemini-3.1-flash-lite",
+        "google/gemini-3.5-flash",
+        "google/gemini-3.8-flash",
+        "google/gemini-3.7-flash",
+        "local-quant-brain",
     ]
     if not target_model:
         curr = getattr(state, "active_model", settings.openrouter_model)
@@ -828,9 +833,47 @@ def detect_intent_and_tool(message: str, snapshot: dict) -> tuple[str | None, di
     text_lower = text.lower()
 
     # 0. Model command
-    if text.startswith("/model") or text_lower.startswith("switch model") or text_lower.startswith("model change"):
+    if text.startswith("/model") or text_lower.startswith("switch model") or text_lower.startswith("model change") or text_lower.startswith("model switch"):
         parts = text.split(maxsplit=1)
-        target = parts[1].strip() if len(parts) > 1 else ""
+        raw_target = parts[1].strip() if len(parts) > 1 else ""
+        alias_map = {
+            "mimov2.6 pro": "xiaomi/mimo-v2.6-pro",
+            "mimov2.6-pro": "xiaomi/mimo-v2.6-pro",
+            "mimo-v2.6-pro": "xiaomi/mimo-v2.6-pro",
+            "mimo v2.6 pro": "xiaomi/mimo-v2.6-pro",
+            "mimo pro": "xiaomi/mimo-v2.6-pro",
+            "mimov2.6 flash": "xiaomi/mimo-v2.6-flash",
+            "mimov2.6-flash": "xiaomi/mimo-v2.6-flash",
+            "mimo-v2.6-flash": "xiaomi/mimo-v2.6-flash",
+            "mimo flash": "xiaomi/mimo-v2.6-flash",
+            "deepseek 4.1": "deepseek/deepseek-chat",
+            "deepseek 4.1 flash": "deepseek/deepseek-chat",
+            "deepseek": "deepseek/deepseek-chat",
+            "deepseek v3": "deepseek/deepseek-chat",
+            "deepseek-chat": "deepseek/deepseek-chat",
+            "deepseek r1": "deepseek/deepseek-r1",
+            "deepseek-r1": "deepseek/deepseek-r1",
+            "llama": "meta-llama/llama-3.3-70b-instruct",
+            "llama 3.3": "meta-llama/llama-3.3-70b-instruct",
+            "claude": "anthropic/claude-3.5-sonnet",
+            "claude 3.5": "anthropic/claude-3.5-sonnet",
+            "gemini 3.1": "google/gemini-3.1-flash-lite",
+            "gemini-3.1-flash-lite": "google/gemini-3.1-flash-lite",
+            "gemini 3.1 flash lite": "google/gemini-3.1-flash-lite",
+            "gemini 3.1 lite": "google/gemini-3.1-flash-lite",
+            "gemini lite": "google/gemini-3.1-flash-lite",
+            "gemini 3.5": "google/gemini-3.5-flash",
+            "gemini-3.5-flash": "google/gemini-3.5-flash",
+            "gemini 3.5 flash": "google/gemini-3.5-flash",
+            "gemini 3.8": "google/gemini-3.8-flash",
+            "gemini-3.8-flash": "google/gemini-3.8-flash",
+            "gemini 3.7": "google/gemini-3.7-flash",
+            "gemini-3.7-flash": "google/gemini-3.7-flash",
+            "local": "local-quant-brain",
+            "local brain": "local-quant-brain",
+            "local-quant-brain": "local-quant-brain",
+        }
+        target = alias_map.get(raw_target.lower(), raw_target)
         return "set_ai_model", {"model": target}
 
     # 0.1 StockNow Live Session Commands

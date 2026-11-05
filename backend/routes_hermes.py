@@ -132,17 +132,23 @@ def build_hermes_router(database: Database, settings: Settings, chat: ChatServic
             state = portfolio_state(session)
             active = getattr(state, "active_model", settings.openrouter_model)
         available = [
-            {"id": "xiaomi/mimo-v2-flash", "name": "Xiaomi MiMo-v2-Flash (Ultra Fast / Free)", "tier": 1},
-            {"id": "deepseek/deepseek-chat", "name": "DeepSeek V3 (Deep Reasoning)", "tier": 1},
+            {"id": "xiaomi/mimo-v2.6-pro", "name": "Xiaomi MiMo-v2.6-Pro (Primary Brain)", "tier": 1},
+            {"id": "xiaomi/mimo-v2.6-flash", "name": "Xiaomi MiMo-v2.6-Flash (Ultra Fast)", "tier": 1},
+            {"id": "deepseek/deepseek-chat", "name": "DeepSeek V3 / 4.1 Flash (Deep Reasoning)", "tier": 1},
+            {"id": "deepseek/deepseek-r1", "name": "DeepSeek R1 (Reasoning / Math)", "tier": 1},
             {"id": "meta-llama/llama-3.3-70b-instruct", "name": "Llama 3.3 70B (High Precision)", "tier": 1},
-            {"id": "google/gemini-2.0-flash-001", "name": "Gemini 2.0 Flash (Fast Analysis)", "tier": 1},
             {"id": "anthropic/claude-3.5-sonnet", "name": "Claude 3.5 Sonnet (Elite Quant)", "tier": 1},
-            {"id": "google/gemini-2.5-flash", "name": "Google Gemini 2.5 Flash (1st Fallback)", "tier": 2},
+            {"id": "google/gemini-3.1-flash-lite", "name": "Google Gemini 3.1 Flash-Lite (Fastest ~1.5s)", "tier": 2},
+            {"id": "google/gemini-3.5-flash", "name": "Google Gemini 3.5 Flash (Balanced Analysis)", "tier": 2},
+            {"id": "google/gemini-3.8-flash", "name": "Google Gemini 3.8 Flash (Latest Preview)", "tier": 2},
+            {"id": "google/gemini-3.7-flash", "name": "Google Gemini 3.7 Flash (Hybrid Reasoning)", "tier": 2},
             {"id": "local-quant-brain", "name": "Local Deterministic Quant Brain ($0 Offline)", "tier": 3},
         ]
+        has_gemini = bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or getattr(settings, "gemini_api_key", ""))
+        is_direct_gemini = active.startswith("google/") or active.startswith("gemini")
         fallback_chain = [
-            {"tier": 1, "name": "Primary Brain", "target": active, "status": "ACTIVE" if settings.openrouter_api_key else "STANDBY"},
-            {"tier": 2, "name": "1st Fallback", "target": "google/gemini-2.5-flash", "status": "READY" if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") else "OFFLINE"},
+            {"tier": 1, "name": "Primary Brain", "target": active, "status": "ACTIVE" if (settings.openrouter_api_key or (is_direct_gemini and has_gemini)) else "STANDBY"},
+            {"tier": 2, "name": "1st Fallback", "target": "google/gemini-3.1-flash-lite", "status": "READY" if has_gemini else "OFFLINE"},
             {"tier": 3, "name": "2nd Fallback", "target": "Local Deterministic Quant Brain", "status": "ALWAYS AVAILABLE"},
         ]
         return {

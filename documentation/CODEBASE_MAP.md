@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 15:52:55 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 16:20:28 UTC**.
 
 ---
 
@@ -8,18 +8,18 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 40 | 8,713 | Python Core Kernel, Engine & Hermes Agent |
+| `.py` | 40 | 8,918 | Python Core Kernel, Engine & Hermes Agent |
 | `.css` | 2 | 6,720 | Custom Dark / Light / Terminal Design System |
-| `.js` | 3 | 3,175 | Vanilla ES6+ Reactive Terminal Controller |
-| `.md` | 10 | 1,840 | Architecture & Strategy Documentation |
-| `.html` | 1 | 849 | Single Page Application DOM Structure |
+| `.js` | 3 | 3,178 | Vanilla ES6+ Reactive Terminal Controller |
+| `.md` | 10 | 1,888 | Architecture & Strategy Documentation |
+| `.html` | 1 | 853 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
 | `.cursorignore` | 1 | 12 | Configuration / Asset |
 | `.opencodeignore` | 1 | 12 | Configuration / Asset |
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **63** | **21,355** | *Entire Humming Bird Repository* |
+| **TOTAL** | **63** | **21,615** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -449,7 +449,7 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
 | `CheckpointManager` | `L62–L222` | `object` | — | 2 |
-| `HermesAgentLoop` | `L225–L483` | `object` | — | 8 |
+| `HermesAgentLoop` | `L225–L561` | `object` | — | 10 |
 
 
 **Methods in `CheckpointManager`:**
@@ -470,8 +470,10 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | `detect_intent_and_tool` | `L250–L252` | `(self, message: str, snapshot: dict...)` | `tuple[str | None, dict[str, Any]]` | High-precision intent detector for Bangla, Banglish & English agent commands. | `detect_intent_and_tool` |
 | `run_turn` | `L254–L325` | `(self, user_message: str, history: l...)` | `dict[str, Any]` | Main turn loop: Layered Memory + Skills Injection + Tool Execution + Context Scrubbing. | `HermesMemory`, `_conversational_inference`, `_format_tool_response`, `build_snapshot` |
 | `_format_tool_response` | `L327–L328` | `(self, tool_name: str, tool_res: dic...)` | `str` | — | `format_tool_response` |
-| `_conversational_inference` | `L330–L465` | `(self, message: str, history: list[d...)` | `dict[str, Any]` | Runs conversational response with Layered Memory and Matched SKILL.md injection. | `AsyncClient`, `ChatBudget`, `HermesMemory`, `Timeout` |
-| `_local_conversational_fallback` | `L467–L483` | `(self, message: str, snapshot: dict,...)` | `dict[str, Any]` | — | `HermesMemory`, `local_summary`, `portfolio_state`, `record_turn` |
+| `get_gemini_keys` | `L330–L339` | `(self...)` | `list[str]` | — | `append`, `getattr`, `replace`, `split` |
+| `_call_gemini_with_key_rotation` | `L341–L414` | `(self, target_model: str, full_syste...)` | `dict[str, Any] | None` | Calls Google Gemini API with automatic multi-key rotation / rollback on 429, 403, 503 or quota limits. | `AsyncClient`, `HermesMemory`, `Timeout`, `append` |
+| `_conversational_inference` | `L416–L543` | `(self, message: str, history: list[d...)` | `dict[str, Any]` | Runs conversational response with Layered Memory and Matched SKILL.md injection. | `AsyncClient`, `ChatBudget`, `HermesMemory`, `Timeout` |
+| `_local_conversational_fallback` | `L545–L561` | `(self, message: str, snapshot: dict,...)` | `dict[str, Any]` | — | `HermesMemory`, `local_summary`, `portfolio_state`, `record_turn` |
 
 
 ---
@@ -566,17 +568,17 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | `handle_execute_manual_order` | `L176–L253` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `ThreadPoolExecutor`, `ValueError`, `all`, `create_checkpoint` |
 | `handle_learn_or_patch_skill` | `L256–L282` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `create_checkpoint`, `get`, `learn_or_patch_skill` |
 | `handle_set_automation_config` | `L285–L331` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `ValueError`, `bool`, `create_checkpoint`, `flush` |
-| `handle_set_ai_model` | `L334–L374` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `create_checkpoint`, `flush`, `get`, `getattr` |
-| `handle_evaluate_canary_theses` | `L377–L393` | `(session: Session, state: PortfolioS...)` | `dict[str, Any]` | — | `check_canary_theses`, `isoformat`, `learn_or_patch_skill` |
-| `handle_control_stocknow_session` | `L396–L513` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `Database`, `StockNowLiveClient`, `ThreadPoolExecutor`, `append` |
-| `dispatch_tool` | `L520–L554` | `(tool_name: str, args: dict[str, Any...)` | `dict[str, Any]` | Routes tool execution to dedicated handlers with low nesting depth (<= 3). | `ValueError`, `handle_control_stocknow_session`, `handle_evaluate_canary_theses`, `handle_execute_manual_order` |
-| `_fmt_rollback` | `L561–L577` | `(res: dict[str, Any], bangla: bool...)` | `str` | — | `join` |
-| `_fmt_report_threat` | `L580–L606` | `(res: dict[str, Any], bangla: bool...)` | `str` | — | — |
-| `_fmt_watchlist_tier` | `L609–L620` | `(tool_res: dict[str, Any], bangla: b...)` | `str` | — | `get` |
-| `_fmt_automation_config` | `L623–L645` | `(tool_res: dict[str, Any], bangla: b...)` | `str` | — | — |
-| `_fmt_ai_model` | `L648–L678` | `(tool_res: dict[str, Any], bangla: b...)` | `str` | — | `get`, `join` |
-| `format_tool_response` | `L681–L818` | `(tool_name: str, tool_res: dict[str,...)` | `str` | Formats human-friendly Bangla/English message summarizing the executed tool's outcome. | `_fmt_ai_model`, `_fmt_automation_config`, `_fmt_report_threat`, `_fmt_rollback` |
-| `detect_intent_and_tool` | `L825–L1000` | `(message: str, snapshot: dict...)` | `tuple[str | None, dict[str, Any]]` | High-precision intent detector for Bangla, Banglish & English agent commands. | `any`, `float`, `get`, `int` |
+| `handle_set_ai_model` | `L334–L379` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `create_checkpoint`, `flush`, `get`, `getattr` |
+| `handle_evaluate_canary_theses` | `L382–L398` | `(session: Session, state: PortfolioS...)` | `dict[str, Any]` | — | `check_canary_theses`, `isoformat`, `learn_or_patch_skill` |
+| `handle_control_stocknow_session` | `L401–L518` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `Database`, `StockNowLiveClient`, `ThreadPoolExecutor`, `append` |
+| `dispatch_tool` | `L525–L559` | `(tool_name: str, args: dict[str, Any...)` | `dict[str, Any]` | Routes tool execution to dedicated handlers with low nesting depth (<= 3). | `ValueError`, `handle_control_stocknow_session`, `handle_evaluate_canary_theses`, `handle_execute_manual_order` |
+| `_fmt_rollback` | `L566–L582` | `(res: dict[str, Any], bangla: bool...)` | `str` | — | `join` |
+| `_fmt_report_threat` | `L585–L611` | `(res: dict[str, Any], bangla: bool...)` | `str` | — | — |
+| `_fmt_watchlist_tier` | `L614–L625` | `(tool_res: dict[str, Any], bangla: b...)` | `str` | — | `get` |
+| `_fmt_automation_config` | `L628–L650` | `(tool_res: dict[str, Any], bangla: b...)` | `str` | — | — |
+| `_fmt_ai_model` | `L653–L683` | `(tool_res: dict[str, Any], bangla: b...)` | `str` | — | `get`, `join` |
+| `format_tool_response` | `L686–L823` | `(tool_name: str, tool_res: dict[str,...)` | `str` | Formats human-friendly Bangla/English message summarizing the executed tool's outcome. | `_fmt_ai_model`, `_fmt_automation_config`, `_fmt_report_threat`, `_fmt_rollback` |
+| `detect_intent_and_tool` | `L830–L1043` | `(message: str, snapshot: dict...)` | `tuple[str | None, dict[str, Any]]` | High-precision intent detector for Bangla, Banglish & English agent commands. | `any`, `float`, `get`, `int` |
 
 
 ---
@@ -676,13 +678,14 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `build_auth_settings_router` | `L40–L166` | `(database: Database, settings: Setti...)` | `APIRouter` | — | `APIRouter` |
+| `build_auth_settings_router` | `L40–L174` | `(database: Database, settings: Setti...)` | `APIRouter` | — | `APIRouter` |
 | `login` | `L44–L58` | `(body: LoginRequest...)` | — | — | `HTTPException`, `add`, `post`, `uuid4` |
 | `logout` | `L61–L65` | `(request: Request...)` | — | — | `discard`, `get`, `post`, `replace` |
 | `auth_session` | `L68–L80` | `(request: Request...)` | — | — | `bool`, `get`, `replace`, `strip` |
-| `get_api_keys` | `L83–L115` | `(...)` | — | — | `bool`, `date`, `get`, `getattr` |
-| `mask` | `L84–L89` | `(s: str...)` | `str` | — | `len` |
-| `update_api_keys` | `L118–L164` | `(body: KeysSettingsRequest...)` | — | — | `__setattr__`, `append`, `create_checkpoint`, `join` |
+| `get_api_keys` | `L83–L123` | `(...)` | — | — | `bool`, `date`, `get`, `getattr` |
+| `mask_single` | `L84–L89` | `(s: str...)` | `str` | — | `len` |
+| `mask` | `L91–L97` | `(s: str...)` | `str` | — | `join`, `len`, `mask_single`, `replace` |
+| `update_api_keys` | `L126–L172` | `(body: KeysSettingsRequest...)` | — | — | `__setattr__`, `append`, `create_checkpoint`, `join` |
 
 
 ---
@@ -700,15 +703,15 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `build_hermes_router` | `L26–L199` | `(database: Database, settings: Setti...)` | `APIRouter` | — | `APIRouter` |
+| `build_hermes_router` | `L26–L205` | `(database: Database, settings: Setti...)` | `APIRouter` | — | `APIRouter` |
 | `chat_route` | `L30–L34` | `(body: ChatRequest...)` | — | — | `get`, `post`, `publish`, `respond` |
 | `list_conversations` | `L37–L41` | `(...)` | — | — | `HermesMemory`, `get`, `list_threads`, `read` |
 | `create_conversation` | `L44–L55` | `(body: CreateThreadRequest...)` | — | — | `HermesMemory`, `get_or_create_thread`, `post`, `write` |
 | `conversation_messages` | `L58–L62` | `(conversation_id: str...)` | — | — | `HermesMemory`, `get`, `get_thread_messages`, `read` |
 | `system_changes` | `L65–L127` | `(...)` | — | — | `Path`, `append`, `desc`, `get` |
-| `hermes_models` | `L130–L152` | `(...)` | — | — | `get`, `getattr`, `getenv`, `portfolio_state` |
-| `set_hermes_model` | `L155–L188` | `(payload: dict...)` | — | — | `HTTPException`, `create_checkpoint`, `get`, `getattr` |
-| `rollback_checkpoint` | `L191–L197` | `(...)` | — | — | `portfolio_state`, `post`, `publish`, `rollback_last` |
+| `hermes_models` | `L130–L158` | `(...)` | — | — | `bool`, `get`, `getattr`, `getenv` |
+| `set_hermes_model` | `L161–L194` | `(payload: dict...)` | — | — | `HTTPException`, `create_checkpoint`, `get`, `getattr` |
+| `rollback_checkpoint` | `L197–L203` | `(...)` | — | — | `portfolio_state`, `post`, `publish`, `rollback_last` |
 
 
 ---
@@ -940,17 +943,17 @@ Identified **233** distinct element IDs in the UI shell. Key controller anchors:
 | `escapeHtml()` | `hermes_ui.js` | `L357` | Reactive DOM rendering / event controller |
 | `executeRollback()` | `hermes_ui.js` | `L367` | Reactive DOM rendering / event controller |
 | `loadHermesModels()` | `hermes_ui.js` | `L390` | Reactive DOM rendering / event controller |
-| `switchHermesModel()` | `hermes_ui.js` | `L445` | Reactive DOM rendering / event controller |
-| `loadApiKeysSettings()` | `hermes_ui.js` | `L467` | Reactive DOM rendering / event controller |
-| `saveApiKeysSettings()` | `hermes_ui.js` | `L517` | Reactive DOM rendering / event controller |
-| `checkAuthSession()` | `hermes_ui.js` | `L557` | Reactive DOM rendering / event controller |
-| `openOperatorProfile()` | `hermes_ui.js` | `L575` | Reactive DOM rendering / event controller |
-| `closeOperatorProfile()` | `hermes_ui.js` | `L580` | Reactive DOM rendering / event controller |
-| `handleOperatorLogin()` | `hermes_ui.js` | `L585` | Reactive DOM rendering / event controller |
-| `handleOperatorLogout()` | `hermes_ui.js` | `L614` | Reactive DOM rendering / event controller |
-| `initAuthAndSettings()` | `hermes_ui.js` | `L624` | Reactive DOM rendering / event controller |
-| `loadSystemChanges()` | `hermes_ui.js` | `L692` | Reactive DOM rendering / event controller |
-| `initHermesChatListeners()` | `hermes_ui.js` | `L780` | Reactive DOM rendering / event controller |
+| `switchHermesModel()` | `hermes_ui.js` | `L448` | Reactive DOM rendering / event controller |
+| `loadApiKeysSettings()` | `hermes_ui.js` | `L470` | Reactive DOM rendering / event controller |
+| `saveApiKeysSettings()` | `hermes_ui.js` | `L520` | Reactive DOM rendering / event controller |
+| `checkAuthSession()` | `hermes_ui.js` | `L560` | Reactive DOM rendering / event controller |
+| `openOperatorProfile()` | `hermes_ui.js` | `L578` | Reactive DOM rendering / event controller |
+| `closeOperatorProfile()` | `hermes_ui.js` | `L583` | Reactive DOM rendering / event controller |
+| `handleOperatorLogin()` | `hermes_ui.js` | `L588` | Reactive DOM rendering / event controller |
+| `handleOperatorLogout()` | `hermes_ui.js` | `L617` | Reactive DOM rendering / event controller |
+| `initAuthAndSettings()` | `hermes_ui.js` | `L627` | Reactive DOM rendering / event controller |
+| `loadSystemChanges()` | `hermes_ui.js` | `L695` | Reactive DOM rendering / event controller |
+| `initHermesChatListeners()` | `hermes_ui.js` | `L783` | Reactive DOM rendering / event controller |
 
 ---
 
@@ -985,7 +988,8 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/engine/t2_ledger.py` | `bucket_balances` | 31 | 4 | Acceptable; well-scoped logic |
 | `backend/hermes/agent_loop.py` | `rollback_last` | 104 | 3 | Decompose into sub-functions |
 | `backend/hermes/agent_loop.py` | `run_turn` | 72 | 4 | Acceptable; well-scoped logic |
-| `backend/hermes/agent_loop.py` | `_conversational_inference` | 136 | 6 | Decompose into sub-functions |
+| `backend/hermes/agent_loop.py` | `_call_gemini_with_key_rotation` | 74 | 6 | Acceptable; well-scoped logic |
+| `backend/hermes/agent_loop.py` | `_conversational_inference` | 128 | 4 | Decompose into sub-functions |
 | `backend/hermes/memory.py` | `record_turn` | 29 | 4 | Acceptable; well-scoped logic |
 | `backend/hermes/memory.py` | `search_sessions` | 28 | 4 | Acceptable; well-scoped logic |
 | `backend/hermes/memory.py` | `format_layer_3_prompt` | 17 | 5 | Acceptable; well-scoped logic |
@@ -995,7 +999,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/hermes/tools_dispatcher.py` | `handle_control_stocknow_session` | 118 | 9 | Decompose into sub-functions |
 | `backend/hermes/tools_dispatcher.py` | `dispatch_tool` | 35 | 12 | Acceptable; well-scoped logic |
 | `backend/hermes/tools_dispatcher.py` | `format_tool_response` | 138 | 6 | Decompose into sub-functions |
-| `backend/hermes/tools_dispatcher.py` | `detect_intent_and_tool` | 176 | 5 | Decompose into sub-functions |
+| `backend/hermes/tools_dispatcher.py` | `detect_intent_and_tool` | 214 | 5 | Decompose into sub-functions |
 | `backend/main.py` | `create_app` | 220 | 4 | Decompose into sub-functions |
 | `backend/main.py` | `local_security` | 39 | 4 | Acceptable; well-scoped logic |
 | `backend/main.py` | `event_stream` | 26 | 4 | Acceptable; well-scoped logic |
@@ -1003,8 +1007,8 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/market_map.py` | `build_market_map_payload` | 72 | 5 | Acceptable; well-scoped logic |
 | `backend/portfolio.py` | `snapshot_from_session` | 273 | 3 | Decompose into sub-functions |
 | `backend/portfolio.py` | `normalized_watchlist` | 20 | 4 | Acceptable; well-scoped logic |
-| `backend/routes_auth_settings.py` | `build_auth_settings_router` | 127 | 2 | Decompose into sub-functions |
-| `backend/routes_hermes.py` | `build_hermes_router` | 174 | 5 | Decompose into sub-functions |
+| `backend/routes_auth_settings.py` | `build_auth_settings_router` | 135 | 2 | Decompose into sub-functions |
+| `backend/routes_hermes.py` | `build_hermes_router` | 180 | 5 | Decompose into sub-functions |
 | `backend/routes_hermes.py` | `system_changes` | 63 | 5 | Acceptable; well-scoped logic |
 | `backend/routes_stocknow.py` | `build_stocknow_router` | 146 | 4 | Decompose into sub-functions |
 | `backend/routes_stocknow.py` | `post_stocknow_session` | 20 | 4 | Acceptable; well-scoped logic |
@@ -1019,4 +1023,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 32 Python modules inspected, 10 FastAPI endpoints registered, 21,355 total LOC indexed.
+> **Audit Summary:** 32 Python modules inspected, 10 FastAPI endpoints registered, 21,615 total LOC indexed.

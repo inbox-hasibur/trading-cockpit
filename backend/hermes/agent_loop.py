@@ -223,11 +223,11 @@ class CheckpointManager:
 
 
 class HermesAgentLoop:
-    def __init__(self, database: Database, settings: Settings):
+    def __init__(self, database: Database, settings: Settings, transport: httpx.AsyncBaseTransport | None = None):
         self.database = database
         self.settings = settings
         self.skills_mgr = SkillsManager()
-        self.transport: httpx.AsyncBaseTransport | None = None
+        self.transport = transport
 
     def execute_tool(self, tool_name: str, args: dict[str, Any], session: Session, state: PortfolioState) -> dict[str, Any]:
         """Deterministic execution of Hermes Agent tools with automatic checkpointing and rule diff tracking."""
@@ -327,6 +327,92 @@ class HermesAgentLoop:
     def _format_tool_response(self, tool_name: str, tool_res: dict[str, Any], user_msg: str, snapshot: dict) -> str:
         return format_tool_response(tool_name, tool_res, user_msg, snapshot)
 
+    def get_gemini_keys(self) -> list[str]:
+        raw = getattr(self.settings, "gemini_api_key", "").strip()
+        if not raw:
+            return []
+        keys: list[str] = []
+        for item in raw.replace("\n", ",").replace(";", ",").split(","):
+            k = item.strip()
+            if k and k not in keys:
+                keys.append(k)
+        return keys
+
+    async def _call_gemini_with_key_rotation(
+        self,
+        target_model: str,
+        full_system_prompt: str,
+        message: str,
+        snapshot: dict,
+        conversation_id: str | None = None,
+        is_direct: bool = False,
+    ) -> dict[str, Any] | None:
+        """Calls Google Gemini API with automatic multi-key rotation / rollback on 429, 403, 503 or quota limits."""
+        keys = self.get_gemini_keys()
+        if not keys:
+            return None
+
+        clean_target = target_model.replace("google/", "").strip()
+        candidate_models = [clean_target] if clean_target else []
+        for fb in ("gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.7-flash"):
+            if fb not in candidate_models:
+                candidate_models.append(fb)
+
+        prompt_text = f"{full_system_prompt}\n\nOperator message: {message}"
+        payload = {"contents": [{"parts": [{"text": prompt_text}]}]}
+
+        for g_model in candidate_models:
+            for key_idx, gemini_key in enumerate(keys):
+                masked_key = f"{gemini_key[:4]}...{gemini_key[-4:]}" if len(gemini_key) > 8 else "***"
+                gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/{g_model}:generateContent?key={gemini_key}"
+                try:
+                    async with httpx.AsyncClient(timeout=httpx.Timeout(15, connect=5), transport=self.transport) as client:
+                        resp = await client.post(gemini_url, json=payload)
+                        if resp.status_code == 200:
+                            data = resp.json()
+                            g_reply = data["candidates"][0]["content"]["parts"][0]["text"]
+                            clean_reply = redact_secrets(g_reply.strip()[:12000])
+                            with self.database.write() as session:
+                                state = portfolio_state(session)
+                                mem = HermesMemory(session)
+                                mem.record_turn(
+                                    session_date=state.clock_date,
+                                    role="assistant",
+                                    content=clean_reply,
+                                    conversation_id=conversation_id,
+                                )
+                            prefix_note = "Direct Gemini Brain" if is_direct else "1st Fallback"
+                            key_note = f" (Key #{key_idx + 1}/{len(keys)})" if len(keys) > 1 else ""
+                            return {
+                                "reply": clean_reply,
+                                "provider": "gemini",
+                                "model": f"google/{g_model}",
+                                "warning": f"Served via {prefix_note}: Google Gemini API ({g_model}){key_note}",
+                                "context_date": snapshot["app"]["date"],
+                                "context_revision": snapshot["app"]["revision"],
+                                "conversation_id": conversation_id,
+                                "read_only": False,
+                            }
+                        elif resp.status_code in (429, 403, 503):
+                            logger.warning(
+                                "Gemini key #%d (%s) failed for %s with HTTP %d (quota/limit/unavailable). Rotating / rolling back to next key.",
+                                key_idx + 1, masked_key, g_model, resp.status_code,
+                            )
+                            continue
+                        else:
+                            logger.warning(
+                                "Gemini model %s returned status %d on key #%d (%s): %s",
+                                g_model, resp.status_code, key_idx + 1, masked_key, resp.text[:100],
+                            )
+                except Exception as exc:
+                    logger.warning(
+                        "Gemini key #%d (%s) request failed for model %s: %s; rotating to next key.",
+                        key_idx + 1, masked_key, g_model, exc,
+                    )
+                    continue
+
+        return None
+
     async def _conversational_inference(self, message: str, history: list[dict[str, str]], snapshot: dict, conversation_id: str | None = None) -> dict[str, Any]:
         """Runs conversational response with Layered Memory and Matched SKILL.md injection."""
         with self.database.read() as session:
@@ -380,8 +466,27 @@ class HermesAgentLoop:
                 conversation_id=conversation_id,
             )
 
-        # Tier 1: User-selected OpenRouter model
+        # Check active model
         target_model = snapshot.get("app", {}).get("active_model") or self.settings.openrouter_model
+
+        if target_model == "local-quant-brain":
+            return self._local_conversational_fallback(message, snapshot, conversation_id=conversation_id)
+
+        # Direct Google Gemini Brain check
+        if target_model.startswith("google/") or target_model.startswith("gemini"):
+            gemini_res = await self._call_gemini_with_key_rotation(
+                target_model, full_system_prompt, message, snapshot,
+                conversation_id=conversation_id, is_direct=True,
+            )
+            if gemini_res:
+                return gemini_res
+            return self._local_conversational_fallback(
+                message, snapshot,
+                warning=f"All Gemini API keys exceeded quota or unavailable for {target_model}. Falling back to Local Quant Brain.",
+                conversation_id=conversation_id,
+            )
+
+        # Tier 1: User-selected OpenRouter model
         messages = [{"role": "system", "content": full_system_prompt}]
         for turn in compressed_history:
             messages.append({"role": turn["role"], "content": redact_secrets(turn["content"])})
@@ -426,40 +531,13 @@ class HermesAgentLoop:
             except Exception as exc:
                 logger.warning("Tier 1 OpenRouter failed: %s; falling back to Tier 2 Gemini.", exc)
 
-        # Tier 2: 1st Fallback — Free Google Gemini API
-        gemini_key = getattr(self.settings, "gemini_api_key", "").strip()
-        if gemini_key:
-            # Candidate models: gemini-3.1-flash-lite (fastest, ~1.5s), gemini-3.5-flash
-            for g_model in ("gemini-3.1-flash-lite", "gemini-3.5-flash"):
-                try:
-                    gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/{g_model}:generateContent?key={gemini_key}"
-                    prompt_text = f"{full_system_prompt}\n\nOperator message: {message}"
-                    async with httpx.AsyncClient(timeout=httpx.Timeout(15, connect=5), transport=self.transport) as client:
-                        resp = await client.post(
-                            gemini_url,
-                            json={"contents": [{"parts": [{"text": prompt_text}]}]},
-                        )
-                        if resp.status_code == 200:
-                            g_reply = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
-                            clean_reply = redact_secrets(g_reply.strip()[:12000])
-                            with self.database.write() as session:
-                                state = portfolio_state(session)
-                                mem = HermesMemory(session)
-                                mem.record_turn(session_date=state.clock_date, role="assistant", content=clean_reply, conversation_id=conversation_id)
-                            return {
-                                "reply": clean_reply,
-                                "provider": "gemini",
-                                "model": f"google/{g_model}",
-                                "warning": f"Served via 1st Fallback: Google Gemini API ({g_model})",
-                                "context_date": snapshot["app"]["date"],
-                                "context_revision": snapshot["app"]["revision"],
-                                "conversation_id": conversation_id,
-                                "read_only": False,
-                            }
-                        else:
-                            logger.warning("Gemini model %s returned status %s: %s", g_model, resp.status_code, resp.text[:100])
-                except Exception as exc:
-                    logger.warning("Tier 2 Gemini fallback (%s) failed: %s; trying next candidate.", g_model, exc)
+        # Tier 2: 1st Fallback — Free Google Gemini API with multi-key rotation
+        gemini_res = await self._call_gemini_with_key_rotation(
+            "gemini-3.1-flash-lite", full_system_prompt, message, snapshot,
+            conversation_id=conversation_id, is_direct=False,
+        )
+        if gemini_res:
+            return gemini_res
 
         # Tier 3: 2nd Fallback — Deterministic Local Quant Brain ($0 offline)
         return self._local_conversational_fallback(message, snapshot, conversation_id=conversation_id)

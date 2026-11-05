@@ -141,3 +141,73 @@ def test_teach_lesson_self_improving_skill(client):
     snap = client.get("/api/portfolio").json()
     skills = snap["hermes"]["skills"]
     assert any("learned_rule" in s["name"] for s in skills)
+
+
+def test_hermes_model_switching_and_aliases(client):
+    # Test switching via chat with alias "mimov2.6 pro"
+    res1 = client.post("/api/chat", json={"message": "/model mimov2.6 pro"}).json()
+    assert res1["agentic_action"] == "SET_AI_MODEL"
+    assert res1["tool_result"]["active_model"] == "xiaomi/mimo-v2.6-pro"
+
+    # Test switching via chat with alias "deepseek 4.1 flash"
+    res2 = client.post("/api/chat", json={"message": "/model deepseek 4.1 flash"}).json()
+    assert res2["agentic_action"] == "SET_AI_MODEL"
+    assert res2["tool_result"]["active_model"] == "deepseek/deepseek-chat"
+
+    # Test switching via chat with alias "gemini lite"
+    res3 = client.post("/api/chat", json={"message": "/model gemini lite"}).json()
+    assert res3["agentic_action"] == "SET_AI_MODEL"
+    assert res3["tool_result"]["active_model"] == "google/gemini-3.1-flash-lite"
+
+    # Test direct POST /api/hermes/model endpoint
+    res4 = client.post("/api/hermes/model", json={"model": "google/gemini-3.5-flash"}).json()
+    assert res4["status"] == "ok"
+    assert res4["active_model"] == "google/gemini-3.5-flash"
+
+    # Verify model catalog GET /api/hermes/models
+    catalog = client.get("/api/hermes/models").json()
+    assert catalog["active_model"] == "google/gemini-3.5-flash"
+    model_ids = [m["id"] for m in catalog["models"]]
+    assert "xiaomi/mimo-v2.6-pro" in model_ids
+    assert "deepseek/deepseek-chat" in model_ids
+    assert "google/gemini-3.1-flash-lite" in model_ids
+
+
+def test_gemini_multi_key_rotation_on_429(settings):
+    import asyncio
+    import httpx
+    from backend.hermes.agent_loop import HermesAgentLoop
+    from backend.main import create_app
+
+    # Configure multiple keys separated by comma
+    object.__setattr__(settings, "gemini_api_key", "key_first_429, key_second_ok")
+    object.__setattr__(settings, "openrouter_api_key", "")
+
+    app = create_app(settings)
+    with TestClient(app):
+        db = app.state.database
+
+        # Create mock transport: key_first_429 returns 429, key_second_ok returns 200
+        call_log = []
+
+        def mock_handler(request: httpx.Request):
+            url_str = str(request.url)
+            call_log.append(url_str)
+            if "key_first_429" in url_str:
+                return httpx.Response(429, json={"error": {"code": 429, "message": "Resource has been exhausted."}})
+            elif "key_second_ok" in url_str:
+                return httpx.Response(200, json={
+                    "candidates": [{"content": {"parts": [{"text": "Hello from Gemini Key 2! Market looks healthy."}]}}]
+                })
+            return httpx.Response(500)
+
+        transport = httpx.MockTransport(mock_handler)
+        agent = HermesAgentLoop(db, settings, transport=transport)
+
+        assert agent.get_gemini_keys() == ["key_first_429", "key_second_ok"]
+
+        turn_res = asyncio.run(agent.run_turn("What is your analysis of current DSE market?", history=[]))
+        assert turn_res["provider"] == "gemini"
+        assert "Hello from Gemini Key 2" in turn_res["reply"]
+        assert "Key #2/2" in turn_res["warning"]
+        assert len(call_log) >= 2

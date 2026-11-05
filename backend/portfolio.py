@@ -465,7 +465,7 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
             "durable_facts": durable_facts,
             "active_model": getattr(state, "active_model", settings.openrouter_model),
             "fallback_chain": [
-                {"tier": 1, "name": "Primary Brain", "target": getattr(state, "active_model", settings.openrouter_model), "status": "ACTIVE" if settings.openrouter_api_key else "STANDBY"},
+                {"tier": 1, "name": "Primary Brain", "target": getattr(state, "active_model", settings.openrouter_model), "status": "ACTIVE" if (settings.openrouter_api_key or (getattr(state, "active_model", "").startswith("google/") and (os.getenv("GEMINI_API_KEY") or getattr(settings, "gemini_api_key", "")))) else "STANDBY"},
                 {"tier": 2, "name": "1st Fallback", "target": "google/gemini-3.1-flash-lite", "status": "READY" if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or getattr(settings, "gemini_api_key", "") else "OFFLINE"},
                 {"tier": 3, "name": "2nd Fallback", "target": "Local Deterministic Quant Brain", "status": "ALWAYS AVAILABLE"},
             ],

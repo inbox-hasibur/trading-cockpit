@@ -456,12 +456,16 @@
             <div class="settings-subgroup">
               <label class="settings-sub-label" for="settings-model-select">PRIMARY REASONING MODEL (TIER 1)</label>
               <select id="settings-model-select" class="settings-select" style="width: 100%; max-width: 100%; margin-top: 6px;">
-                <option value="xiaomi/mimo-v2-flash">Xiaomi MiMo-v2-Flash (Ultra Fast / Free)</option>
-                <option value="deepseek/deepseek-chat">DeepSeek V3 (Deep Reasoning)</option>
+                <option value="xiaomi/mimo-v2.6-pro">Xiaomi MiMo-v2.6-Pro (Primary Brain)</option>
+                <option value="xiaomi/mimo-v2.6-flash">Xiaomi MiMo-v2.6-Flash (Ultra Fast)</option>
+                <option value="deepseek/deepseek-chat">DeepSeek V3 / 4.1 Flash (Deep Reasoning)</option>
+                <option value="deepseek/deepseek-r1">DeepSeek R1 (Reasoning / Math)</option>
                 <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B (High Precision)</option>
-                <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash (Fast Analysis)</option>
                 <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet (Elite Quant)</option>
-                <option value="google/gemini-3.1-flash-lite">Google Gemini 3.1 Flash (1st Fallback)</option>
+                <option value="google/gemini-3.1-flash-lite">Google Gemini 3.1 Flash-Lite (Fastest ~1.5s)</option>
+                <option value="google/gemini-3.5-flash">Google Gemini 3.5 Flash (Balanced Analysis)</option>
+                <option value="google/gemini-3.8-flash">Google Gemini 3.8 Flash (Latest Preview)</option>
+                <option value="google/gemini-3.7-flash">Google Gemini 3.7 Flash (Hybrid Reasoning)</option>
                 <option value="local-quant-brain">Local Deterministic Quant Brain ($0 Offline)</option>
               </select>
             </div>
@@ -471,7 +475,7 @@
               <div class="fallback-chain-list" id="settings-fallback-list" style="margin-top: 6px;">
                 <div class="chain-step-card active">
                   <span class="step-num">Tier 1</span>
-                  <div class="step-desc"><strong id="tier1-label">xiaomi/mimo-v2-flash</strong><span>OpenRouter Primary Brain</span></div>
+                  <div class="step-desc"><strong id="tier1-label">xiaomi/mimo-v2.6-pro</strong><span>OpenRouter Primary Brain</span></div>
                   <span class="chain-status-badge live" id="tier1-badge">ACTIVE</span>
                 </div>
                 <div class="chain-step-card">
@@ -588,7 +592,7 @@
             <div class="model-picker-wrap bottom-model-picker">
               <button type="button" class="bottom-model-btn" id="hermes-model-trigger" title="Switch AI Brain Model (/model)">
                 <span class="muted-label" id="provider-prefix-label">OPENROUTER ·</span>
-                <strong id="hermes-active-model-name">xiaomi/mimo-v2-flash</strong>
+                <strong id="hermes-active-model-name">mimo-v2.6-pro</strong>
                 <span class="badge-caret">▾</span>
               </button>
               <div class="model-dropup-menu" id="model-dropup-menu" hidden>

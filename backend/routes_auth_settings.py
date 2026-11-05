@@ -81,12 +81,20 @@ def build_auth_settings_router(database: Database, settings: Settings, broadcast
 
     @router.get("/api/settings/keys")
     def get_api_keys():
-        def mask(s: str) -> str:
+        def mask_single(s: str) -> str:
             if not s:
                 return ""
             if len(s) <= 8:
                 return "****"
             return f"{s[:4]}...{s[-4:]}"
+
+        def mask(s: str) -> str:
+            if not s:
+                return ""
+            parts = [k.strip() for k in s.replace("\n", ",").replace(";", ",").split(",") if k.strip()]
+            if len(parts) > 1:
+                return f"{', '.join(mask_single(p) for p in parts)} ({len(parts)} keys active)"
+            return mask_single(parts[0]) if parts else ""
 
         with database.read() as session:
             state = portfolio_state(session)

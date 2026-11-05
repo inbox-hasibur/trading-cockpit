@@ -36,7 +36,7 @@ class Settings:
     market_close: time = time(14, 30)
     bucket_anchor: date = date(2024, 1, 7)  # Fixed Sunday; not a resettable weekday.
     openrouter_api_key: str = ""
-    openrouter_model: str = "xiaomi/mimo-v2-flash"
+    openrouter_model: str = "xiaomi/mimo-v2.6-pro"
     gemini_api_key: str = ""
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""
@@ -101,7 +101,7 @@ class Settings:
             market_open=time.fromisoformat(os.getenv("MARKET_OPEN", "10:00")),
             market_close=time.fromisoformat(os.getenv("MARKET_CLOSE", "14:30")),
             openrouter_api_key=os.getenv("OPENROUTER_API_KEY", "").strip(),
-            openrouter_model=os.getenv("OPENROUTER_MODEL", "xiaomi/mimo-v2-flash").strip(),
+            openrouter_model=os.getenv("OPENROUTER_MODEL", "xiaomi/mimo-v2.6-pro").strip(),
             gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip() or os.getenv("GOOGLE_API_KEY", "").strip(),
             telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN", "").strip(),
             telegram_chat_id=os.getenv("TELEGRAM_CHAT_ID", "").strip(),

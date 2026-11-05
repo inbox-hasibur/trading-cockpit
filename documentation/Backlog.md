@@ -149,6 +149,12 @@
   - REST endpoint `POST /api/stocknow/execute-order` with CheckpointManager state snapshot for 1-click `/rollback`.
   - Strict enforcement of T+2 maturity lock and 1% fee math (blocking immature and net-loss sells under Strict No-Loss policy).
   - Hermes conversational Buy and Matured Sell execution (*"Buy 10 GP"*, *"GP 10 ta share kine felo"*, *"Sell 5 SQURPHARMA"*) with StockNow virtual order receipt confirmation.
+- [x] **Step 2.4.1: Multi-Key Gemini API Rotation, 429 Rollback & Unified Model Switcher:**
+  - Integrated multi-key rotation supporting comma-separated `GEMINI_API_KEY` with automatic rollback on HTTP 429 quota exhaustion, 403, 503, or rate limits.
+  - Aligned model names across all tiers: Tier 1 OpenRouter (`xiaomi/mimo-v2.6-pro`, `xiaomi/mimo-v2.6-flash`, `deepseek/deepseek-chat`, `deepseek/deepseek-r1`, `meta-llama/llama-3.3-70b-instruct`, `anthropic/claude-3.5-sonnet`), Tier 2 Direct/1st Fallback Gemini 3.x (`google/gemini-3.1-flash-lite`, `google/gemini-3.5-flash`, `google/gemini-3.8-flash`, `google/gemini-3.7-flash`), and Tier 3 Local Deterministic Quant Brain.
+  - Fixed UI model switcher by resolving double `JSON.stringify` serialization in `frontend/hermes_ui.js` and `frontend/app.js`.
+  - Added natural conversational chat aliases (`/model mimov2.6 pro`, `/model deepseek 4.1 flash`, `/model gemini lite`, `/model local`).
+
 - [ ] **Step 2.5: DSE Market-Hours Scheduler:**
   - Automated background loop running Sunday–Thursday from **10:00 AM to 2:30 PM (`Asia/Dhaka`)** with configurable polling intervals.
 

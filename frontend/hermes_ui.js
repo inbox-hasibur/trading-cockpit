@@ -396,6 +396,9 @@ async function loadHermesModels() {
 
     const shortName = active.split("/").pop();
     setText("hermes-active-model-name", shortName);
+    const isGemini = active.startsWith("google/") || active.startsWith("gemini");
+    const isLocal = active === "local-quant-brain";
+    setText("provider-prefix-label", isGemini ? "GEMINI ·" : (isLocal ? "LOCAL ·" : "OPENROUTER ·"));
 
     // Sync dropdown menu
     const dropdownList = $("model-dropdown-list");
@@ -449,7 +452,7 @@ async function switchHermesModel(modelId) {
   try {
     const res = await api("/api/hermes/model", {
       method: "POST",
-      body: JSON.stringify({ model: modelId }),
+      body: { model: modelId },
     });
     notify(`🧠 AI Brain switched to ${modelId}`);
     await refresh();
