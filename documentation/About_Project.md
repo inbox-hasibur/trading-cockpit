@@ -195,6 +195,15 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
       - REST API endpoint `POST /api/stocknow/sync-market` broadcasting realtime portfolio updates via SSE.
       - Hermes conversational tool `control_stocknow_session` (*"Launch StockNow browser"*, *"StockNow login check koro"*, *"Sync live market prices"*).
       - 1-Click UI controls in Settings (`Launch Live Browser`, `Check / Auto-Login`, `Sync Live Prices`).
+    - **Step 2.3 ("Humming Bird" Virtual Portfolio & Holdings Sync):**
+      - Dedicated portfolio extractor and reconciler (`stocknow_portfolio_sync.py`) locating the **"Humming Bird"** virtual portfolio.
+      - Synchronizes virtual cash balance and holdings into SQLite `TaxLot` and `TradeLog` records with rotating bucket assignment (`A`, `B`, `C`).
+      - Preserves active sequential selling tier progression (`next_tier`, `peak_price`, `phase`, `recovery_anchor`, `cycle_base_qty`) during portfolio sync.
+      - CheckpointManager state snapshot enabling complete 1-click `/rollback` restoration.
+      - Zero-drift paisa-level ledger balancing guaranteeing `assert_ledger` 100% compliance.
+      - REST endpoint `POST /api/stocknow/sync-portfolio` broadcasting real-time snapshot via SSE.
+      - Hermes conversational command (*"Sync Humming Bird portfolio"*, *"Humming Bird portfolio sync koro"*).
+      - 1-Click UI action button in Settings (`Sync "Humming Bird" Portfolio`).
 
 ---
 

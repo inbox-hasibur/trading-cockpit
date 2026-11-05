@@ -133,9 +133,15 @@
   - REST endpoint `POST /api/stocknow/sync-market` with SSE portfolio refresh broadcast.
   - Hermes agentic tool `control_stocknow_session` with natural language Bangla/English command execution (*"Launch StockNow browser"*, *"StockNow login check koro"*, *"Sync live market prices"*).
   - UI action buttons in `#settings` StockNow Bridge card (`Launch Live Browser`, `Check / Auto-Login`, `Sync Live Prices`).
-- [ ] **Step 2.3: "Humming Bird" Virtual Portfolio & Holdings Sync:**
-  - Automatically bind to the user's **"Humming Bird"** portfolio on StockNow.
-  - Sync virtual cash balance, existing share quantities, buy prices, and transaction history into the local SQLite T+2 ledger.
+- [x] **Step 2.3: "Humming Bird" Virtual Portfolio & Holdings Sync:**
+  - Automatically bind to the operator's **"Humming Bird"** virtual portfolio on StockNow (`extract_hummingbird_portfolio`).
+  - Sync virtual cash balance, holdings, buy prices, and transaction history into the local SQLite T+2 ledger with rotating bucket assignment (`reconcile_portfolio_to_db`).
+  - Active selling tier preservation (`next_tier`, `peak_price`, `phase`, `recovery_anchor`, `cycle_base_qty`) across sync cycles.
+  - State checkpointing with full 1-click `/rollback` restoration of previous tax lots and trades.
+  - Zero-drift paisa-level ledger balancing guaranteeing `assert_ledger` 100% compliance.
+  - API endpoint `POST /api/stocknow/sync-portfolio` with real-time SSE snapshot broadcast.
+  - Hermes agentic tool dispatch with Bangla/English natural commands (*"Sync Humming Bird portfolio"*, *"Humming Bird portfolio sync koro"*).
+  - UI control button in `#settings` StockNow Bridge card (`Sync "Humming Bird" Portfolio`).
 - [ ] **Step 2.4: Automated Virtual Order Execution:**
   - Execute automated Buy and Sequential Sell orders directly on `stocknow.com.bd`'s "Humming Bird" portfolio when triggered by `auto_trader.py`.
   - Verify order acknowledgement and reconcile local tax lots against StockNow's portfolio table.

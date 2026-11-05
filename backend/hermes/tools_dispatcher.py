@@ -407,6 +407,24 @@ def handle_control_stocknow_session(
             action_result = sync_live_market_to_db(session, quotes, session_date=state.clock_date)
         except Exception as exc:
             action_result = {"success": False, "error": str(exc)}
+    elif action == "sync_portfolio":
+        try:
+            from backend.adapters.stocknow_portfolio_sync import (
+                extract_hummingbird_portfolio,
+                reconcile_portfolio_to_db,
+            )
+            injected = args.get("injected_portfolio") or args.get("portfolio")
+            extracted = extract_hummingbird_portfolio(client, injected_portfolio=injected)
+            action_result = reconcile_portfolio_to_db(
+                session, settings, extracted, checkpoint_mgr=checkpoint_mgr
+            )
+            pname = extracted.get("portfolio_name", "Humming Bird")
+            diff_lines.append({
+                "type": "add",
+                "text": f"Synced virtual portfolio '{pname}' ({action_result.get('synced_holdings_count', 0)} holdings, cash: ৳{action_result.get('cash_balance', 0):,.2f})",
+            })
+        except Exception as exc:
+            action_result = {"success": False, "error": str(exc)}
     elif action == "close":
         try:
             import asyncio
@@ -686,6 +704,26 @@ def format_tool_response(tool_name: str, tool_res: dict[str, Any], user_msg: str
                 if bangla
                 else f"DEMO/PAPER · Synchronized {count} live DSE quotes & curves from StockNow ({syms})."
             )
+        elif action == "sync_portfolio":
+            pname = res.get("portfolio_name", "Humming Bird")
+            count = res.get("synced_holdings_count", 0)
+            cash = res.get("cash_balance", 0.0)
+            syms = ", ".join(res.get("symbols", [])) if res.get("symbols") else "none"
+            return (
+                f"DEMO/PAPER · [StockNow Portfolio Sync]\n"
+                f"✅ StockNow '{pname}' ভার্চুয়াল পোর্টফোলিও সফলভাবে সিঙ্ক করা হয়েছে।\n"
+                f"• হোল্ডিংস: {count} টি ({syms})\n"
+                f"• ক্যাশ ব্যালেন্স: ৳{cash:,.2f}\n"
+                f"• T+2 লেজার সম্পূর্ণ ব্যালেন্সড ও রিকনসাইলড।"
+                if bangla
+                else (
+                    f"DEMO/PAPER · [StockNow Portfolio Sync]\n"
+                    f"✅ StockNow virtual portfolio '{pname}' synced successfully.\n"
+                    f"• Holdings: {count} ({syms})\n"
+                    f"• Cash Balance: ৳{cash:,.2f}\n"
+                    f"• T+2 ledger fully balanced to the paisa."
+                )
+            )
         return (
             f"DEMO/PAPER · StockNow সেশন অ্যাকশন '{action}' সম্পন্ন হয়েছে।"
             if bangla
@@ -724,6 +762,15 @@ def detect_intent_and_tool(message: str, snapshot: dict) -> tuple[str | None, di
     )
     if any(w in text_lower for w in auth_words):
         return "control_stocknow_session", {"action": "check_auth"}
+
+    portfolio_sync_words = (
+        "sync hummingbird", "sync hummingbird portfolio", "sync humming bird portfolio",
+        "sync humming bird", "humming bird portfolio sync", "hummingbird portfolio sync",
+        "humming bird sync koro", "hummingbird sync koro", "portfolio sync koro",
+        "humming bird portfolio sync koro", "sync portfolio",
+    )
+    if any(w in text_lower for w in portfolio_sync_words):
+        return "control_stocknow_session", {"action": "sync_portfolio"}
 
     sync_words = (
         "sync live market", "sync market", "sync stocknow", "sync live prices", "sync live",

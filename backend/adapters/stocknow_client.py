@@ -69,6 +69,9 @@ class StockNowLiveClient:
         self.page: Any | None = None
         self.state: str = "BROWSER_NOT_STARTED"
         self.last_sync_at: str | None = None
+        self.bound_portfolio_name: str | None = None
+        self.bound_portfolio_id: str | int | None = None
+        self.last_portfolio_sync_at: str | None = None
         self.last_error: str | None = None
         self.captured_endpoints: dict[str, dict[str, Any]] = {}
         self._lock = asyncio.Lock()
@@ -373,6 +376,9 @@ class StockNowLiveClient:
             "captured_endpoints_count": len(self.captured_endpoints),
             "captured_endpoints": sorted(list(self.captured_endpoints.keys())),
             "last_sync_at": self.last_sync_at,
+            "bound_portfolio_name": self.bound_portfolio_name,
+            "bound_portfolio_id": self.bound_portfolio_id,
+            "last_portfolio_sync_at": self.last_portfolio_sync_at,
             "last_error": self.last_error,
         }
 

@@ -12,6 +12,10 @@ from backend.adapters.stocknow_market_sync import (
     extract_quotes_from_stocknow,
     sync_live_market_to_db,
 )
+from backend.adapters.stocknow_portfolio_sync import (
+    extract_hummingbird_portfolio,
+    reconcile_portfolio_to_db,
+)
 from backend.config import Settings
 from backend.database import Database
 from backend.portfolio import build_snapshot
@@ -26,6 +30,11 @@ class StockNowSessionActionRequest(BaseModel):
 class StockNowMarketSyncRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     payload: Any | None = None
+
+
+class StockNowPortfolioSyncRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    injected_portfolio: Any | None = None
 
 
 def build_stocknow_router(
@@ -74,6 +83,21 @@ def build_stocknow_router(
         snapshot = build_snapshot(database, settings)
         payload = {"result": result, "snapshot": snapshot}
         broadcaster.publish("market_sync", payload)
+        return payload
+
+    @router.post("/sync-portfolio")
+    async def post_stocknow_sync_portfolio(body: StockNowPortfolioSyncRequest | None = None):
+        injected = body.injected_portfolio if body is not None else None
+        extracted = extract_hummingbird_portfolio(stocknow_client, injected_portfolio=injected)
+        result = reconcile_portfolio_to_db(database, settings, extracted)
+        if result.get("success"):
+            stocknow_client.bound_portfolio_name = extracted.get("portfolio_name", "Humming Bird")
+            stocknow_client.bound_portfolio_id = extracted.get("portfolio_id")
+            stocknow_client.last_portfolio_sync_at = result.get("synced_at")
+
+        snapshot = build_snapshot(database, settings)
+        payload = {"result": result, "snapshot": snapshot}
+        broadcaster.publish("portfolio_sync", payload)
         return payload
 
     return router

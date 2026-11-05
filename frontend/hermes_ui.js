@@ -881,6 +881,26 @@ function initHermesChatListeners() {
       }
     });
   }
+
+  const btnSyncPortfolio = $("btn-stocknow-sync-portfolio");
+  if (btnSyncPortfolio) {
+    btnSyncPortfolio.addEventListener("click", async () => {
+      try {
+        btnSyncPortfolio.disabled = true;
+        btnSyncPortfolio.textContent = "Syncing Portfolio…";
+        const res = await api("/api/stocknow/sync-portfolio", { method: "POST", body: {} });
+        const count = res.result?.synced_holdings_count ?? 0;
+        const cash = res.result?.cash_balance ?? 0;
+        notify(`Synchronized Humming Bird portfolio: ${count} holdings, ৳${Number(cash).toLocaleString()} cash.`);
+        if (typeof refresh === "function") await refresh();
+      } catch (err) {
+        notify("Portfolio sync failed: " + err.message, true);
+      } finally {
+        btnSyncPortfolio.disabled = false;
+        btnSyncPortfolio.textContent = 'Sync "Humming Bird" Portfolio';
+      }
+    });
+  }
 }
 
 // Wrap initHermesSidebar to also init chat listeners and active conversation

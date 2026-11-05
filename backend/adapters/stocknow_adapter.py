@@ -89,6 +89,9 @@ class StockNowAdapter:
             "profile_path": profile_path,
             "captured_endpoints_count": captured_endpoints_count,
             "last_sync_at": last_sync_at,
+            "bound_portfolio_name": client_status.get("bound_portfolio_name"),
+            "bound_portfolio_id": client_status.get("bound_portfolio_id"),
+            "last_portfolio_sync_at": client_status.get("last_portfolio_sync_at"),
             "description": (
                 f"Method A: Periodic background polling every {polling_interval_sec}s."
                 if ingestion_mode == "BACKGROUND_POLLING"

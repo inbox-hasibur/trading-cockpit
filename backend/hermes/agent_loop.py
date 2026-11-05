@@ -69,6 +69,7 @@ class CheckpointManager:
         symbol: str | None = None,
         diff_payload: dict[str, Any] | None = None,
         actor: str = "Hermes Agent",
+        extra_snapshot: dict[str, Any] | None = None,
     ) -> HermesStateCheckpoint:
         payload: dict[str, Any] = {
             "action": action,
@@ -81,6 +82,8 @@ class CheckpointManager:
             "companies": {},
             "rules": {},
         }
+        if extra_snapshot:
+            payload.update(extra_snapshot)
         symbols_to_save = [symbol.upper()] if symbol else [c.symbol for c in session.scalars(select(CompanyProfile))]
         for sym in symbols_to_save:
             comp = session.get(CompanyProfile, sym)
@@ -146,6 +149,67 @@ class CheckpointManager:
             state.ingestion_mode = payload["ingestion_mode"]
         if "polling_interval_sec" in payload:
             state.polling_interval_sec = payload["polling_interval_sec"]
+
+        portfolio_lots = payload.get("portfolio_lots")
+        portfolio_trades = payload.get("portfolio_trades")
+        if portfolio_lots is not None and portfolio_trades is not None:
+            from datetime import date
+            from backend.database import TaxLot, TradeLog
+            from backend.engine.t2_ledger import assert_ledger
+
+            session.query(TradeLog).delete()
+            session.query(TaxLot).delete()
+            session.flush()
+
+            for ldata in portfolio_lots:
+                lot = TaxLot(
+                    id=ldata["id"],
+                    symbol=ldata["symbol"],
+                    bucket=ldata["bucket"],
+                    acquired_on=date.fromisoformat(ldata["acquired_on"]),
+                    matures_on=date.fromisoformat(ldata["matures_on"]),
+                    original_qty=ldata["original_qty"],
+                    remaining_qty=ldata["remaining_qty"],
+                    buy_price=decimal(ldata["buy_price"]),
+                    buy_fee=decimal(ldata["buy_fee"]),
+                    original_cost_basis=decimal(ldata["original_cost_basis"]),
+                    remaining_cost_basis=decimal(ldata["remaining_cost_basis"]),
+                    cycle_base_qty=ldata["cycle_base_qty"],
+                    next_tier=ldata.get("next_tier", 0),
+                    last_sale_revision=ldata.get("last_sale_revision", 0),
+                    peak_price=decimal(ldata["peak_price"]),
+                    phase=ldata.get("phase", "ACTIVE"),
+                    recovery_anchor=decimal(ldata["recovery_anchor"]) if ldata.get("recovery_anchor") else None,
+                )
+                session.add(lot)
+            session.flush()
+
+            for tdata in portfolio_trades:
+                trade = TradeLog(
+                    id=tdata["id"],
+                    trade_key=tdata["trade_key"],
+                    cycle_id=tdata.get("cycle_id"),
+                    lot_id=tdata["lot_id"],
+                    symbol=tdata["symbol"],
+                    side=tdata["side"],
+                    quantity=tdata["quantity"],
+                    price=decimal(tdata["price"]),
+                    gross_amount=decimal(tdata["gross_amount"]),
+                    fee=decimal(tdata["fee"]),
+                    net_cash_change=decimal(tdata["net_cash_change"]),
+                    realized_pnl=decimal(tdata.get("realized_pnl", "0")),
+                    bucket=tdata["bucket"],
+                    trade_on=date.fromisoformat(tdata["trade_on"]),
+                    settles_on=date.fromisoformat(tdata["settles_on"]),
+                    reason=tdata.get("reason", ""),
+                    source=tdata.get("source", "DEMO_SEED"),
+                )
+                session.add(trade)
+            session.flush()
+
+            if "initial_capital" in payload:
+                state.initial_capital = decimal(payload["initial_capital"])
+            assert_ledger(session, state)
 
         cp.reverted = True
         state.rules_revision += 1
