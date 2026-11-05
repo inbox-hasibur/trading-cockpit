@@ -90,12 +90,17 @@ function formatChatMarkdown(text) {
     .replace(/<\/div><br>/g, "</div>");
 }
 
-function addMessage(role, content, provider = null) {
+function addMessage(role, content, provider = null, servedBy = null) {
   const article = element("article", `chat-message ${role}`);
   const author = element("div", "message-author");
   if (role === "assistant") author.append(element("span", "assistant-avatar", "✦"));
   author.append(document.createTextNode(role === "user" ? "YOU" : "HERMES"));
-  if (provider) author.append(element("span", "muted", `· ${provider.toUpperCase()}`));
+  if (servedBy && servedBy.provider && servedBy.model) {
+    const cleanModel = String(servedBy.model).replace(/^google\//, "");
+    author.append(element("span", "muted", `· ${servedBy.provider} · ${cleanModel}`));
+  } else if (provider) {
+    author.append(element("span", "muted", `· ${provider.toUpperCase()}`));
+  }
   const body = element("div", "message-body");
   body.innerHTML = formatChatMarkdown(content);
   article.append(author, body);
@@ -122,11 +127,42 @@ async function sendChat(message) {
     };
     const response = await api("/api/chat", { method: "POST", body: payload, timeout: 35000 });
     thinking.remove();
-    const article = addMessage("assistant", response.reply, response.provider === "local" ? "local summary" : "OpenRouter");
-    if (response.warning) article.append(element("p", "response-warning", response.warning));
+    const servedBy = response.served_by || {
+      tier: response.provider === "local" ? 3 : (response.provider === "gemini" ? 2 : 1),
+      provider: (response.provider || "local").toUpperCase(),
+      model: response.model || "hermes-local-quant",
+      fallback_reason: null,
+    };
+    const article = addMessage("assistant", response.reply, null, servedBy);
+
+    if (response.warning || servedBy.fallback_reason) {
+      let warnText = response.warning || "Served via offline fallback";
+      if (servedBy.fallback_reason && !warnText.toLowerCase().includes(servedBy.fallback_reason.toLowerCase())) {
+        warnText += ` (Trigger: ${servedBy.fallback_reason})`;
+      }
+      article.append(element("p", "response-warning", warnText));
+    }
+
     state.lastChatProvider = response.provider;
-    setText("chat-provider", response.provider === "local" ? "LOCAL SUMMARY · NO API COST FOR THIS REPLY" : `OPENROUTER · ${response.model}`);
-    setText("chat-footer-note", response.provider === "local" ? "Read-only local summary. No trade or rule changes made." : "External AI used demo portfolio context. No execution tools.");
+    const cleanModel = String(servedBy.model || "").replace(/^google\//, "");
+    if (servedBy.provider === "LOCAL") {
+      setText("chat-provider", "LOCAL SUMMARY · NO API COST FOR THIS REPLY");
+      setText("chat-footer-note", "Read-only local summary. No trade or rule changes made.");
+    } else {
+      setText("chat-provider", `${servedBy.provider} · ${cleanModel}`);
+      setText("chat-footer-note", "External AI used demo portfolio context. No execution tools.");
+    }
+
+    // Keep bottom composer footer (#hermes-model-trigger) showing the selected primary model,
+    // and set its title tooltip to "Last reply served by: <provider> (<model>)"
+    const modelTrigger = $("hermes-model-trigger");
+    if (modelTrigger) {
+      modelTrigger.title = `Last reply served by: ${servedBy.provider} (${cleanModel})`;
+    }
+
+    // Refresh settings & quota counters so both spots update immediately
+    loadApiKeysSettings();
+
     state.history.push({ role: "assistant", content: response.reply.slice(0, 2000) });
     state.history = state.history.slice(-8);
 
@@ -594,11 +630,13 @@ async function loadApiKeysSettings() {
     const limitSlider = $("daily-limit-slider");
     if (limitSlider) limitSlider.value = limitVal;
 
-    // Telemetry quota bar
+    // Telemetry quota bar & settings budget text (unified single source of truth)
     const callsUsed = data.daily_calls_used !== undefined ? data.daily_calls_used : (data.calls_used_today || 0);
     const limit = data.daily_call_limit || 30;
     const pct = Math.min(100, Math.round((callsUsed / limit) * 100));
-    setText("telemetry-usage-text", `${callsUsed} / ${limit} calls used`);
+    const budgetStr = `${callsUsed} / ${limit} calls used`;
+    setText("telemetry-usage-text", budgetStr);
+    setText("settings-budget-text", budgetStr);
     const quotaBar = $("telemetry-quota-bar");
     if (quotaBar) quotaBar.style.width = `${pct}%`;
   } catch (err) {

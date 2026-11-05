@@ -560,6 +560,9 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
             "checkpoints": recent_checkpoints,
             "durable_facts": durable_facts,
             "active_model": getattr(state, "active_model", settings.openrouter_model),
+            "calls_used_today": used_calls,
+            "daily_call_limit": settings.chat_daily_call_limit,
+            "calls_remaining": max(0, settings.chat_daily_call_limit - used_calls),
             "fallback_chain": [
                 {"tier": 1, "name": "Primary Brain", "target": getattr(state, "active_model", settings.openrouter_model), "status": "ACTIVE" if (settings.openrouter_api_key or (getattr(state, "active_model", "").startswith("google/") and (os.getenv("GEMINI_API_KEY") or getattr(settings, "gemini_api_key", "")))) else "STANDBY"},
                 {"tier": 2, "name": "1st Fallback", "target": "google/gemini-3.1-flash-lite", "status": "READY" if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or getattr(settings, "gemini_api_key", "") else "OFFLINE"},

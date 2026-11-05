@@ -31,6 +31,8 @@
 
 :root, [data-theme="dark"] {
   color-scheme: dark;
+  --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Bengali", "Nirmala UI", "Vrinda", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Noto Sans Bengali", "Nirmala UI", "Vrinda", monospace;
   --bg: #0a1018;
   --panel: #101822;
   --panel-hover: #141f2b;
@@ -56,7 +58,7 @@
   --sim-border: #233446;
   --glow-up: rgba(34, 197, 94, 0.35);
   --glow-down: rgba(239, 68, 68, 0.35);
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
   font-size: 13px;
   font-synthesis: none;
 }
@@ -1156,7 +1158,7 @@ input[type=checkbox] {
 }
 
 .message-body code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   background: rgba(148, 163, 184, 0.15);
   padding: 1px 4px;

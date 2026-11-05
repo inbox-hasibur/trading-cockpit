@@ -211,3 +211,74 @@ def test_gemini_multi_key_rotation_on_429(settings):
         assert "Hello from Gemini Key 2" in turn_res["reply"]
         assert "Key #2/2" in turn_res["warning"]
         assert len(call_log) >= 2
+
+        # Verify served_by payload
+        assert turn_res["served_by"]["tier"] == 2
+        assert turn_res["served_by"]["provider"] == "GEMINI"
+        assert turn_res["served_by"]["model"] == "gemini-3.1-flash-lite"
+        assert turn_res["served_by"]["fallback_reason"] == "no_key"
+
+        # Verify ChatBudget incremented on Tier 2 Gemini success
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        from backend.database import ChatBudget
+        dhaka = ZoneInfo("Asia/Dhaka")
+        with db.read() as s:
+            budget = s.get(ChatBudget, datetime.now(dhaka).date())
+            assert budget is not None and budget.calls == 1
+
+
+def test_chat_response_served_by_and_tier2_gemini_fallback(settings):
+    import httpx
+    from backend.main import create_app
+    from backend.database import ChatBudget
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    # Ensure openrouter is blank and gemini key is configured
+    object.__setattr__(settings, "openrouter_api_key", "")
+    object.__setattr__(settings, "gemini_api_key", "test_gemini_key")
+    object.__setattr__(settings, "chat_daily_call_limit", 30)
+
+    app = create_app(settings)
+
+    def mock_gemini(request: httpx.Request):
+        assert "test_gemini_key" in str(request.url)
+        return httpx.Response(200, json={
+            "candidates": [{"content": {"parts": [{"text": "Gemini fallback response here."}]}}]
+        })
+
+    app.state.chat.transport = httpx.MockTransport(mock_gemini)
+    with TestClient(app, base_url="http://localhost") as client:
+        # Before chat: budget is 0
+        dhaka = ZoneInfo("Asia/Dhaka")
+        today = datetime.now(dhaka).date()
+        with app.state.database.read() as s:
+            b_before = s.get(ChatBudget, today)
+            calls_before = b_before.calls if b_before else 0
+
+        # Send chat message
+        res = client.post("/api/chat", json={"message": "Can you analyze GP?"}).json()
+        assert res["provider"] == "gemini"
+        assert res["reply"] == "Gemini fallback response here."
+        assert res["served_by"]["tier"] == 2
+        assert res["served_by"]["provider"] == "GEMINI"
+        assert res["served_by"]["model"] == "gemini-3.1-flash-lite"
+        assert res["served_by"]["fallback_reason"] == "no_key"
+
+        # After chat: ChatBudget incremented
+        with app.state.database.read() as s:
+            b_after = s.get(ChatBudget, today)
+            assert b_after is not None
+            calls_after = b_after.calls
+            assert calls_after == calls_before + 1
+
+        # Verify /api/settings/keys reflects exact same count
+        keys_data = client.get("/api/settings/keys").json()
+        assert keys_data["daily_calls_used"] == calls_after
+        assert keys_data["calls_used_today"] == calls_after
+
+        # Verify /api/portfolio reflects exact same count
+        port_data = client.get("/api/portfolio").json()
+        assert port_data["hermes"]["calls_used_today"] == calls_after
+        assert port_data["chat"]["external_calls_today"] == calls_after

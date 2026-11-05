@@ -74,7 +74,12 @@ def test_openrouter_mock_and_call_limit(settings):
         first = client.post("/api/chat", json={"message": "status"}).json()
         second = client.post("/api/chat", json={"message": "status"}).json()
         assert first["provider"] == "openrouter" and first["reply"] == "Demo response"
+        assert first["served_by"]["tier"] == 1
+        assert first["served_by"]["provider"] == "OPENROUTER"
         assert second["provider"] == "local" and len(requests) == 1
+        assert second["served_by"]["tier"] == 3
+        assert second["served_by"]["provider"] == "LOCAL"
+        assert second["served_by"]["fallback_reason"] == "quota"
         assert "SYNTHETIC" in requests[0]["messages"][0]["content"]
         assert "tools" not in requests[0]
 

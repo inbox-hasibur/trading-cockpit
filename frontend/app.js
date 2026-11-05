@@ -219,6 +219,18 @@ function renderSnapshot() {
     setText("chat-provider", state.snapshot.chat.provider === "local" ? "LOCAL SUMMARY · NO API COST" : `OPENROUTER · ${state.snapshot.chat.model}`);
     setText("chat-footer-note", state.snapshot.chat.provider === "local" ? "Local summaries are free. External AI is optional." : "External AI receives your demo portfolio context.");
   }
+  if (state.snapshot.chat) {
+    const used = state.snapshot.chat.external_calls_today || 0;
+    const limit = state.snapshot.chat.daily_call_limit || 30;
+    const budgetStr = `${used} / ${limit} calls used`;
+    setText("settings-budget-text", budgetStr);
+    setText("telemetry-usage-text", budgetStr);
+    const quotaBar = $("telemetry-quota-bar");
+    if (quotaBar) {
+      const pct = Math.min(100, Math.round((used / limit) * 100));
+      quotaBar.style.width = `${pct}%`;
+    }
+  }
   updateControls();
 }
 

@@ -115,6 +115,7 @@ def build_auth_settings_router(database: Database, settings: Settings, broadcast
             "telegram_chat_id_masked": mask(settings.telegram_chat_id),
             "daily_call_limit": settings.chat_daily_call_limit,
             "daily_calls_used": used_calls,
+            "calls_used_today": used_calls,
             "calls_remaining": max(0, settings.chat_daily_call_limit - used_calls),
             "active_model": active_model,
             "total_chat_turns": total_turns,

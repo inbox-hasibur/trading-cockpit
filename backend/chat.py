@@ -188,8 +188,18 @@ class ChatService:
 
     async def respond(self, request: ChatRequest) -> dict:
         self.agent_loop.transport = self.transport
-        return await self.agent_loop.run_turn(
+        res = await self.agent_loop.run_turn(
             request.message,
             [turn.model_dump() for turn in request.history],
             conversation_id=request.conversation_id,
         )
+        if "served_by" not in res:
+            prov = (res.get("provider") or "LOCAL").upper()
+            tier = 3 if prov == "LOCAL" else (2 if prov == "GEMINI" else 1)
+            res["served_by"] = {
+                "tier": tier,
+                "provider": prov,
+                "model": res.get("model") or "hermes-local-quant",
+                "fallback_reason": None,
+            }
+        return res

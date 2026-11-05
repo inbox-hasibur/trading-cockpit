@@ -310,6 +310,12 @@ class HermesAgentLoop:
                 "reply": reply,
                 "provider": "local",
                 "model": "hermes-agentic",
+                "served_by": {
+                    "tier": 3,
+                    "provider": "LOCAL",
+                    "model": "hermes-agentic",
+                    "fallback_reason": None,
+                },
                 "tool_executed": tool_name,
                 "agentic_action": action_map.get(tool_name, tool_name.upper()),
                 "tool_result": tool_result,
@@ -346,6 +352,7 @@ class HermesAgentLoop:
         snapshot: dict,
         conversation_id: str | None = None,
         is_direct: bool = False,
+        fallback_reason: str | None = None,
     ) -> dict[str, Any] | None:
         """Calls Google Gemini API with automatic multi-key rotation / rollback on 429, 403, 503 or quota limits."""
         keys = self.get_gemini_keys()
@@ -381,13 +388,29 @@ class HermesAgentLoop:
                                     content=clean_reply,
                                     conversation_id=conversation_id,
                                 )
+                                # Unified ChatBudget increment for external Tier 2 Gemini call
+                                day = datetime.now(DHAKA).date()
+                                budget = session.get(ChatBudget, day)
+                                if budget is None:
+                                    budget = ChatBudget(day=day, calls=0)
+                                    session.add(budget)
+                                budget.calls += 1
+
+                            clean_model = g_model.replace("google/", "").strip()
                             prefix_note = "Direct Gemini Brain" if is_direct else "1st Fallback"
+                            reason_note = f" (trigger: {fallback_reason})" if fallback_reason and not is_direct else ""
                             key_note = f" (Key #{key_idx + 1}/{len(keys)})" if len(keys) > 1 else ""
                             return {
                                 "reply": clean_reply,
                                 "provider": "gemini",
-                                "model": f"google/{g_model}",
-                                "warning": f"Served via {prefix_note}: Google Gemini API ({g_model}){key_note}",
+                                "model": f"google/{clean_model}",
+                                "served_by": {
+                                    "tier": 1 if is_direct else 2,
+                                    "provider": "GEMINI",
+                                    "model": clean_model,
+                                    "fallback_reason": fallback_reason if not is_direct else None,
+                                },
+                                "warning": f"Served via {prefix_note}: Google Gemini API ({clean_model}){key_note}{reason_note}",
                                 "context_date": snapshot["app"]["date"],
                                 "context_revision": snapshot["app"]["revision"],
                                 "conversation_id": conversation_id,
@@ -445,32 +468,26 @@ class HermesAgentLoop:
         # Final scrubbing
         full_system_prompt = redact_secrets(full_system_prompt)
 
-        # Tier 1 & Tier 2 budget enforcement
-        day = datetime.now(DHAKA).date()
-        allowed = True
-        with self.database.write() as session:
-            budget = session.get(ChatBudget, day)
-            if budget is None:
-                budget = ChatBudget(day=day, calls=0)
-                session.add(budget)
-            if budget.calls >= self.settings.chat_daily_call_limit:
-                allowed = False
-            else:
-                budget.calls += 1
+        # Check active model first
+        target_model = snapshot.get("app", {}).get("active_model") or self.settings.openrouter_model
 
-        if not allowed:
+        if target_model == "local-quant-brain":
+            return self._local_conversational_fallback(message, snapshot, conversation_id=conversation_id)
+
+        # Tier 1 & Tier 2 budget enforcement (external AI calls only)
+        day = datetime.now(DHAKA).date()
+        with self.database.read() as session:
+            budget = session.get(ChatBudget, day)
+            used_calls = budget.calls if budget else 0
+
+        if used_calls >= self.settings.chat_daily_call_limit:
             return self._local_conversational_fallback(
                 message,
                 snapshot,
                 warning="Daily external call budget reached. Running offline on Local Deterministic Quant Brain.",
                 conversation_id=conversation_id,
+                fallback_reason="quota",
             )
-
-        # Check active model
-        target_model = snapshot.get("app", {}).get("active_model") or self.settings.openrouter_model
-
-        if target_model == "local-quant-brain":
-            return self._local_conversational_fallback(message, snapshot, conversation_id=conversation_id)
 
         # Direct Google Gemini Brain check
         if target_model.startswith("google/") or target_model.startswith("gemini"):
@@ -484,6 +501,7 @@ class HermesAgentLoop:
                 message, snapshot,
                 warning=f"All Gemini API keys exceeded quota or unavailable for {target_model}. Falling back to Local Quant Brain.",
                 conversation_id=conversation_id,
+                fallback_reason="quota",
             )
 
         # Tier 1: User-selected OpenRouter model
@@ -492,7 +510,10 @@ class HermesAgentLoop:
             messages.append({"role": turn["role"], "content": redact_secrets(turn["content"])})
         messages.append({"role": "user", "content": message})
 
-        if self.settings.openrouter_api_key:
+        openrouter_fail_reason = None
+        if not self.settings.openrouter_api_key:
+            openrouter_fail_reason = "no_key"
+        else:
             try:
                 async with httpx.AsyncClient(timeout=httpx.Timeout(25, connect=5), transport=self.transport) as client:
                     resp = await client.post(
@@ -517,32 +538,71 @@ class HermesAgentLoop:
                         state = portfolio_state(session)
                         mem = HermesMemory(session)
                         mem.record_turn(session_date=state.clock_date, role="assistant", content=clean_reply, conversation_id=conversation_id)
+                        # Increment ChatBudget for successful Tier 1 OpenRouter call
+                        budget = session.get(ChatBudget, day)
+                        if budget is None:
+                            budget = ChatBudget(day=day, calls=0)
+                            session.add(budget)
+                        budget.calls += 1
 
                     return {
                         "reply": clean_reply,
                         "provider": "openrouter",
                         "model": target_model,
+                        "served_by": {
+                            "tier": 1,
+                            "provider": "OPENROUTER",
+                            "model": target_model,
+                            "fallback_reason": None,
+                        },
                         "warning": None,
                         "context_date": snapshot["app"]["date"],
                         "context_revision": snapshot["app"]["revision"],
                         "conversation_id": conversation_id,
                         "read_only": False,
                     }
+            except httpx.TimeoutException:
+                logger.warning("Tier 1 OpenRouter timed out; falling back to Tier 2 Gemini.")
+                openrouter_fail_reason = "timeout"
+            except httpx.HTTPStatusError as err:
+                code = err.response.status_code
+                logger.warning("Tier 1 OpenRouter HTTP %d; falling back to Tier 2 Gemini.", code)
+                if code == 429:
+                    openrouter_fail_reason = "quota"
+                elif code in (401, 403):
+                    openrouter_fail_reason = "auth"
+                else:
+                    openrouter_fail_reason = f"http_{code}"
             except Exception as exc:
                 logger.warning("Tier 1 OpenRouter failed: %s; falling back to Tier 2 Gemini.", exc)
+                openrouter_fail_reason = "error"
 
-        # Tier 2: 1st Fallback — Free Google Gemini API with multi-key rotation
+        # Tier 2: 1st Fallback - Free Google Gemini API with multi-key rotation
         gemini_res = await self._call_gemini_with_key_rotation(
             "gemini-3.1-flash-lite", full_system_prompt, message, snapshot,
             conversation_id=conversation_id, is_direct=False,
+            fallback_reason=openrouter_fail_reason,
         )
         if gemini_res:
             return gemini_res
 
-        # Tier 3: 2nd Fallback — Deterministic Local Quant Brain ($0 offline)
-        return self._local_conversational_fallback(message, snapshot, conversation_id=conversation_id)
+        # Tier 3: 2nd Fallback - Deterministic Local Quant Brain ($0 offline)
+        return self._local_conversational_fallback(
+            message,
+            snapshot,
+            warning="Running offline on Local Deterministic Quant Brain.",
+            conversation_id=conversation_id,
+            fallback_reason=openrouter_fail_reason or "unavailable",
+        )
 
-    def _local_conversational_fallback(self, message: str, snapshot: dict, warning: str | None = None, conversation_id: str | None = None) -> dict[str, Any]:
+    def _local_conversational_fallback(
+        self,
+        message: str,
+        snapshot: dict,
+        warning: str | None = None,
+        conversation_id: str | None = None,
+        fallback_reason: str | None = None,
+    ) -> dict[str, Any]:
         from backend.chat import local_summary
         reply = local_summary(message, snapshot)
         with self.database.write() as session:
@@ -553,6 +613,12 @@ class HermesAgentLoop:
             "reply": reply,
             "provider": "local",
             "model": "hermes-local-quant",
+            "served_by": {
+                "tier": 3,
+                "provider": "LOCAL",
+                "model": "hermes-local-quant",
+                "fallback_reason": fallback_reason,
+            },
             "warning": warning or "Local summary mode: zero external API cost.",
             "context_date": snapshot["app"]["date"],
             "context_revision": snapshot["app"]["revision"],
