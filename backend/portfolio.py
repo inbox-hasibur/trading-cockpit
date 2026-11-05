@@ -1,6 +1,7 @@
 """Read-only snapshots with explicit realized/unrealized/turnover semantics."""
 
 from __future__ import annotations
+import re
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -395,6 +396,45 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
         buy_ceiling = float(analysis.low + (analysis.high - analysis.low) * decimal(rule.buy_zone_fraction))
         curve_dict["buy_zone_ceiling"] = buy_ceiling
 
+        # Multi-session drawdown session count
+        history_closes = [float(p["close"]) for p in company.price_history[-15:]] if company.price_history else []
+        if len(history_closes) >= 2:
+            peak_val = max(history_closes[:-1])
+            peak_idx = max(loc for loc, val in enumerate(history_closes[:-1]) if val == peak_val)
+            drawdown_sessions = max(1, len(history_closes) - 1 - peak_idx)
+        else:
+            drawdown_sessions = 1
+        curve_dict["drawdown_sessions"] = drawdown_sessions
+
+        # Accurate support position wording: below vs at vs near vs above
+        price_val = float(company.last_price)
+        sup_val = float(analysis.low)
+        if price_val < sup_val:
+            pos_label = f"below support (৳{sup_val:,.2f})"
+        elif sup_val > 0 and abs(price_val - sup_val) / sup_val <= 0.002:
+            pos_label = f"at support (৳{sup_val:,.2f})"
+        elif sup_val > 0 and 0 < (price_val - sup_val) / sup_val <= 0.01:
+            pos_label = f"near support (৳{sup_val:,.2f})"
+        else:
+            pos_label = f"above support (৳{sup_val:,.2f})"
+        curve_dict["support_position"] = pos_label
+
+        # Multi-session drawdown summary vs 1-day change
+        drop_pct = float(analysis.drawdown_pct)
+        if company.quarantine_reason:
+            m = re.search(r"(\d+(?:\.\d+)?)%", company.quarantine_reason)
+            if m:
+                drop_pct = float(m.group(1))
+        day_chg = float(curve_dict.get("day_change_pct") or 0)
+        drawdown_desc = f"{drop_pct:.2f}% drop over {drawdown_sessions} sessions (1-day: {day_chg:+.2f}%)"
+        curve_dict["drawdown_summary"] = drawdown_desc
+
+        quarantine_reason_text = company.quarantine_reason
+        if company.quarantined or analysis.signal == "CRASH_QUARANTINE":
+            curve_dict["reason"] = f"{drawdown_desc}; block buys, not a diagnosis of insolvency."
+            if quarantine_reason_text and ("session decline" in quarantine_reason_text or "session drop" in quarantine_reason_text):
+                quarantine_reason_text = f"Abnormal {drawdown_desc}; block buys and require review."
+
         company_views.append({
             "symbol": company.symbol,
             "name": company.name,
@@ -411,7 +451,7 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
             "curve": curve_dict,
             "quarantined": company.quarantined or analysis.signal == "CRASH_QUARANTINE",
             "quarantine_persisted": company.quarantined,
-            "quarantine_reason": company.quarantine_reason,
+            "quarantine_reason": quarantine_reason_text,
             "rule": rule_view(rule),
             "holding_qty": sum(lot["remaining_qty"] for lot in company_lots),
             "mature_qty": sum(lot["remaining_qty"] for lot in company_lots if lot["is_mature"]),

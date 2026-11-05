@@ -83,8 +83,8 @@ function renderMainChart() {
   if ($("pulse-support-val")) setText("pulse-support-val", `৳${support.toFixed(2)}`);
   if ($("pulse-resistance-val")) setText("pulse-resistance-val", `৳${resistance.toFixed(2)}`);
 
-  const width = 700, height = 180, left = 45, right = 15, top = 16, bottom = 26;
-  const chartW = width - left - right;
+  const width = 700, height = 180, left = 45, padRight = 72, top = 16, bottom = 26;
+  const chartW = width - left - padRight;
   const chartH = height - top - bottom;
   const minVal = Math.min(...values) * 0.985;
   const maxVal = Math.max(...values) * 1.015;
@@ -117,7 +117,7 @@ function renderMainChart() {
     svg.append(svgElement("line", {
       x1: left,
       y1: yPos,
-      x2: width - right,
+      x2: left + chartW,
       y2: yPos,
       stroke: "var(--chart-grid, #23303c)",
       "stroke-width": 0.8,
@@ -148,46 +148,46 @@ function renderMainChart() {
     }));
   }
 
-  // Horizontal Support line (dashed green)
+  // Horizontal Support line (dashed green) with tag in right gutter
   svg.append(svgElement("line", {
     x1: left,
     y1: y(support),
-    x2: width - right,
+    x2: left + chartW,
     y2: y(support),
     stroke: "#22c55e",
     "stroke-width": 1.5,
     "stroke-dasharray": "4 4",
   }));
   const supLbl = svgElement("text", {
-    x: width - right - 4,
-    y: y(support) - 4,
-    "text-anchor": "end",
+    x: left + chartW + 6,
+    y: y(support) + 3,
+    "text-anchor": "start",
     fill: "#22c55e",
     "font-size": 8.5,
     "font-weight": 700,
   });
-  supLbl.textContent = `SUPPORT ৳${support.toFixed(1)}`;
+  supLbl.textContent = `SUP ৳${support.toFixed(1)}`;
   svg.append(supLbl);
 
-  // Horizontal Resistance line (dashed red)
+  // Horizontal Resistance line (dashed red) with tag in right gutter
   svg.append(svgElement("line", {
     x1: left,
     y1: y(resistance),
-    x2: width - right,
+    x2: left + chartW,
     y2: y(resistance),
     stroke: "#ef4444",
     "stroke-width": 1.5,
     "stroke-dasharray": "4 4",
   }));
   const resLbl = svgElement("text", {
-    x: width - right - 4,
-    y: y(resistance) - 4,
-    "text-anchor": "end",
+    x: left + chartW + 6,
+    y: y(resistance) + 3,
+    "text-anchor": "start",
     fill: "#ef4444",
     "font-size": 8.5,
     "font-weight": 700,
   });
-  resLbl.textContent = `RESISTANCE ৳${resistance.toFixed(1)}`;
+  resLbl.textContent = `RES ৳${resistance.toFixed(1)}`;
   svg.append(resLbl);
 
   // Price Area & Line with smooth cubic bezier curve
@@ -231,7 +231,7 @@ function renderMainChart() {
 
   // Interactive Crosshair Elements with 1:1 SVG coordinate tracking
   const crosshairV = svgElement("line", { x1: 0, y1: top, x2: 0, y2: top + chartH, class: "chart-crosshair-line", style: "display:none;" });
-  const crosshairH = svgElement("line", { x1: left, y1: 0, x2: width - right, y2: 0, class: "chart-crosshair-line", style: "display:none;" });
+  const crosshairH = svgElement("line", { x1: left, y1: 0, x2: left + chartW, y2: 0, class: "chart-crosshair-line", style: "display:none;" });
   const crosshairDot = svgElement("circle", { cx: 0, cy: 0, r: 4.5, class: "chart-crosshair-point", style: "display:none;" });
   svg.append(crosshairV, crosshairH, crosshairDot);
 
@@ -1118,7 +1118,7 @@ function renderDeepTrendChart(company, timeframe = "7d") {
 
   // Crosshair vertical & horizontal lines & tracking dot
   const crosshairV = svgElement("line", { x1: 0, y1: top, x2: 0, y2: top + chartH, class: "chart-crosshair-line", style: "display:none;" });
-  const crosshairH = svgElement("line", { x1: left, y1: 0, x2: width - right, y2: 0, class: "chart-crosshair-line", style: "display:none;" });
+  const crosshairH = svgElement("line", { x1: left, y1: 0, x2: left + chartW, y2: 0, class: "chart-crosshair-line", style: "display:none;" });
   const crosshairPoint = svgElement("circle", { cx: 0, cy: 0, r: 4, class: "chart-crosshair-point", style: "display:none;" });
   svg.append(crosshairV, crosshairH, crosshairPoint);
 

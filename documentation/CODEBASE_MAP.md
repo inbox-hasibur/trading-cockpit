@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 18:39:34 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 18:53:43 UTC**.
 
 ---
 
@@ -8,9 +8,9 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 42 | 10,174 | Python Core Kernel, Engine & Hermes Agent |
-| `.css` | 2 | 6,836 | Custom Dark / Light / Terminal Design System |
-| `.js` | 3 | 3,393 | Vanilla ES6+ Reactive Terminal Controller |
+| `.py` | 42 | 10,300 | Python Core Kernel, Engine & Hermes Agent |
+| `.css` | 2 | 6,849 | Custom Dark / Light / Terminal Design System |
+| `.js` | 3 | 3,407 | Vanilla ES6+ Reactive Terminal Controller |
 | `.md` | 10 | 2,038 | Architecture & Strategy Documentation |
 | `.html` | 1 | 844 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
@@ -19,7 +19,7 @@
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **65** | **23,343** | *Entire Humming Bird Repository* |
+| **TOTAL** | **65** | **23,496** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -191,7 +191,7 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | :--- | :--- | :--- | :--- | :--- |
 | `ChatTurn` | `L46–L49` | `BaseModel` | — | 0 |
 | `ChatRequest` | `L52–L64` | `BaseModel` | — | 1 |
-| `ChatService` | `L181–L205` | `object` | — | 2 |
+| `ChatService` | `L204–L228` | `object` | — | 2 |
 
 
 **Methods in `ChatRequest`:**
@@ -205,8 +205,8 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__init__` | `L182–L187` | `(self, database: Database, settings:...)` | — | — | `HermesAgentLoop` |
-| `respond` | `L189–L205` | `(self, request: ChatRequest...)` | `dict` | — | `get`, `model_dump`, `run_turn`, `upper` |
+| `__init__` | `L205–L210` | `(self, database: Database, settings:...)` | — | — | `HermesAgentLoop` |
+| `respond` | `L212–L228` | `(self, request: ChatRequest...)` | `dict` | — | `get`, `model_dump`, `run_turn`, `upper` |
 
 
 #### Standalone Functions
@@ -215,7 +215,7 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `match_symbol` | `L67–L82` | `(text: str, companies: list[dict]...)` | `dict | None` | — | `get`, `lower` |
 | `format_canary_updates` | `L85–L100` | `(snapshot: dict...)` | `str` | — | `append`, `get`, `join` |
-| `local_summary` | `L103–L178` | `(message: str, snapshot: dict...)` | `str` | — | `any`, `format_canary_updates`, `get`, `join` |
+| `local_summary` | `L103–L201` | `(message: str, snapshot: dict...)` | `str` | — | `abs`, `any`, `append`, `float` |
 
 
 ---
@@ -484,32 +484,32 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `CheckpointManager` | `L62–L222` | `object` | — | 2 |
-| `HermesAgentLoop` | `L225–L627` | `object` | — | 10 |
+| `CheckpointManager` | `L70–L230` | `object` | — | 2 |
+| `HermesAgentLoop` | `L233–L635` | `object` | — | 10 |
 
 
 **Methods in `CheckpointManager`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `create_checkpoint` | `L64–L116` | `(session: Session, state: PortfolioS...)` | `HermesStateCheckpoint` | — | `HermesStateCheckpoint`, `add`, `flush`, `get` |
-| `rollback_last` | `L119–L222` | `(session: Session, state: PortfolioS...)` | `dict[str, Any]` | — | `TaxLot`, `TradeLog`, `ValueError`, `add` |
+| `create_checkpoint` | `L72–L124` | `(session: Session, state: PortfolioS...)` | `HermesStateCheckpoint` | — | `HermesStateCheckpoint`, `add`, `flush`, `get` |
+| `rollback_last` | `L127–L230` | `(session: Session, state: PortfolioS...)` | `dict[str, Any]` | — | `TaxLot`, `TradeLog`, `ValueError`, `add` |
 
 
 **Methods in `HermesAgentLoop`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__init__` | `L226–L230` | `(self, database: Database, settings:...)` | — | — | `SkillsManager` |
-| `execute_tool` | `L232–L234` | `(self, tool_name: str, args: dict[st...)` | `dict[str, Any]` | Deterministic execution of Hermes Agent tools with automatic checkpointing and rule diff tracking. | `dispatch_tool` |
-| `compress_history` | `L236–L248` | `(self, history: list[dict[str, str]]...)` | `list[dict[str, str]]` | Summarizes older conversation turns to keep context window compact & lightweight. | `append`, `capitalize`, `join`, `len` |
-| `detect_intent_and_tool` | `L250–L252` | `(self, message: str, snapshot: dict...)` | `tuple[str | None, dict[str, Any]]` | High-precision intent detector for Bangla, Banglish & English agent commands. | `detect_intent_and_tool` |
-| `run_turn` | `L254–L331` | `(self, user_message: str, history: l...)` | `dict[str, Any]` | Main turn loop: Layered Memory + Skills Injection + Tool Execution + Context Scrubbing. | `HermesMemory`, `_conversational_inference`, `_format_tool_response`, `build_snapshot` |
-| `_format_tool_response` | `L333–L334` | `(self, tool_name: str, tool_res: dic...)` | `str` | — | `format_tool_response` |
-| `get_gemini_keys` | `L336–L345` | `(self...)` | `list[str]` | — | `append`, `getattr`, `replace`, `split` |
-| `_call_gemini_with_key_rotation` | `L347–L437` | `(self, target_model: str, full_syste...)` | `dict[str, Any] | None` | Calls Google Gemini API with automatic multi-key rotation / rollback on 429, 403, 503 or quota limits. | `AsyncClient`, `ChatBudget`, `HermesMemory`, `Timeout` |
-| `_conversational_inference` | `L439–L596` | `(self, message: str, history: list[d...)` | `dict[str, Any]` | Runs conversational response with Layered Memory and Matched SKILL.md injection. | `AsyncClient`, `ChatBudget`, `HermesMemory`, `Timeout` |
-| `_local_conversational_fallback` | `L598–L627` | `(self, message: str, snapshot: dict,...)` | `dict[str, Any]` | — | `HermesMemory`, `local_summary`, `portfolio_state`, `record_turn` |
+| `__init__` | `L234–L238` | `(self, database: Database, settings:...)` | — | — | `SkillsManager` |
+| `execute_tool` | `L240–L242` | `(self, tool_name: str, args: dict[st...)` | `dict[str, Any]` | Deterministic execution of Hermes Agent tools with automatic checkpointing and rule diff tracking. | `dispatch_tool` |
+| `compress_history` | `L244–L256` | `(self, history: list[dict[str, str]]...)` | `list[dict[str, str]]` | Summarizes older conversation turns to keep context window compact & lightweight. | `append`, `capitalize`, `join`, `len` |
+| `detect_intent_and_tool` | `L258–L260` | `(self, message: str, snapshot: dict...)` | `tuple[str | None, dict[str, Any]]` | High-precision intent detector for Bangla, Banglish & English agent commands. | `detect_intent_and_tool` |
+| `run_turn` | `L262–L339` | `(self, user_message: str, history: l...)` | `dict[str, Any]` | Main turn loop: Layered Memory + Skills Injection + Tool Execution + Context Scrubbing. | `HermesMemory`, `_conversational_inference`, `_format_tool_response`, `build_snapshot` |
+| `_format_tool_response` | `L341–L342` | `(self, tool_name: str, tool_res: dic...)` | `str` | — | `format_tool_response` |
+| `get_gemini_keys` | `L344–L353` | `(self...)` | `list[str]` | — | `append`, `getattr`, `replace`, `split` |
+| `_call_gemini_with_key_rotation` | `L355–L445` | `(self, target_model: str, full_syste...)` | `dict[str, Any] | None` | Calls Google Gemini API with automatic multi-key rotation / rollback on 429, 403, 503 or quota limits. | `AsyncClient`, `ChatBudget`, `HermesMemory`, `Timeout` |
+| `_conversational_inference` | `L447–L604` | `(self, message: str, history: list[d...)` | `dict[str, Any]` | Runs conversational response with Layered Memory and Matched SKILL.md injection. | `AsyncClient`, `ChatBudget`, `HermesMemory`, `Timeout` |
+| `_local_conversational_fallback` | `L606–L635` | `(self, message: str, snapshot: dict,...)` | `dict[str, Any]` | — | `HermesMemory`, `local_summary`, `portfolio_state`, `record_turn` |
 
 
 ---
@@ -689,13 +689,13 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `generate_extended_history` | `L210–L262` | `(history: list[dict[str, str]], fund...)` | `dict[str, list[dict[str, Any]]]` | Generates 7d, 1m, 6m, 1y series for TradingView-style deep trend views. | `add_sessions`, `append`, `cos`, `float` |
-| `rule_view` | `L265–L275` | `(rule: CustomRule...)` | `dict` | — | `decimal`, `float` |
-| `trade_view` | `L278–L297` | `(trade: TradeLog...)` | `dict` | — | `float`, `isoformat` |
-| `period_totals` | `L300–L315` | `(trades: list[TradeLog], start: date...)` | `dict` | — | `float`, `isoformat`, `len`, `sum` |
-| `build_snapshot` | `L318–L320` | `(database: Database, settings: Setti...)` | `dict` | — | `read`, `snapshot_from_session` |
-| `snapshot_from_session` | `L323–L598` | `(session: Session, settings: Setting...)` | `dict` | — | `SkillsManager`, `StockNowAdapter`, `TradingCalendar`, `add_sessions` |
-| `normalized_watchlist` | `L601–L620` | `(companies: list[dict]...)` | `list[dict]` | Equal-weight normalized PRICE index, explicitly not portfolio performance. | `any`, `append`, `decimal`, `float` |
+| `generate_extended_history` | `L211–L263` | `(history: list[dict[str, str]], fund...)` | `dict[str, list[dict[str, Any]]]` | Generates 7d, 1m, 6m, 1y series for TradingView-style deep trend views. | `add_sessions`, `append`, `cos`, `float` |
+| `rule_view` | `L266–L276` | `(rule: CustomRule...)` | `dict` | — | `decimal`, `float` |
+| `trade_view` | `L279–L298` | `(trade: TradeLog...)` | `dict` | — | `float`, `isoformat` |
+| `period_totals` | `L301–L316` | `(trades: list[TradeLog], start: date...)` | `dict` | — | `float`, `isoformat`, `len`, `sum` |
+| `build_snapshot` | `L319–L321` | `(database: Database, settings: Setti...)` | `dict` | — | `read`, `snapshot_from_session` |
+| `snapshot_from_session` | `L324–L638` | `(session: Session, settings: Setting...)` | `dict` | — | `SkillsManager`, `StockNowAdapter`, `TradingCalendar`, `abs` |
+| `normalized_watchlist` | `L641–L660` | `(companies: list[dict]...)` | `list[dict]` | Equal-weight normalized PRICE index, explicitly not portfolio performance. | `any`, `append`, `decimal`, `float` |
 
 
 ---
@@ -946,7 +946,7 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 | `.engine-controls` | [`frontend/styles.css`](/frontend/styles.css#L370) | `L370` | `flex` | — | — | — | — |
 | `.session-bar` | [`frontend/styles.css`](/frontend/styles.css#L406) | `L406` | `flex` | — | — | `#0e161f` | `wrap` |
 | `.metric-card` | [`frontend/styles.css`](/frontend/styles.css#L458) | `L458` | — | — | — | `var(--panel)` | — |
-| `.skills-drawer` | [`frontend/styles.css`](/frontend/styles.css#L1935) | `L1935` | — | — | — | `#0c141d` | — |
+| `.skills-drawer` | [`frontend/styles.css`](/frontend/styles.css#L1939) | `L1939` | — | — | — | `#0c141d` | — |
 | `.session-bar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L55) | `L55` | — | — | — | `#ffffff` | — |
 | `.metric-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L81) | `L81` | — | — | — | `#ffffff` | — |
 | `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L448) | `L448` | — | — | — | `#f8fafc !important` | — |
@@ -975,7 +975,7 @@ Identified **234** distinct element IDs in the UI shell. Key controller anchors:
 
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
-| `styles.css` | 4454 | Core design tokens, layout & widgets |
+| `styles.css` | 4467 | Core design tokens, layout & widgets |
 | `theme_light_hermes.css` | 2382 | Daylight overrides & Hermes IDE sidebar |
 
 
@@ -1027,22 +1027,22 @@ Identified **234** distinct element IDs in the UI shell. Key controller anchors:
 | `cell()` | `app.js` | `L256` | Reactive DOM rendering / event controller |
 | `selectCompany()` | `app.js` | `L258` | Reactive DOM rendering / event controller |
 | `renderWatchlist()` | `app.js` | `L265` | Reactive DOM rendering / event controller |
-| `renderCanaryTheses()` | `app.js` | `L321` | Reactive DOM rendering / event controller |
-| `renderInspector()` | `app.js` | `L355` | Reactive DOM rendering / event controller |
-| `renderDecisions()` | `app.js` | `L390` | Reactive DOM rendering / event controller |
-| `renderLedger()` | `app.js` | `L407` | Reactive DOM rendering / event controller |
-| `initTheme()` | `app.js` | `L533` | Reactive DOM rendering / event controller |
-| `setTheme()` | `app.js` | `L539` | Reactive DOM rendering / event controller |
-| `toggleTheme()` | `app.js` | `L550` | Reactive DOM rendering / event controller |
-| `tickMarketClock()` | `app.js` | `L556` | Reactive DOM rendering / event controller |
-| `tickClock()` | `app.js` | `L621` | Reactive DOM rendering / event controller |
-| `renderAutomationControlBar()` | `app.js` | `L630` | Reactive DOM rendering / event controller |
-| `setAutomationConfig()` | `app.js` | `L756` | Reactive DOM rendering / event controller |
-| `initRealtimeStream()` | `app.js` | `L873` | Reactive DOM rendering / event controller |
-| `switchView()` | `app.js` | `L899` | Reactive DOM rendering / event controller |
-| `initViewRouter()` | `app.js` | `L950` | Reactive DOM rendering / event controller |
-| `initScrollSpy()` | `app.js` | `L1016` | Reactive DOM rendering / event controller |
-| `updateActiveNav()` | `app.js` | `L1029` | Reactive DOM rendering / event controller |
+| `renderCanaryTheses()` | `app.js` | `L335` | Reactive DOM rendering / event controller |
+| `renderInspector()` | `app.js` | `L369` | Reactive DOM rendering / event controller |
+| `renderDecisions()` | `app.js` | `L404` | Reactive DOM rendering / event controller |
+| `renderLedger()` | `app.js` | `L421` | Reactive DOM rendering / event controller |
+| `initTheme()` | `app.js` | `L547` | Reactive DOM rendering / event controller |
+| `setTheme()` | `app.js` | `L553` | Reactive DOM rendering / event controller |
+| `toggleTheme()` | `app.js` | `L564` | Reactive DOM rendering / event controller |
+| `tickMarketClock()` | `app.js` | `L570` | Reactive DOM rendering / event controller |
+| `tickClock()` | `app.js` | `L635` | Reactive DOM rendering / event controller |
+| `renderAutomationControlBar()` | `app.js` | `L644` | Reactive DOM rendering / event controller |
+| `setAutomationConfig()` | `app.js` | `L770` | Reactive DOM rendering / event controller |
+| `initRealtimeStream()` | `app.js` | `L887` | Reactive DOM rendering / event controller |
+| `switchView()` | `app.js` | `L913` | Reactive DOM rendering / event controller |
+| `initViewRouter()` | `app.js` | `L964` | Reactive DOM rendering / event controller |
+| `initScrollSpy()` | `app.js` | `L1030` | Reactive DOM rendering / event controller |
+| `updateActiveNav()` | `app.js` | `L1043` | Reactive DOM rendering / event controller |
 | `smoothCurvePath()` | `charts.js` | `L8` | Reactive DOM rendering / event controller |
 | `getBezierPointAtContinuousIndex()` | `charts.js` | `L31` | Reactive DOM rendering / event controller |
 | `renderMainChart()` | `charts.js` | `L63` | Reactive DOM rendering / event controller |
@@ -1106,7 +1106,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/adapters/stocknow_portfolio_sync.py` | `_execute_reconciliation` | 117 | 3 | Decompose into sub-functions |
 | `backend/chat.py` | `match_symbol` | 16 | 4 | Acceptable; well-scoped logic |
 | `backend/chat.py` | `format_canary_updates` | 16 | 4 | Acceptable; well-scoped logic |
-| `backend/chat.py` | `local_summary` | 76 | 2 | Acceptable; well-scoped logic |
+| `backend/chat.py` | `local_summary` | 99 | 6 | Acceptable; well-scoped logic |
 | `backend/database.py` | `create_schema` | 36 | 4 | Acceptable; well-scoped logic |
 | `backend/engine/agent_actions.py` | `emergency_quarantine_and_canary` | 106 | 5 | Decompose into sub-functions |
 | `backend/engine/agent_actions.py` | `check_canary_theses` | 31 | 4 | Acceptable; well-scoped logic |
@@ -1141,7 +1141,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/main.py` | `event_stream` | 26 | 4 | Acceptable; well-scoped logic |
 | `backend/main.py` | `generator` | 13 | 4 | Acceptable; well-scoped logic |
 | `backend/market_map.py` | `build_market_map_payload` | 72 | 5 | Acceptable; well-scoped logic |
-| `backend/portfolio.py` | `snapshot_from_session` | 276 | 3 | Decompose into sub-functions |
+| `backend/portfolio.py` | `snapshot_from_session` | 315 | 5 | Decompose into sub-functions |
 | `backend/portfolio.py` | `normalized_watchlist` | 20 | 4 | Acceptable; well-scoped logic |
 | `backend/routes_auth_settings.py` | `build_auth_settings_router` | 136 | 2 | Decompose into sub-functions |
 | `backend/routes_hermes.py` | `build_hermes_router` | 184 | 5 | Decompose into sub-functions |
@@ -1163,4 +1163,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 23,343 total LOC indexed.
+> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 23,496 total LOC indexed.

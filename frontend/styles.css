@@ -543,7 +543,11 @@ select {
 }
 
 .chart-summary {
-  padding: 1px 18px 0; display: flex; align-items: baseline; gap: 9px;
+  padding: 6px 18px 2px;
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  width: 100%;
 }
 
 .chart-summary strong {
@@ -2783,16 +2787,25 @@ input[type=checkbox] {
 }
 
 .main-chart-legend {
-  padding: 0 4px 6px 4px;
+  padding: 4px 18px 8px;
   margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 
 .main-chart-legend .chart-legend-items {
-  gap: 12px;
-  font-size: 9.5px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 10px;
 }
 
 .main-chart-legend .deep-chart-telemetry {
+  display: flex;
+  align-items: center;
   gap: 12px;
   font-size: 10px;
 }

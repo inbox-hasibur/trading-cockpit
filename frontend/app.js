@@ -296,7 +296,21 @@ function renderWatchlist() {
     button.append(name); companyCell.append(button);
     const day = cell(percentage(company.curve.day_change_pct), `align-right ${company.curve.day_change_pct >= 0 ? "positive" : "negative"}`);
     const chart = cell(); chart.append(sparkline(company.history));
-    const signal = cell(); signal.append(badge(company.curve.signal)); signal.title = company.curve.reason;
+    const signal = cell();
+    const sigBadge = badge(company.curve.signal);
+    if (company.quarantined || company.curve.signal === "CRASH_QUARANTINE") {
+      let dropVal = company.curve.drawdown_pct ? company.curve.drawdown_pct.toFixed(2) : "0.00";
+      if (company.quarantine_reason) {
+        const match = company.quarantine_reason.match(/(\d+(?:\.\d+)?)%/);
+        if (match) dropVal = parseFloat(match[1]).toFixed(2);
+      }
+      const nSessions = company.curve.drawdown_sessions || 5;
+      sigBadge.title = `Quarantined: ${dropVal}% drawdown over ${nSessions} sessions`;
+      signal.title = sigBadge.title;
+    } else {
+      signal.title = company.curve.reason;
+    }
+    signal.append(sigBadge);
     const position = cell(undefined, "align-right position-count");
     position.append(element("span", "", company.holding_qty), element("span", "muted", `/ ${company.mature_qty}`));
     const allocation = cell(`${company.rule.buy_allocation_pct}%`, "align-right allocation-value");

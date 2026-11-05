@@ -282,3 +282,58 @@ def test_chat_response_served_by_and_tier2_gemini_fallback(settings):
         port_data = client.get("/api/portfolio").json()
         assert port_data["hermes"]["calls_used_today"] == calls_after
         assert port_data["chat"]["external_calls_today"] == calls_after
+
+
+def test_hermes_multi_session_drop_and_support_wording(settings):
+    from backend.main import create_app
+    from backend.portfolio import build_snapshot
+    from backend.chat import local_summary
+
+    app = create_app(settings)
+    with TestClient(app) as client:
+        snapshot = build_snapshot(app.state.database, settings)
+
+        # 1. BXPHARMA multi-session drawdown check
+        bx = next(c for c in snapshot["companies"] if c["symbol"] == "BXPHARMA")
+        assert bx["quarantined"] is True
+        assert "drop over" in bx["curve"]["drawdown_summary"]
+        assert "(1-day:" in bx["curve"]["drawdown_summary"]
+
+        # 2. Local summary describes multi-session drop and 1-day change accurately
+        summary = local_summary("status of BXPHARMA", snapshot)
+        assert "drop over" in summary
+        assert "(1-day:" in summary
+
+        # 3. Test explicit case of multi-session drop with positive 1-day change (e.g. +0.80%)
+        mock_snapshot = {
+            "app": snapshot["app"],
+            "metrics": snapshot["metrics"],
+            "canary_theses": [],
+            "companies": [{
+                "symbol": "BXPHARMA",
+                "price": 58.46,
+                "holding_qty": 10,
+                "mature_qty": 10,
+                "locked_qty": 0,
+                "unrealized_pnl": -322.78,
+                "net_return_pct": -35.69,
+                "quarantined": True,
+                "quarantine_reason": "Abnormal 35.56% drop over 5 sessions (1-day: +0.80%); block buys and require review.",
+                "curve": {
+                    "signal": "CRASH_QUARANTINE",
+                    "reason": "35.56% drop over 5 sessions (1-day: +0.80%); block buys, not a diagnosis of insolvency.",
+                    "drawdown_summary": "35.56% drop over 5 sessions (1-day: +0.80%)",
+                    "support": 58.0,
+                    "low": 58.0,
+                    "support_position": "near support (৳58.00)",
+                },
+            }],
+        }
+        mock_summary = local_summary("status of BXPHARMA", mock_snapshot)
+        assert "35.56% drop over 5 sessions (1-day: +0.80%)" in mock_summary
+        assert "near support (৳58.00)" in mock_summary
+
+        # 3. Support position wording unit checks
+        # Price below support
+        gp = next(c for c in snapshot["companies"] if c["symbol"] == "GP")
+        assert "above support" in gp["curve"]["support_position"]

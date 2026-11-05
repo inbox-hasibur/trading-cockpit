@@ -111,17 +111,40 @@ def local_summary(message: str, snapshot: dict) -> str:
     symbol = match_symbol(text, snapshot["companies"])
     if symbol:
         company = symbol
+        support_pos = company["curve"].get("support_position")
+        if not support_pos:
+            price_val = float(company["price"])
+            sup_val = float(company["curve"].get("support") or company["curve"].get("low") or 0)
+            if price_val < sup_val:
+                support_pos = f"below support (৳{sup_val:,.2f})"
+            elif sup_val > 0 and abs(price_val - sup_val) / sup_val <= 0.002:
+                support_pos = f"at support (৳{sup_val:,.2f})"
+            elif sup_val > 0 and 0 < (price_val - sup_val) / sup_val <= 0.01:
+                support_pos = f"near support (৳{sup_val:,.2f})"
+            else:
+                support_pos = f"above support (৳{sup_val:,.2f})"
+
+        status_text = (
+            f"Status: Quarantined ({company['curve'].get('drawdown_summary') or company['quarantine_reason'] or company['curve']['reason']})."
+            if company["quarantined"]
+            else "Status: Active."
+        )
         return (
             f"{prefix}\n{proactive_notice}{company['symbol']} ({company.get('watchlist_category', 'GSC')}): "
-            f"synthetic price ৳{company['price']:,.2f}; "
+            f"synthetic price ৳{company['price']:,.2f} ({support_pos}); "
             f"{company['holding_qty']} shares ({company['mature_qty']} mature, {company['locked_qty']} locked).\n"
             f"Estimated net P/L: ৳{company['unrealized_pnl']:+,.2f} ({company['net_return_pct']:+.2f}%).\n"
             f"Signal: {company['curve']['signal']}. {company['curve']['reason']}\n"
-            f"Status: {'Quarantined' if company['quarantined'] else 'Active'}.\n"
+            f"{status_text}\n"
             "DEMO mode: Hermes Agentic Orchestrator standing by for instructions."
         )
     if any(word in text for word in ("crash", "quarantine", "guard", "safe", "সেফ", "ক্র্যাশ")):
-        blocked = ", ".join(company["symbol"] for company in snapshot["companies"] if company["quarantined"]) or "none"
+        blocked_list = []
+        for c in snapshot["companies"]:
+            if c["quarantined"]:
+                dd = c["curve"].get("drawdown_summary")
+                blocked_list.append(f"{c['symbol']} ({dd})" if dd else c["symbol"])
+        blocked = ", ".join(blocked_list) or "none"
         return (
             f"{prefix}\n{proactive_notice}Crash Quarantine status: {blocked}.\n"
             "New buys are strictly blocked on quarantined stocks. "
