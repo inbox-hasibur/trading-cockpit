@@ -2725,6 +2725,21 @@ input[type=checkbox] {
   margin-bottom: 10px;
 }
 
+.main-chart-legend {
+  padding: 0 4px 6px 4px;
+  margin-bottom: 4px;
+}
+
+.main-chart-legend .chart-legend-items {
+  gap: 12px;
+  font-size: 9.5px;
+}
+
+.main-chart-legend .deep-chart-telemetry {
+  gap: 12px;
+  font-size: 10px;
+}
+
 .chart-legend-items {
   display: flex;
   align-items: center;

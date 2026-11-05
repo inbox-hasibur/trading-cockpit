@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 14:03:37 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 14:22:25 UTC**.
 
 ---
 
@@ -8,18 +8,18 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.css` | 2 | 6,705 | Custom Dark / Light / Terminal Design System |
+| `.css` | 2 | 6,720 | Custom Dark / Light / Terminal Design System |
 | `.py` | 31 | 6,041 | Python Core Kernel, Engine & Hermes Agent |
-| `.js` | 3 | 2,938 | Vanilla ES6+ Reactive Terminal Controller |
+| `.js` | 3 | 3,101 | Vanilla ES6+ Reactive Terminal Controller |
 | `.md` | 10 | 1,666 | Architecture & Strategy Documentation |
-| `.html` | 1 | 837 | Single Page Application DOM Structure |
+| `.html` | 1 | 843 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
 | `.cursorignore` | 1 | 12 | Configuration / Asset |
 | `.opencodeignore` | 1 | 12 | Configuration / Asset |
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **54** | **18,245** | *Entire Humming Bird Repository* |
+| **TOTAL** | **54** | **18,429** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -736,7 +736,7 @@ Identified **229** distinct element IDs in the UI shell. Key controller anchors:
 
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
-| `styles.css` | 4362 | Core design tokens, layout & widgets |
+| `styles.css` | 4377 | Core design tokens, layout & widgets |
 | `theme_light_hermes.css` | 2343 | Daylight overrides & Hermes IDE sidebar |
 
 
@@ -803,21 +803,21 @@ Identified **229** distinct element IDs in the UI shell. Key controller anchors:
 | `updateActiveNav()` | `app.js` | `L1014` | Reactive DOM rendering / event controller |
 | `smoothCurvePath()` | `charts.js` | `L8` | Reactive DOM rendering / event controller |
 | `renderMainChart()` | `charts.js` | `L31` | Reactive DOM rendering / event controller |
-| `sparkline()` | `charts.js` | `L153` | Reactive DOM rendering / event controller |
-| `squarify()` | `charts.js` | `L168` | Reactive DOM rendering / event controller |
-| `layoutRow()` | `charts.js` | `L178` | Reactive DOM rendering / event controller |
-| `worst()` | `charts.js` | `L225` | Reactive DOM rendering / event controller |
-| `showTreemapTooltip()` | `charts.js` | `L262` | Reactive DOM rendering / event controller |
-| `hideTreemapTooltip()` | `charts.js` | `L275` | Reactive DOM rendering / event controller |
-| `renderMarketMap()` | `charts.js` | `L280` | Reactive DOM rendering / event controller |
-| `renderTopSectorsChart()` | `charts.js` | `L451` | Reactive DOM rendering / event controller |
-| `renderGainerChart()` | `charts.js` | `L611` | Reactive DOM rendering / event controller |
-| `updateWhatIfSimulator()` | `charts.js` | `L616` | Reactive DOM rendering / event controller |
-| `updateModalSimulator()` | `charts.js` | `L660` | Reactive DOM rendering / event controller |
-| `openDeepTrendModal()` | `charts.js` | `L699` | Reactive DOM rendering / event controller |
-| `closeDeepTrendModal()` | `charts.js` | `L756` | Reactive DOM rendering / event controller |
-| `renderDeepTrendChart()` | `charts.js` | `L766` | Reactive DOM rendering / event controller |
-| `initCharts()` | `charts.js` | `L1005` | Reactive DOM rendering / event controller |
+| `sparkline()` | `charts.js` | `L310` | Reactive DOM rendering / event controller |
+| `squarify()` | `charts.js` | `L325` | Reactive DOM rendering / event controller |
+| `layoutRow()` | `charts.js` | `L335` | Reactive DOM rendering / event controller |
+| `worst()` | `charts.js` | `L382` | Reactive DOM rendering / event controller |
+| `showTreemapTooltip()` | `charts.js` | `L419` | Reactive DOM rendering / event controller |
+| `hideTreemapTooltip()` | `charts.js` | `L432` | Reactive DOM rendering / event controller |
+| `renderMarketMap()` | `charts.js` | `L437` | Reactive DOM rendering / event controller |
+| `renderTopSectorsChart()` | `charts.js` | `L608` | Reactive DOM rendering / event controller |
+| `renderGainerChart()` | `charts.js` | `L768` | Reactive DOM rendering / event controller |
+| `updateWhatIfSimulator()` | `charts.js` | `L773` | Reactive DOM rendering / event controller |
+| `updateModalSimulator()` | `charts.js` | `L817` | Reactive DOM rendering / event controller |
+| `openDeepTrendModal()` | `charts.js` | `L856` | Reactive DOM rendering / event controller |
+| `closeDeepTrendModal()` | `charts.js` | `L913` | Reactive DOM rendering / event controller |
+| `renderDeepTrendChart()` | `charts.js` | `L923` | Reactive DOM rendering / event controller |
+| `initCharts()` | `charts.js` | `L1168` | Reactive DOM rendering / event controller |
 | `renderHermesSkills()` | `hermes_ui.js` | `L8` | Reactive DOM rendering / event controller |
 | `addMessage()` | `hermes_ui.js` | `L52` | Reactive DOM rendering / event controller |
 | `sendChat()` | `hermes_ui.js` | `L65` | Reactive DOM rendering / event controller |
@@ -891,4 +891,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 27 Python modules inspected, 10 FastAPI endpoints registered, 18,245 total LOC indexed.
+> **Audit Summary:** 27 Python modules inspected, 10 FastAPI endpoints registered, 18,429 total LOC indexed.

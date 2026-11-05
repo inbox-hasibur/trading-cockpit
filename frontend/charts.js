@@ -30,10 +30,11 @@ function smoothCurvePath(points) {
 
 function renderMainChart() {
   const points = state.snapshot.normalized_curve;
-  if (points.length < 2) {
+  if (!points || points.length < 2) {
     $("main-chart").replaceChildren(element("span", "muted", "Insufficient valid history to chart."));
     return;
   }
+  const allTrades = state.snapshot.trades || [];
   setText("curve-sessions", `${points.length} sessions`);
   const last = points[points.length - 1].value;
   setText("index-value", last.toFixed(2));
@@ -41,38 +42,188 @@ function renderMainChart() {
   setText("index-change", percentage(change));
   $("index-change").classList.toggle("positive", change >= 0);
   $("index-change").classList.toggle("negative", change < 0);
-  const width = 700, height = 175, left = 36, right = 12, top = 10, bottom = 28;
+
+  const values = points.map((point) => point.value);
+  const support = Math.min(...values);
+  const resistance = Math.max(...values);
+  const buyCeiling = support + (resistance - support) * 0.25;
+
+  if ($("pulse-support-val")) setText("pulse-support-val", `৳${support.toFixed(2)}`);
+  if ($("pulse-resistance-val")) setText("pulse-resistance-val", `৳${resistance.toFixed(2)}`);
+
+  const width = 700, height = 180, left = 45, right = 15, top = 16, bottom = 26;
   const chartW = width - left - right;
   const chartH = height - top - bottom;
-  const values = points.map((point) => point.value);
-  const min = Math.min(...values) - 1, max = Math.max(...values) + 1;
-  const x = (i) => left + (i / (points.length - 1)) * chartW;
-  const y = (value) => top + ((max - value) / (max - min)) * chartH;
-  const svg = svgElement("svg", { viewBox: `0 0 ${width} ${height}`, preserveAspectRatio: "none", role: "img", "aria-label": "Synthetic normalized watchlist price index. Not portfolio performance." });
-  const defs = svgElement("defs");
-  const gradient = svgElement("linearGradient", { id: "chart-gradient", x1: "0", x2: "0", y1: "0", y2: "1" });
-  gradient.append(svgElement("stop", { offset: "0%", "stop-color": "#5de4c7", "stop-opacity": ".18" }), svgElement("stop", { offset: "100%", "stop-color": "#5de4c7", "stop-opacity": "0" }));
-  defs.append(gradient); svg.append(defs);
-  for (let i = 0; i < 4; i += 1) {
-    const value = min + ((max - min) * i) / 3;
-    svg.append(svgElement("line", { x1: left, y1: y(value), x2: width - right, y2: y(value), class: "chart-grid" }));
-    const label = svgElement("text", { x: left - 8, y: y(value) + 3, "text-anchor": "end", class: "chart-axis-label" });
-    label.textContent = value.toFixed(1); svg.append(label);
-  }
-  const coords = points.map((pt, i) => ({ x: x(i), y: y(pt.value) }));
-  const smoothPath = smoothCurvePath(coords);
-  svg.append(svgElement("path", { d: `${smoothPath} L${x(points.length - 1)},${height - bottom} L${left},${height - bottom} Z`, class: "chart-area" }));
-  svg.append(svgElement("path", { d: smoothPath, class: "chart-line" }));
+  const minVal = Math.min(...values) * 0.985;
+  const maxVal = Math.max(...values) * 1.015;
+  const range = maxVal - minVal || 1;
 
-  [...new Set([0, Math.floor((points.length - 1) / 2), points.length - 1])].forEach((i) => {
-    const label = svgElement("text", { x: x(i), y: height - 5, "text-anchor": i === 0 ? "start" : i === points.length - 1 ? "end" : "middle", class: "chart-axis-label" });
-    label.textContent = sessionDate(points[i].date, true); svg.append(label);
+  const x = (i) => left + (i / (points.length - 1)) * chartW;
+  const y = (val) => top + ((maxVal - val) / range) * chartH;
+
+  const svg = svgElement("svg", {
+    viewBox: `0 0 ${width} ${height}`,
+    preserveAspectRatio: "none",
+    class: "main-trend-svg",
+    role: "img",
+    "aria-label": "Normalized watchlist price index with support, resistance, and executed orders",
   });
 
-  // Interactive Crosshair Elements (No static dots on the curve line - 100% clean curve)
-  const crosshairV = svgElement("line", { x1: 0, y1: top, x2: 0, y2: height - bottom, class: "chart-crosshair-line", style: "display:none;" });
+  const defs = svgElement("defs");
+  const gradient = svgElement("linearGradient", { id: "chart-gradient", x1: "0", x2: "0", y1: "0", y2: "1" });
+  gradient.append(
+    svgElement("stop", { offset: "0%", "stop-color": "#5de4c7", "stop-opacity": "0.22" }),
+    svgElement("stop", { offset: "100%", "stop-color": "#5de4c7", "stop-opacity": "0" })
+  );
+  defs.append(gradient);
+  svg.append(defs);
+
+  // Background Gridlines
+  for (let step = 0; step <= 3; step++) {
+    const val = minVal + (range * step) / 3;
+    const yPos = y(val);
+    svg.append(svgElement("line", {
+      x1: left,
+      y1: yPos,
+      x2: width - right,
+      y2: yPos,
+      stroke: "var(--chart-grid, #23303c)",
+      "stroke-width": 0.8,
+      "stroke-dasharray": "2 3",
+    }));
+    const lbl = svgElement("text", {
+      x: left - 8,
+      y: yPos + 3,
+      "text-anchor": "end",
+      fill: "var(--muted, #63768b)",
+      "font-size": 9,
+    });
+    lbl.textContent = `৳${val.toFixed(1)}`;
+    svg.append(lbl);
+  }
+
+  // Shaded Buy Zone band: [support, buyCeiling]
+  if (buyCeiling > support) {
+    const yTop = Math.min(y(support), y(buyCeiling));
+    const bandH = Math.abs(y(support) - y(buyCeiling));
+    svg.append(svgElement("rect", {
+      x: left,
+      y: yTop,
+      width: chartW,
+      height: bandH,
+      fill: "rgba(34, 197, 94, 0.08)",
+      stroke: "none",
+    }));
+  }
+
+  // Horizontal Support line (dashed green)
+  svg.append(svgElement("line", {
+    x1: left,
+    y1: y(support),
+    x2: width - right,
+    y2: y(support),
+    stroke: "#22c55e",
+    "stroke-width": 1.5,
+    "stroke-dasharray": "4 4",
+  }));
+  const supLbl = svgElement("text", {
+    x: width - right - 4,
+    y: y(support) - 4,
+    "text-anchor": "end",
+    fill: "#22c55e",
+    "font-size": 8.5,
+    "font-weight": 700,
+  });
+  supLbl.textContent = `SUPPORT ৳${support.toFixed(1)}`;
+  svg.append(supLbl);
+
+  // Horizontal Resistance line (dashed red)
+  svg.append(svgElement("line", {
+    x1: left,
+    y1: y(resistance),
+    x2: width - right,
+    y2: y(resistance),
+    stroke: "#ef4444",
+    "stroke-width": 1.5,
+    "stroke-dasharray": "4 4",
+  }));
+  const resLbl = svgElement("text", {
+    x: width - right - 4,
+    y: y(resistance) - 4,
+    "text-anchor": "end",
+    fill: "#ef4444",
+    "font-size": 8.5,
+    "font-weight": 700,
+  });
+  resLbl.textContent = `RESISTANCE ৳${resistance.toFixed(1)}`;
+  svg.append(resLbl);
+
+  // Price Area & Line with smooth cubic bezier curve
+  const coords = points.map((pt, i) => ({ x: x(i), y: y(pt.value) }));
+  const smoothPath = smoothCurvePath(coords);
+  svg.append(svgElement("path", {
+    d: `${smoothPath} L${x(points.length - 1).toFixed(1)},${(top + chartH).toFixed(1)} L${left},${(top + chartH).toFixed(1)} Z`,
+    fill: "url(#chart-gradient)",
+  }));
+  svg.append(svgElement("path", {
+    d: smoothPath,
+    fill: "none",
+    stroke: "var(--teal, #5de4c7)",
+    "stroke-width": 2.2,
+  }));
+
+  // X Axis Session Dates
+  const sampleIndices = [...new Set([0, Math.floor((points.length - 1) / 2), points.length - 1])];
+  sampleIndices.forEach((idx) => {
+    const xPos = x(idx);
+    const dateLbl = svgElement("text", {
+      x: xPos,
+      y: height - 5,
+      "text-anchor": idx === 0 ? "start" : idx === points.length - 1 ? "end" : "middle",
+      fill: "var(--muted, #63768b)",
+      "font-size": 9,
+    });
+    dateLbl.textContent = sessionDate(points[idx].date, true);
+    svg.append(dateLbl);
+  });
+
+  // Bot Order Markers (B = Buy in green, S = Sell in red)
+  points.forEach((pt, idx) => {
+    const tradesOnDate = allTrades.filter((t) => t.date === pt.date || t.trade_on === pt.date);
+    tradesOnDate.forEach((t, tIdx) => {
+      const isBuy = t.side === "BUY";
+      const markerX = x(idx);
+      const yOffset = tradesOnDate.length > 1 ? (tIdx === 0 ? -8 : 8) : 0;
+      const markerY = y(pt.value) + yOffset;
+
+      const markerG = svgElement("g", { class: "chart-trade-marker" });
+      markerG.append(svgElement("circle", {
+        cx: markerX,
+        cy: markerY,
+        r: 6.5,
+        fill: isBuy ? "#16a34a" : "#dc2626",
+        stroke: "#ffffff",
+        "stroke-width": 1.5,
+      }));
+      const textM = svgElement("text", {
+        x: markerX,
+        y: markerY + 3.2,
+        "text-anchor": "middle",
+        fill: "#ffffff",
+        "font-size": 8,
+        "font-weight": 800,
+      });
+      textM.textContent = isBuy ? "B" : "S";
+      markerG.append(textM);
+      markerG.title = `${t.side} ${t.symbol} ${t.quantity} shares @ ৳${t.price}`;
+      svg.append(markerG);
+    });
+  });
+
+  // Interactive Crosshair Elements with 1:1 SVG coordinate tracking
+  const crosshairV = svgElement("line", { x1: 0, y1: top, x2: 0, y2: top + chartH, class: "chart-crosshair-line", style: "display:none;" });
   const crosshairH = svgElement("line", { x1: left, y1: 0, x2: width - right, y2: 0, class: "chart-crosshair-line", style: "display:none;" });
-  const crosshairDot = svgElement("circle", { cx: 0, cy: 0, r: 4, class: "chart-crosshair-point", style: "display:none;" });
+  const crosshairDot = svgElement("circle", { cx: 0, cy: 0, r: 4.5, class: "chart-crosshair-point", style: "display:none;" });
   svg.append(crosshairV, crosshairH, crosshairDot);
 
   // Mouse overlay rect for continuous TradingView-style hover tracking
@@ -89,8 +240,12 @@ function renderMainChart() {
     const chartContainer = $("main-chart");
     if (!chartContainer) return;
     const rect = chartContainer.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    // Project client coordinate into SVG coordinate space
     const mouseX = e.clientX - rect.left;
-    const normX = Math.max(0, Math.min(chartW, mouseX - left));
+    const svgX = (mouseX / rect.width) * width;
+    const normX = Math.max(0, Math.min(chartW, svgX - left));
     const t = normX / chartW;
     const continuousIdx = t * (points.length - 1);
     const i0 = Math.floor(continuousIdx);
@@ -117,11 +272,11 @@ function renderMainChart() {
     const pt = points[closestIdx];
 
     const chgFromBase = ((interpolatedVal / points[0].value - 1) * 100);
-    const dateTrades = allTrades.filter((t) => t.date === pt.date || t.trade_on === pt.date);
+    const dateTrades = allTrades.filter((tr) => tr.date === pt.date || tr.trade_on === pt.date);
     let tradeNote = "";
     if (dateTrades.length) {
       tradeNote = `<div style="margin-top:4px;border-top:1px solid var(--soft-line);padding-top:3px;">
-        ${dateTrades.map((t) => `<strong style="color:${t.side === "BUY" ? "#22c55e" : "#ef4444"}">${t.side}</strong> ${t.symbol} ${t.quantity} qty @ ৳${t.price}`).join("<br>")}
+        ${dateTrades.map((tr) => `<strong style="color:${tr.side === "BUY" ? "#22c55e" : "#ef4444"}">${tr.side}</strong> ${tr.symbol} ${tr.quantity} qty @ ৳${tr.price}`).join("<br>")}
       </div>`;
     }
 
@@ -129,12 +284,14 @@ function renderMainChart() {
     if (tooltip) {
       tooltip.innerHTML = `
         <div style="font-weight:700;color:var(--teal);">${sessionDate(pt.date)}</div>
-        <div style="font-size:11px;font-weight:600;margin-top:2px;">Rebased: ${interpolatedVal.toFixed(2)} (${chgFromBase >= 0 ? "+" : ""}${chgFromBase.toFixed(2)}%)</div>
+        <div style="font-size:11px;font-weight:600;margin-top:2px;">Rebased: ৳${interpolatedVal.toFixed(2)} (${chgFromBase >= 0 ? "+" : ""}${chgFromBase.toFixed(2)}%)</div>
         ${tradeNote}
       `;
       tooltip.hidden = false;
-      tooltip.style.left = `${Math.min(rect.width - 90, Math.max(90, ptX))}px`;
-      tooltip.style.top = `${Math.max(20, ptY - 10)}px`;
+      const screenX = (ptX / width) * rect.width;
+      const screenY = (ptY / height) * rect.height;
+      tooltip.style.left = `${Math.min(rect.width - 100, Math.max(100, screenX))}px`;
+      tooltip.style.top = `${Math.max(20, screenY - 10)}px`;
     }
   });
 
@@ -941,8 +1098,12 @@ function renderDeepTrendChart(company, timeframe = "7d") {
 
   overlay.addEventListener("mousemove", (e) => {
     const rect = mount.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    // Project client coordinate into SVG coordinate space
     const mouseX = e.clientX - rect.left;
-    const normX = Math.max(0, Math.min(chartW, mouseX - left));
+    const svgX = (mouseX / rect.width) * width;
+    const normX = Math.max(0, Math.min(chartW, svgX - left));
     const t = normX / chartW;
     const continuousIdx = t * (series.length - 1);
     const i0 = Math.floor(continuousIdx);
@@ -985,8 +1146,10 @@ function renderDeepTrendChart(company, timeframe = "7d") {
         ${tradeNote}
       `;
       tooltip.hidden = false;
-      tooltip.style.left = `${Math.min(rect.width - 100, Math.max(100, ptX))}px`;
-      tooltip.style.top = `${Math.max(30, ptY - 10)}px`;
+      const screenX = (ptX / width) * rect.width;
+      const screenY = (ptY / height) * rect.height;
+      tooltip.style.left = `${Math.min(rect.width - 100, Math.max(100, screenX))}px`;
+      tooltip.style.top = `${Math.max(30, screenY - 10)}px`;
     }
   });
 

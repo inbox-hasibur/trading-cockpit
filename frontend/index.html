@@ -48,15 +48,8 @@
             </button>
           </div>
           <div class="engine-controls">
-            <div class="header-engine-switch" title="Toggle Automation Engine (ON / OFF)">
-              <span class="engine-switch-label is-active" id="topbar-engine-status-text">Engine ON</span>
-              <label class="ios-switch topbar-switch" title="Toggle Automation Engine">
-                <input type="checkbox" id="topbar-automation-toggle-input" checked>
-                <span class="ios-slider"></span>
-              </label>
-            </div>
-            <button class="button primary" id="run-cycle" type="button" disabled title="Run single manual evaluation cycle"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6V4Z"/></svg><span id="run-label">Run automation cycle</span></button>
-            <button class="button secondary" id="pause-button" type="button" style="display:none;" disabled>Pause engine</button>
+            <button class="button secondary" id="pause-button" type="button" disabled>Pause engine</button>
+            <button class="button primary" id="run-cycle" type="button" disabled><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6V4Z"/></svg><span id="run-label">Run automation cycle</span></button>
           </div>
           <button class="theme-toggle-btn" id="theme-toggle-btn" type="button" title="Switch Theme (Dark / Light)">
             <span class="theme-icon">◐</span> <span id="theme-name">Dark</span>
@@ -103,11 +96,24 @@
             <article class="panel pulse-panel">
               <div class="panel-heading"><div><h2>Watchlist pulse</h2><p>Equal-weight price index · synthetic</p></div><span class="outline-badge" id="curve-sessions">7 sessions</span></div>
               <div class="chart-summary"><strong id="index-value">—</strong><span id="index-change" class="small">—</span><span class="chart-baseline">Rebased to 100</span></div>
+              <div class="deep-chart-header main-chart-legend">
+                <div class="chart-legend-items">
+                  <span class="legend-item"><i class="leg-color leg-curve"></i> Price Curve</span>
+                  <span class="legend-item"><i class="leg-color leg-support"></i> Support Floor</span>
+                  <span class="legend-item"><i class="leg-color leg-resistance"></i> Resistance Ceiling</span>
+                  <span class="legend-item"><i class="leg-color leg-buy"></i> Buy Marker (B)</span>
+                  <span class="legend-item"><i class="leg-color leg-sell"></i> Sell Marker (S)</span>
+                </div>
+                <div class="deep-chart-telemetry">
+                  <span>Support: <strong id="pulse-support-val">—</strong></span>
+                  <span>Resistance: <strong id="pulse-resistance-val">—</strong></span>
+                </div>
+              </div>
               <div class="chart-container-wrap">
                 <div class="main-chart" id="main-chart"><span class="muted">Loading synthetic history…</span></div>
                 <div class="chart-tooltip" id="main-chart-tooltip" hidden></div>
               </div>
-              <div class="chart-footer"><span><span class="legend-dash"></span> Demo watchlist index</span><span>Price index ≠ portfolio return · TradingView Crosshair</span></div>
+              <div class="chart-footer"><span><span class="legend-dash"></span> Demo watchlist index</span><span>TradingView-style interactive crosshair · Hover over data points</span></div>
             </article>
             <article class="panel buckets-panel"><div class="panel-heading"><div><h2>Rolling capital</h2><p>Three buckets. Settlement respected.</p></div><span class="outline-badge">T+2*</span></div><div class="bucket-stack" id="bucket-stack"></div><div class="panel-note">*Configurable demo assumption, not verified DSE rules.</div></article>
           </div>
