@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 16:20:28 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 16:38:15 UTC**.
 
 ---
 
@@ -8,10 +8,10 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 40 | 8,918 | Python Core Kernel, Engine & Hermes Agent |
-| `.css` | 2 | 6,720 | Custom Dark / Light / Terminal Design System |
+| `.py` | 40 | 9,064 | Python Core Kernel, Engine & Hermes Agent |
+| `.css` | 2 | 6,768 | Custom Dark / Light / Terminal Design System |
 | `.js` | 3 | 3,178 | Vanilla ES6+ Reactive Terminal Controller |
-| `.md` | 10 | 1,888 | Architecture & Strategy Documentation |
+| `.md` | 10 | 1,975 | Architecture & Strategy Documentation |
 | `.html` | 1 | 853 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
 | `.cursorignore` | 1 | 12 | Configuration / Asset |
@@ -19,7 +19,7 @@
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **63** | **21,615** | *Entire Humming Bird Repository* |
+| **TOTAL** | **63** | **21,896** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -784,9 +784,11 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | `is_ignored` | `L26–L31` | `(path: Path...)` | `bool` | — | `startswith` |
 | `collect_file_metrics` | `L34–L48` | `(...)` | — | — | `append`, `defaultdict`, `is_file`, `is_ignored` |
 | `parse_python_files` | `L149–L165` | `(...)` | — | — | `AstVisitor`, `as_posix`, `is_ignored`, `list` |
-| `parse_fastapi_routes` | `L168–L192` | `(main_path: Path...)` | — | — | `append`, `exists`, `get_docstring`, `isinstance` |
-| `parse_frontend` | `L195–L220` | `(...)` | — | — | `add`, `append`, `enumerate`, `exists` |
-| `generate_markdown` | `L223–L383` | `(...)` | — | — | `append`, `collect_file_metrics`, `get`, `items` |
+| `parse_fastapi_routes` | `L168–L205` | `(router_paths: list[Path]...)` | — | — | `append`, `as_posix`, `exists`, `get_docstring` |
+| `parse_css_design` | `L208–L310` | `(styles_file: Path, light_file: Path...)` | — | — | `append`, `exists`, `get`, `group` |
+| `scan_file` | `L256–L305` | `(css_text: str, filename: str...)` | — | — | `any`, `append`, `escape`, `get` |
+| `parse_frontend` | `L313–L338` | `(...)` | — | — | `add`, `append`, `enumerate`, `exists` |
+| `generate_markdown` | `L341–L529` | `(...)` | — | — | `append`, `collect_file_metrics`, `get`, `items` |
 
 
 ---
@@ -817,24 +819,106 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 
 ---
 
-## 5. FastAPI Route Registry (`backend/main.py`)
+## 5. FastAPI Route Registry (All Sub-Routers & Endpoints)
 
-| Method | Route Path | Handler Function | Line | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/api/health` | `health` | `L159` | Route endpoint |
-| `GET` | `/api/portfolio` | `portfolio` | `L163` | Route endpoint |
-| `POST` | `/api/automation/cycle` | `cycle` | `L167` | Route endpoint |
-| `POST` | `/api/automation/pause` | `pause` | `L176` | Route endpoint |
-| `POST` | `/api/automation/config` | `automation_config` | `L186` | Route endpoint |
-| `POST` | `/api/demo/advance` | `advance` | `L207` | Route endpoint |
-| `GET` | `/api/market/map` | `market_map_endpoint` | `L221` | Route endpoint |
-| `PATCH` | `/api/companies/{symbol}/allocation` | `allocation` | `L225` | Route endpoint |
-| `GET` | `/api/stream` | `event_stream` | `L255` | Route endpoint |
-| `GET` | `/` | `cockpit` | `L291` | Route endpoint |
+| Method | Route Path | Module File | Line | Handler Function | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/api/health` | [`backend/main.py`](/backend/main.py#L159) | `L159` | `health()` | Route endpoint |
+| `GET` | `/api/portfolio` | [`backend/main.py`](/backend/main.py#L163) | `L163` | `portfolio()` | Route endpoint |
+| `POST` | `/api/automation/cycle` | [`backend/main.py`](/backend/main.py#L167) | `L167` | `cycle()` | Route endpoint |
+| `POST` | `/api/automation/pause` | [`backend/main.py`](/backend/main.py#L176) | `L176` | `pause()` | Route endpoint |
+| `POST` | `/api/automation/config` | [`backend/main.py`](/backend/main.py#L186) | `L186` | `automation_config()` | Route endpoint |
+| `POST` | `/api/demo/advance` | [`backend/main.py`](/backend/main.py#L207) | `L207` | `advance()` | Route endpoint |
+| `GET` | `/api/market/map` | [`backend/main.py`](/backend/main.py#L221) | `L221` | `market_map_endpoint()` | Route endpoint |
+| `PATCH` | `/api/companies/{symbol}/allocation` | [`backend/main.py`](/backend/main.py#L225) | `L225` | `allocation()` | Route endpoint |
+| `GET` | `/api/stream` | [`backend/main.py`](/backend/main.py#L255) | `L255` | `event_stream()` | Route endpoint |
+| `GET` | `/` | [`backend/main.py`](/backend/main.py#L291) | `L291` | `cockpit()` | Route endpoint |
+| `POST` | `/api/chat` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L30) | `L30` | `chat_route()` | Route endpoint |
+| `GET` | `/api/hermes/conversations` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L37) | `L37` | `list_conversations()` | Route endpoint |
+| `POST` | `/api/hermes/conversations` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L44) | `L44` | `create_conversation()` | Route endpoint |
+| `GET` | `/api/hermes/conversations/{conversation_id}/messages` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L58) | `L58` | `conversation_messages()` | Route endpoint |
+| `GET` | `/api/system/changes` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L65) | `L65` | `system_changes()` | Route endpoint |
+| `GET` | `/api/hermes/models` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L130) | `L130` | `hermes_models()` | Route endpoint |
+| `POST` | `/api/hermes/model` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L161) | `L161` | `set_hermes_model()` | Route endpoint |
+| `POST` | `/api/hermes/rollback` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L197) | `L197` | `rollback_checkpoint()` | Route endpoint |
+| `POST` | `/api/auth/login` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L44) | `L44` | `login()` | Route endpoint |
+| `POST` | `/api/auth/logout` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L61) | `L61` | `logout()` | Route endpoint |
+| `GET` | `/api/auth/session` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L68) | `L68` | `auth_session()` | Route endpoint |
+| `GET` | `/api/settings/keys` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L83) | `L83` | `get_api_keys()` | Route endpoint |
+| `POST` | `/api/settings/keys` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L126) | `L126` | `update_api_keys()` | Route endpoint |
+| `GET` | `/api/stocknow/status` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L61) | `L61` | `get_stocknow_status()` | Route endpoint |
+| `POST` | `/api/stocknow/session` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L65) | `L65` | `post_stocknow_session()` | Route endpoint |
+| `POST` | `/api/stocknow/sync-market` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L87) | `L87` | `post_stocknow_sync_market()` | Route endpoint |
+| `POST` | `/api/stocknow/sync-portfolio` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L99) | `L99` | `post_stocknow_sync_portfolio()` | Route endpoint |
+| `POST` | `/api/stocknow/execute-order` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L114) | `L114` | `post_stocknow_execute_order()` | Route endpoint |
 
 ---
 
-## 6. Frontend DOM & JS Controller X-Ray
+## 6. Frontend DOM, JS Controller & CSS Design X-Ray
+
+### Theme Color & Layout Tokens Table (`:root` Dark vs Light Mode)
+
+| CSS Custom Property | Category | Dark Mode (`:root`) | Light Mode (`[data-theme="light"]`) |
+| :--- | :--- | :--- | :--- |
+| `--amber` | Color | `#e4bb73` | `#b45309` |
+| `--bg` | Surface / Background | `#0a1018` | `#e2e8f0` |
+| `--blue` | Color | `#8dacf0` | `#1d4ed8` |
+| `--chart-crosshair` | Color | `#5de4c7` | `#0d9488` |
+| `--chart-grid` | Border / Divider | `#1c2837` | `#cbd5e1` |
+| `--dim` | Typography | `#586b80` | `#334155` |
+| `--glow-down` | Glow / Shadow | `rgba(239, 68, 68, 0.35)` | `rgba(220, 38, 38, 0.25)` |
+| `--glow-up` | Glow / Shadow | `rgba(34, 197, 94, 0.35)` | `rgba(13, 148, 136, 0.25)` |
+| `--line` | Border / Divider | `#202c39` | `#cbd5e1` |
+| `--modal-bg` | Surface / Background | `rgba(10, 16, 24, 0.88)` | `rgba(15, 23, 42, 0.65)` |
+| `--modal-border` | Border / Divider | `#233547` | `#cbd5e1` |
+| `--modal-panel` | Surface / Background | `#111a24` | `#ffffff` |
+| `--muted` | Typography | `#8393a6` | `#1e293b` |
+| `--nav-bg` | Surface / Background | `#0d141d` | `#f8fafc` |
+| `--panel` | Surface / Background | `#101822` | `#ffffff` |
+| `--panel-hover` | Surface / Background | `#141f2b` | `#f8fafc` |
+| `--radius` | Shape / Radius | `10px` | `10px` |
+| `--red` | Color | `#f18a96` | `#dc2626` |
+| `--red-bg` | Surface / Background | `#35232c` | `#fee2e2` |
+| `--sim-bg` | Surface / Background | `#14202d` | `#f8fafc` |
+| `--sim-border` | Border / Divider | `#233446` | `#cbd5e1` |
+| `--soft-line` | Border / Divider | `#1a2531` | `#e2e8f0` |
+| `--teal` | Color | `#5de4c7` | `#0d9488` |
+| `--teal-bg` | Surface / Background | `#15362f` | `#ccfbf1` |
+| `--text` | Typography | `#e5edf5` | `#050811` |
+
+
+### Component CSS Selector Map
+
+| Component Selector | Stylesheet File | Line | Display | Grid / Layout | Position | Background / Color | Flex Wrap |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `.app-shell` | [`frontend/styles.css`](/frontend/styles.css#L178) | `L178` | `grid` | `64px minmax(0, 1fr) var(--hermes-width)` | — | — | — |
+| `.nav-rail` | [`frontend/styles.css`](/frontend/styles.css#L191) | `L191` | `flex` | — | — | `var(--nav-bg)` | — |
+| `.workspace` | [`frontend/styles.css`](/frontend/styles.css#L244) | `L244` | — | — | `relative` | — | — |
+| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L268) | `L268` | `flex` | — | `sticky` | `rgba(10, 16, 24, 0.88)` | `nowrap` |
+| `.topbar-right` | [`frontend/styles.css`](/frontend/styles.css#L304) | `L304` | `flex` | — | — | — | `nowrap` |
+| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L314) | `L314` | `flex` | — | — | — | `nowrap` |
+| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L323) | `L323` | — | — | — | — | — |
+| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L330) | `L330` | — | — | — | — | — |
+| `.engine-controls` | [`frontend/styles.css`](/frontend/styles.css#L368) | `L368` | `flex` | — | — | — | — |
+| `.session-bar` | [`frontend/styles.css`](/frontend/styles.css#L404) | `L404` | `flex` | — | — | `#0e161f` | `wrap` |
+| `.metric-card` | [`frontend/styles.css`](/frontend/styles.css#L456) | `L456` | — | — | — | `var(--panel)` | — |
+| `.skills-drawer` | [`frontend/styles.css`](/frontend/styles.css#L1926) | `L1926` | — | — | — | `#0c141d` | — |
+| `.session-bar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L53) | `L53` | — | — | — | `#ffffff` | — |
+| `.metric-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L79) | `L79` | — | — | — | `#ffffff` | — |
+| `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L440) | `L440` | — | — | — | `#f8fafc !important` | — |
+| `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L494) | `L494` | — | — | — | `#ffffff !important` | — |
+| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L533) | `L533` | — | — | — | `#ffffff !important` | — |
+| `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L721) | `L721` | — | — | — | `#ccfbf1 !important` | — |
+| `.topbar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L783) | `L783` | — | — | — | `rgba(226, 232, 240, 0.92)` | — |
+| `#hermes-resizer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L806) | `L806` | — | — | `absolute` | `transparent` | — |
+| `.app-shell` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L847) | `L847` | — | — | — | — | — |
+| `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L956) | `L956` | — | — | — | — | — |
+| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1263) | `L1263` | — | — | — | `var(--panel)` | — |
+| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1392) | `L1392` | — | — | `absolute` | `var(--panel)` | — |
+| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1406) | `L1406` | — | — | — | `#ffffff` | — |
+| `.workspace` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1529) | `L1529` | — | — | — | — | — |
+| `.skills-drawer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1820) | `L1820` | — | — | — | `#ffffff !important` | — |
+
 
 ### Key DOM Identifiers (`frontend/index.html`)
 
@@ -847,7 +931,7 @@ Identified **233** distinct element IDs in the UI shell. Key controller anchors:
 
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
-| `styles.css` | 4377 | Core design tokens, layout & widgets |
+| `styles.css` | 4425 | Core design tokens, layout & widgets |
 | `theme_light_hermes.css` | 2343 | Daylight overrides & Hermes IDE sidebar |
 
 
@@ -917,43 +1001,44 @@ Identified **233** distinct element IDs in the UI shell. Key controller anchors:
 | `updateActiveNav()` | `app.js` | `L1014` | Reactive DOM rendering / event controller |
 | `smoothCurvePath()` | `charts.js` | `L8` | Reactive DOM rendering / event controller |
 | `renderMainChart()` | `charts.js` | `L31` | Reactive DOM rendering / event controller |
-| `sparkline()` | `charts.js` | `L310` | Reactive DOM rendering / event controller |
-| `squarify()` | `charts.js` | `L325` | Reactive DOM rendering / event controller |
-| `layoutRow()` | `charts.js` | `L335` | Reactive DOM rendering / event controller |
-| `worst()` | `charts.js` | `L382` | Reactive DOM rendering / event controller |
-| `showTreemapTooltip()` | `charts.js` | `L419` | Reactive DOM rendering / event controller |
-| `hideTreemapTooltip()` | `charts.js` | `L432` | Reactive DOM rendering / event controller |
-| `renderMarketMap()` | `charts.js` | `L437` | Reactive DOM rendering / event controller |
-| `renderTopSectorsChart()` | `charts.js` | `L608` | Reactive DOM rendering / event controller |
-| `renderGainerChart()` | `charts.js` | `L768` | Reactive DOM rendering / event controller |
-| `updateWhatIfSimulator()` | `charts.js` | `L773` | Reactive DOM rendering / event controller |
-| `updateModalSimulator()` | `charts.js` | `L817` | Reactive DOM rendering / event controller |
-| `openDeepTrendModal()` | `charts.js` | `L856` | Reactive DOM rendering / event controller |
-| `closeDeepTrendModal()` | `charts.js` | `L913` | Reactive DOM rendering / event controller |
-| `renderDeepTrendChart()` | `charts.js` | `L923` | Reactive DOM rendering / event controller |
-| `initCharts()` | `charts.js` | `L1168` | Reactive DOM rendering / event controller |
+| `sparkline()` | `charts.js` | `L277` | Reactive DOM rendering / event controller |
+| `squarify()` | `charts.js` | `L292` | Reactive DOM rendering / event controller |
+| `layoutRow()` | `charts.js` | `L302` | Reactive DOM rendering / event controller |
+| `worst()` | `charts.js` | `L349` | Reactive DOM rendering / event controller |
+| `showTreemapTooltip()` | `charts.js` | `L386` | Reactive DOM rendering / event controller |
+| `hideTreemapTooltip()` | `charts.js` | `L399` | Reactive DOM rendering / event controller |
+| `renderMarketMap()` | `charts.js` | `L404` | Reactive DOM rendering / event controller |
+| `renderTopSectorsChart()` | `charts.js` | `L575` | Reactive DOM rendering / event controller |
+| `renderGainerChart()` | `charts.js` | `L735` | Reactive DOM rendering / event controller |
+| `updateWhatIfSimulator()` | `charts.js` | `L740` | Reactive DOM rendering / event controller |
+| `updateModalSimulator()` | `charts.js` | `L784` | Reactive DOM rendering / event controller |
+| `openDeepTrendModal()` | `charts.js` | `L823` | Reactive DOM rendering / event controller |
+| `closeDeepTrendModal()` | `charts.js` | `L880` | Reactive DOM rendering / event controller |
+| `renderDeepTrendChart()` | `charts.js` | `L890` | Reactive DOM rendering / event controller |
+| `initCharts()` | `charts.js` | `L1135` | Reactive DOM rendering / event controller |
 | `renderHermesSkills()` | `hermes_ui.js` | `L8` | Reactive DOM rendering / event controller |
-| `addMessage()` | `hermes_ui.js` | `L52` | Reactive DOM rendering / event controller |
-| `sendChat()` | `hermes_ui.js` | `L65` | Reactive DOM rendering / event controller |
-| `initHermesSidebar()` | `hermes_ui.js` | `L109` | Reactive DOM rendering / event controller |
-| `loadConversations()` | `hermes_ui.js` | `L253` | Reactive DOM rendering / event controller |
-| `switchConversation()` | `hermes_ui.js` | `L287` | Reactive DOM rendering / event controller |
-| `createNewConversation()` | `hermes_ui.js` | `L316` | Reactive DOM rendering / event controller |
-| `formatRelativeTime()` | `hermes_ui.js` | `L343` | Reactive DOM rendering / event controller |
-| `escapeHtml()` | `hermes_ui.js` | `L357` | Reactive DOM rendering / event controller |
-| `executeRollback()` | `hermes_ui.js` | `L367` | Reactive DOM rendering / event controller |
-| `loadHermesModels()` | `hermes_ui.js` | `L390` | Reactive DOM rendering / event controller |
-| `switchHermesModel()` | `hermes_ui.js` | `L448` | Reactive DOM rendering / event controller |
-| `loadApiKeysSettings()` | `hermes_ui.js` | `L470` | Reactive DOM rendering / event controller |
-| `saveApiKeysSettings()` | `hermes_ui.js` | `L520` | Reactive DOM rendering / event controller |
-| `checkAuthSession()` | `hermes_ui.js` | `L560` | Reactive DOM rendering / event controller |
-| `openOperatorProfile()` | `hermes_ui.js` | `L578` | Reactive DOM rendering / event controller |
-| `closeOperatorProfile()` | `hermes_ui.js` | `L583` | Reactive DOM rendering / event controller |
-| `handleOperatorLogin()` | `hermes_ui.js` | `L588` | Reactive DOM rendering / event controller |
-| `handleOperatorLogout()` | `hermes_ui.js` | `L617` | Reactive DOM rendering / event controller |
-| `initAuthAndSettings()` | `hermes_ui.js` | `L627` | Reactive DOM rendering / event controller |
-| `loadSystemChanges()` | `hermes_ui.js` | `L695` | Reactive DOM rendering / event controller |
-| `initHermesChatListeners()` | `hermes_ui.js` | `L783` | Reactive DOM rendering / event controller |
+| `formatChatMarkdown()` | `hermes_ui.js` | `L52` | Reactive DOM rendering / event controller |
+| `addMessage()` | `hermes_ui.js` | `L84` | Reactive DOM rendering / event controller |
+| `sendChat()` | `hermes_ui.js` | `L98` | Reactive DOM rendering / event controller |
+| `initHermesSidebar()` | `hermes_ui.js` | `L142` | Reactive DOM rendering / event controller |
+| `loadConversations()` | `hermes_ui.js` | `L286` | Reactive DOM rendering / event controller |
+| `switchConversation()` | `hermes_ui.js` | `L320` | Reactive DOM rendering / event controller |
+| `createNewConversation()` | `hermes_ui.js` | `L349` | Reactive DOM rendering / event controller |
+| `formatRelativeTime()` | `hermes_ui.js` | `L376` | Reactive DOM rendering / event controller |
+| `escapeHtml()` | `hermes_ui.js` | `L390` | Reactive DOM rendering / event controller |
+| `executeRollback()` | `hermes_ui.js` | `L400` | Reactive DOM rendering / event controller |
+| `loadHermesModels()` | `hermes_ui.js` | `L423` | Reactive DOM rendering / event controller |
+| `switchHermesModel()` | `hermes_ui.js` | `L481` | Reactive DOM rendering / event controller |
+| `loadApiKeysSettings()` | `hermes_ui.js` | `L503` | Reactive DOM rendering / event controller |
+| `saveApiKeysSettings()` | `hermes_ui.js` | `L553` | Reactive DOM rendering / event controller |
+| `checkAuthSession()` | `hermes_ui.js` | `L593` | Reactive DOM rendering / event controller |
+| `openOperatorProfile()` | `hermes_ui.js` | `L611` | Reactive DOM rendering / event controller |
+| `closeOperatorProfile()` | `hermes_ui.js` | `L616` | Reactive DOM rendering / event controller |
+| `handleOperatorLogin()` | `hermes_ui.js` | `L621` | Reactive DOM rendering / event controller |
+| `handleOperatorLogout()` | `hermes_ui.js` | `L650` | Reactive DOM rendering / event controller |
+| `initAuthAndSettings()` | `hermes_ui.js` | `L660` | Reactive DOM rendering / event controller |
+| `loadSystemChanges()` | `hermes_ui.js` | `L728` | Reactive DOM rendering / event controller |
+| `initHermesChatListeners()` | `hermes_ui.js` | `L816` | Reactive DOM rendering / event controller |
 
 ---
 
@@ -1016,11 +1101,13 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/seed.py` | `seed_demo` | 87 | 3 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `is_ignored` | 6 | 4 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `collect_file_metrics` | 15 | 4 | Acceptable; well-scoped logic |
-| `scripts/generate_code_map.py` | `parse_fastapi_routes` | 25 | 7 | Acceptable; well-scoped logic |
+| `scripts/generate_code_map.py` | `parse_fastapi_routes` | 38 | 10 | Acceptable; well-scoped logic |
+| `scripts/generate_code_map.py` | `parse_css_design` | 103 | 8 | Decompose into sub-functions |
+| `scripts/generate_code_map.py` | `scan_file` | 50 | 8 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `parse_frontend` | 26 | 4 | Acceptable; well-scoped logic |
-| `scripts/generate_code_map.py` | `generate_markdown` | 161 | 6 | Decompose into sub-functions |
+| `scripts/generate_code_map.py` | `generate_markdown` | 189 | 6 | Decompose into sub-functions |
 | `scripts/generate_code_map.py` | `visit_Call` | 10 | 4 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 32 Python modules inspected, 10 FastAPI endpoints registered, 21,615 total LOC indexed.
+> **Audit Summary:** 32 Python modules inspected, 28 FastAPI endpoints registered, 21,896 total LOC indexed.

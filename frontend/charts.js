@@ -34,7 +34,6 @@ function renderMainChart() {
     $("main-chart").replaceChildren(element("span", "muted", "Insufficient valid history to chart."));
     return;
   }
-  const allTrades = state.snapshot.trades || [];
   setText("curve-sessions", `${points.length} sessions`);
   const last = points[points.length - 1].value;
   setText("index-value", last.toFixed(2));
@@ -187,38 +186,6 @@ function renderMainChart() {
     svg.append(dateLbl);
   });
 
-  // Bot Order Markers (B = Buy in green, S = Sell in red)
-  points.forEach((pt, idx) => {
-    const tradesOnDate = allTrades.filter((t) => t.date === pt.date || t.trade_on === pt.date);
-    tradesOnDate.forEach((t, tIdx) => {
-      const isBuy = t.side === "BUY";
-      const markerX = x(idx);
-      const yOffset = tradesOnDate.length > 1 ? (tIdx === 0 ? -8 : 8) : 0;
-      const markerY = y(pt.value) + yOffset;
-
-      const markerG = svgElement("g", { class: "chart-trade-marker" });
-      markerG.append(svgElement("circle", {
-        cx: markerX,
-        cy: markerY,
-        r: 6.5,
-        fill: isBuy ? "#16a34a" : "#dc2626",
-        stroke: "#ffffff",
-        "stroke-width": 1.5,
-      }));
-      const textM = svgElement("text", {
-        x: markerX,
-        y: markerY + 3.2,
-        "text-anchor": "middle",
-        fill: "#ffffff",
-        "font-size": 8,
-        "font-weight": 800,
-      });
-      textM.textContent = isBuy ? "B" : "S";
-      markerG.append(textM);
-      markerG.title = `${t.side} ${t.symbol} ${t.quantity} shares @ ৳${t.price}`;
-      svg.append(markerG);
-    });
-  });
 
   // Interactive Crosshair Elements with 1:1 SVG coordinate tracking
   const crosshairV = svgElement("line", { x1: 0, y1: top, x2: 0, y2: top + chartH, class: "chart-crosshair-line", style: "display:none;" });

@@ -165,31 +165,149 @@ def parse_python_files():
     return parsed
 
 
-def parse_fastapi_routes(main_path: Path):
-    routes = []
-    if not main_path.exists():
-        return routes
-    try:
-        content = main_path.read_text(encoding="utf-8")
-        tree = ast.parse(content, filename=str(main_path))
-        for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                for deco in node.decorator_list:
-                    if isinstance(deco, ast.Call) and isinstance(deco.func, ast.Attribute):
-                        method = deco.func.attr.upper()
-                        if method in {"GET", "POST", "PUT", "PATCH", "DELETE"} and deco.args:
-                            path = ast.literal_eval(deco.args[0]) if isinstance(deco.args[0], ast.Constant) else "?"
-                            doc = (ast.get_docstring(node) or "").strip().split("\n")[0]
-                            routes.append({
-                                "method": method,
-                                "path": path,
-                                "func_name": node.name,
-                                "lineno": node.lineno,
-                                "doc": doc or "Route endpoint",
-                            })
-    except Exception as exc:
-        print(f"Error parsing FastAPI routes: {exc}")
-    return routes
+def parse_fastapi_routes(router_paths: list[Path]):
+    all_routes = []
+    for p in router_paths:
+        if not p.exists():
+            continue
+        try:
+            content = p.read_text(encoding="utf-8")
+            tree = ast.parse(content, filename=str(p))
+            file_prefix = ""
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Assign):
+                    for target in node.targets:
+                        if isinstance(target, ast.Name) and "router" in target.id:
+                            if isinstance(node.value, ast.Call):
+                                for kw in node.value.keywords:
+                                    if kw.arg == "prefix" and isinstance(kw.value, ast.Constant):
+                                        file_prefix = kw.value.value
+
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    for deco in node.decorator_list:
+                        if isinstance(deco, ast.Call) and isinstance(deco.func, ast.Attribute):
+                            method = deco.func.attr.upper()
+                            if method in {"GET", "POST", "PUT", "PATCH", "DELETE"} and deco.args:
+                                raw_path = ast.literal_eval(deco.args[0]) if isinstance(deco.args[0], ast.Constant) else "?"
+                                full_path = f"{file_prefix}{raw_path}" if file_prefix and not raw_path.startswith(file_prefix) else raw_path
+                                doc = (ast.get_docstring(node) or "").strip().split("\n")[0]
+                                all_routes.append({
+                                    "file": p.relative_to(REPO_ROOT).as_posix(),
+                                    "method": method,
+                                    "path": full_path,
+                                    "func_name": node.name,
+                                    "lineno": node.lineno,
+                                    "doc": doc or "Route endpoint",
+                                })
+        except Exception as exc:
+            print(f"Error parsing FastAPI routes in {p}: {exc}")
+    return all_routes
+
+
+def parse_css_design(styles_file: Path, light_file: Path):
+    styles_text = styles_file.read_text(encoding="utf-8") if styles_file.exists() else ""
+    light_text = light_file.read_text(encoding="utf-8") if light_file.exists() else ""
+
+    dark_vars = {}
+    root_match = re.search(r':root[^{]*\{([^}]+)\}', styles_text)
+    if root_match:
+        for line in root_match.group(1).splitlines():
+            line = line.strip()
+            if line.startswith("--"):
+                parts = line.split(":", 1)
+                if len(parts) == 2:
+                    dark_vars[parts[0].strip()] = parts[1].rstrip(";").strip()
+
+    light_vars = {}
+    light_match = re.search(r'\[data-theme=["\']?light["\']?\]\s*\{([^}]+)\}', light_text)
+    if light_match:
+        for line in light_match.group(1).splitlines():
+            line = line.strip()
+            if line.startswith("--"):
+                parts = line.split(":", 1)
+                if len(parts) == 2:
+                    light_vars[parts[0].strip()] = parts[1].rstrip(";").strip()
+
+    all_keys = sorted(list(set(dark_vars.keys()) | set(light_vars.keys())))
+    token_rows = []
+    for k in all_keys:
+        d_val = dark_vars.get(k, "—")
+        l_val = light_vars.get(k, "—")
+        category = "Color"
+        if "radius" in k: category = "Shape / Radius"
+        elif "bg" in k or "panel" in k: category = "Surface / Background"
+        elif "line" in k or "border" in k or "grid" in k: category = "Border / Divider"
+        elif "glow" in k: category = "Glow / Shadow"
+        elif "text" in k or "muted" in k or "dim" in k: category = "Typography"
+        token_rows.append({"token": k, "dark": d_val, "light": l_val, "category": category})
+
+    key_selectors = [
+        ".app-shell", ".topbar", ".topbar-right", ".workspace", ".assistant",
+        "#hermes-resizer", ".card", ".metric-card", ".table-wrap",
+        ".model-dropup-menu", ".diff-card", ".nav-rail", ".session-bar",
+        ".engine-controls", ".modal", ".market-map-grid", ".chat-messages",
+        ".skills-drawer"
+    ]
+    target_props = ["display", "grid-template-columns", "position", "background", "background-color", "color", "flex-wrap"]
+
+    component_rows = []
+
+    def scan_file(css_text: str, filename: str):
+        lines = css_text.splitlines()
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+            for sel in key_selectors:
+                if re.search(rf'(?:^|[\s,>+~]){re.escape(sel)}(?:[\s,{{>]|$)', line):
+                    if ":" in line and not any(p in line for p in [":root", "[data-theme"]):
+                        continue
+                    line_no = i + 1
+                    body_lines = []
+                    brace_depth = 0
+                    started = False
+                    j = i
+                    while j < len(lines):
+                        l = lines[j]
+                        for char in l:
+                            if char == '{':
+                                brace_depth += 1
+                                started = True
+                            elif char == '}':
+                                brace_depth -= 1
+                        if started:
+                            body_lines.append(l)
+                        if started and brace_depth <= 0:
+                            break
+                        j += 1
+                    body_text = "\n".join(body_lines)
+                    props = {}
+                    for prop in target_props:
+                        pm = re.search(rf'(?:^|[;\s{{]){prop}\s*:\s*([^;}}]+)', body_text)
+                        if pm:
+                            props[prop] = pm.group(1).strip()
+
+                    bg = props.get("background") or props.get("background-color") or "—"
+                    if len(bg) > 42:
+                        bg = bg[:39] + "..."
+                    component_rows.append({
+                        "selector": sel,
+                        "file": filename,
+                        "line": line_no,
+                        "display": props.get("display", "—"),
+                        "grid_cols": props.get("grid-template-columns", "—"),
+                        "position": props.get("position", "—"),
+                        "background": bg,
+                        "color": props.get("color", "—"),
+                        "flex_wrap": props.get("flex-wrap", "—"),
+                    })
+                    break
+            i += 1
+
+    scan_file(styles_text, "frontend/styles.css")
+    scan_file(light_text, "frontend/theme_light_hermes.css")
+
+    return token_rows, component_rows
 
 
 def parse_frontend():
@@ -224,8 +342,17 @@ def generate_markdown():
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     metrics, file_list = collect_file_metrics()
     parsed_py = parse_python_files()
-    routes = parse_fastapi_routes(REPO_ROOT / "backend" / "main.py")
+    routes = parse_fastapi_routes([
+        REPO_ROOT / "backend" / "main.py",
+        REPO_ROOT / "backend" / "routes_hermes.py",
+        REPO_ROOT / "backend" / "routes_auth_settings.py",
+        REPO_ROOT / "backend" / "routes_stocknow.py",
+    ])
     html_ids, js_endpoints, js_funcs, css_files = parse_frontend()
+    css_tokens, css_components = parse_css_design(
+        REPO_ROOT / "frontend" / "styles.css",
+        REPO_ROOT / "frontend" / "theme_light_hermes.css",
+    )
 
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
@@ -319,15 +446,34 @@ def generate_markdown():
     md.append("\n---\n")
 
     # Section 5
-    md.append("## 5. FastAPI Route Registry (`backend/main.py`)\n")
-    md.append("| Method | Route Path | Handler Function | Line | Description |")
-    md.append("| :--- | :--- | :--- | :--- | :--- |")
+    md.append("## 5. FastAPI Route Registry (All Sub-Routers & Endpoints)\n")
+    md.append("| Method | Route Path | Module File | Line | Handler Function | Description |")
+    md.append("| :--- | :--- | :--- | :--- | :--- | :--- |")
     for r in routes:
-        md.append(f"| `{r['method']}` | `{r['path']}` | `{r['func_name']}` | `L{r['lineno']}` | {r['doc']} |")
+        md.append(f"| `{r['method']}` | `{r['path']}` | [`{r['file']}`](/{r['file']}#L{r['lineno']}) | `L{r['lineno']}` | `{r['func_name']}()` | {r['doc']} |")
     md.append("\n---\n")
 
     # Section 6
-    md.append("## 6. Frontend DOM & JS Controller X-Ray\n")
+    md.append("## 6. Frontend DOM, JS Controller & CSS Design X-Ray\n")
+    md.append("### Theme Color & Layout Tokens Table (`:root` Dark vs Light Mode)\n")
+    md.append("| CSS Custom Property | Category | Dark Mode (`:root`) | Light Mode (`[data-theme=\"light\"]`) |")
+    md.append("| :--- | :--- | :--- | :--- |")
+    for t in css_tokens:
+        md.append(f"| `{t['token']}` | {t['category']} | `{t['dark']}` | `{t['light']}` |")
+    md.append("\n")
+
+    md.append("### Component CSS Selector Map\n")
+    md.append("| Component Selector | Stylesheet File | Line | Display | Grid / Layout | Position | Background / Color | Flex Wrap |")
+    md.append("| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |")
+    for c in css_components:
+        grid_desc = f"`{c['grid_cols']}`" if c['grid_cols'] != "—" else "—"
+        pos_desc = f"`{c['position']}`" if c['position'] != "—" else "—"
+        disp_desc = f"`{c['display']}`" if c['display'] != "—" else "—"
+        wrap_desc = f"`{c['flex_wrap']}`" if c['flex_wrap'] != "—" else "—"
+        bg_desc = f"`{c['background']}`" if c['background'] != "—" else "—"
+        md.append(f"| `{c['selector']}` | [`{c['file']}`](/{c['file']}#L{c['line']}) | `L{c['line']}` | {disp_desc} | {grid_desc} | {pos_desc} | {bg_desc} | {wrap_desc} |")
+    md.append("\n")
+
     md.append("### Key DOM Identifiers (`frontend/index.html`)\n")
     md.append(f"Identified **{len(html_ids)}** distinct element IDs in the UI shell. Key controller anchors:\n")
     key_ids = [

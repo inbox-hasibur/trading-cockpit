@@ -49,13 +49,46 @@ function renderHermesSkills() {
   }
 }
 
+function formatChatMarkdown(text) {
+  if (!text) return "";
+  let safe = escapeHtml(text);
+  // Code spans `code`
+  safe = safe.replace(/`([^`]+)`/g, "<code>$1</code>");
+  // Bold **bold**
+  safe = safe.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+
+  // Bullet items (* item, - item, • item)
+  const lines = safe.split("\n");
+  const formatted = [];
+  let inList = false;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("* ") || trimmed.startsWith("- ") || trimmed.startsWith("• ")) {
+      if (!inList) {
+        formatted.push('<ul class="chat-bullet-list">');
+        inList = true;
+      }
+      formatted.push(`<li>${trimmed.slice(2).trim()}</li>`);
+    } else {
+      if (inList) {
+        formatted.push("</ul>");
+        inList = false;
+      }
+      formatted.push(line);
+    }
+  }
+  if (inList) formatted.push("</ul>");
+  return formatted.join("<br>").replace(/<br><ul/g, "<ul").replace(/<\/ul><br>/g, "</ul>");
+}
+
 function addMessage(role, content, provider = null) {
   const article = element("article", `chat-message ${role}`);
   const author = element("div", "message-author");
   if (role === "assistant") author.append(element("span", "assistant-avatar", "✦"));
   author.append(document.createTextNode(role === "user" ? "YOU" : "HERMES"));
   if (provider) author.append(element("span", "muted", `· ${provider.toUpperCase()}`));
-  const body = element("div", "message-body", content); // No HTML/Markdown execution.
+  const body = element("div", "message-body");
+  body.innerHTML = formatChatMarkdown(content);
   article.append(author, body);
   $("chat-messages").append(article);
   $("chat-messages").scrollTop = $("chat-messages").scrollHeight;
