@@ -47,15 +47,29 @@ class StockNowExecuteOrderRequest(BaseModel):
     idempotency_key: str | None = None
 
 
+class StockNowSchedulerActionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    action: Literal["start", "stop", "tick_now"]
+    force: bool = False
+
+
 def build_stocknow_router(
     database: Database,
     settings: Settings,
     broadcaster: Any,
     client: StockNowLiveClient | None = None,
+    scheduler: Any = None,
 ) -> APIRouter:
+    from backend.engine.scheduler import DSEMarketScheduler, get_active_scheduler
+
     router = APIRouter(prefix="/api/stocknow", tags=["stocknow"])
     stocknow_client = client or StockNowLiveClient(ingestion_mode="BACKGROUND_POLLING")
     router.stocknow_client = stocknow_client  # type: ignore[attr-defined]
+
+    dse_scheduler = scheduler or get_active_scheduler()
+    if dse_scheduler is None:
+        dse_scheduler = DSEMarketScheduler(database, settings, broadcaster, stocknow_client)
+    router.dse_scheduler = dse_scheduler  # type: ignore[attr-defined]
 
     @router.get("/status")
     def get_stocknow_status():
@@ -191,5 +205,20 @@ def build_stocknow_router(
         payload = {"success": True, "receipt": receipt, "trade": trade_res, "snapshot": snapshot}
         broadcaster.publish("order_executed", payload)
         return payload
+
+    @router.get("/scheduler")
+    def get_stocknow_scheduler():
+        return dse_scheduler.get_status()
+
+    @router.post("/scheduler")
+    async def post_stocknow_scheduler(body: StockNowSchedulerActionRequest):
+        action = body.action
+        if action == "start":
+            return dse_scheduler.start()
+        elif action == "stop":
+            return await dse_scheduler.stop()
+        elif action == "tick_now":
+            return await dse_scheduler.run_scheduled_tick(force=body.force)
+        raise HTTPException(status_code=400, detail=f"Unknown scheduler action: {action}")
 
     return router

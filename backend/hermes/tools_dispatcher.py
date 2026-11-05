@@ -485,6 +485,31 @@ def handle_control_stocknow_session(
             })
         except Exception as exc:
             action_result = {"success": False, "error": str(exc)}
+    elif action == "scheduler_start":
+        from backend.engine.scheduler import get_active_scheduler
+        sch = get_active_scheduler()
+        if sch:
+            action_result = sch.start()
+        else:
+            action_result = {"status": "NO_SCHEDULER_INSTANCE"}
+        diff_lines.append({"type": "add", "text": "Started DSE market-hours auto-scheduler background loop."})
+    elif action == "scheduler_stop":
+        from backend.engine.scheduler import get_active_scheduler
+        sch = get_active_scheduler()
+        if sch:
+            action_result = sch.stop_sync()
+        else:
+            action_result = {"status": "NO_SCHEDULER_INSTANCE"}
+        diff_lines.append({"type": "modify", "text": "Stopped DSE market-hours auto-scheduler background loop."})
+    elif action == "scheduler_tick":
+        from backend.engine.scheduler import get_active_scheduler
+        sch = get_active_scheduler()
+        force = bool(args.get("force", True))
+        if sch:
+            action_result = sch.run_scheduled_tick_sync(force=force, session=session)
+        else:
+            action_result = {"status": "NO_SCHEDULER_INSTANCE"}
+        diff_lines.append({"type": "add", "text": f"Executed DSE scheduler tick (status: {action_result.get('status', 'EXECUTED')})."})
     elif action == "close":
         try:
             import asyncio
@@ -814,6 +839,46 @@ def format_tool_response(tool_name: str, tool_res: dict[str, Any], user_msg: str
                     f"• T+2 ledger fully balanced to the paisa."
                 )
             )
+        elif action == "scheduler_start":
+            status = res.get("status", "STARTED")
+            return (
+                f"DEMO/PAPER · [DSE Market Scheduler]\n"
+                f"✅ DSE মার্কেট-আওয়ার অটো-শিডিউলার ব্যাকগ্রাউন্ড লুপ সফলভাবে চালু করা হয়েছে (Status: {status})।\n"
+                f"• ট্রেডিং উইন্ডো: ১০:০০ AM – ০২:৩০ PM (রবি–বৃহস্পতি)\n"
+                f"• লাইভ কোট ও অটোমেশন সাইকেল স্বয়ংক্রিয়ভাবে এক্সিকিউট হবে।"
+                if bangla
+                else (
+                    f"DEMO/PAPER · [DSE Market Scheduler]\n"
+                    f"✅ DSE market-hours auto-scheduler started successfully ({status}).\n"
+                    f"• Active window: 10:00 AM – 2:30 PM (Sun–Thu)\n"
+                    f"• Monitoring live DSE quotes and executing automation ticks."
+                )
+            )
+        elif action == "scheduler_stop":
+            status = res.get("status", "STOPPED")
+            return (
+                f"DEMO/PAPER · [DSE Market Scheduler]\n"
+                f"🛑 DSE মার্কেট-আওয়ার অটো-শিডিউলার থামানো হয়েছে ({status})।"
+                if bangla
+                else f"DEMO/PAPER · DSE market-hours auto-scheduler stopped ({status})."
+            )
+        elif action == "scheduler_tick":
+            status = res.get("status", "EXECUTED")
+            tick = res.get("tick_count", 0)
+            synced = res.get("synced_quotes", 0)
+            return (
+                f"DEMO/PAPER · [DSE Market Scheduler Tick]\n"
+                f"⚡ শিডিউলার টিক সফলভাবে রান হয়েছে (Status: {status}, Tick #{tick})।\n"
+                f"• সিঙ্ক হওয়া কোট: {synced} টি কোম্পানি\n"
+                f"• পোর্টফোলিও স্ন্যাপশট ও ডিসিশন সাইকেল SSE তে ব্রডকাস্ট হয়েছে।"
+                if bangla
+                else (
+                    f"DEMO/PAPER · [DSE Market Scheduler Tick]\n"
+                    f"⚡ Scheduler tick executed successfully (Status: {status}, Tick #{tick}).\n"
+                    f"• Synced quotes: {synced} companies\n"
+                    f"• Snapshot and cycle evaluated and broadcast."
+                )
+            )
         return (
             f"DEMO/PAPER · StockNow সেশন অ্যাকশন '{action}' সম্পন্ন হয়েছে।"
             if bangla
@@ -906,6 +971,27 @@ def detect_intent_and_tool(message: str, snapshot: dict) -> tuple[str | None, di
     )
     if any(w in text_lower for w in sync_words):
         return "control_stocknow_session", {"action": "sync_market"}
+
+    scheduler_start_words = (
+        "start dse scheduler", "start scheduler", "scheduler start", "dse scheduler start",
+        "scheduler start koro", "start market scheduler", "scheduler chalu koro", "chalu koro scheduler"
+    )
+    if any(w in text_lower for w in scheduler_start_words):
+        return "control_stocknow_session", {"action": "scheduler_start"}
+
+    scheduler_stop_words = (
+        "stop dse scheduler", "stop scheduler", "scheduler stop", "dse scheduler stop",
+        "scheduler stop koro", "stop market scheduler", "scheduler bondho koro", "bondho koro scheduler"
+    )
+    if any(w in text_lower for w in scheduler_stop_words):
+        return "control_stocknow_session", {"action": "scheduler_stop"}
+
+    scheduler_tick_words = (
+        "run scheduler tick now", "scheduler tick", "run scheduler tick", "tick now",
+        "force scheduler tick", "run tick now", "scheduler tick dao", "tick koro"
+    )
+    if any(w in text_lower for w in scheduler_tick_words):
+        return "control_stocknow_session", {"action": "scheduler_tick", "force": True}
 
     # 1. Rollback command
     if text_lower in {"/rollback", "rollback", "undo", "undo last action", "undo koro", "ager obosthay nao"}:

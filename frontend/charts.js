@@ -28,12 +28,45 @@ function smoothCurvePath(points) {
   return d;
 }
 
+function getBezierPointAtContinuousIndex(coords, continuousIdx) {
+  if (!coords || coords.length === 0) return { x: 0, y: 0 };
+  if (coords.length === 1) return coords[0];
+  if (continuousIdx <= 0) return coords[0];
+  if (continuousIdx >= coords.length - 1) return coords[coords.length - 1];
+
+  const i0 = Math.floor(continuousIdx);
+  const i1 = i0 + 1;
+  const u = continuousIdx - i0;
+
+  const p0 = coords[i0 === 0 ? 0 : i0 - 1];
+  const p1 = coords[i0];
+  const p2 = coords[i1];
+  const p3 = coords[i1 + 1 < coords.length ? i1 + 1 : coords.length - 1];
+
+  const cp1x = p1.x + (p2.x - p0.x) / 6;
+  const cp1y = p1.y + (p2.y - p0.y) / 6;
+  const cp2x = p2.x - (p3.x - p1.x) / 6;
+  const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+  const u1 = 1 - u;
+  const c0 = u1 * u1 * u1;
+  const c1 = 3 * u1 * u1 * u;
+  const c2 = 3 * u1 * u * u;
+  const c3 = u * u * u;
+
+  return {
+    x: c0 * p1.x + c1 * cp1x + c2 * cp2x + c3 * p2.x,
+    y: c0 * p1.y + c1 * cp1y + c2 * cp2y + c3 * p2.y,
+  };
+}
+
 function renderMainChart() {
   const points = state.snapshot.normalized_curve;
   if (!points || points.length < 2) {
     $("main-chart").replaceChildren(element("span", "muted", "Insufficient valid history to chart."));
     return;
   }
+  const allTrades = state.snapshot.trades || [];
   setText("curve-sessions", `${points.length} sessions`);
   const last = points[points.length - 1].value;
   setText("index-value", last.toFixed(2));
@@ -186,6 +219,15 @@ function renderMainChart() {
     svg.append(dateLbl);
   });
 
+  // Latest Point Marker (visible when not hovering, matching Image 2 Bank Asia modal style)
+  const endpointDot = svgElement("circle", {
+    cx: x(points.length - 1),
+    cy: y(last),
+    r: 4.5,
+    class: "chart-crosshair-point",
+    style: "display:block;",
+  });
+  svg.append(endpointDot);
 
   // Interactive Crosshair Elements with 1:1 SVG coordinate tracking
   const crosshairV = svgElement("line", { x1: 0, y1: top, x2: 0, y2: top + chartH, class: "chart-crosshair-line", style: "display:none;" });
@@ -206,22 +248,31 @@ function renderMainChart() {
   overlay.addEventListener("mousemove", (e) => {
     const chartContainer = $("main-chart");
     if (!chartContainer) return;
-    const rect = chartContainer.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
 
-    // Project client coordinate into SVG coordinate space
-    const mouseX = e.clientX - rect.left;
-    const svgX = (mouseX / rect.width) * width;
-    const normX = Math.max(0, Math.min(chartW, svgX - left));
-    const t = normX / chartW;
+    let svgX = 0;
+    const ctm = svg.getScreenCTM();
+    if (ctm) {
+      const pt = svg.createSVGPoint();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+      const inv = ctm.inverse();
+      const p = pt.matrixTransform(inv);
+      svgX = p.x;
+    } else {
+      const svgRect = svg.getBoundingClientRect();
+      svgX = ((e.clientX - svgRect.left) / (svgRect.width || 1)) * width;
+    }
+
+    // Strictly clamp svgX within curve bounds [left, left + chartW]
+    const clampedX = Math.max(left, Math.min(left + chartW, svgX));
+    const normX = clampedX - left;
+    const t = chartW > 0 ? normX / chartW : 0;
     const continuousIdx = t * (points.length - 1);
-    const i0 = Math.floor(continuousIdx);
-    const i1 = Math.min(points.length - 1, i0 + 1);
-    const frac = continuousIdx - i0;
-    const interpolatedVal = points[i0].value + frac * (points[i1].value - points[i0].value);
 
-    const ptX = left + normX;
-    const ptY = y(interpolatedVal);
+    // Exact Bezier curve point evaluation
+    const curvePt = getBezierPointAtContinuousIndex(coords, continuousIdx);
+    const ptX = clampedX;
+    const ptY = curvePt.y;
 
     crosshairV.setAttribute("x1", ptX);
     crosshairV.setAttribute("x2", ptX);
@@ -234,10 +285,12 @@ function renderMainChart() {
     crosshairDot.setAttribute("cx", ptX);
     crosshairDot.setAttribute("cy", ptY);
     crosshairDot.style.display = "block";
+    endpointDot.style.display = "none";
 
     const closestIdx = Math.min(points.length - 1, Math.max(0, Math.round(continuousIdx)));
     const pt = points[closestIdx];
 
+    const interpolatedVal = maxVal - ((ptY - top) / chartH) * range;
     const chgFromBase = ((interpolatedVal / points[0].value - 1) * 100);
     const dateTrades = allTrades.filter((tr) => tr.date === pt.date || tr.trade_on === pt.date);
     let tradeNote = "";
@@ -255,9 +308,24 @@ function renderMainChart() {
         ${tradeNote}
       `;
       tooltip.hidden = false;
-      const screenX = (ptX / width) * rect.width;
-      const screenY = (ptY / height) * rect.height;
-      tooltip.style.left = `${Math.min(rect.width - 100, Math.max(100, screenX))}px`;
+
+      const wrap = tooltip.offsetParent || chartContainer;
+      const wrapRect = wrap.getBoundingClientRect();
+      let screenX, screenY;
+      if (ctm) {
+        const pSvg = svg.createSVGPoint();
+        pSvg.x = ptX;
+        pSvg.y = ptY;
+        const pScreen = pSvg.matrixTransform(ctm);
+        screenX = pScreen.x - wrapRect.left;
+        screenY = pScreen.y - wrapRect.top;
+      } else {
+        const svgRect = svg.getBoundingClientRect();
+        screenX = svgRect.left + (ptX / width) * svgRect.width - wrapRect.left;
+        screenY = svgRect.top + (ptY / height) * svgRect.height - wrapRect.top;
+      }
+
+      tooltip.style.left = `${Math.min(wrapRect.width - 100, Math.max(100, screenX))}px`;
       tooltip.style.top = `${Math.max(20, screenY - 10)}px`;
     }
   });
@@ -266,6 +334,7 @@ function renderMainChart() {
     crosshairV.style.display = "none";
     crosshairH.style.display = "none";
     crosshairDot.style.display = "none";
+    endpointDot.style.display = "block";
     const tooltip = $("main-chart-tooltip");
     if (tooltip) tooltip.hidden = true;
   });
@@ -1053,6 +1122,16 @@ function renderDeepTrendChart(company, timeframe = "7d") {
   const crosshairPoint = svgElement("circle", { cx: 0, cy: 0, r: 4, class: "chart-crosshair-point", style: "display:none;" });
   svg.append(crosshairV, crosshairH, crosshairPoint);
 
+  // Latest Point Marker (visible when not hovering, matching Image 2 Bank Asia modal style)
+  const endpointDot = svgElement("circle", {
+    cx: x(series.length - 1),
+    cy: y(Number(series[series.length - 1].close)),
+    r: 4.5,
+    class: "chart-crosshair-point",
+    style: "display:block;",
+  });
+  svg.append(endpointDot);
+
   // Overlay for mouse events
   const overlay = svgElement("rect", {
     x: left,
@@ -1067,19 +1146,28 @@ function renderDeepTrendChart(company, timeframe = "7d") {
     const rect = mount.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
 
-    // Project client coordinate into SVG coordinate space
-    const mouseX = e.clientX - rect.left;
-    const svgX = (mouseX / rect.width) * width;
-    const normX = Math.max(0, Math.min(chartW, svgX - left));
-    const t = normX / chartW;
-    const continuousIdx = t * (series.length - 1);
-    const i0 = Math.floor(continuousIdx);
-    const i1 = Math.min(series.length - 1, i0 + 1);
-    const frac = continuousIdx - i0;
-    const val = Number(series[i0].close) + frac * (Number(series[i1].close) - Number(series[i0].close));
+    let svgX = 0;
+    const ctm = svg.getScreenCTM();
+    if (ctm) {
+      const pt = svg.createSVGPoint();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+      const inv = ctm.inverse();
+      const p = pt.matrixTransform(inv);
+      svgX = p.x;
+    } else {
+      const svgRect = svg.getBoundingClientRect();
+      svgX = ((e.clientX - svgRect.left) / (svgRect.width || 1)) * width;
+    }
 
-    const ptX = left + normX;
-    const ptY = y(val);
+    const clampedX = Math.max(left, Math.min(left + chartW, svgX));
+    const normX = clampedX - left;
+    const t = chartW > 0 ? normX / chartW : 0;
+    const continuousIdx = t * (series.length - 1);
+
+    const curvePt = getBezierPointAtContinuousIndex(coords, continuousIdx);
+    const ptX = clampedX;
+    const ptY = curvePt.y;
 
     crosshairV.setAttribute("x1", ptX);
     crosshairV.setAttribute("x2", ptX);
@@ -1092,10 +1180,12 @@ function renderDeepTrendChart(company, timeframe = "7d") {
     crosshairPoint.setAttribute("cx", ptX);
     crosshairPoint.setAttribute("cy", ptY);
     crosshairPoint.style.display = "block";
+    endpointDot.style.display = "none";
 
     const closestIdx = Math.min(series.length - 1, Math.max(0, Math.round(continuousIdx)));
     const pt = series[closestIdx];
 
+    const val = maxVal - ((ptY - top) / chartH) * range;
     const chgFromStart = ((val / Number(series[0].close) - 1) * 100);
     const dateTrades = companyTrades.filter((t) => t.date === pt.date || t.trade_on === pt.date);
     let tradeNote = "";
@@ -1113,9 +1203,24 @@ function renderDeepTrendChart(company, timeframe = "7d") {
         ${tradeNote}
       `;
       tooltip.hidden = false;
-      const screenX = (ptX / width) * rect.width;
-      const screenY = (ptY / height) * rect.height;
-      tooltip.style.left = `${Math.min(rect.width - 100, Math.max(100, screenX))}px`;
+
+      const wrap = tooltip.offsetParent || mount;
+      const wrapRect = wrap.getBoundingClientRect();
+      let screenX, screenY;
+      if (ctm) {
+        const pSvg = svg.createSVGPoint();
+        pSvg.x = ptX;
+        pSvg.y = ptY;
+        const pScreen = pSvg.matrixTransform(ctm);
+        screenX = pScreen.x - wrapRect.left;
+        screenY = pScreen.y - wrapRect.top;
+      } else {
+        const svgRect = svg.getBoundingClientRect();
+        screenX = svgRect.left + (ptX / width) * svgRect.width - wrapRect.left;
+        screenY = svgRect.top + (ptY / height) * svgRect.height - wrapRect.top;
+      }
+
+      tooltip.style.left = `${Math.min(wrapRect.width - 100, Math.max(100, screenX))}px`;
       tooltip.style.top = `${Math.max(30, screenY - 10)}px`;
     }
   });
@@ -1124,6 +1229,7 @@ function renderDeepTrendChart(company, timeframe = "7d") {
     crosshairV.style.display = "none";
     crosshairH.style.display = "none";
     crosshairPoint.style.display = "none";
+    endpointDot.style.display = "block";
     const tooltip = $("deep-chart-tooltip");
     if (tooltip) tooltip.hidden = true;
   });

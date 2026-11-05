@@ -119,7 +119,7 @@
 
 ---
 
-### 🔌 Sprint 2 (Active): Live `stocknow.com.bd` Virtual Portfolio Automation ("Humming Bird")
+### 🔌 Sprint 2 (Completed): Live `stocknow.com.bd` Virtual Portfolio Automation ("Humming Bird")
 
 - [x] **Step 2.1: Persistent Playwright Session, Auto-Login & Network Sniffer:**
   - Launch Chromium with a persistent local profile (`Path.home() / ".hummingbird_stocknow_profile"`) outside OneDrive to prevent sync locks.
@@ -155,8 +155,12 @@
   - Fixed UI model switcher by resolving double `JSON.stringify` serialization in `frontend/hermes_ui.js` and `frontend/app.js`.
   - Added natural conversational chat aliases (`/model mimov2.6 pro`, `/model deepseek 4.1 flash`, `/model gemini lite`, `/model local`).
 
-- [ ] **Step 2.5: DSE Market-Hours Scheduler:**
-  - Automated background loop running Sunday–Thursday from **10:00 AM to 2:30 PM (`Asia/Dhaka`)** with configurable polling intervals.
+- [x] **Step 2.5: DSE Market-Hours Auto-Scheduler (10:00 AM – 2:30 PM Sun–Thu):**
+  - Automated background loop running Sunday–Thursday from **10:00 AM to 2:30 PM (`Asia/Dhaka`)** respecting configured polling intervals (`30s`–`300s`).
+  - DSE market hours gate (`is_dse_market_open`) evaluating Asia/Dhaka time, trading days, weekends (Friday/Saturday), and configured DSE holidays.
+  - Background async scheduler (`DSEMarketScheduler`) syncing live market quotes from StockNow, executing AutoTrader paper cycle, updating telemetry, and broadcasting SSE snapshots.
+  - API endpoints: `GET /api/stocknow/scheduler`, `POST /api/stocknow/scheduler` (`start`, `stop`, `tick_now` with `force`).
+  - Hermes agent natural Bangla/English command execution (*"Start DSE scheduler"*, *"Stop scheduler"*, *"Run scheduler tick now"*) with live execution receipts.
 
 ---
 

@@ -211,6 +211,12 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
       - REST API endpoint `POST /api/stocknow/execute-order` with CheckpointManager state snapshot for 1-click `/rollback`.
       - Strict T+2 maturity lock and 1% fee math enforcement (rejecting immature and net-loss sells under Strict No-Loss policy).
       - Hermes conversational Buy and Matured Sell execution (*"Buy 10 GP"*, *"GP 10 ta share kine felo"*, *"Sell 5 SQURPHARMA"*) attaching StockNow virtual receipts.
+    - **Step 2.5 (DSE Market-Hours Auto-Scheduler 10:00 AM – 2:30 PM Sun–Thu):**
+      - Dedicated async background scheduler (`backend/engine/scheduler.py`, `DSEMarketScheduler`).
+      - DSE market hours gate (`is_dse_market_open`) enforcing trading windows strictly Sunday–Thursday 10:00 AM – 2:30 PM (`Asia/Dhaka`), pausing on weekends and official DSE holidays.
+      - Live quote sync from StockNow, execution of AutoTrader paper cycle, and SSE real-time broadcast.
+      - API endpoints: `GET /api/stocknow/scheduler`, `POST /api/stocknow/scheduler` (`start`, `stop`, `tick_now`).
+      - Hermes conversational commands (*"Start DSE scheduler"*, *"Stop scheduler"*, *"Run scheduler tick now"*).
 
 ---
 

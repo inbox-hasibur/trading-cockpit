@@ -24,6 +24,7 @@ from backend.chat import ChatRequest, ChatService
 from backend.config import ROOT, VERSION, Settings
 from backend.database import CustomRule, Database, RuleAudit, portfolio_state
 from backend.engine.auto_trader import AutomationPaused, AutoTrader
+from backend.engine.scheduler import DSEMarketScheduler
 from backend.engine.money import ZERO
 from backend.market_map import build_market_map_payload
 from backend.portfolio import build_snapshot, rule_view
@@ -87,6 +88,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     chat = ChatService(database, settings)
     broadcaster = EventBroadcaster()
     stocknow_client = StockNowLiveClient(ingestion_mode="BACKGROUND_POLLING")
+    scheduler = DSEMarketScheduler(database, settings, broadcaster, stocknow_client, trader)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
@@ -97,6 +99,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             yield
         finally:
             database.engine.dispose()
+            try:
+                await scheduler.stop()
+            except Exception:
+                pass
             try:
                 await stocknow_client.close()
             except Exception:
@@ -112,6 +118,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.trader = trader
     app.state.chat = chat
     app.state.stocknow_client = stocknow_client
+    app.state.scheduler = scheduler
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(settings.trusted_hosts))
 
     @app.middleware("http")
@@ -249,7 +256,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(build_hermes_router(database, settings, chat, broadcaster))
     app.include_router(build_auth_settings_router(database, settings, broadcaster))
-    app.include_router(build_stocknow_router(database, settings, broadcaster, stocknow_client))
+    app.include_router(build_stocknow_router(database, settings, broadcaster, stocknow_client, scheduler=scheduler))
 
     @app.get("/api/stream")
     async def event_stream(request: Request):
