@@ -199,18 +199,25 @@ def parse_frontend():
         html_text = html_path.read_text(encoding="utf-8")
         html_ids = re.findall(r'id=["\']([^"\']+)["\']', html_text)
 
-    js_endpoints = []
+    js_endpoints = set()
     js_funcs = []
-    js_path = REPO_ROOT / "frontend" / "app.js"
-    if js_path.exists():
-        js_text = js_path.read_text(encoding="utf-8")
-        js_endpoints = sorted(list(set(re.findall(r'api\(\s*["\']([^"\']+)["\']', js_text))))
+    frontend_dir = REPO_ROOT / "frontend"
+    for js_file in sorted(frontend_dir.glob("*.js")):
+        js_text = js_file.read_text(encoding="utf-8")
+        for ep in re.findall(r'api\(\s*["\']([^"\']+)["\']', js_text):
+            js_endpoints.add(ep)
         lines = js_text.splitlines()
         for idx, line in enumerate(lines, 1):
             m = re.match(r'^(?:async\s+)?function\s+([a-zA-Z0-9_]+)\s*\(', line.strip())
             if m:
-                js_funcs.append((m.group(1), idx))
-    return sorted(list(set(html_ids))), js_endpoints, js_funcs
+                js_funcs.append((m.group(1), js_file.name, idx))
+
+    css_files = []
+    for css_file in sorted(frontend_dir.glob("*.css")):
+        line_count = len(css_file.read_text(encoding="utf-8").splitlines())
+        css_files.append((css_file.name, line_count))
+
+    return sorted(list(set(html_ids))), sorted(list(js_endpoints)), js_funcs, css_files
 
 
 def generate_markdown():
@@ -218,7 +225,7 @@ def generate_markdown():
     metrics, file_list = collect_file_metrics()
     parsed_py = parse_python_files()
     routes = parse_fastapi_routes(REPO_ROOT / "backend" / "main.py")
-    html_ids, js_endpoints, js_funcs = parse_frontend()
+    html_ids, js_endpoints, js_funcs, css_files = parse_frontend()
 
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
@@ -331,18 +338,26 @@ def generate_markdown():
     ]
     md.append(", ".join(f"`#{i}`" for i in key_ids if i in html_ids) + "\n\n")
 
-    md.append("### Frontend API Contract Invocations (`frontend/app.js`)\n")
+    md.append("### Frontend Stylesheets (`frontend/*.css`)\n")
+    md.append("| Stylesheet File | Lines | Purpose |")
+    md.append("| :--- | :--- | :--- |")
+    for css_name, count in css_files:
+        desc = "Daylight overrides & Hermes IDE sidebar" if "light" in css_name or "hermes" in css_name else "Core design tokens, layout & widgets"
+        md.append(f"| `{css_name}` | {count} | {desc} |")
+    md.append("\n")
+
+    md.append("### Frontend API Contract Invocations (`frontend/*.js`)\n")
     md.append("| Endpoint Invocated | Direction | Purpose |")
     md.append("| :--- | :--- | :--- |")
     for ep in js_endpoints:
         md.append(f"| `{ep}` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |")
     md.append("\n")
 
-    md.append("### Core JavaScript Controllers (`frontend/app.js`)\n")
-    md.append("| Function | Line in `app.js` | Role |")
-    md.append("| :--- | :--- | :--- |")
-    for fn, line in js_funcs[:25]:
-        md.append(f"| `{fn}()` | `L{line}` | Reactive DOM rendering / event controller |")
+    md.append("### Core JavaScript Controllers (`frontend/*.js`)\n")
+    md.append("| Function | Module File | Line | Role |")
+    md.append("| :--- | :--- | :--- | :--- |")
+    for fn, mod, line in js_funcs:
+        md.append(f"| `{fn}()` | `{mod}` | `L{line}` | Reactive DOM rendering / event controller |")
     md.append("\n---\n")
 
     # Section 7
