@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 17:15:28 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 17:46:12 UTC**.
 
 ---
 
@@ -8,10 +8,10 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 42 | 9,610 | Python Core Kernel, Engine & Hermes Agent |
+| `.py` | 42 | 10,002 | Python Core Kernel, Engine & Hermes Agent |
 | `.css` | 2 | 6,768 | Custom Dark / Light / Terminal Design System |
-| `.js` | 3 | 3,284 | Vanilla ES6+ Reactive Terminal Controller |
-| `.md` | 10 | 2,030 | Architecture & Strategy Documentation |
+| `.js` | 3 | 3,287 | Vanilla ES6+ Reactive Terminal Controller |
+| `.md` | 10 | 2,036 | Architecture & Strategy Documentation |
 | `.html` | 1 | 853 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
 | `.cursorignore` | 1 | 12 | Configuration / Asset |
@@ -19,7 +19,7 @@
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **65** | **22,603** | *Entire Humming Bird Repository* |
+| **TOTAL** | **65** | **23,004** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -31,7 +31,7 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | [`backend/adapters/__init__.py`](/backend/adapters/__init__.py) | `backend.adapters.stocknow_adapter.StockNowAdapter`, `backend.adapters.stocknow_client.StockNowLiveClient`, `backend.adapters.stocknow_client.get_safe_profile_dir`, `backend.adapters.stocknow_market_sync.extract_quotes_from_payload`, `backend.adapters.stocknow_market_sync.extract_quotes_from_stocknow`, `backend.adapters.stocknow_market_sync.sync_live_market_to_db` |
 | [`backend/adapters/stocknow_adapter.py`](/backend/adapters/stocknow_adapter.py) | `backend.adapters.stocknow_client.get_safe_profile_dir`, `backend.adapters.stocknow_order_executor.execute_stocknow_virtual_order`, `backend.database.CompanyProfile`, `backend.engine.money.ZERO`, `backend.engine.money.decimal` |
 | [`backend/adapters/stocknow_client.py`](/backend/adapters/stocknow_client.py) | `backend.hermes.secret_guard.SecretGuard`, `backend.hermes.secret_guard.redact_secrets` |
-| [`backend/adapters/stocknow_market_sync.py`](/backend/adapters/stocknow_market_sync.py) | `backend.database.CompanyProfile`, `backend.database.Database`, `backend.database.portfolio_state`, `backend.engine.money.ZERO`, `backend.engine.money.decimal` |
+| [`backend/adapters/stocknow_market_sync.py`](/backend/adapters/stocknow_market_sync.py) | `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.portfolio_state`, `backend.engine.money.ZERO`, `backend.engine.money.decimal`, `backend.portfolio.COMPANY_FUNDAMENTALS`, `backend.portfolio.DEFAULT_FUNDAMENTALS` |
 | [`backend/adapters/stocknow_order_executor.py`](/backend/adapters/stocknow_order_executor.py) | *Independent Core Module* |
 | [`backend/adapters/stocknow_portfolio_sync.py`](/backend/adapters/stocknow_portfolio_sync.py) | `backend.config.Settings`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.PortfolioState`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.engine.money.decimal`, `backend.engine.money.money`, `backend.engine.money.price`, `backend.engine.money.purchase_amount`, `backend.engine.t2_ledger.BUCKETS`, `backend.engine.t2_ledger.TradingCalendar`, `backend.engine.t2_ledger.assert_ledger`, `backend.hermes.agent_loop.CheckpointManager` |
 | [`backend/chat.py`](/backend/chat.py) | `backend.config.DHAKA`, `backend.config.Settings`, `backend.database.CanaryThesis`, `backend.database.ChatBudget`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.PortfolioState`, `backend.database.portfolio_state`, `backend.engine.agent_actions.check_canary_theses`, `backend.engine.agent_actions.emergency_quarantine_and_canary`, `backend.engine.agent_actions.execute_agentic_buy`, `backend.engine.agent_actions.restore_quarantine`, `backend.hermes.agent_loop.HermesAgentLoop`, `backend.portfolio.build_snapshot` |
@@ -52,7 +52,7 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | [`backend/hermes/secret_guard.py`](/backend/hermes/secret_guard.py) | *Independent Core Module* |
 | [`backend/hermes/skills_manager.py`](/backend/hermes/skills_manager.py) | `backend.database.HermesSkillRevision`, `backend.hermes.secret_guard.SecretGuard` |
 | [`backend/hermes/tools_dispatcher.py`](/backend/hermes/tools_dispatcher.py) | `backend.adapters.stocknow_client.StockNowLiveClient`, `backend.adapters.stocknow_market_sync.extract_quotes_from_payload`, `backend.adapters.stocknow_market_sync.extract_quotes_from_stocknow`, `backend.adapters.stocknow_market_sync.sync_live_market_to_db`, `backend.adapters.stocknow_order_executor.execute_stocknow_virtual_order`, `backend.adapters.stocknow_portfolio_sync.extract_hummingbird_portfolio`, `backend.adapters.stocknow_portfolio_sync.reconcile_portfolio_to_db`, `backend.config.Settings`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.PortfolioState`, `backend.database.RuleAudit`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.engine.agent_actions.check_canary_theses`, `backend.engine.agent_actions.emergency_quarantine_and_canary`, `backend.engine.agent_actions.execute_agentic_buy`, `backend.engine.agent_actions.execute_agentic_sell`, `backend.engine.agent_actions.restore_quarantine`, `backend.engine.money.decimal`, `backend.engine.scheduler.get_active_scheduler`, `backend.hermes.memory.HermesMemory`, `backend.hermes.skills_manager.SkillsManager` |
-| [`backend/main.py`](/backend/main.py) | `backend.adapters.stocknow_adapter.StockNowAdapter`, `backend.adapters.stocknow_client.StockNowLiveClient`, `backend.chat.ChatRequest`, `backend.chat.ChatService`, `backend.config.ROOT`, `backend.config.Settings`, `backend.config.VERSION`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.RuleAudit`, `backend.database.portfolio_state`, `backend.engine.auto_trader.AutoTrader`, `backend.engine.auto_trader.AutomationPaused`, `backend.engine.money.ZERO`, `backend.engine.scheduler.DSEMarketScheduler`, `backend.market_map.build_market_map_payload`, `backend.portfolio.build_snapshot`, `backend.portfolio.rule_view`, `backend.routes_auth_settings.KeysSettingsRequest`, `backend.routes_auth_settings.LoginRequest`, `backend.routes_auth_settings.build_auth_settings_router`, `backend.routes_hermes.CreateThreadRequest`, `backend.routes_hermes.build_hermes_router`, `backend.routes_stocknow.build_stocknow_router`, `backend.seed.seed_demo` |
+| [`backend/main.py`](/backend/main.py) | `backend.adapters.stocknow_adapter.StockNowAdapter`, `backend.adapters.stocknow_client.StockNowLiveClient`, `backend.adapters.stocknow_market_sync.extract_quotes_from_stocknow`, `backend.adapters.stocknow_market_sync.sync_live_market_to_db`, `backend.chat.ChatRequest`, `backend.chat.ChatService`, `backend.config.ROOT`, `backend.config.Settings`, `backend.config.VERSION`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.RuleAudit`, `backend.database.portfolio_state`, `backend.engine.auto_trader.AutoTrader`, `backend.engine.auto_trader.AutomationPaused`, `backend.engine.money.ZERO`, `backend.engine.scheduler.DSEMarketScheduler`, `backend.market_map.build_market_map_payload`, `backend.portfolio.build_snapshot`, `backend.portfolio.rule_view`, `backend.routes_auth_settings.KeysSettingsRequest`, `backend.routes_auth_settings.LoginRequest`, `backend.routes_auth_settings.build_auth_settings_router`, `backend.routes_hermes.CreateThreadRequest`, `backend.routes_hermes.build_hermes_router`, `backend.routes_stocknow.build_stocknow_router`, `backend.seed.migrate_real_stocknow_market`, `backend.seed.seed_demo` |
 | [`backend/market_map.py`](/backend/market_map.py) | *Independent Core Module* |
 | [`backend/portfolio.py`](/backend/portfolio.py) | `backend.adapters.stocknow_adapter.StockNowAdapter`, `backend.config.DHAKA`, `backend.config.Settings`, `backend.config.VERSION`, `backend.database.AutomationCycle`, `backend.database.CanaryThesis`, `backend.database.ChatBudget`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.DecisionLog`, `backend.database.HermesDurableFact`, `backend.database.HermesSkillRevision`, `backend.database.HermesStateCheckpoint`, `backend.database.HermesUserProfile`, `backend.database.RuleAudit`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.database.portfolio_state`, `backend.engine.money.HUNDRED`, `backend.engine.money.ZERO`, `backend.engine.money.decimal`, `backend.engine.money.money`, `backend.engine.money.sale_amount`, `backend.engine.signals.assess_company`, `backend.engine.t2_ledger.TradingCalendar`, `backend.engine.t2_ledger.bucket_balances`, `backend.hermes.skills_manager.SkillsManager`, `backend.market_map.build_market_map_payload` |
 | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py) | `backend.config.DHAKA`, `backend.config.Settings`, `backend.database.ChatBudget`, `backend.database.Database`, `backend.database.HermesSessionMemory`, `backend.database.portfolio_state`, `backend.hermes.agent_loop.CheckpointManager` |
@@ -114,7 +114,7 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `StockNowLiveClient` | `L55–L383` | `object` | Persistent Playwright browser controller, auto-login assistant & XHR network sniffer. | 6 |
+| `StockNowLiveClient` | `L55–L391` | `object` | Persistent Playwright browser controller, auto-login assistant & XHR network sniffer. | 6 |
 
 
 **Methods in `StockNowLiveClient`:**
@@ -123,10 +123,10 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `__init__` | `L58–L77` | `(self, profile_directory: Path | str...)` | — | — | `Lock`, `get_safe_profile_dir`, `rstrip` |
 | `_handle_response` | `L79–L110` | `(self, response: Any...)` | `None` | Passively capture JSON responses from stocknow.com.bd. | `debug`, `get`, `getattr`, `isoformat` |
-| `launch` | `L112–L161` | `(self, mode: str | None=None...)` | `dict[str, Any]` | Launch or attach persistent Chromium session. | `_handle_response`, `async_playwright`, `callable`, `create_task` |
-| `close` | `L163–L188` | `(self...)` | `dict[str, Any]` | Close browser context and stop Playwright cleanly. | `close`, `get_status`, `stop` |
-| `ensure_authenticated` | `L190–L362` | `(self, phone: str='', password: str=...)` | `dict[str, Any]` | Inspect authentication state on stocknow.com.bd, filling credentials if needed. | `click`, `fill`, `getattr`, `goto` |
-| `get_status` | `L364–L383` | `(self...)` | `dict[str, Any]` | Return structured telemetry for live session status endpoint. | `hasattr`, `is_closed`, `keys`, `len` |
+| `launch` | `L112–L169` | `(self, mode: str | None=None...)` | `dict[str, Any]` | Launch or attach persistent Chromium session. | `_handle_response`, `async_playwright`, `callable`, `create_task` |
+| `close` | `L171–L196` | `(self...)` | `dict[str, Any]` | Close browser context and stop Playwright cleanly. | `close`, `get_status`, `stop` |
+| `ensure_authenticated` | `L198–L370` | `(self, phone: str='', password: str=...)` | `dict[str, Any]` | Inspect authentication state on stocknow.com.bd, filling credentials if needed. | `click`, `fill`, `getattr`, `goto` |
+| `get_status` | `L372–L391` | `(self...)` | `dict[str, Any]` | Return structured telemetry for live session status endpoint. | `hasattr`, `is_closed`, `keys`, `len` |
 
 
 #### Standalone Functions
@@ -147,10 +147,11 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `_parse_positive_decimal` | `L21–L30` | `(val: Any...)` | `Decimal | None` | — | `decimal`, `is_finite`, `replace`, `str` |
 | `_normalize_history_series` | `L33–L48` | `(raw_history: Any, fallback_price: D...)` | `list[dict[str, str]]` | Normalize 7-30 session curve observations into [{"date": "YYYY-MM-DD", "close": "XX.XX"}]. | `_parse_positive_decimal`, `append`, `get`, `isinstance` |
-| `extract_quotes_from_payload` | `L51–L113` | `(payload: Any, as_of_date: date | No...)` | `list[dict[str, Any]]` | Extract and normalize quotes from an arbitrary JSON payload. | `_normalize_history_series`, `_parse_positive_decimal`, `append`, `decimal` |
-| `extract_quotes_from_stocknow` | `L116–L160` | `(client: Any, injected_payload: Any=...)` | `list[dict[str, Any]]` | Extracts live DSE ticker quotes from sniffer cache, page DOM or injected payload. | `debug`, `evaluate`, `extract_quotes_from_payload`, `get` |
-| `_sync_in_session` | `L163–L224` | `(session: Any, quotes: list[dict[str...)` | `dict[str, Any]` | — | `append`, `decimal`, `get`, `isoformat` |
-| `sync_live_market_to_db` | `L227–L236` | `(target: Database | Any, quotes: lis...)` | `dict[str, Any]` | Synchronizes extracted live quotes into SQLite CompanyProfile records. | `_sync_in_session`, `hasattr`, `write` |
+| `_extract_fundamentals_from_dict` | `L51–L112` | `(item: dict[str, Any]...)` | `dict[str, Any]` | — | `dict`, `float`, `get`, `int` |
+| `extract_quotes_from_payload` | `L115–L193` | `(payload: Any, as_of_date: date | No...)` | `list[dict[str, Any]]` | Extract and normalize quotes from an arbitrary JSON payload. | `_extract_fundamentals_from_dict`, `_normalize_history_series`, `_parse_positive_decimal`, `append` |
+| `extract_quotes_from_stocknow` | `L196–L331` | `(client: Any, injected_payload: Any=...)` | `list[dict[str, Any]]` | Extracts live DSE ticker quotes from sniffer cache, page DOM or injected payload. | `debug`, `evaluate`, `extract_quotes_from_payload`, `get` |
+| `_sync_in_session` | `L334–L422` | `(session: Any, quotes: list[dict[str...)` | `dict[str, Any]` | — | `CompanyProfile`, `CustomRule`, `add`, `append` |
+| `sync_live_market_to_db` | `L425–L434` | `(target: Database | Any, quotes: lis...)` | `dict[str, Any]` | Synchronizes extracted live quotes into SQLite CompanyProfile records. | `_sync_in_session`, `hasattr`, `write` |
 
 
 ---
@@ -624,49 +625,49 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `PauseRequest` | `L41–L43` | `BaseModel` | — | 0 |
-| `AutomationConfigRequest` | `L46–L50` | `BaseModel` | — | 0 |
-| `AdvanceRequest` | `L53–L55` | `BaseModel` | — | 0 |
-| `AllocationRequest` | `L58–L61` | `BaseModel` | — | 0 |
-| `EventBroadcaster` | `L64–L81` | `object` | — | 4 |
-| `DevStaticFiles` | `L289–L295` | `StaticFiles` | — | 1 |
+| `PauseRequest` | `L45–L47` | `BaseModel` | — | 0 |
+| `AutomationConfigRequest` | `L50–L54` | `BaseModel` | — | 0 |
+| `AdvanceRequest` | `L57–L59` | `BaseModel` | — | 0 |
+| `AllocationRequest` | `L62–L65` | `BaseModel` | — | 0 |
+| `EventBroadcaster` | `L68–L85` | `object` | — | 4 |
+| `DevStaticFiles` | `L319–L325` | `StaticFiles` | — | 1 |
 
 
 **Methods in `EventBroadcaster`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__init__` | `L65–L66` | `(self...)` | — | — | `set` |
-| `subscribe` | `L68–L71` | `(self...)` | `asyncio.Queue` | — | `Queue`, `add` |
-| `unsubscribe` | `L73–L74` | `(self, queue: asyncio.Queue...)` | — | — | `discard` |
-| `publish` | `L76–L81` | `(self, event_type: str, data: dict...)` | — | — | `list`, `put_nowait` |
+| `__init__` | `L69–L70` | `(self...)` | — | — | `set` |
+| `subscribe` | `L72–L75` | `(self...)` | `asyncio.Queue` | — | `Queue`, `add` |
+| `unsubscribe` | `L77–L78` | `(self, queue: asyncio.Queue...)` | — | — | `discard` |
+| `publish` | `L80–L85` | `(self, event_type: str, data: dict...)` | — | — | `list`, `put_nowait` |
 
 
 **Methods in `DevStaticFiles`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `get_response` | `L290–L295` | `(self, path: str, scope...)` | — | — | `get_response`, `super` |
+| `get_response` | `L320–L325` | `(self, path: str, scope...)` | — | — | `get_response`, `super` |
 
 
 #### Standalone Functions
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `create_app` | `L84–L309` | `(settings: Settings | None=None...)` | `FastAPI` | — | `AutoTrader`, `ChatService`, `DSEMarketScheduler`, `Database` |
-| `lifespan` | `L94–L109` | `(_app: FastAPI...)` | — | — | `close`, `create_schema`, `dispose`, `seed_demo` |
-| `local_security` | `L125–L163` | `(request: Request, call_next...)` | — | — | `JSONResponse`, `call_next`, `compare_digest`, `encode` |
-| `health` | `L166–L167` | `(...)` | — | — | `get` |
-| `portfolio` | `L170–L171` | `(...)` | — | — | `build_snapshot`, `get` |
-| `cycle` | `L174–L180` | `(idempotency_key: Annotated[UUID | N...)` | — | — | `HTTPException`, `Header`, `post`, `publish` |
-| `pause` | `L183–L190` | `(body: PauseRequest...)` | — | — | `portfolio_state`, `post`, `publish`, `write` |
-| `automation_config` | `L193–L211` | `(body: AutomationConfigRequest...)` | — | — | `StockNowAdapter`, `get_adapter_status`, `portfolio_state`, `post` |
-| `advance` | `L214–L225` | `(body: AdvanceRequest...)` | — | — | `Decimal`, `advance_demo`, `build_market_map_payload`, `get` |
-| `market_map_endpoint` | `L228–L229` | `(...)` | — | — | `build_market_map_payload`, `get` |
-| `allocation` | `L232–L255` | `(symbol: str, body: AllocationReques...)` | — | — | `HTTPException`, `RuleAudit`, `add`, `get` |
-| `event_stream` | `L262–L287` | `(request: Request...)` | — | — | `StreamingResponse`, `generator`, `get`, `subscribe` |
-| `generator` | `L265–L277` | `(...)` | — | — | `dumps`, `get`, `is_disconnected`, `unsubscribe` |
-| `cockpit` | `L298–L306` | `(...)` | — | — | `FileResponse`, `get` |
+| `create_app` | `L88–L339` | `(settings: Settings | None=None...)` | `FastAPI` | — | `AutoTrader`, `ChatService`, `DSEMarketScheduler`, `Database` |
+| `lifespan` | `L98–L114` | `(_app: FastAPI...)` | — | — | `close`, `create_schema`, `dispose`, `migrate_real_stocknow_market` |
+| `local_security` | `L130–L168` | `(request: Request, call_next...)` | — | — | `JSONResponse`, `call_next`, `compare_digest`, `encode` |
+| `health` | `L171–L172` | `(...)` | — | — | `get` |
+| `portfolio` | `L175–L176` | `(...)` | — | — | `build_snapshot`, `get` |
+| `cycle` | `L179–L193` | `(idempotency_key: Annotated[UUID | N...)` | — | — | `HTTPException`, `Header`, `extract_quotes_from_stocknow`, `post` |
+| `pause` | `L196–L203` | `(body: PauseRequest...)` | — | — | `portfolio_state`, `post`, `publish`, `write` |
+| `automation_config` | `L206–L241` | `(body: AutomationConfigRequest...)` | — | — | `StockNowAdapter`, `ensure_authenticated`, `extract_quotes_from_stocknow`, `get_adapter_status` |
+| `advance` | `L244–L255` | `(body: AdvanceRequest...)` | — | — | `Decimal`, `advance_demo`, `build_market_map_payload`, `get` |
+| `market_map_endpoint` | `L258–L259` | `(...)` | — | — | `build_market_map_payload`, `get` |
+| `allocation` | `L262–L285` | `(symbol: str, body: AllocationReques...)` | — | — | `HTTPException`, `RuleAudit`, `add`, `get` |
+| `event_stream` | `L292–L317` | `(request: Request...)` | — | — | `StreamingResponse`, `generator`, `get`, `subscribe` |
+| `generator` | `L295–L307` | `(...)` | — | — | `dumps`, `get`, `is_disconnected`, `unsubscribe` |
+| `cockpit` | `L328–L336` | `(...)` | — | — | `FileResponse`, `get` |
 
 
 ---
@@ -688,13 +689,13 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `generate_extended_history` | `L114–L166` | `(history: list[dict[str, str]], fund...)` | `dict[str, list[dict[str, Any]]]` | Generates 7d, 1m, 6m, 1y series for TradingView-style deep trend views. | `add_sessions`, `append`, `cos`, `float` |
-| `rule_view` | `L169–L179` | `(rule: CustomRule...)` | `dict` | — | `decimal`, `float` |
-| `trade_view` | `L182–L201` | `(trade: TradeLog...)` | `dict` | — | `float`, `isoformat` |
-| `period_totals` | `L204–L219` | `(trades: list[TradeLog], start: date...)` | `dict` | — | `float`, `isoformat`, `len`, `sum` |
-| `build_snapshot` | `L222–L224` | `(database: Database, settings: Setti...)` | `dict` | — | `read`, `snapshot_from_session` |
-| `snapshot_from_session` | `L227–L499` | `(session: Session, settings: Setting...)` | `dict` | — | `SkillsManager`, `StockNowAdapter`, `TradingCalendar`, `add_sessions` |
-| `normalized_watchlist` | `L502–L521` | `(companies: list[dict]...)` | `list[dict]` | Equal-weight normalized PRICE index, explicitly not portfolio performance. | `any`, `append`, `decimal`, `float` |
+| `generate_extended_history` | `L210–L262` | `(history: list[dict[str, str]], fund...)` | `dict[str, list[dict[str, Any]]]` | Generates 7d, 1m, 6m, 1y series for TradingView-style deep trend views. | `add_sessions`, `append`, `cos`, `float` |
+| `rule_view` | `L265–L275` | `(rule: CustomRule...)` | `dict` | — | `decimal`, `float` |
+| `trade_view` | `L278–L297` | `(trade: TradeLog...)` | `dict` | — | `float`, `isoformat` |
+| `period_totals` | `L300–L315` | `(trades: list[TradeLog], start: date...)` | `dict` | — | `float`, `isoformat`, `len`, `sum` |
+| `build_snapshot` | `L318–L320` | `(database: Database, settings: Setti...)` | `dict` | — | `read`, `snapshot_from_session` |
+| `snapshot_from_session` | `L323–L595` | `(session: Session, settings: Setting...)` | `dict` | — | `SkillsManager`, `StockNowAdapter`, `TradingCalendar`, `add_sessions` |
+| `normalized_watchlist` | `L598–L617` | `(companies: list[dict]...)` | `list[dict]` | Equal-weight normalized PRICE index, explicitly not portfolio performance. | `any`, `append`, `decimal`, `float` |
 
 
 ---
@@ -786,7 +787,8 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `seed_demo` | `L26–L112` | `(session: Session, settings: Setting...)` | `None` | — | `CompanyProfile`, `CustomRule`, `Decimal`, `PortfolioState` |
+| `seed_demo` | `L34–L120` | `(session: Session, settings: Setting...)` | `None` | — | `CompanyProfile`, `CustomRule`, `Decimal`, `PortfolioState` |
+| `migrate_real_stocknow_market` | `L123–L172` | `(session: Session, settings: Setting...)` | `None` | Migrates existing SQLite database on boot to real Nov 5, 2026 StockNow data. | `CompanyProfile`, `CustomRule`, `TradingCalendar`, `add` |
 
 
 ---
@@ -861,16 +863,16 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 
 | Method | Route Path | Module File | Line | Handler Function | Description |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/api/health` | [`backend/main.py`](/backend/main.py#L166) | `L166` | `health()` | Route endpoint |
-| `GET` | `/api/portfolio` | [`backend/main.py`](/backend/main.py#L170) | `L170` | `portfolio()` | Route endpoint |
-| `POST` | `/api/automation/cycle` | [`backend/main.py`](/backend/main.py#L174) | `L174` | `cycle()` | Route endpoint |
-| `POST` | `/api/automation/pause` | [`backend/main.py`](/backend/main.py#L183) | `L183` | `pause()` | Route endpoint |
-| `POST` | `/api/automation/config` | [`backend/main.py`](/backend/main.py#L193) | `L193` | `automation_config()` | Route endpoint |
-| `POST` | `/api/demo/advance` | [`backend/main.py`](/backend/main.py#L214) | `L214` | `advance()` | Route endpoint |
-| `GET` | `/api/market/map` | [`backend/main.py`](/backend/main.py#L228) | `L228` | `market_map_endpoint()` | Route endpoint |
-| `PATCH` | `/api/companies/{symbol}/allocation` | [`backend/main.py`](/backend/main.py#L232) | `L232` | `allocation()` | Route endpoint |
-| `GET` | `/api/stream` | [`backend/main.py`](/backend/main.py#L262) | `L262` | `event_stream()` | Route endpoint |
-| `GET` | `/` | [`backend/main.py`](/backend/main.py#L298) | `L298` | `cockpit()` | Route endpoint |
+| `GET` | `/api/health` | [`backend/main.py`](/backend/main.py#L171) | `L171` | `health()` | Route endpoint |
+| `GET` | `/api/portfolio` | [`backend/main.py`](/backend/main.py#L175) | `L175` | `portfolio()` | Route endpoint |
+| `POST` | `/api/automation/cycle` | [`backend/main.py`](/backend/main.py#L179) | `L179` | `cycle()` | Route endpoint |
+| `POST` | `/api/automation/pause` | [`backend/main.py`](/backend/main.py#L196) | `L196` | `pause()` | Route endpoint |
+| `POST` | `/api/automation/config` | [`backend/main.py`](/backend/main.py#L206) | `L206` | `automation_config()` | Route endpoint |
+| `POST` | `/api/demo/advance` | [`backend/main.py`](/backend/main.py#L244) | `L244` | `advance()` | Route endpoint |
+| `GET` | `/api/market/map` | [`backend/main.py`](/backend/main.py#L258) | `L258` | `market_map_endpoint()` | Route endpoint |
+| `PATCH` | `/api/companies/{symbol}/allocation` | [`backend/main.py`](/backend/main.py#L262) | `L262` | `allocation()` | Route endpoint |
+| `GET` | `/api/stream` | [`backend/main.py`](/backend/main.py#L292) | `L292` | `event_stream()` | Route endpoint |
+| `GET` | `/` | [`backend/main.py`](/backend/main.py#L328) | `L328` | `cockpit()` | Route endpoint |
 | `POST` | `/api/chat` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L30) | `L30` | `chat_route()` | Route endpoint |
 | `GET` | `/api/hermes/conversations` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L37) | `L37` | `list_conversations()` | Route endpoint |
 | `POST` | `/api/hermes/conversations` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L44) | `L44` | `create_conversation()` | Route endpoint |
@@ -1034,11 +1036,11 @@ Identified **233** distinct element IDs in the UI shell. Key controller anchors:
 | `tickClock()` | `app.js` | `L609` | Reactive DOM rendering / event controller |
 | `renderAutomationControlBar()` | `app.js` | `L618` | Reactive DOM rendering / event controller |
 | `setAutomationConfig()` | `app.js` | `L744` | Reactive DOM rendering / event controller |
-| `initRealtimeStream()` | `app.js` | `L858` | Reactive DOM rendering / event controller |
-| `switchView()` | `app.js` | `L884` | Reactive DOM rendering / event controller |
-| `initViewRouter()` | `app.js` | `L935` | Reactive DOM rendering / event controller |
-| `initScrollSpy()` | `app.js` | `L1001` | Reactive DOM rendering / event controller |
-| `updateActiveNav()` | `app.js` | `L1014` | Reactive DOM rendering / event controller |
+| `initRealtimeStream()` | `app.js` | `L861` | Reactive DOM rendering / event controller |
+| `switchView()` | `app.js` | `L887` | Reactive DOM rendering / event controller |
+| `initViewRouter()` | `app.js` | `L938` | Reactive DOM rendering / event controller |
+| `initScrollSpy()` | `app.js` | `L1004` | Reactive DOM rendering / event controller |
+| `updateActiveNav()` | `app.js` | `L1017` | Reactive DOM rendering / event controller |
 | `smoothCurvePath()` | `charts.js` | `L8` | Reactive DOM rendering / event controller |
 | `getBezierPointAtContinuousIndex()` | `charts.js` | `L31` | Reactive DOM rendering / event controller |
 | `renderMainChart()` | `charts.js` | `L63` | Reactive DOM rendering / event controller |
@@ -1090,11 +1092,12 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 
 | File | Function / Method | Length (Lines) | Max Nesting Depth | Recommendation |
 | :--- | :--- | :--- | :--- | :--- |
+| `backend/adapters/stocknow_client.py` | `launch` | 58 | 4 | Acceptable; well-scoped logic |
 | `backend/adapters/stocknow_client.py` | `ensure_authenticated` | 173 | 6 | Decompose into sub-functions |
 | `backend/adapters/stocknow_market_sync.py` | `_normalize_history_series` | 16 | 6 | Acceptable; well-scoped logic |
-| `backend/adapters/stocknow_market_sync.py` | `extract_quotes_from_payload` | 63 | 5 | Acceptable; well-scoped logic |
-| `backend/adapters/stocknow_market_sync.py` | `extract_quotes_from_stocknow` | 45 | 4 | Acceptable; well-scoped logic |
-| `backend/adapters/stocknow_market_sync.py` | `_sync_in_session` | 62 | 4 | Acceptable; well-scoped logic |
+| `backend/adapters/stocknow_market_sync.py` | `extract_quotes_from_payload` | 79 | 6 | Acceptable; well-scoped logic |
+| `backend/adapters/stocknow_market_sync.py` | `extract_quotes_from_stocknow` | 136 | 4 | Decompose into sub-functions |
+| `backend/adapters/stocknow_market_sync.py` | `_sync_in_session` | 89 | 4 | Acceptable; well-scoped logic |
 | `backend/adapters/stocknow_order_executor.py` | `execute_stocknow_virtual_order` | 101 | 5 | Decompose into sub-functions |
 | `backend/adapters/stocknow_portfolio_sync.py` | `_find_portfolio_dict` | 17 | 5 | Acceptable; well-scoped logic |
 | `backend/adapters/stocknow_portfolio_sync.py` | `extract_hummingbird_portfolio` | 43 | 4 | Acceptable; well-scoped logic |
@@ -1129,8 +1132,10 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/hermes/tools_dispatcher.py` | `dispatch_tool` | 35 | 12 | Acceptable; well-scoped logic |
 | `backend/hermes/tools_dispatcher.py` | `format_tool_response` | 178 | 9 | Decompose into sub-functions |
 | `backend/hermes/tools_dispatcher.py` | `detect_intent_and_tool` | 235 | 5 | Decompose into sub-functions |
-| `backend/main.py` | `create_app` | 226 | 4 | Decompose into sub-functions |
+| `backend/main.py` | `create_app` | 252 | 4 | Decompose into sub-functions |
 | `backend/main.py` | `local_security` | 39 | 4 | Acceptable; well-scoped logic |
+| `backend/main.py` | `cycle` | 15 | 4 | Acceptable; well-scoped logic |
+| `backend/main.py` | `automation_config` | 36 | 4 | Acceptable; well-scoped logic |
 | `backend/main.py` | `event_stream` | 26 | 4 | Acceptable; well-scoped logic |
 | `backend/main.py` | `generator` | 13 | 4 | Acceptable; well-scoped logic |
 | `backend/market_map.py` | `build_market_map_payload` | 72 | 5 | Acceptable; well-scoped logic |
@@ -1144,6 +1149,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/routes_stocknow.py` | `post_stocknow_execute_order` | 80 | 4 | Acceptable; well-scoped logic |
 | `backend/routes_stocknow.py` | `post_stocknow_scheduler` | 9 | 4 | Acceptable; well-scoped logic |
 | `backend/seed.py` | `seed_demo` | 87 | 3 | Acceptable; well-scoped logic |
+| `backend/seed.py` | `migrate_real_stocknow_market` | 50 | 6 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `is_ignored` | 6 | 4 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `collect_file_metrics` | 15 | 4 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `parse_fastapi_routes` | 38 | 10 | Acceptable; well-scoped logic |
@@ -1155,4 +1161,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 22,603 total LOC indexed.
+> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 23,004 total LOC indexed.

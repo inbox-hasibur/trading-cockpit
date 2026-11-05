@@ -758,6 +758,9 @@ async function setAutomationConfig(newConfig) {
     }
     const modeLabel = res.ingestion_mode === "BACKGROUND_POLLING" ? "Background Polling" : "Onscreen Live Mode";
     notify(`Automation: ${res.automation_enabled ? "ON" : "OFF"} · ${modeLabel} (${res.polling_interval_sec}s)`);
+    if (res.ingestion_mode === "ONSCREEN_LIVE") {
+      await refresh(true);
+    }
   });
 }
 

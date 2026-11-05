@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import hmac
 import json
+import logging
 from contextlib import asynccontextmanager
 from decimal import Decimal
 from pathlib import Path
@@ -20,6 +21,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from backend.adapters.stocknow_adapter import StockNowAdapter
 from backend.adapters.stocknow_client import StockNowLiveClient
+from backend.adapters.stocknow_market_sync import extract_quotes_from_stocknow, sync_live_market_to_db
 from backend.chat import ChatRequest, ChatService
 from backend.config import ROOT, VERSION, Settings
 from backend.database import CustomRule, Database, RuleAudit, portfolio_state
@@ -35,7 +37,9 @@ from backend.routes_auth_settings import (
 )
 from backend.routes_hermes import CreateThreadRequest, build_hermes_router
 from backend.routes_stocknow import build_stocknow_router
-from backend.seed import seed_demo
+from backend.seed import migrate_real_stocknow_market, seed_demo
+
+logger = logging.getLogger("hummingbird.api")
 
 
 class PauseRequest(BaseModel):
@@ -95,6 +99,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         database.create_schema()
         with database.write() as session:
             seed_demo(session, settings)
+            migrate_real_stocknow_market(session, settings)
         try:
             yield
         finally:
@@ -171,7 +176,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return build_snapshot(database, settings)
 
     @app.post("/api/automation/cycle")
-    def cycle(idempotency_key: Annotated[UUID | None, Header(alias="Idempotency-Key")] = None):
+    async def cycle(idempotency_key: Annotated[UUID | None, Header(alias="Idempotency-Key")] = None):
+        # Sync latest quotes from live page before cycle if active
+        if stocknow_client and stocknow_client.state == "READY" and stocknow_client.page:
+            try:
+                quotes = await extract_quotes_from_stocknow(stocknow_client)
+                if quotes:
+                    sync_live_market_to_db(database, quotes)
+            except Exception as exc:
+                logger.warning("Pre-cycle live quote sync skipped: %s", exc)
         try:
             result = trader.run_cycle(str(idempotency_key) if idempotency_key else None)
             broadcaster.publish("cycle", result)
@@ -190,13 +203,30 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return res
 
     @app.post("/api/automation/config")
-    def automation_config(body: AutomationConfigRequest):
+    async def automation_config(body: AutomationConfigRequest):
         with database.write() as session:
             state = portfolio_state(session)
             state.automation_enabled = body.automation_enabled
             state.paused = not body.automation_enabled
             state.ingestion_mode = body.ingestion_mode
             state.polling_interval_sec = body.polling_interval_sec
+
+        # When operator switches to ONSCREEN_LIVE, launch headed Chromium and sync live market
+        if body.ingestion_mode == "ONSCREEN_LIVE":
+            try:
+                await stocknow_client.launch(mode="ONSCREEN_LIVE")
+                phone = getattr(settings, "operator_phone", settings.operator_username)
+                password = settings.operator_password
+                if phone and password and stocknow_client.state == "READY":
+                    await stocknow_client.ensure_authenticated(phone, password)
+                quotes = await extract_quotes_from_stocknow(stocknow_client)
+                if quotes:
+                    sync_live_market_to_db(database, quotes)
+            except Exception as exc:
+                logger.warning("Onscreen live mode auto-launch failed: %s", exc)
+
+        with database.read() as session:
+            state = portfolio_state(session)
             adapter = StockNowAdapter()
             adapter_status = adapter.get_adapter_status(state.ingestion_mode, state.polling_interval_sec, stocknow_client)
             res = {

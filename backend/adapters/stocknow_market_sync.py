@@ -48,6 +48,70 @@ def _normalize_history_series(raw_history: Any, fallback_price: Decimal, as_of_d
     return result[-30:]
 
 
+def _extract_fundamentals_from_dict(item: dict[str, Any]) -> dict[str, Any]:
+    f: dict[str, Any] = {}
+    if "fundamentals" in item and isinstance(item["fundamentals"], dict):
+        return dict(item["fundamentals"])
+    pe = item.get("pe") or item.get("pe_ratio") or item.get("pe_ttm") or item.get("p_e")
+    if pe is not None:
+        try:
+            f["pe_ratio"] = float(str(pe).replace(",", "").strip())
+        except (ValueError, TypeError):
+            pass
+    eps = item.get("eps") or item.get("eps_ttm")
+    if eps is not None:
+        try:
+            f["eps"] = float(str(eps).replace(",", "").strip())
+        except (ValueError, TypeError):
+            pass
+    nav = item.get("nav") or item.get("navps")
+    if nav is not None:
+        try:
+            f["nav"] = float(str(nav).replace(",", "").strip())
+        except (ValueError, TypeError):
+            pass
+    mcap = item.get("market_cap") or item.get("market_cap_cr") or item.get("mcap")
+    if mcap is not None:
+        try:
+            f["market_cap_cr"] = float(str(mcap).replace(",", "").strip())
+        except (ValueError, TypeError):
+            pass
+    paid = item.get("paid_up_capital") or item.get("paid_up_capital_cr") or item.get("paid_up")
+    if paid is not None:
+        try:
+            f["paid_up_capital_cr"] = float(str(paid).replace(",", "").strip())
+        except (ValueError, TypeError):
+            pass
+    div = item.get("dividend_yield") or item.get("div_yield")
+    if div is not None:
+        try:
+            f["dividend_yield"] = float(str(div).replace("%", "").replace(",", "").strip())
+        except (ValueError, TypeError):
+            pass
+    h52 = item.get("high_52w") or item.get("52w_high") or item.get("high52")
+    if h52 is not None:
+        try:
+            f["high_52w"] = float(str(h52).replace(",", "").strip())
+        except (ValueError, TypeError):
+            pass
+    l52 = item.get("low_52w") or item.get("52w_low") or item.get("low52")
+    if l52 is not None:
+        try:
+            f["low_52w"] = float(str(l52).replace(",", "").strip())
+        except (ValueError, TypeError):
+            pass
+    cat = item.get("category") or item.get("market_category")
+    if cat is not None and isinstance(cat, str):
+        f["category"] = cat.strip().upper()
+    year = item.get("listing_year") or item.get("year")
+    if year is not None:
+        try:
+            f["listing_year"] = int(str(year).strip())
+        except (ValueError, TypeError):
+            pass
+    return f
+
+
 def extract_quotes_from_payload(payload: Any, as_of_date: date | None = None) -> list[dict[str, Any]]:
     """Extract and normalize quotes from an arbitrary JSON payload."""
     as_of = as_of_date or date.today()
@@ -56,12 +120,20 @@ def extract_quotes_from_payload(payload: Any, as_of_date: date | None = None) ->
     if isinstance(payload, list):
         items = payload
     elif isinstance(payload, dict):
-        for key in ("instruments", "data", "quotes", "prices", "items", "rows"):
-            if isinstance(payload.get(key), list):
-                items = payload[key]
-                break
-        if not items and ("symbol" in payload or "trading_code" in payload):
-            items = [payload]
+        if isinstance(payload.get("watchlist"), list):
+            items = payload["watchlist"]
+            active_sym = payload.get("active_symbol")
+            active_funds = payload.get("fundamentals") or {}
+            for it in items:
+                if isinstance(it, dict) and active_sym and it.get("symbol", "").upper() == active_sym:
+                    it["fundamentals"] = active_funds
+        else:
+            for key in ("instruments", "data", "quotes", "prices", "items", "rows"):
+                if isinstance(payload.get(key), list):
+                    items = payload[key]
+                    break
+            if not items and ("symbol" in payload or "trading_code" in payload):
+                items = [payload]
 
     extracted: list[dict[str, Any]] = []
     for item in items:
@@ -99,8 +171,9 @@ def extract_quotes_from_payload(payload: Any, as_of_date: date | None = None) ->
 
         raw_hist = item.get("history") or item.get("series") or item.get("chart") or item.get("price_history")
         history = _normalize_history_series(raw_hist, last_price, as_of)
+        funds = _extract_fundamentals_from_dict(item)
 
-        extracted.append({
+        quote_dict: dict[str, Any] = {
             "symbol": symbol,
             "last_price": last_price,
             "ycp": ycp,
@@ -108,7 +181,14 @@ def extract_quotes_from_payload(payload: Any, as_of_date: date | None = None) ->
             "history": history,
             "as_of_date": as_of,
             "source": "STOCKNOW_LIVE",
-        })
+        }
+        if funds:
+            quote_dict["fundamentals"] = funds
+        cat = item.get("category") or (funds.get("category") if funds else None)
+        if cat:
+            quote_dict["category"] = str(cat).strip().upper()
+
+        extracted.append(quote_dict)
 
     return extracted
 
@@ -130,24 +210,115 @@ async def extract_quotes_from_stocknow(client: Any, injected_payload: Any = None
     page = getattr(client, "page", None)
     if page is not None:
         try:
-            dom_data = await page.evaluate("""() => {
+            dom_data = await page.evaluate(r"""() => {
                 const results = [];
                 const win = window;
                 if (win.__NEXT_DATA__ && win.__NEXT_DATA__.props) {
                     return win.__NEXT_DATA__.props;
                 }
-                const rows = document.querySelectorAll("tr, div[class*='row']");
+
+                // 1. Scrape center panel active symbol & fundamentals
+                let activeSym = null;
+                try {
+                    const params = new URLSearchParams(win.location ? win.location.search : "");
+                    if (params.get("symbol")) activeSym = params.get("symbol").toUpperCase();
+                } catch(e) {}
+
+                const fullText = document.body ? document.body.innerText : "";
+                const funds = {};
+
+                const peMatch = fullText.match(/P\/E\\s*(?:\\(TTM\\))?[:\\s]+([0-9.]+)/i);
+                if (peMatch) funds.pe_ratio = parseFloat(peMatch[1]);
+
+                const epsMatch = fullText.match(/EPS\\s*(?:\\(TTM\\))?[:\\s]+([0-9.-]+)/i);
+                if (epsMatch) funds.eps = parseFloat(epsMatch[1]);
+
+                const navMatch = fullText.match(/NAV(?:PS)?[:\\s]+([0-9.]+)/i);
+                if (navMatch) funds.nav = parseFloat(navMatch[1]);
+
+                const mcapMatch = fullText.match(/Market\\s*Cap[:\\s]+([0-9.,]+)\\s*(?:cr|crore)?/i);
+                if (mcapMatch) funds.market_cap_cr = parseFloat(mcapMatch[1].replace(/,/g, ''));
+
+                const paidMatch = fullText.match(/Paid[- ]?up\\s*Cap(?:ital)?[:\\s]+([0-9.,]+)\\s*(?:cr|crore)?/i);
+                if (paidMatch) funds.paid_up_capital_cr = parseFloat(paidMatch[1].replace(/,/g, ''));
+
+                const divMatch = fullText.match(/Div(?:idend)?\\s*Yield[:\\s]+([0-9.]+)%/i);
+                if (divMatch) funds.dividend_yield = parseFloat(divMatch[1]);
+
+                const h52Match = fullText.match(/52W\\s*H(?:igh)?[:\\s]+(?:৳|Tk\\.?)?\\s*([0-9.]+)/i);
+                if (h52Match) funds.high_52w = parseFloat(h52Match[1]);
+
+                const l52Match = fullText.match(/52W\\s*L(?:ow)?[:\\s]+(?:৳|Tk\\.?)?\\s*([0-9.]+)/i);
+                if (l52Match) funds.low_52w = parseFloat(l52Match[1]);
+
+                const range52Match = fullText.match(/52W\\s*Range[:\\s]+(?:৳|Tk\\.?)?\\s*([0-9.]+)\\s*[—–-]\\s*(?:৳|Tk\\.?)?\\s*([0-9.]+)/i);
+                if (range52Match) {
+                    funds.low_52w = parseFloat(range52Match[1]);
+                    funds.high_52w = parseFloat(range52Match[2]);
+                }
+
+                const catMatch = fullText.match(/Category\\s*([A-Z])/i);
+                if (catMatch) funds.category = catMatch[1].toUpperCase();
+
+                const yearMatch = fullText.match(/Listing\\s*Year[:\\s]+([12][0-9]{3})/i);
+                if (yearMatch) funds.listing_year = parseInt(yearMatch[1], 10);
+
+                // 2. Scrape right-hand watchlist rows
+                const rows = document.querySelectorAll("tr, div[class*='row'], div[class*='item']");
+                const seen = new Set();
                 for (const r of rows) {
                     const text = r.innerText || "";
-                    const parts = text.split(/[\\t\\n]+/);
-                    if (parts.length >= 2) {
-                        const sym = parts[0].trim().toUpperCase();
-                        const p = parseFloat(parts[1].replace(/,/g, ''));
-                        if (sym.length >= 2 && sym.length <= 12 && !isNaN(p) && p > 0) {
-                            results.push({ symbol: sym, ltp: p });
+                    const parts = text.split(/[\\t\\n]+/).map(s => s.trim()).filter(Boolean);
+                    if (parts.length < 2) continue;
+
+                    let sym = null;
+                    let ltp = null;
+                    let changePct = null;
+                    let cat = null;
+
+                    for (const p of parts) {
+                        if (!sym && /^[A-Z0-9]{2,12}$/.test(p) && !["BUY", "SELL", "LTP", "YCP", "HIGH", "LOW", "VOL", "CLOSE", "CHANGE"].includes(p)) {
+                            sym = p;
+                        }
+                        if (/^\\[?([ABZN])\\]?$/.test(p)) {
+                            cat = p.replace(/[\\[\\]]/g, '');
+                        }
+                        const val = parseFloat(p.replace(/,/g, ''));
+                        if (!isNaN(val) && val > 0 && val < 50000) {
+                            if (ltp === null && p.includes('.')) {
+                                ltp = val;
+                            }
+                        }
+                        if (p.includes('%')) {
+                            const cp = parseFloat(p.replace(/[%+,\\s]/g, ''));
+                            if (!isNaN(cp)) {
+                                changePct = (p.includes('-') ? -1 : 1) * Math.abs(cp);
+                            }
                         }
                     }
+
+                    if (sym && ltp !== null && !seen.has(sym)) {
+                        seen.add(sym);
+                        const item = { symbol: sym, ltp: ltp, change_pct: changePct, category: cat };
+                        if (activeSym && sym === activeSym && Object.keys(funds).length > 0) {
+                            item.fundamentals = funds;
+                        }
+                        results.push(item);
+                    }
                 }
+
+                // 3. Fallback for active symbol if not in table
+                if (activeSym && !seen.has(activeSym)) {
+                    const ltpMatch = fullText.match(/(?:LTP|Price|Last)[:\\s]+(?:৳|Tk\\.?)?\\s*([0-9.]+)/i);
+                    if (ltpMatch) {
+                        results.push({
+                            symbol: activeSym,
+                            ltp: parseFloat(ltpMatch[1]),
+                            fundamentals: funds,
+                        });
+                    }
+                }
+
                 return results;
             }""")
             quotes = extract_quotes_from_payload(dom_data)
@@ -183,14 +354,41 @@ def _sync_in_session(
     for q in quotes:
         symbol = q["symbol"].upper()
         company = session.get(CompanyProfile, symbol)
-        if company is None:
-            skipped_count += 1
-            continue
-
         last_price = q["last_price"]
+
+        if company is None:
+            # Auto-create company profile from live market feed
+            from backend.database import CustomRule
+            company = CompanyProfile(
+                symbol=symbol,
+                name=f"{symbol} · StockNow",
+                sector="DSE",
+                watchlist_category=q.get("category", "GSC"),
+                settlement_days=2,
+                last_price=last_price,
+                price_history=[{"date": (q.get("as_of_date") or as_of).isoformat(), "close": str(last_price)}],
+                quote_on=q.get("as_of_date") or as_of,
+                source="STOCKNOW_LIVE",
+            )
+            session.add(company)
+            session.flush()
+            rule = session.get(CustomRule, symbol)
+            if rule is None:
+                session.add(CustomRule(symbol=symbol, buy_allocation_pct=ZERO))
+
         company.last_price = last_price
         company.quote_on = q.get("as_of_date") or as_of
         company.source = "STOCKNOW_LIVE"
+
+        # Update in-memory fundamentals if provided
+        if q.get("fundamentals"):
+            try:
+                from backend.portfolio import COMPANY_FUNDAMENTALS, DEFAULT_FUNDAMENTALS
+                base_f = dict(COMPANY_FUNDAMENTALS.get(symbol, DEFAULT_FUNDAMENTALS))
+                base_f.update(q["fundamentals"])
+                COMPANY_FUNDAMENTALS[symbol] = base_f
+            except Exception as f_exc:
+                logger.debug("Failed updating fundamentals for %s: %s", symbol, f_exc)
 
         provided_hist = q.get("history")
         if provided_hist and len(provided_hist) >= 2:

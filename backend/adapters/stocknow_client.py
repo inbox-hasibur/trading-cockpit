@@ -59,7 +59,7 @@ class StockNowLiveClient:
         self,
         profile_directory: Path | str | None = None,
         ingestion_mode: str = "BACKGROUND_POLLING",
-        base_url: str = "https://stocknow.com.bd",
+        base_url: str = "https://www.stocknow.com.bd/favorites?symbol=BANKASIA",
     ):
         self.profile_directory = get_safe_profile_dir(profile_directory)
         self.ingestion_mode = ingestion_mode
@@ -150,6 +150,14 @@ class StockNowLiveClient:
 
                 # Attach XHR/JSON sniffer
                 self.page.on("response", lambda res: asyncio.create_task(self._handle_response(res)))
+
+                # Auto-navigate to target favorites page if blank or initial launch
+                try:
+                    current_url = getattr(self.page, "url", "")
+                    if not current_url or current_url in ("about:blank", "chrome://newtab/"):
+                        await self.page.goto(self.base_url, timeout=20000, wait_until="domcontentloaded")
+                except Exception as nav_exc:
+                    logger.debug("Initial navigation to %s completed/timed out: %s", self.base_url, nav_exc)
 
                 self.state = "READY"
                 self.last_sync_at = datetime.now(timezone.utc).isoformat(timespec="seconds")

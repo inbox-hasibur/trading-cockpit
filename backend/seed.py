@@ -14,12 +14,20 @@ from backend.engine.t2_ledger import TradingCalendar, bucket_balances
 
 # The crash symbol is an invented test scenario, not an opinion about that issuer.
 FIXTURES = (
-    ("BANKASIA", "Bank Asia · demo", "BANK", "GSC_L2", "10", [20.6, 21.1, 20.9, 20.2, 21, 20.4, 19.8]),
+    ("BANKASIA", "Bank Asia PLC", "BANK", "GSC_L2", "10", [18.2, 18.5, 18.0, 17.8, 17.3, 17.0, 17.5]),
     ("EXIM1STMF", "EXIM 1st Mutual Fund · demo", "MUTUAL_FUND", "GSC", "15",
      [5.5, 5.65, 5.55, 5.35, 5.6, 5.4, 5.2]),
     ("SQURPHARMA", "Square Pharma · demo", "PHARMA", "GSC_L1", "30", [202, 205, 208, 211, 214, 215, 216]),
     ("BXPHARMA", "Beximco Pharma · crash fixture", "PHARMA", "GSC", "10", [91, 92, 93, 92, 91, 90, 58]),
     ("GP", "Grameenphone · demo", "TELECOM", "GSC", "25", [260, 264, 270, 275, 273, 269, 265]),
+    ("ACI", "ACI Limited", "PHARMA", "GSC", "0", [184.0, 182.5, 181.0, 179.5, 178.8, 178.1, 176.2]),
+    ("DHAKABANK", "Dhaka Bank PLC", "BANK", "GSC", "0", [11.5, 11.4, 11.2, 11.0, 11.0, 11.0, 11.1]),
+    ("FUWANGCER", "Fu-Wang Ceramic Ind.", "CERAMICS", "GSC", "0", [12.2, 12.0, 11.7, 11.5, 11.3, 11.3, 11.4]),
+    ("IFIC", "IFIC Bank PLC", "BANK", "GSC", "0", [5.2, 5.1, 5.1, 5.0, 5.0, 5.0, 5.0]),
+    ("NPOLYMER", "National Polymer Ind.", "ENGINEERING", "GSC", "0", [25.8, 25.5, 26.0, 26.2, 26.1, 26.3, 27.7]),
+    ("PRIMEBANK", "Prime Bank PLC", "BANK", "GSC", "0", [28.0, 28.2, 28.5, 28.4, 28.3, 28.6, 30.0]),
+    ("PUBALIBANK", "Pubali Bank PLC", "BANK", "GSC", "0", [40.5, 41.0, 41.2, 41.5, 41.3, 41.6, 43.4]),
+    ("SPCERAMICS", "Shinepukur Ceramics", "CERAMICS", "GSC", "0", [21.0, 21.2, 21.5, 21.4, 21.6, 21.8, 23.2]),
 )
 
 
@@ -65,7 +73,7 @@ def seed_demo(session: Session, settings: Settings) -> None:
     # Keep seed lots fully funded even when a user chooses smaller initial capital.
     scale = settings.initial_capital / Decimal("15000")
     lot_specs = (
-        ("BANKASIA", 0, 50, "20", "20"),
+        ("BANKASIA", 0, 50, "17.5", "17.5"),
         ("EXIM1STMF", -1, 100, "5", "5.2"),
         ("SQURPHARMA", -2, 20, "200", "216"),
         ("BXPHARMA", -2, 10, "90", "93"),
@@ -110,3 +118,55 @@ def seed_demo(session: Session, settings: Settings) -> None:
         ))
     session.flush()
     bucket_balances(session, state)  # Refuse to seed an unfunded ledger.
+
+
+def migrate_real_stocknow_market(session: Session, settings: Settings) -> None:
+    """Migrates existing SQLite database on boot to real Nov 5, 2026 StockNow data."""
+    state = session.get(PortfolioState, 1)
+    if state is None:
+        return
+    calendar = TradingCalendar(settings.holidays, settings.bucket_anchor)
+    today = state.clock_date or calendar.on_or_before(datetime.now(DHAKA).date())
+
+    updated = False
+    for symbol, name, sector, category, allocation, values in FIXTURES:
+        history = [
+            {"date": calendar.add_sessions(today, index - len(values) + 1).isoformat(), "close": str(price(decimal(value)))}
+            for index, value in enumerate(values)
+        ]
+        comp = session.get(CompanyProfile, symbol)
+        if comp is None:
+            session.add(CompanyProfile(
+                symbol=symbol,
+                name=name,
+                sector=sector,
+                watchlist_category=category,
+                settlement_days=settings.settlement_days,
+                last_price=price(decimal(values[-1])),
+                price_history=history,
+                quote_on=today,
+                source="STOCKNOW_LIVE",
+            ))
+            rule = session.get(CustomRule, symbol)
+            if rule is None:
+                session.add(CustomRule(symbol=symbol, buy_allocation_pct=decimal(allocation)))
+            updated = True
+        else:
+            target_price = price(decimal(values[-1]))
+            if symbol == "BANKASIA":
+                if comp.last_price != target_price:
+                    comp.name = name
+                    comp.last_price = target_price
+                    comp.price_history = history
+                    comp.source = "STOCKNOW_LIVE"
+                    updated = True
+            elif comp.symbol not in {"GP", "SQURPHARMA", "BXPHARMA", "EXIM1STMF"}:
+                if comp.last_price != target_price:
+                    comp.name = name
+                    comp.last_price = target_price
+                    comp.price_history = history
+                    comp.source = "STOCKNOW_LIVE"
+                    updated = True
+
+    if updated:
+        state.revision += 1
