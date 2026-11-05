@@ -340,11 +340,11 @@
               <div class="slider-row-wrap">
                 <input type="range" id="polling-range-slider" min="30" max="300" step="30" value="120" class="styled-range-slider" aria-label="Polling interval slider">
                 <div class="slider-range-labels">
-                  <span>30s · Hyper</span>
+                  <span>30s (Min)</span>
                   <span>60s</span>
-                  <span>120s · Standard</span>
+                  <span>120s (Default)</span>
                   <span>180s</span>
-                  <span>300s · Relaxed</span>
+                  <span>300s (Max)</span>
                 </div>
               </div>
               <div class="pill-group" id="polling-interval-pills" style="margin-top: 10px;">
@@ -372,7 +372,7 @@
                 </div>
                 <div class="key-input-box">
                   <span class="field-icon">🔑</span>
-                  <input type="password" id="key-openrouter" placeholder="sk-or-v1-••••••••••••••••" autocomplete="off">
+                  <input type="password" id="key-openrouter" class="secret-input" placeholder="sk-or-v1-••••••••••••••••" autocomplete="off">
                   <button type="button" class="key-toggle-btn" data-target="key-openrouter" title="Toggle visibility">👁</button>
                 </div>
               </div>
@@ -384,7 +384,7 @@
                 </div>
                 <div class="key-input-box">
                   <span class="field-icon">🧠</span>
-                  <input type="password" id="key-gemini" placeholder="AIzaSy••••••••••••••••" autocomplete="off">
+                  <input type="password" id="key-gemini" class="secret-input" placeholder="AIzaSy••••••••••••••••" autocomplete="off">
                   <button type="button" class="key-toggle-btn" data-target="key-gemini" title="Toggle visibility">👁</button>
                 </div>
               </div>
@@ -394,14 +394,14 @@
                   <label for="key-telegram-token" class="simple-label">Telegram Bot Token</label>
                   <div class="key-input-box compact">
                     <span class="field-icon">🤖</span>
-                    <input type="password" id="key-telegram-token" placeholder="bot123456:••••" autocomplete="off">
+                    <input type="password" id="key-telegram-token" class="secret-input" placeholder="bot123456:••••" autocomplete="off">
                   </div>
                 </div>
                 <div class="modern-field-group">
                   <label for="key-telegram-chat" class="simple-label">Telegram Chat ID</label>
                   <div class="key-input-box compact">
                     <span class="field-icon">💬</span>
-                    <input type="text" id="key-telegram-chat" placeholder="@channel / 123456" autocomplete="off">
+                    <input type="text" id="key-telegram-chat" class="secret-input" placeholder="@channel / 123456" autocomplete="off">
                   </div>
                 </div>
               </div>
