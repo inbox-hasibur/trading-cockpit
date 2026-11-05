@@ -160,15 +160,25 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
     - **Fixed Viewport Lock Architecture:** Locked outer viewport (`height: 100vh; overflow: hidden;`) with middle `.workspace` scrolling independently (`height: 100vh; overflow-y: auto;`). Left nav rail and right Hermes assistant stay 100% viewport-fixed at all times, never scrolling off screen.
     - **Continuous Smooth Curves Without Point Dots:** Pure continuous cubic bezier curves without static session dots, paired with continuous pixel-level hover interpolation so crosshairs glide smoothly with pixel precision.
     - **Rebuilt Hermes `[Changes]` Tab as System & Rule Diff Review:** Visual GitHub/IDE-style structured Before vs. After diff cards (`.diff-card`) featuring red deleted lines (`[-] Previous`) and green added lines (`[+] Updated`), actor badges, timestamps, and 1-click `/rollback`.
+    - **Settings Page Complete Overhaul:**
+      - *Telemetry Ingestion Pipeline Card:* Interactive Method A (Background HTTP Polling) vs Method B (Onscreen Live Mode CDP) selector tiles with status pills, smooth polling interval slider (30s to 300s), and quick preset cadence pills (30s Hyper, 60s Fast, 120s Standard, 180s Relaxed).
+      - *API Keys & Live Telemetry Manager:* Modern credential form with masked secret inputs (`sk-or-v1-...`, Gemini API key, Telegram Bot token & chat ID), toggleable password visibility eyes, quota usage bar, and one-click save.
+      - *Market Clearing & Settlement Rules Card:* Fee structure (0.50% buy, 0.50% sell, +1.005% gross hurdle) and T+2 settlement rolling bucket explanation.
+      - *System & Security Card:* Consolidated technical badges (Realtime SSE status, Demo/Paper mode indicator, and optional session API tokens).
     - **3-Tier AI Brain Switcher (`/model`):**
-      - **Tier 1:** User-selected OpenRouter model (`xiaomi/mimo-v2-flash`, `deepseek/deepseek-chat`, `meta-llama/llama-3.3-70b-instruct`, `anthropic/claude-3.5-sonnet`, `google/gemini-2.0-flash-001`). Switchable via `/model <name>` in chat or UI dropdown picker in header & settings.
+      - **Tier 1:** User-selected OpenRouter model (`xiaomi/mimo-v2-flash`, `deepseek/deepseek-chat`, `meta-llama/llama-3.3-70b-instruct`, `anthropic/claude-3.5-sonnet`, `google/gemini-2.0-flash-001`). Switchable via `/model <name>` in chat, upward drop-up menu in bottom bar, or UI dropdown picker in settings.
       - **Tier 2:** 1st Fallback — Free Google Gemini API (`google/gemini-2.5-flash`).
       - **Tier 3:** 2nd Fallback — Deterministic Local Quant Brain ($0 offline).
       - API endpoints: `GET /api/hermes/models` and `POST /api/hermes/model`.
-    - **Exhaustive Light Mode Daylight Uniformity:** Complete elimination of hardcoded dark background artifacts across tables, cards, canvases, and sidebars.
+    - **Exhaustive Light Mode Daylight Uniformity:** Complete elimination of hardcoded dark background artifacts across tables, cards, canvases, settings, and sidebars, featuring 50% lighter pastel treemap tiles and dark legible text contrast.
+    - **Developer Productivity & Instant Local Reload:** Disabled aggressive static asset browser caching (`Cache-Control: no-cache, no-store, must-revalidate`) in `DevStaticFiles` and root cockpit endpoint so frontend UI changes reflect immediately upon browser refresh (`F5`) without cache clearing.
 
 11. **Hermes IDE Resizable Sidebar, Topics & Antigravity History:**
-    - **Resizable Drag Handle (`col-resize`):** Fluid sidebar width adjustment (280px–650px) with `localStorage` persistence like VS Code / Orca IDE.
+    - **Synchronized Viewport-Grid Resizing (`col-resize`):** Smooth, bi-directional width adjustment (280px–640px) dynamically resizing the `.app-shell` 3rd column track via CSS variable `--hermes-width`, completely eliminating off-screen rightward overflow or clipping while persisting dimensions in `localStorage`.
+    - **Custom Upward-Opening Model Drop-up Menu:** Bottom status bar model selector opens upward smoothly above the chat composer with zero overflow clipping, active model checkmarks, and instant OpenRouter switching.
+    - **Restored Compact Pill Quick-Prompts:** Clean, horizontal inline quick prompts (`Portfolio status ↗`, `Alert bankruptcy threat ⚡`, `Restore company ↺`) with subtle borders and teal hover accents.
+    - **Sub-Pixel Centered Chat Send Button:** Reset default browser button padding and aligned send icon to the absolute geometric center.
+    - **Decluttered Trader Interface:** Stripped repetitive, redundant "AGENTIC" status badges and visual dot artifacts across Hermes for a focused, institutional-grade terminal aesthetic.
     - **Minimize / Collapse Mode:** One-click minimize button with a floating reopen pill (`✦ Hermes`) for maximum dashboard screen real estate.
     - **Multi-Conversation Topic Manager (`+ New Conversation`):** Human strategy & topic separator (`HermesConversationThread`), enabling distinct conversation threads while Hermes retains unified cross-topic memory and self-improving procedural skills.
     - **High-Performance Snapshot Engine:** Precomputed $O(N)$ calendar date slices in `portfolio.py`, eliminating the 145,000+ date increment loop and resolving page load delays.

@@ -95,13 +95,26 @@
     - **Tier 2:** 1st Fallback — Free Google Gemini API (`google/gemini-2.5-flash`).
     - **Tier 3:** 2nd Fallback — Deterministic Local Quant Brain ($0 offline).
     - API endpoints: `GET /api/hermes/models` and `POST /api/hermes/model`.
+  - **Settings Page Overhaul & Telemetry Pipeline Controls:**
+    - Interactive Method A (Background HTTP Polling) vs Method B (Onscreen Live Mode CDP) selector tiles with status pills, smooth polling interval slider (30s to 300s), and quick preset cadence pills (30s Hyper, 60s Fast, 120s Standard, 180s Relaxed).
+    - API Keys & Live Telemetry credential manager with masked inputs (`sk-or-v1-...`, Gemini key, Telegram Bot token & chat ID), toggleable password visibility eyes, and quota usage tracking.
+    - Market Clearing & Settlement rules card (0.50% buy, 0.50% sell, +1.005% gross hurdle) and T+2 rolling bucket explanation.
+    - Technical clutter migration: Relocated SSE realtime status, paper mode badges, and session API token triggers from the sticky topbar into Settings.
+  - **Hermes Copilot Viewport Grid Synchronization & UX Polish:**
+    - Synchronized bi-directional sidebar width adjustment (280px–640px) resizing the `.app-shell` 3rd column track via CSS variable `--hermes-width`, completely resolving off-screen rightward overflow or clipping while persisting in `localStorage`.
+    - Custom upward-opening model drop-up menu (`.model-dropup-menu`) opening smoothly above the chat composer with active model checkmarks.
+    - Restored compact horizontal pill quick-prompt buttons (`Portfolio status ↗`, `Alert bankruptcy threat ⚡`, `Restore company ↺`) with subtle borders and teal hover accents.
+    - Sub-pixel centered chat send button with zero browser padding offset.
+    - Decluttered trader interface by removing repetitive "AGENTIC" badges and visual dot artifacts across Hermes.
+  - **Developer Productivity & Instant Local Reload:**
+    - Disabled aggressive static asset browser caching (`Cache-Control: no-cache, no-store, must-revalidate`) in `DevStaticFiles` and root cockpit endpoint so frontend UI changes reflect immediately upon browser refresh (`F5`) without clearing browser cache.
   - **Exhaustive Light Mode Daylight Uniformity:**
-    - Eliminated all hardcoded dark background artifacts (`#0b1220`, `#111c26`, `#0f1721`, etc.) across watchlist tables, position inspectors, DSE market map containers, stacked bar charts, modals, settings, and diff review cards.
+    - Eliminated all hardcoded dark background artifacts across watchlist tables, position inspectors, DSE market map containers, stacked bar charts, modals, settings, and diff review cards, featuring 50% lighter pastel treemap tiles and dark legible text contrast.
 - [x] **AST Codebase X-Ray & Architecture Radar (`scripts/generate_code_map.py` -> `documentation/CODEBASE_MAP.md`):**
   - Zero-dependency stdlib script scanning Python AST, class methods, FastAPI routes, DOM elements, and code health radar.
 - [x] **Repository Documentation Reorganization:**
-  - All architecture specs moved to `documentation/` (`About_Project.md`, `Backlog.md`, `CODEBASE_MAP.md`), keeping only `README.md` at repo root.
-- [x] **Complete Automated Test Suite (25/25 passing):**
+  - All architecture specs maintained in `documentation/` (`About_Project.md`, `Backlog.md`, `CODEBASE_MAP.md`), keeping only `README.md` at repo root.
+- [x] **Complete Automated Test Suite (28/28 passing):**
   - Engine tests, settlement calendars, fee basis math, sequential seller tiers, local chat, OpenRouter mock, agentic emergency quarantine & canary exits, watchlist categories, SSE streams, cockpit smoke tests, SecretGuard isolation, on-demand skill loading & self-patching, 3-layer memory, state checkpoint `/rollback`, DSE Market Map `/api/market/map` payload & visualizer tests, company fundamentals/extended history deep trend tests, dual-mode automation controller API tests, Hermes conversation threads & messages, system changes diff endpoint, and AI brain model switcher tests.
 
 ---
