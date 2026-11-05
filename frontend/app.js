@@ -1971,16 +1971,17 @@ function initRealtimeStream() {
 // --- Hermes IDE Resizable Sidebar, Tabs & Antigravity History ---
 function initHermesSidebar() {
   const sidebar = $("hermes-sidebar");
-  const resizeHandle = $("hermes-resize-handle");
+  const resizer = $("hermes-resizer") || $("hermes-resize-handle");
   const collapseBtn = $("hermes-collapse-btn");
   const openBtn = $("floating-hermes-open");
   const appShell = document.querySelector(".app-shell");
 
   // Restore saved width
   const savedWidth = localStorage.getItem("humming-bird-hermes-width");
-  if (savedWidth) {
+  if (savedWidth && sidebar) {
     const parsed = parseInt(savedWidth, 10);
-    if (parsed >= 260 && parsed <= 700) {
+    if (parsed >= 300 && parsed <= 640) {
+      sidebar.style.width = `${parsed}px`;
       document.documentElement.style.setProperty("--hermes-width", `${parsed}px`);
     }
   }
@@ -1992,30 +1993,33 @@ function initHermesSidebar() {
     openBtn.hidden = false;
   }
 
-  // Drag Resizing
-  if (resizeHandle && appShell) {
-    let isDragging = false;
-    resizeHandle.addEventListener("mousedown", (e) => {
-      isDragging = true;
-      resizeHandle.classList.add("is-dragging");
-      document.body.style.userSelect = "none";
-      document.body.style.cursor = "col-resize";
-    });
-
-    window.addEventListener("mousemove", (e) => {
-      if (!isDragging) return;
-      const newWidth = Math.max(280, Math.min(650, window.innerWidth - e.clientX));
+  // Drag Resizing with smooth window tracking & cursor stability
+  if (resizer && sidebar) {
+    let lastWidth = 380;
+    const onMouseMove = (e) => {
+      const newWidth = Math.min(640, Math.max(300, window.innerWidth - e.clientX));
+      lastWidth = newWidth;
+      sidebar.style.width = `${newWidth}px`;
       document.documentElement.style.setProperty("--hermes-width", `${newWidth}px`);
-      localStorage.setItem("humming-bird-hermes-width", newWidth);
-    });
+    };
 
-    window.addEventListener("mouseup", () => {
-      if (isDragging) {
-        isDragging = false;
-        resizeHandle.classList.remove("is-dragging");
-        document.body.style.userSelect = "";
-        document.body.style.cursor = "";
+    const onMouseUp = () => {
+      document.body.classList.remove("is-resizing-hermes");
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("blur", onMouseUp);
+      localStorage.setItem("humming-bird-hermes-width", lastWidth);
+      if (typeof renderMainChart === "function") {
+        renderMainChart();
       }
+    };
+
+    resizer.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      document.body.classList.add("is-resizing-hermes");
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", onMouseUp);
+      window.addEventListener("blur", onMouseUp);
     });
   }
 
@@ -2249,19 +2253,21 @@ async function loadHermesModels() {
       dropdownList.innerHTML = models.map((m) => {
         const isCur = m.id === active;
         return `
-          <button type="button" class="model-opt-btn ${isCur ? "is-active" : ""}" data-model="${m.id}">
-            <span>${escapeHtml(m.name)}</span>
-            <span class="model-tier-tag">T${m.tier}</span>
+          <button type="button" class="model-dropup-item ${isCur ? "is-active" : ""}" data-model="${escapeHtml(m.id)}">
+            <span class="model-item-name">${escapeHtml(m.name)}</span>
+            ${isCur ? '<span class="model-dropup-check">✓</span>' : ""}
           </button>
         `;
       }).join("");
 
-      dropdownList.querySelectorAll(".model-opt-btn").forEach((btn) => {
+      dropdownList.querySelectorAll(".model-dropup-item").forEach((btn) => {
         btn.addEventListener("click", () => {
           const modId = btn.dataset.model;
-          switchHermesModel(modId);
-          const drop = $("model-picker-dropdown");
+          const short = modId.split("/").pop();
+          setText("hermes-active-model-name", short);
+          const drop = $("model-dropup-menu") || $("model-picker-dropdown");
           if (drop) drop.hidden = true;
+          switchHermesModel(modId);
         });
       });
     }
@@ -2390,16 +2396,16 @@ function initViewRouter() {
     });
   }
 
-  // Model Picker Dropdown toggle (Bottom model button above chat input)
-  const modelBtn = $("hermes-bottom-model-btn") || $("hermes-model-btn");
-  const modelDrop = $("model-picker-dropdown");
+  // Model Picker Drop-up toggle (Bottom model button above chat input)
+  const modelBtn = $("hermes-model-trigger") || $("hermes-bottom-model-btn") || $("hermes-model-btn");
+  const modelDrop = $("model-dropup-menu") || $("model-picker-dropdown");
   if (modelBtn && modelDrop) {
     modelBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       modelDrop.hidden = !modelDrop.hidden;
     });
     document.addEventListener("click", (e) => {
-      if (!modelDrop.contains(e.target) && e.target !== modelBtn) {
+      if (!modelDrop.contains(e.target) && !modelBtn.contains(e.target)) {
         modelDrop.hidden = true;
       }
     });

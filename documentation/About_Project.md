@@ -139,23 +139,24 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
    - **Individual Company Deep-Trend View (Modal):** Multi-timeframe trend curves (**7D**, **1M**, **6M**, **1Y**) with horizontal Support Floor (dashed green) and Resistance Ceiling (dashed red) lines, shaded Buy Zone band, and an 8-metric fundamental profile card (P/E, EPS, NAV, Market Cap, Dividend Yield, Paid-up Capital, 52-Week Range, Category).
    - **"What-If" Profit Simulator Slider:** Real-time calculator allowing traders to slide target price up/down and compute simulated gross exit value, 1% DSE brokerage fee, and net pocket cash profit in BDT.
    - **Theme Switcher (Dark / Light):** High-contrast daylight mode for daytime readability and sleek dark slate default with clean card borders and contrast.
-   - **Smooth Catmull-Rom Dynamic Curves & Point Dots:** Replaced snappy straight lines with smooth cubic bezier spline curves, with individual point dots across every session point and dynamic hover/click telemetry.
+   - **Continuous Smooth Spline Curves:** Pure continuous cubic bezier spline curves without static point dots, paired with continuous pixel-level hover crosshairs and subtle Buy/Sell execution markers.
    - **DSE Live Market Clock & Countdown:** Topbar live telemetry showing session state (`🟢 DSE OPEN` vs `🔴 DSE CLOSED`) with real-time countdown to next session opening or market close.
 
-9. **Master Automation Controller & Dedicated System Control Page (`#system-control`):**
-   - **Dedicated Navigation Page:** Moved master automation switch, dual ingestion mode selector, polling interval pills, and StockNow CDP telemetry into its own dedicated page on the left navigation rail, keeping `#overview` clean with a quick status pill.
+9. **Master Automation Controller & Ingestion Pipeline:**
    - **Dual Ingestion Mode Architecture:**
-     - **Method A (`BACKGROUND_POLLING`):** Lightweight periodic data polling (configurable 30s to 300s, default 120s) with interval pill selector (`30s`, `60s`, `120s`, `180s`). Ideal for low-resource VPS, battery saving, or stealth operation.
-     - **Method B (`SIDE_BY_SIDE_LIVE`):** Headed, persistent Playwright browser context running alongside the operator on desktop, allowing live DOM/CDP telemetry inspection and immediate event triggers.
-   - **Hermes Chat Orchestration:** Operator can command in chat (*"Switch to side by side mode"*, *"Background polling 60s koro"*, *"Turn off buy sell automation"*), with automatic state checkpointing for 1-click `/rollback`.
+     - **Method A (`BACKGROUND_POLLING`):** Lightweight periodic data polling (configurable 30s to 300s, default 120s) with interval pill selector and range slider. Ideal for low-resource VPS, battery saving, or stealth operation.
+     - **Method B (`ONSCREEN_LIVE`):** Headed, persistent Playwright browser context running alongside the operator on desktop (Onscreen Live Mode), allowing live DOM/CDP telemetry inspection and immediate event triggers.
+   - **Hermes Chat Orchestration:** Operator can command in chat (*"Switch to onscreen live mode"*, *"Background polling 60s koro"*, *"Turn off buy sell automation"*), with automatic state checkpointing for 1-click `/rollback`.
 
-10. **Multi-View Navigation & Dedicated Settings Page:**
-    - **5-View Left Navigation Rail:** True view-switching via Left Nav Rail across 5 distinct views, eliminating the giant vertical scroll:
+10. **Unified Continuous Dashboard, ScrollSpy & Dedicated Settings Page:**
+    - **4 Scrollable Dashboard Sections + 5th Separate Settings View:**
       1. `#overview`: Financial telemetry, rebased Watchlist pulse curve, 3-Bucket rolling capital, and Decision stream.
       2. `#watchlist`: Multi-tier company watchlist, Position inspector with maturity lots, DSE Market Map Treemap with Finviz heat scale, and Top Sectors by Gainer chart.
       3. `#rules`: Strategy Rules, "What-If" profit simulator, custom buy cap form, sequential profit tiers (+1.5%, +3.5%, +6.0%), 50/50 pullback setting, and Canary Theses observation board.
       4. `#ledger`: Accounting periods (Overall, Today, Week, Month, Year) and full FIFO tax lot execution table.
-      5. `#settings`: Master Buy/Sell automation switch, Method A vs Method B ingestion pipeline, polling cadence pills, Hermes AI brain model selector & 3-tier fallback chain display, fee structure & settlement rules, and appearance preferences.
+      5. `#settings`: Dedicated page for Master Buy/Sell automation switch, Method A vs Method B ingestion pipeline, polling cadence slider, Hermes AI brain model selector & 3-tier fallback chain display, fee structure & settlement rules, and API credentials.
+    - **ScrollSpy Left Nav Rail Sync:** Seamlessly tracks operator scrolling across `#overview`, `#watchlist`, `#rules`, and `#ledger` in the main workspace and dynamically highlights the active section icon.
+    - **Sticky Top Navbar:** Locked mission-critical navigation with live DSE market clock & countdown, two-way ingestion mode toggle, master engine controls, and theme switcher, allowing all dashboard sections to slide cleanly underneath.
     - **Fixed Viewport Lock Architecture:** Locked outer viewport (`height: 100vh; overflow: hidden;`) with middle `.workspace` scrolling independently (`height: 100vh; overflow-y: auto;`). Left nav rail and right Hermes assistant stay 100% viewport-fixed at all times, never scrolling off screen.
     - **Continuous Smooth Curves Without Point Dots:** Pure continuous cubic bezier curves without static session dots, paired with continuous pixel-level hover interpolation so crosshairs glide smoothly with pixel precision.
     - **Rebuilt Hermes `[Changes]` Tab as System & Rule Diff Review:** Visual GitHub/IDE-style structured Before vs. After diff cards (`.diff-card`) featuring red deleted lines (`[-] Previous`) and green added lines (`[+] Updated`), actor badges, timestamps, and 1-click `/rollback`.

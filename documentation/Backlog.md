@@ -74,29 +74,17 @@
   - **Individual Company Deep-Trend View (Modal):** Multi-timeframe trend curves (**7D**, **1M**, **6M**, **1Y**) with horizontal Support Floor (green dashed) & Resistance Ceiling (red dashed) lines, shaded Buy Zone band, and an 8-card fundamental company profile (P/E, EPS, NAV, Market Cap, Dividend Yield, Paid-up Capital, 52-Week Range, Category).
   - **"What-If" Profit Simulator Slider:** Real-time calculator allowing traders to slide target price up/down and compute simulated gross exit value, 1% DSE brokerage fee, and net pocket cash profit in BDT.
   - **Theme Switcher (Dark / Light):** High-contrast daylight mode for daytime readability and sleek dark slate default with clean card borders and contrast.
-  - **Smooth Catmull-Rom Dynamic Curves & Point Dots:** Replaced snappy straight lines with smooth cubic bezier spline curves, with individual point dots across every session point and dynamic hover/click telemetry.
-  - **Dedicated System Controller Page (`#system-control`):** Moved master automation switch, dual ingestion mode selector, polling interval pills, and StockNow CDP telemetry into its own dedicated page on the left navigation rail.
-  - **Hermes IDE-Style Resizable & Collapsible Sidebar (VS Code / Orca style):** Draggable splitter handle (`col-resize`) for fluid width resizing (280px–650px), minimize toggle with floating reopen pill (`✦ Hermes`), and 4 IDE panes:
-    - `[💬 Chat]`: Active conversation stream and commands.
-    - `[📂 Topics]`: Multi-conversation thread manager (`+ New Conversation`) acting as a human topic/strategy separator while preserving unified cross-thread skills and memory.
-    - `[⚡ Changes]`: Antigravity-style file modifications drawer (`/api/system/changes`) with status chips (`[M]`, `[A]`, `[D]`) and recent state checkpoints with 1-click `/rollback`.
-    - `[🧠 Skills]`: Procedural skills (`SKILL_*.md`) and Layer 3 durable company facts inspector.
-  - **High-Performance Snapshot Engine:** Precomputed $O(N)$ calendar date slices in `portfolio.py`, eliminating the 145,000+ date increment loop and resolving page load delays.
-  - **DSE Live Market Clock & Countdown:** Topbar live telemetry showing session state (`🟢 DSE OPEN` vs `🔴 DSE CLOSED`) with real-time countdown to next session opening or market close.
-  - **Master Automation Controller & Dual Ingestion Mode (`Background Polling` vs `Side-by-Side Live`):**
+  - **Continuous Smooth Spline Curves:** Pure continuous cubic bezier spline curves without static point dots, paired with continuous pixel-level hover crosshairs and subtle Buy/Sell execution markers.
+  - **Master Automation Controller & Dual Ingestion Mode (`Background Polling` vs `Onscreen Live Mode`):**
     - Database schema & persistence: `automation_enabled`, `ingestion_mode`, `polling_interval_sec` in `PortfolioState`.
     - API endpoint: `POST /api/automation/config` with real-time SSE broadcast.
-    - Dedicated Cockpit UI Page & Status Link: Master toggle (`AUTOMATION ON` vs `AUTOMATION OFF / PAUSED`), Dual Ingestion Mode segmented toggle (Method A: Background Polling vs Method B: Side-by-Side Live), polling interval pill selector (`30s`, `60s`, `120s`, `180s`), and live adapter status badge.
-    - Hermes agentic tool `set_automation_config` with `/rollback` checkpointing and natural Bangla/Banglish command support (*"Switch to side by side mode"*, *"Background polling 60s koro"*, *"Turn off buy sell automation"*).
-  - **Multi-View Navigation & Dedicated Settings Page:**
-    - True view-switching via Left Nav Rail across 5 distinct views (`#overview`, `#watchlist`, `#rules`, `#ledger`, `#settings`), eliminating the giant vertical scroll:
-      1. **Overview (`#overview`):** Telemetry cards, Watchlist pulse rebased chart, 3-Bucket rolling capital, and Decision stream.
-      2. **Watchlist & Market Map (`#watchlist`):** 3-Tier company watchlist table, Position inspector with maturity lots, DSE Market Map Treemap with Finviz heat scale, and Top Sectors by Gainer chart.
-      3. **Strategy Rules & Allocation (`#rules`):** "What-If" profit simulator, custom buy cap form, sequential profit tiers (+1.5%, +3.5%, +6.0%), 50/50 pullback rules, and Canary Theses observation board.
-      4. **Trade Ledger (`#ledger`):** Accounting periods (Overall, Today, Week, Month, Year) and full FIFO tax lot execution table.
-      5. **Dedicated Settings Page (`#settings`):** Master Buy/Sell automation switch, Method A vs Method B ingestion pipeline, polling cadence pills, Hermes AI brain model selector & 3-tier fallback chain display, fee structure & settlement rules, and appearance preferences.
-  - **Fixed Viewport Lock Architecture (Sticky Hermes & Nav Rail):**
-    - Locked outer viewport (`height: 100vh; overflow: hidden;`) with middle `.workspace` scrolling independently (`height: 100vh; overflow-y: auto;`). Left nav rail and right Hermes assistant stay 100% viewport-fixed at all times, never scrolling off screen.
+    - Two-way segmented slider switch in the sticky topbar and dedicated settings page: Master toggle (`AUTOMATION ON` vs `AUTOMATION OFF / PAUSED`), Dual Ingestion Mode toggle (Method A: Background Polling vs Method B: Onscreen Live Mode), and polling cadence slider.
+    - Hermes agentic tool `set_automation_config` with `/rollback` checkpointing and natural Bangla/Banglish command support (*"Switch to onscreen live mode"*, *"Background polling 60s koro"*, *"Turn off buy sell automation"*).
+  - **Unified Continuous Dashboard, ScrollSpy & Dedicated Settings Page:**
+    - 4 scrollable dashboard sections on the single main page (`#overview`, `#watchlist`, `#rules`, `#ledger`) with ScrollSpy left nav sync, plus 5th dedicated separate `#settings` page.
+    - **Sticky Top Navbar:** Locked mission-critical navigation with live DSE market clock & countdown, two-way ingestion mode toggle, master engine controls, and theme switcher, allowing all dashboard sections to slide cleanly underneath.
+    - **Fixed Viewport Lock Architecture (Sticky Hermes & Nav Rail):**
+      - Locked outer viewport (`height: 100vh; overflow: hidden;`) with middle `.workspace` scrolling independently (`height: 100vh; overflow-y: auto;`). Left nav rail and right Hermes assistant stay 100% viewport-fixed at all times, never scrolling off screen.
   - **Continuous Smooth Curves Without Point Dots:**
     - Eliminated static dots along the price curve in `renderMainChart()` and `renderDeepTrendChart()`.
     - Implemented continuous pixel-level hover interpolation so crosshairs glide smoothly with pixel precision without discrete session hopping.

@@ -148,7 +148,7 @@ def test_cockpit_smoke_and_assets(client):
     assert "id=\"operator-modal\"" in html
     assert "id=\"login-gate-overlay\"" in html
     assert "id=\"api-keys-card\"" in html
-    assert "id=\"hermes-bottom-model-btn\"" in html
+    assert "id=\"hermes-model-trigger\"" in html or "id=\"hermes-bottom-model-btn\"" in html
     assert client.get("/assets/app.js").status_code == 200
     assert client.get("/assets/styles.css").status_code == 200
     assert client.get("/assets/favicon.svg").status_code == 200

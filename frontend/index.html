@@ -36,12 +36,21 @@
             <strong id="market-status-text">DSE CLOSED</strong>
             <span class="clock-countdown" id="market-countdown-text">Next: 10:00 AM</span>
           </div>
+          <div class="header-mode-slider" id="header-mode-slider" role="radiogroup" aria-label="Ingestion Mode">
+            <button type="button" class="hdr-slider-btn active" id="hdr-mode-polling" data-mode="BACKGROUND_POLLING" title="Method A: Periodic background polling">
+              Background Polling
+            </button>
+            <button type="button" class="hdr-slider-btn" id="hdr-mode-live" data-mode="ONSCREEN_LIVE" title="Method B: Onscreen Live Mode (Playwright Headed CDP Attached)">
+              Onscreen Live Mode
+            </button>
+          </div>
+          <div class="engine-controls">
+            <button class="button secondary" id="pause-button" type="button" disabled>Pause engine</button>
+            <button class="button primary" id="run-cycle" type="button" disabled><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6V4Z"/></svg><span id="run-label">Run automation cycle</span></button>
+          </div>
           <button class="theme-toggle-btn" id="theme-toggle-btn" type="button" title="Switch Theme (Dark / Light)">
             <span class="theme-icon">◐</span> <span id="theme-name">Dark</span>
           </button>
-          <span class="stream-badge" title="Live reactive Server-Sent Events stream connected"><span class="status-dot live-dot" id="live-dot"></span> REALTIME SSE</span>
-          <span class="demo-badge"><span class="status-dot"></span> DEMO / PAPER</span>
-          <button class="text-button" id="token-button" type="button" title="Set an optional private API token for this browser session">API token</button>
         </div>
       </header>
 
@@ -52,17 +61,6 @@
         <section id="overview" class="section-anchor">
           <div class="page-heading">
             <div><div class="eyebrow breadcrumb">WORKSPACE <span>/</span> BANGLADESH EQUITIES</div><h1>Portfolio overview<span class="heading-dot">.</span></h1><p class="muted">A clear view. A measured next move.</p></div>
-            <div class="header-action-group">
-              <div class="header-mode-slider" id="header-mode-slider" role="radiogroup" aria-label="Ingestion Mode">
-                <button type="button" class="hdr-slider-btn active" id="hdr-mode-polling" data-mode="BACKGROUND_POLLING" title="Method A: Periodic background polling">
-                  Background Polling
-                </button>
-                <button type="button" class="hdr-slider-btn" id="hdr-mode-live" data-mode="ONSCREEN_LIVE" title="Method B: Onscreen Live Mode (Playwright Headed CDP Attached)">
-                  Onscreen Live Mode
-                </button>
-              </div>
-              <div class="engine-controls"><button class="button secondary" id="pause-button" type="button" disabled>Pause engine</button><button class="button primary" id="run-cycle" type="button" disabled><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6V4Z"/></svg><span id="run-label">Run automation cycle</span></button></div>
-            </div>
           </div>
 
           <div class="session-bar">
@@ -505,6 +503,14 @@
               <div class="adp-row"><span>Browser Engine:</span><strong>Chromium (Playwright CDP)</strong></div>
               <div class="adp-row"><span>Secret Isolation:</span><strong class="positive">✓ Zero-Secret-Read Guard Active</strong></div>
               <div class="adp-row"><span>Rollback Support:</span><strong class="positive">✓ SQLite State Checkpointing</strong></div>
+              <div class="adp-row">
+                <span>Telemetry Status:</span>
+                <div class="settings-telemetry-badges">
+                  <span class="stream-badge" id="sse-status-badge" title="Live reactive Server-Sent Events stream connected"><span class="status-dot live-dot" id="live-dot"></span> REALTIME SSE</span>
+                  <span class="demo-badge" id="source-badge"><span class="status-dot"></span> DEMO / PAPER</span>
+                  <button class="text-button" id="token-button" type="button" title="Set an optional private API token for this browser session">API token</button>
+                </div>
+              </div>
             </div>
           </article>
         </div>
@@ -513,7 +519,7 @@
     </main>
 
     <aside class="chat-panel" id="hermes-sidebar" aria-label="Hermes portfolio copilot">
-      <div class="hermes-resize-handle" id="hermes-resize-handle" title="Drag to resize Hermes sidebar"></div>
+      <div class="hermes-resize-handle" id="hermes-resizer" title="Drag to resize Hermes sidebar"></div>
       <header class="chat-header">
         <div class="chat-header-title">
           <div class="copilot-symbol" aria-hidden="true"><svg viewBox="0 0 30 30"><path d="M15 3v24M3 15h24M6.5 6.5l17 17m0-17-17 17"/><circle cx="15" cy="15" r="5"/></svg></div>
@@ -559,19 +565,18 @@
           </div>
           <div class="provider-status">
             <div class="model-picker-wrap bottom-model-picker">
-              <button type="button" class="bottom-model-btn" id="hermes-bottom-model-btn" title="Switch AI Brain Model (/model)">
+              <button type="button" class="bottom-model-btn" id="hermes-model-trigger" title="Switch AI Brain Model (/model)">
                 <span class="status-dot-mini teal">●</span>
                 <span class="muted-label" id="provider-prefix-label">OPENROUTER ·</span>
                 <strong id="hermes-active-model-name">xiaomi/mimo-v2-flash</strong>
                 <span class="badge-caret">▾</span>
               </button>
-              <div class="model-picker-dropdown bottom-dropdown" id="model-picker-dropdown" hidden>
-                <div class="dropdown-header">HERMES AI BRAIN</div>
+              <div class="model-dropup-menu" id="model-dropup-menu" hidden>
+                <div class="dropup-header">HERMES AI BRAIN</div>
                 <div class="dropdown-list" id="model-dropdown-list"></div>
               </div>
             </div>
             <span class="bot-state-pill" id="bot-orchestrator-label">AGENTIC</span>
-            <span id="chat-provider" class="provider-info-label" style="display:none;">LOCAL AGENTIC ORCHESTRATOR</span>
           </div>
           <form id="chat-form" class="chat-form">
             <label for="chat-input" class="sr-only">Message Hermes</label>
