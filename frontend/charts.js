@@ -127,8 +127,10 @@ function renderMainChart() {
       x: left - 8,
       y: yPos + 3,
       "text-anchor": "end",
-      fill: "var(--muted, #63768b)",
-      "font-size": 9,
+      fill: "var(--muted)",
+      "font-size": 11,
+      "font-weight": 550,
+      class: "chart-axis-label",
     });
     lbl.textContent = `৳${val.toFixed(1)}`;
     svg.append(lbl);
@@ -212,8 +214,10 @@ function renderMainChart() {
       x: xPos,
       y: height - 5,
       "text-anchor": idx === 0 ? "start" : idx === points.length - 1 ? "end" : "middle",
-      fill: "var(--muted, #63768b)",
-      "font-size": 9,
+      fill: "var(--muted)",
+      "font-size": 11,
+      "font-weight": 550,
+      class: "chart-axis-label",
     });
     dateLbl.textContent = sessionDate(points[idx].date, true);
     svg.append(dateLbl);
@@ -1015,7 +1019,7 @@ function renderDeepTrendChart(company, timeframe = "7d") {
     const val = minVal + (range * step) / 4;
     const yPos = y(val);
     svg.append(svgElement("line", { x1: left, y1: yPos, x2: width - right, y2: yPos, stroke: "var(--chart-grid)", "stroke-width": 1, "stroke-dasharray": "2 3" }));
-    const lbl = svgElement("text", { x: left - 8, y: yPos + 3, "text-anchor": "end", fill: "var(--muted)", "font-size": 9.5 });
+    const lbl = svgElement("text", { x: left - 8, y: yPos + 3, "text-anchor": "end", fill: "var(--muted)", "font-size": 11, "font-weight": 550, class: "chart-axis-label" });
     lbl.textContent = `৳${val.toFixed(1)}`;
     svg.append(lbl);
   }
@@ -1085,7 +1089,9 @@ function renderDeepTrendChart(company, timeframe = "7d") {
       y: height - 8,
       "text-anchor": idx === 0 ? "start" : idx === series.length - 1 ? "end" : "middle",
       fill: "var(--muted)",
-      "font-size": 9.5,
+      "font-size": 11,
+      "font-weight": 550,
+      class: "chart-axis-label",
     });
     dateLbl.textContent = sessionDate(series[idx].date, true);
     svg.append(dateLbl);
