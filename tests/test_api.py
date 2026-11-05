@@ -350,6 +350,18 @@ def test_hermes_models_and_switcher(client):
     assert "active_model" in models_res
     assert len(models_res["models"]) >= 5
     assert len(models_res["fallback_chain"]) == 3
+    # Active model must always be in models catalog
+    model_ids = [m["id"] for m in models_res["models"]]
+    assert models_res["active_model"] in model_ids
+
+    # Switch to an unlisted custom model to verify it is auto-included in catalog
+    custom_model = "custom/custom-quant-model-v9"
+    switch_custom = client.post("/api/hermes/model", json={"model": custom_model}).json()
+    assert switch_custom["status"] == "ok"
+    assert switch_custom["active_model"] == custom_model
+    catalog_custom = client.get("/api/hermes/models").json()
+    assert catalog_custom["active_model"] == custom_model
+    assert any(m["id"] == custom_model for m in catalog_custom["models"])
 
     # Switch model via API
     switch_res = client.post("/api/hermes/model", json={"model": "deepseek/deepseek-chat"}).json()

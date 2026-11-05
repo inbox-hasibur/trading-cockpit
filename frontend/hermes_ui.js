@@ -57,7 +57,7 @@ function formatChatMarkdown(text) {
   // Bold **bold**
   safe = safe.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
 
-  // Bullet items (* item, - item, • item)
+  // Bullet items (* item, - item, • item) and Headings (###, ##, #)
   const lines = safe.split("\n");
   const formatted = [];
   let inList = false;
@@ -74,11 +74,20 @@ function formatChatMarkdown(text) {
         formatted.push("</ul>");
         inList = false;
       }
-      formatted.push(line);
+      if (/^#{1,3}\s+/.test(trimmed)) {
+        const headingText = trimmed.replace(/^#{1,3}\s+/, "");
+        formatted.push(`<div class="chat-h">${headingText}</div>`);
+      } else {
+        formatted.push(line);
+      }
     }
   }
   if (inList) formatted.push("</ul>");
-  return formatted.join("<br>").replace(/<br><ul/g, "<ul").replace(/<\/ul><br>/g, "</ul>");
+  return formatted.join("<br>")
+    .replace(/<br><ul/g, "<ul")
+    .replace(/<\/ul><br>/g, "</ul>")
+    .replace(/<br><div class="chat-h">/g, '<div class="chat-h">')
+    .replace(/<\/div><br>/g, "</div>");
 }
 
 function addMessage(role, content, provider = null) {
@@ -449,8 +458,6 @@ async function loadHermesModels() {
       dropdownList.querySelectorAll(".model-dropup-item").forEach((btn) => {
         btn.addEventListener("click", () => {
           const modId = btn.dataset.model;
-          const short = modId.split("/").pop();
-          setText("hermes-active-model-name", short);
           const drop = $("model-dropup-menu") || $("model-picker-dropdown");
           if (drop) drop.hidden = true;
           switchHermesModel(modId);
@@ -461,8 +468,17 @@ async function loadHermesModels() {
     // Sync Settings select
     const select = $("settings-model-select");
     if (select) {
+      select.innerHTML = models.map((m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.name)}</option>`).join("");
+      if (active && !Array.from(select.options).some((opt) => opt.value === active)) {
+        const opt = document.createElement("option");
+        opt.value = active;
+        opt.textContent = `${active} (Active)`;
+        select.prepend(opt);
+      }
       select.value = active;
     }
+    const errHint = $("settings-model-hint") || $("settings-model-error");
+    if (errHint) errHint.hidden = true;
 
     // Update settings fallback chain display
     const tier1Label = $("tier1-label");
@@ -475,6 +491,15 @@ async function loadHermesModels() {
     }
   } catch (err) {
     console.warn("Failed to load Hermes models:", err);
+    const select = $("settings-model-select");
+    if (select) {
+      select.innerHTML = '<option disabled selected>Models unavailable</option>';
+    }
+    const errHint = $("settings-model-hint") || $("settings-model-error");
+    if (errHint) {
+      errHint.textContent = "Unable to load model list. Please check connection.";
+      errHint.hidden = false;
+    }
   }
 }
 
@@ -482,12 +507,43 @@ async function switchHermesModel(modelId) {
   if (!modelId || state.busy) return;
   state.busy = true;
   updateControls();
+  // Immediately synchronize both controls
+  const short = modelId.split("/").pop();
+  setText("hermes-active-model-name", short);
+  const select = $("settings-model-select");
+  if (select && select.value !== modelId) {
+    if (!Array.from(select.options).some((opt) => opt.value === modelId)) {
+      const opt = document.createElement("option");
+      opt.value = modelId;
+      opt.textContent = `${modelId} (Active)`;
+      select.prepend(opt);
+    }
+    select.value = modelId;
+  }
+  const tier1Label = $("tier1-label");
+  if (tier1Label) tier1Label.textContent = modelId;
+  const dropdownList = $("model-dropdown-list");
+  if (dropdownList) {
+    dropdownList.querySelectorAll(".model-dropup-item").forEach((btn) => {
+      const isCur = btn.dataset.model === modelId;
+      btn.classList.toggle("is-active", isCur);
+      const check = btn.querySelector(".model-dropup-check");
+      if (isCur && !check) {
+        const sp = document.createElement("span");
+        sp.className = "model-dropup-check";
+        sp.textContent = "✓";
+        btn.append(sp);
+      } else if (!isCur && check) {
+        check.remove();
+      }
+    });
+  }
   try {
     const res = await api("/api/hermes/model", {
       method: "POST",
       body: { model: modelId },
     });
-    notify(`🧠 AI Brain switched to ${modelId}`);
+    notify(`AI Brain switched to ${modelId}`);
     await refresh();
     await loadHermesModels();
     await loadSystemChanges();

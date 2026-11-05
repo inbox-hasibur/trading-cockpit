@@ -144,6 +144,10 @@ def build_hermes_router(database: Database, settings: Settings, chat: ChatServic
             {"id": "google/gemini-3.7-flash", "name": "Google Gemini 3.7 Flash (Hybrid Reasoning)", "tier": 2},
             {"id": "local-quant-brain", "name": "Local Deterministic Quant Brain ($0 Offline)", "tier": 3},
         ]
+        if active and not any(m["id"] == active for m in available):
+            available.insert(0, {"id": active, "name": f"{active} (Active)", "tier": 1})
+        if settings.openrouter_model and not any(m["id"] == settings.openrouter_model for m in available):
+            available.insert(1, {"id": settings.openrouter_model, "name": f"{settings.openrouter_model} (Configured)", "tier": 1})
         has_gemini = bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or getattr(settings, "gemini_api_key", ""))
         is_direct_gemini = active.startswith("google/") or active.startswith("gemini")
         fallback_chain = [

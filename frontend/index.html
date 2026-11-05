@@ -310,13 +310,13 @@
               </div>
               <div class="toggle-control-side">
                 <label class="ios-switch" title="Toggle Master Buy/Sell Automation">
-                  <input type="checkbox" id="master-automation-toggle-input" checked>
+                  <input type="checkbox" id="master-automation-toggle-input" checked style="position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0;">
                   <span class="ios-slider"></span>
                 </label>
                 <span class="toggle-status-plain is-on" id="master-automation-status-text">ON</span>
               </div>
               <!-- Keep legacy button for test compatibility -->
-              <button class="automation-master-switch is-active" id="master-automation-toggle" type="button" style="display:none;" title="Toggle Master Buy/Sell Automation ON/OFF"></button>
+              <button class="automation-master-switch is-active" id="master-automation-toggle" type="button" style="display:none !important; position:absolute; width:0; height:0; opacity:0; pointer-events:none;" hidden tabindex="-1" title="Toggle Master Buy/Sell Automation ON/OFF"></button>
             </div>
 
             <div class="settings-subgroup" style="margin-top: 20px;">
@@ -457,17 +457,8 @@
               <label class="settings-sub-label" for="settings-model-select">PRIMARY REASONING MODEL (TIER 1)</label>
               <select id="settings-model-select" class="settings-select" style="width: 100%; max-width: 100%; margin-top: 6px;">
                 <option value="xiaomi/mimo-v2.6-pro">Xiaomi MiMo-v2.6-Pro (Primary Brain)</option>
-                <option value="xiaomi/mimo-v2.6-flash">Xiaomi MiMo-v2.6-Flash (Ultra Fast)</option>
-                <option value="deepseek/deepseek-chat">DeepSeek V3 / 4.1 Flash (Deep Reasoning)</option>
-                <option value="deepseek/deepseek-r1">DeepSeek R1 (Reasoning / Math)</option>
-                <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B (High Precision)</option>
-                <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet (Elite Quant)</option>
-                <option value="google/gemini-3.1-flash-lite">Google Gemini 3.1 Flash-Lite (Fastest ~1.5s)</option>
-                <option value="google/gemini-3.5-flash">Google Gemini 3.5 Flash (Balanced Analysis)</option>
-                <option value="google/gemini-3.8-flash">Google Gemini 3.8 Flash (Latest Preview)</option>
-                <option value="google/gemini-3.7-flash">Google Gemini 3.7 Flash (Hybrid Reasoning)</option>
-                <option value="local-quant-brain">Local Deterministic Quant Brain ($0 Offline)</option>
               </select>
+              <div id="settings-model-hint" class="muted small" style="margin-top: 4px;" hidden></div>
             </div>
 
             <div class="settings-subgroup" style="margin-top: 14px;">

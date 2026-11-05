@@ -2341,3 +2341,34 @@ body.is-resizing-hermes .app-shell {
   color: #b91c1c !important;
   font-weight: 700 !important;
 }
+
+[data-theme="light"] .chat-h {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 10px 0 4px 0;
+  color: var(--text);
+}
+
+[data-theme="light"] .chat-bullet-list {
+  margin: 6px 0 10px 0;
+  padding-left: 18px;
+  list-style-type: disc;
+}
+
+[data-theme="light"] .chat-bullet-list li {
+  margin-bottom: 4px;
+  line-height: 1.45;
+}
+
+[data-theme="light"] #master-automation-toggle {
+  display: none !important;
+  position: absolute !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+}

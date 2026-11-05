@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 17:46:12 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-05 18:14:01 UTC**.
 
 ---
 
@@ -8,18 +8,18 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 42 | 10,002 | Python Core Kernel, Engine & Hermes Agent |
-| `.css` | 2 | 6,768 | Custom Dark / Light / Terminal Design System |
-| `.js` | 3 | 3,287 | Vanilla ES6+ Reactive Terminal Controller |
+| `.py` | 42 | 10,018 | Python Core Kernel, Engine & Hermes Agent |
+| `.css` | 2 | 6,826 | Custom Dark / Light / Terminal Design System |
+| `.js` | 3 | 3,343 | Vanilla ES6+ Reactive Terminal Controller |
 | `.md` | 10 | 2,036 | Architecture & Strategy Documentation |
-| `.html` | 1 | 853 | Single Page Application DOM Structure |
+| `.html` | 1 | 844 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
 | `.cursorignore` | 1 | 12 | Configuration / Asset |
 | `.opencodeignore` | 1 | 12 | Configuration / Asset |
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **65** | **23,004** | *Entire Humming Bird Repository* |
+| **TOTAL** | **65** | **23,125** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -739,15 +739,15 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `build_hermes_router` | `L26–L205` | `(database: Database, settings: Setti...)` | `APIRouter` | — | `APIRouter` |
+| `build_hermes_router` | `L26–L209` | `(database: Database, settings: Setti...)` | `APIRouter` | — | `APIRouter` |
 | `chat_route` | `L30–L34` | `(body: ChatRequest...)` | — | — | `get`, `post`, `publish`, `respond` |
 | `list_conversations` | `L37–L41` | `(...)` | — | — | `HermesMemory`, `get`, `list_threads`, `read` |
 | `create_conversation` | `L44–L55` | `(body: CreateThreadRequest...)` | — | — | `HermesMemory`, `get_or_create_thread`, `post`, `write` |
 | `conversation_messages` | `L58–L62` | `(conversation_id: str...)` | — | — | `HermesMemory`, `get`, `get_thread_messages`, `read` |
 | `system_changes` | `L65–L127` | `(...)` | — | — | `Path`, `append`, `desc`, `get` |
-| `hermes_models` | `L130–L158` | `(...)` | — | — | `bool`, `get`, `getattr`, `getenv` |
-| `set_hermes_model` | `L161–L194` | `(payload: dict...)` | — | — | `HTTPException`, `create_checkpoint`, `get`, `getattr` |
-| `rollback_checkpoint` | `L197–L203` | `(...)` | — | — | `portfolio_state`, `post`, `publish`, `rollback_last` |
+| `hermes_models` | `L130–L162` | `(...)` | — | — | `any`, `bool`, `get`, `getattr` |
+| `set_hermes_model` | `L165–L198` | `(payload: dict...)` | — | — | `HTTPException`, `create_checkpoint`, `get`, `getattr` |
+| `rollback_checkpoint` | `L201–L207` | `(...)` | — | — | `portfolio_state`, `post`, `publish`, `rollback_last` |
 
 
 ---
@@ -879,8 +879,8 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 | `GET` | `/api/hermes/conversations/{conversation_id}/messages` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L58) | `L58` | `conversation_messages()` | Route endpoint |
 | `GET` | `/api/system/changes` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L65) | `L65` | `system_changes()` | Route endpoint |
 | `GET` | `/api/hermes/models` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L130) | `L130` | `hermes_models()` | Route endpoint |
-| `POST` | `/api/hermes/model` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L161) | `L161` | `set_hermes_model()` | Route endpoint |
-| `POST` | `/api/hermes/rollback` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L197) | `L197` | `rollback_checkpoint()` | Route endpoint |
+| `POST` | `/api/hermes/model` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L165) | `L165` | `set_hermes_model()` | Route endpoint |
+| `POST` | `/api/hermes/rollback` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L201) | `L201` | `rollback_checkpoint()` | Route endpoint |
 | `POST` | `/api/auth/login` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L44) | `L44` | `login()` | Route endpoint |
 | `POST` | `/api/auth/logout` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L61) | `L61` | `logout()` | Route endpoint |
 | `GET` | `/api/auth/session` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L68) | `L68` | `auth_session()` | Route endpoint |
@@ -944,7 +944,7 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 | `.engine-controls` | [`frontend/styles.css`](/frontend/styles.css#L368) | `L368` | `flex` | — | — | — | — |
 | `.session-bar` | [`frontend/styles.css`](/frontend/styles.css#L404) | `L404` | `flex` | — | — | `#0e161f` | `wrap` |
 | `.metric-card` | [`frontend/styles.css`](/frontend/styles.css#L456) | `L456` | — | — | — | `var(--panel)` | — |
-| `.skills-drawer` | [`frontend/styles.css`](/frontend/styles.css#L1926) | `L1926` | — | — | — | `#0c141d` | — |
+| `.skills-drawer` | [`frontend/styles.css`](/frontend/styles.css#L1933) | `L1933` | — | — | — | `#0c141d` | — |
 | `.session-bar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L53) | `L53` | — | — | — | `#ffffff` | — |
 | `.metric-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L79) | `L79` | — | — | — | `#ffffff` | — |
 | `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L440) | `L440` | — | — | — | `#f8fafc !important` | — |
@@ -964,7 +964,7 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 
 ### Key DOM Identifiers (`frontend/index.html`)
 
-Identified **233** distinct element IDs in the UI shell. Key controller anchors:
+Identified **234** distinct element IDs in the UI shell. Key controller anchors:
 
 `#overview`, `#watchlist`, `#market-map`, `#master-automation-toggle`, `#mode-btn-polling`, `#mode-btn-live`, `#polling-interval-pills`, `#main-chart`, `#bucket-stack`, `#what-if-slider`, `#theme-toggle-btn`, `#topbar-clock-widget`
 
@@ -973,8 +973,8 @@ Identified **233** distinct element IDs in the UI shell. Key controller anchors:
 
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
-| `styles.css` | 4425 | Core design tokens, layout & widgets |
-| `theme_light_hermes.css` | 2343 | Daylight overrides & Hermes IDE sidebar |
+| `styles.css` | 4452 | Core design tokens, layout & widgets |
+| `theme_light_hermes.css` | 2374 | Daylight overrides & Hermes IDE sidebar |
 
 
 ### Frontend API Contract Invocations (`frontend/*.js`)
@@ -1061,27 +1061,27 @@ Identified **233** distinct element IDs in the UI shell. Key controller anchors:
 | `initCharts()` | `charts.js` | `L1241` | Reactive DOM rendering / event controller |
 | `renderHermesSkills()` | `hermes_ui.js` | `L8` | Reactive DOM rendering / event controller |
 | `formatChatMarkdown()` | `hermes_ui.js` | `L52` | Reactive DOM rendering / event controller |
-| `addMessage()` | `hermes_ui.js` | `L84` | Reactive DOM rendering / event controller |
-| `sendChat()` | `hermes_ui.js` | `L98` | Reactive DOM rendering / event controller |
-| `initHermesSidebar()` | `hermes_ui.js` | `L142` | Reactive DOM rendering / event controller |
-| `loadConversations()` | `hermes_ui.js` | `L286` | Reactive DOM rendering / event controller |
-| `switchConversation()` | `hermes_ui.js` | `L320` | Reactive DOM rendering / event controller |
-| `createNewConversation()` | `hermes_ui.js` | `L349` | Reactive DOM rendering / event controller |
-| `formatRelativeTime()` | `hermes_ui.js` | `L376` | Reactive DOM rendering / event controller |
-| `escapeHtml()` | `hermes_ui.js` | `L390` | Reactive DOM rendering / event controller |
-| `executeRollback()` | `hermes_ui.js` | `L400` | Reactive DOM rendering / event controller |
-| `loadHermesModels()` | `hermes_ui.js` | `L423` | Reactive DOM rendering / event controller |
-| `switchHermesModel()` | `hermes_ui.js` | `L481` | Reactive DOM rendering / event controller |
-| `loadApiKeysSettings()` | `hermes_ui.js` | `L503` | Reactive DOM rendering / event controller |
-| `saveApiKeysSettings()` | `hermes_ui.js` | `L553` | Reactive DOM rendering / event controller |
-| `checkAuthSession()` | `hermes_ui.js` | `L593` | Reactive DOM rendering / event controller |
-| `openOperatorProfile()` | `hermes_ui.js` | `L611` | Reactive DOM rendering / event controller |
-| `closeOperatorProfile()` | `hermes_ui.js` | `L616` | Reactive DOM rendering / event controller |
-| `handleOperatorLogin()` | `hermes_ui.js` | `L621` | Reactive DOM rendering / event controller |
-| `handleOperatorLogout()` | `hermes_ui.js` | `L650` | Reactive DOM rendering / event controller |
-| `initAuthAndSettings()` | `hermes_ui.js` | `L660` | Reactive DOM rendering / event controller |
-| `loadSystemChanges()` | `hermes_ui.js` | `L728` | Reactive DOM rendering / event controller |
-| `initHermesChatListeners()` | `hermes_ui.js` | `L816` | Reactive DOM rendering / event controller |
+| `addMessage()` | `hermes_ui.js` | `L93` | Reactive DOM rendering / event controller |
+| `sendChat()` | `hermes_ui.js` | `L107` | Reactive DOM rendering / event controller |
+| `initHermesSidebar()` | `hermes_ui.js` | `L151` | Reactive DOM rendering / event controller |
+| `loadConversations()` | `hermes_ui.js` | `L295` | Reactive DOM rendering / event controller |
+| `switchConversation()` | `hermes_ui.js` | `L329` | Reactive DOM rendering / event controller |
+| `createNewConversation()` | `hermes_ui.js` | `L358` | Reactive DOM rendering / event controller |
+| `formatRelativeTime()` | `hermes_ui.js` | `L385` | Reactive DOM rendering / event controller |
+| `escapeHtml()` | `hermes_ui.js` | `L399` | Reactive DOM rendering / event controller |
+| `executeRollback()` | `hermes_ui.js` | `L409` | Reactive DOM rendering / event controller |
+| `loadHermesModels()` | `hermes_ui.js` | `L432` | Reactive DOM rendering / event controller |
+| `switchHermesModel()` | `hermes_ui.js` | `L506` | Reactive DOM rendering / event controller |
+| `loadApiKeysSettings()` | `hermes_ui.js` | `L559` | Reactive DOM rendering / event controller |
+| `saveApiKeysSettings()` | `hermes_ui.js` | `L609` | Reactive DOM rendering / event controller |
+| `checkAuthSession()` | `hermes_ui.js` | `L649` | Reactive DOM rendering / event controller |
+| `openOperatorProfile()` | `hermes_ui.js` | `L667` | Reactive DOM rendering / event controller |
+| `closeOperatorProfile()` | `hermes_ui.js` | `L672` | Reactive DOM rendering / event controller |
+| `handleOperatorLogin()` | `hermes_ui.js` | `L677` | Reactive DOM rendering / event controller |
+| `handleOperatorLogout()` | `hermes_ui.js` | `L706` | Reactive DOM rendering / event controller |
+| `initAuthAndSettings()` | `hermes_ui.js` | `L716` | Reactive DOM rendering / event controller |
+| `loadSystemChanges()` | `hermes_ui.js` | `L784` | Reactive DOM rendering / event controller |
+| `initHermesChatListeners()` | `hermes_ui.js` | `L872` | Reactive DOM rendering / event controller |
 
 ---
 
@@ -1142,7 +1142,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/portfolio.py` | `snapshot_from_session` | 273 | 3 | Decompose into sub-functions |
 | `backend/portfolio.py` | `normalized_watchlist` | 20 | 4 | Acceptable; well-scoped logic |
 | `backend/routes_auth_settings.py` | `build_auth_settings_router` | 135 | 2 | Decompose into sub-functions |
-| `backend/routes_hermes.py` | `build_hermes_router` | 180 | 5 | Decompose into sub-functions |
+| `backend/routes_hermes.py` | `build_hermes_router` | 184 | 5 | Decompose into sub-functions |
 | `backend/routes_hermes.py` | `system_changes` | 63 | 5 | Acceptable; well-scoped logic |
 | `backend/routes_stocknow.py` | `build_stocknow_router` | 169 | 4 | Decompose into sub-functions |
 | `backend/routes_stocknow.py` | `post_stocknow_session` | 20 | 4 | Acceptable; well-scoped logic |
@@ -1161,4 +1161,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 23,004 total LOC indexed.
+> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 23,125 total LOC indexed.
