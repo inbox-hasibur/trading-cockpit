@@ -49,6 +49,10 @@ class Settings:
     cockpit_api_token: str = ""
     trusted_hosts: tuple[str, ...] = ("localhost", "127.0.0.1")
 
+    @property
+    def operator_phone(self) -> str:
+        return self.operator_username
+
     def __post_init__(self) -> None:
         if self.trading_mode != "DEMO":
             raise ValueError("Only DEMO mode exists in Sprint 1. Live/StockNow orders are disabled.")

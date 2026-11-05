@@ -62,14 +62,32 @@ class StockNowAdapter:
     async def execute_order(self, *_args, **_kwargs):
         raise LiveIntegrationNotImplemented("No connected virtual or real orders in Sprint 1.")
 
-    def get_adapter_status(self, ingestion_mode: str = "BACKGROUND_POLLING", polling_interval_sec: int = 120) -> dict:
+    def get_adapter_status(
+        self,
+        ingestion_mode: str = "BACKGROUND_POLLING",
+        polling_interval_sec: int = 120,
+        live_client: Any | None = None,
+    ) -> dict:
+        from backend.adapters.stocknow_client import get_safe_profile_dir
+
+        client_status = live_client.get_status() if live_client and hasattr(live_client, "get_status") else {}
+        is_connected = client_status.get("connected", False)
+        session_state = client_status.get("state", "BROWSER_NOT_STARTED")
+        profile_path = client_status.get("profile_path", str(get_safe_profile_dir()))
+        captured_endpoints_count = client_status.get("captured_endpoints_count", 0)
+        last_sync_at = client_status.get("last_sync_at")
+
         return {
             "mode": ingestion_mode,
             "polling_interval_sec": polling_interval_sec,
-            "connected": False,
-            "cdp_attached": False,
+            "connected": is_connected,
+            "cdp_attached": is_connected and ingestion_mode == "ONSCREEN_LIVE",
             "ready": True,
-            "source": "DEMO_SYNTHETIC",
+            "source": "DEMO_SYNTHETIC" if not is_connected else "STOCKNOW_LIVE",
+            "session_state": session_state,
+            "profile_path": profile_path,
+            "captured_endpoints_count": captured_endpoints_count,
+            "last_sync_at": last_sync_at,
             "description": (
                 f"Method A: Periodic background polling every {polling_interval_sec}s."
                 if ingestion_mode == "BACKGROUND_POLLING"

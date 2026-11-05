@@ -19,6 +19,7 @@ from sqlalchemy import select
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from backend.adapters.stocknow_adapter import StockNowAdapter
+from backend.adapters.stocknow_client import StockNowLiveClient
 from backend.chat import ChatRequest, ChatService
 from backend.config import ROOT, VERSION, Settings
 from backend.database import CustomRule, Database, RuleAudit, portfolio_state
@@ -32,6 +33,7 @@ from backend.routes_auth_settings import (
     build_auth_settings_router,
 )
 from backend.routes_hermes import CreateThreadRequest, build_hermes_router
+from backend.routes_stocknow import build_stocknow_router
 from backend.seed import seed_demo
 
 
@@ -84,6 +86,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     trader = AutoTrader(database, settings)
     chat = ChatService(database, settings)
     broadcaster = EventBroadcaster()
+    stocknow_client = StockNowLiveClient(ingestion_mode="BACKGROUND_POLLING")
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
@@ -94,6 +97,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             yield
         finally:
             database.engine.dispose()
+            try:
+                await stocknow_client.close()
+            except Exception:
+                pass
 
     app = FastAPI(
         title="Humming Bird · Paper Trading Cockpit", version=VERSION,
@@ -104,6 +111,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.trader = trader
     app.state.chat = chat
+    app.state.stocknow_client = stocknow_client
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(settings.trusted_hosts))
 
     @app.middleware("http")
@@ -183,7 +191,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             state.ingestion_mode = body.ingestion_mode
             state.polling_interval_sec = body.polling_interval_sec
             adapter = StockNowAdapter()
-            adapter_status = adapter.get_adapter_status(state.ingestion_mode, state.polling_interval_sec)
+            adapter_status = adapter.get_adapter_status(state.ingestion_mode, state.polling_interval_sec, stocknow_client)
             res = {
                 "automation_enabled": state.automation_enabled,
                 "paused": state.paused,
@@ -241,6 +249,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(build_hermes_router(database, settings, chat, broadcaster))
     app.include_router(build_auth_settings_router(database, settings, broadcaster))
+    app.include_router(build_stocknow_router(settings, broadcaster, stocknow_client))
 
     @app.get("/api/stream")
     async def event_stream(request: Request):
