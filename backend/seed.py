@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from backend.config import DHAKA, Settings
@@ -182,19 +182,10 @@ def migrate_real_stocknow_market(session: Session, settings: Settings) -> None:
             else:
                 rule.buy_allocation_pct = decimal(allocation)
 
-        # Reconcile portfolio to exact StockNow #164580 state:
-        # Settled Cash: 91,236.00 BDT
-        # Active Holdings: BANKASIA (294 sh), IBNSINA (16 sh), MATINSPINN (206 sh)
-        # Total open cost basis = 30,056.71 BDT.
-        # Total book assets = 91,236.00 + 30,056.71 = 121,292.71 BDT.
-        target_capital = Decimal("121292.71")
-        existing_real_lots = list(session.scalars(select(TaxLot).where(TaxLot.symbol.in_(["BANKASIA", "IBNSINA", "MATINSPINN"]))))
-
-        already_migrated = (
-            state.initial_capital == target_capital
-            and len(existing_real_lots) == 3
-            and all(lot.remaining_qty > 0 for lot in existing_real_lots)
-        )
+        # Reconcile portfolio to initial StockNow state only on fresh bootstrap
+        has_any_lots = session.scalar(select(func.count(TaxLot.id))) or 0
+        has_any_trades = session.scalar(select(func.count(TradeLog.id))) or 0
+        already_migrated = state.revision > 1 or has_any_lots > 0 or has_any_trades > 0
 
         if not already_migrated:
             session.execute(delete(DecisionLog))
