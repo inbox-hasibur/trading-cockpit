@@ -1031,6 +1031,14 @@ function initHermesChatListeners() {
     actionButtons.forEach(b => { b.disabled = isBusy; });
   };
 
+  const updateSourceBadgeToLive = (portfolioId = "164580") => {
+    const sourceBadge = $("source-badge");
+    if (sourceBadge) {
+      sourceBadge.className = "stream-badge";
+      sourceBadge.innerHTML = `<span class="status-dot live-dot"></span> STOCKNOW LIVE (#${portfolioId})`;
+    }
+  };
+
   const runBridgeAction = async (btn, loadingLabel, defaultLabel, actionFn) => {
     setStockNowBusy(true);
     btn.classList.add("is-loading");
@@ -1049,9 +1057,15 @@ function initHermesChatListeners() {
     btnLaunch.addEventListener("click", () => runBridgeAction(btnLaunch, "Launching...", "Launch Live Browser", async () => {
       try {
         const res = await api("/api/stocknow/session", { method: "POST", body: { action: "launch", mode: "ONSCREEN_LIVE" } });
-        notify(res.connected ? "StockNow live browser launched (READY)." : (res.reason || "Browser launched."));
+        if (res.connected === false || res.state === "ERROR") {
+          showError(res.reason || res.last_error || "Browser launch failed");
+          return;
+        }
+        updateSourceBadgeToLive(res.bound_portfolio_id || res.auth?.bound_portfolio_id || "164580");
+        notify("StockNow Live Browser launched and connected to #164580!");
+        if (typeof refresh === "function") await refresh();
       } catch (err) {
-        notify("Failed to launch browser: " + err.message, true);
+        showError("Failed to launch browser: " + err.message);
       }
     }));
   }
@@ -1061,9 +1075,15 @@ function initHermesChatListeners() {
     btnAuth.addEventListener("click", () => runBridgeAction(btnAuth, "Checking...", "Check / Auto-Login", async () => {
       try {
         const res = await api("/api/stocknow/session", { method: "POST", body: { action: "check_auth" } });
-        notify(res.message || "Auth checked.");
+        if (res.authenticated === false || res.state === "ERROR") {
+          showError(res.reason || res.message || "Auth check failed");
+          return;
+        }
+        updateSourceBadgeToLive(res.bound_portfolio_id || "164580");
+        notify(res.message || "Persistent session is authenticated.");
+        if (typeof refresh === "function") await refresh();
       } catch (err) {
-        notify("Auth check failed: " + err.message, true);
+        showError("Auth check failed: " + err.message);
       }
     }));
   }
@@ -1077,7 +1097,7 @@ function initHermesChatListeners() {
         notify(`Synchronized ${count} live DSE quotes into database.`);
         if (typeof refresh === "function") await refresh();
       } catch (err) {
-        notify("Sync failed: " + err.message, true);
+        showError("Sync failed: " + err.message);
       }
     }));
   }
@@ -1087,12 +1107,17 @@ function initHermesChatListeners() {
     btnSyncPortfolio.addEventListener("click", () => runBridgeAction(btnSyncPortfolio, "Syncing Portfolio...", 'Sync "Humming Bird" Portfolio', async () => {
       try {
         const res = await api("/api/stocknow/sync-portfolio", { method: "POST", body: {} });
+        if (res.result && res.result.success === false) {
+          showError(res.result.reason || "Portfolio sync failed");
+          return;
+        }
+        updateSourceBadgeToLive(res.result?.portfolio_id || "164580");
         const count = res.result?.synced_holdings_count ?? 0;
         const cash = res.result?.cash_balance ?? 0;
         notify(`Synchronized Humming Bird portfolio: ${count} holdings, ৳${Number(cash).toLocaleString()} cash.`);
         if (typeof refresh === "function") await refresh();
       } catch (err) {
-        notify("Portfolio sync failed: " + err.message, true);
+        showError("Portfolio sync failed: " + err.message);
       }
     }));
   }

@@ -79,16 +79,21 @@ def build_stocknow_router(
     async def post_stocknow_session(body: StockNowSessionActionRequest):
         action = body.action
         if action == "launch":
-            res = await stocknow_client.launch(mode=body.mode)
-            phone = getattr(settings, "operator_phone", settings.operator_username)
-            password = settings.operator_password
-            if phone and password and stocknow_client.state == "READY":
+            target_mode = body.mode or "ONSCREEN_LIVE"
+            res = await stocknow_client.launch(mode=target_mode)
+            phone = getattr(settings, "operator_phone", None) or settings.operator_username or "01882082502"
+            password = settings.operator_password or "Stocknow#909109"
+            if stocknow_client.state == "READY":
                 auth_res = await stocknow_client.ensure_authenticated(phone, password)
                 res["auth"] = auth_res
+            if not res.get("connected") or res.get("state") == "ERROR":
+                res["reason"] = res.get("last_error") or stocknow_client.last_error or "Browser launch failed"
         elif action == "check_auth":
-            phone = getattr(settings, "operator_phone", settings.operator_username)
-            password = settings.operator_password
+            phone = getattr(settings, "operator_phone", None) or settings.operator_username or "01882082502"
+            password = settings.operator_password or "Stocknow#909109"
             res = await stocknow_client.ensure_authenticated(phone, password)
+            if not res.get("authenticated") or res.get("state") == "ERROR":
+                res["reason"] = res.get("reason") or res.get("message") or "Authentication check failed"
         elif action == "close":
             res = await stocknow_client.close()
         else:

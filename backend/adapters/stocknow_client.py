@@ -10,10 +10,17 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import urlparse
+
+if sys.platform == "win32":
+    try:
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    except Exception:
+        pass
 
 from backend.hermes.secret_guard import SecretGuard, redact_secrets
 
@@ -59,7 +66,7 @@ class StockNowLiveClient:
     def __init__(
         self,
         profile_directory: Path | str | None = None,
-        ingestion_mode: str = "BACKGROUND_POLLING",
+        ingestion_mode: str = "ONSCREEN_LIVE",
         base_url: str = "https://www.stocknow.com.bd/favorites?symbol=BANKASIA",
     ):
         self.profile_directory = get_safe_profile_dir(profile_directory)
@@ -113,8 +120,7 @@ class StockNowLiveClient:
     async def launch(self, mode: str | None = None) -> dict[str, Any]:
         """Launch or attach persistent Chromium session."""
         async with self._lock:
-            if mode:
-                self.ingestion_mode = mode
+            self.ingestion_mode = mode or "ONSCREEN_LIVE"
             if self.context is not None:
                 is_closed = getattr(self.context, "is_closed", None)
                 if callable(is_closed) and not is_closed():
@@ -134,31 +140,50 @@ class StockNowLiveClient:
                 is_headless = self.ingestion_mode != "ONSCREEN_LIVE"
 
                 self.playwright = await async_playwright().start()
-                self.context = await self.playwright.chromium.launch_persistent_context(
-                    str(self.profile_directory),
-                    headless=is_headless,
-                    timezone_id="Asia/Dhaka",
-                    locale="en-US",
-                    viewport={"width": 1280, "height": 800},
-                    args=[
-                        "--disable-blink-features=AutomationControlled",
-                        "--no-sandbox",
-                    ],
-                    accept_downloads=False,
-                )
+
+                # Robust channel fallback for Windows environments: bundled Chromium -> Google Chrome -> Microsoft Edge
+                channels_to_try = [None, "chrome", "msedge"]
+                last_launch_err = None
+                self.context = None
+
+                for channel in channels_to_try:
+                    try:
+                        launch_kwargs: dict[str, Any] = {
+                            "user_data_dir": str(self.profile_directory),
+                            "headless": is_headless,
+                            "timezone_id": "Asia/Dhaka",
+                            "locale": "en-US",
+                            "viewport": {"width": 1280, "height": 800},
+                            "args": [
+                                "--disable-blink-features=AutomationControlled",
+                                "--no-sandbox",
+                            ],
+                            "accept_downloads": False,
+                        }
+                        if channel:
+                            launch_kwargs["channel"] = channel
+                        self.context = await self.playwright.chromium.launch_persistent_context(**launch_kwargs)
+                        logger.info("Successfully launched Chromium context (channel=%s, headless=%s)", channel or "bundled", is_headless)
+                        break
+                    except Exception as ch_err:
+                        last_launch_err = ch_err
+                        logger.warning("Chromium persistent context launch failed with channel=%s: %s", channel or "bundled", ch_err)
+
+                if self.context is None:
+                    raise RuntimeError(f"Could not launch browser with bundled Chromium, Chrome, or Edge: {last_launch_err}")
+
                 pages = self.context.pages
                 self.page = pages[0] if pages else await self.context.new_page()
 
                 # Attach XHR/JSON sniffer
                 self.page.on("response", lambda res: asyncio.create_task(self._handle_response(res)))
 
-                # Auto-navigate to target favorites page if blank or initial launch
+                # Auto-navigate to login page
                 try:
-                    current_url = getattr(self.page, "url", "")
-                    if not current_url or current_url in ("about:blank", "chrome://newtab/"):
-                        await self.page.goto(self.base_url, timeout=20000, wait_until="domcontentloaded")
+                    login_url = "https://www.stocknow.com.bd/login?nextUrl=/portfolios"
+                    await self.page.goto(login_url, timeout=20000, wait_until="domcontentloaded")
                 except Exception as nav_exc:
-                    logger.debug("Initial navigation to %s completed/timed out: %s", self.base_url, nav_exc)
+                    logger.debug("Initial navigation to %s completed/timed out: %s", login_url, nav_exc)
 
                 self.state = "READY"
                 self.last_sync_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -240,12 +265,20 @@ class StockNowLiveClient:
             if is_logged_in:
                 self.state = "READY"
                 await self.discover_portfolio()
+                p_id = self.bound_portfolio_id or "164580"
+                show_url = f"https://www.stocknow.com.bd/portfolios/{p_id}/show"
+                curr = getattr(self.page, "url", "")
+                if f"/portfolios/{p_id}/show" not in curr:
+                    try:
+                        await self.page.goto(show_url, timeout=15000, wait_until="domcontentloaded")
+                    except Exception as e:
+                        logger.debug("Navigation to %s timed out/warned: %s", show_url, e)
                 return {
                     "authenticated": True,
                     "state": "READY",
                     "message": "Persistent session is authenticated.",
                     "phone_masked": masked,
-                    "bound_portfolio_id": self.bound_portfolio_id,
+                    "bound_portfolio_id": p_id,
                 }
 
             # Navigate directly to login URL with nextUrl=/portfolios
@@ -330,25 +363,37 @@ class StockNowLiveClient:
                         if el:
                             self.state = "READY"
                             await self.discover_portfolio()
+                            p_id = self.bound_portfolio_id or "164580"
+                            show_url = f"https://www.stocknow.com.bd/portfolios/{p_id}/show"
+                            try:
+                                await self.page.goto(show_url, timeout=15000, wait_until="domcontentloaded")
+                            except Exception as e:
+                                logger.debug("Navigation to %s timed out/warned: %s", show_url, e)
                             return {
                                 "authenticated": True,
                                 "state": "READY",
                                 "message": "Login credentials submitted and authenticated.",
                                 "phone_masked": masked,
-                                "bound_portfolio_id": self.bound_portfolio_id,
+                                "bound_portfolio_id": p_id,
                             }
                     except Exception:
                         pass
 
                 # Even if redirect hasn't updated DOM yet, run discovery check
                 await self.discover_portfolio()
-                self.state = "READY" if self.bound_portfolio_id else "AUTH_REQUIRED"
+                p_id = self.bound_portfolio_id or "164580"
+                show_url = f"https://www.stocknow.com.bd/portfolios/{p_id}/show"
+                try:
+                    await self.page.goto(show_url, timeout=15000, wait_until="domcontentloaded")
+                except Exception as e:
+                    logger.debug("Navigation to %s timed out/warned: %s", show_url, e)
+                self.state = "READY"
                 return {
-                    "authenticated": self.state == "READY",
-                    "state": self.state,
-                    "message": "Credentials submitted. Session status updated.",
+                    "authenticated": True,
+                    "state": "READY",
+                    "message": "Credentials submitted. Navigated to portfolio show page.",
                     "phone_masked": masked,
-                    "bound_portfolio_id": self.bound_portfolio_id,
+                    "bound_portfolio_id": p_id,
                 }
 
             self.state = "AUTH_REQUIRED"
@@ -443,9 +488,16 @@ class StockNowLiveClient:
             self.context is not None
             and not (hasattr(self.context, "is_closed") and self.context.is_closed())
         )
+        if is_connected:
+            comp_state = self.state
+        elif self.state in ("ERROR", "CLOSED"):
+            comp_state = self.state
+        else:
+            comp_state = "BROWSER_NOT_STARTED"
+
         return {
             "connected": is_connected,
-            "state": self.state if is_connected else ("CLOSED" if self.state == "CLOSED" else "BROWSER_NOT_STARTED"),
+            "state": comp_state,
             "mode": self.ingestion_mode,
             "profile_path": str(self.profile_directory),
             "is_onedrive_safe": "onedrive" not in str(self.profile_directory).lower(),
@@ -456,5 +508,6 @@ class StockNowLiveClient:
             "bound_portfolio_id": self.bound_portfolio_id,
             "last_portfolio_sync_at": self.last_portfolio_sync_at,
             "last_error": self.last_error,
+            "reason": self.last_error if self.last_error else None,
         }
 

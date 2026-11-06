@@ -180,3 +180,38 @@ def test_stocknow_api_endpoints():
         # POST session invalid action
         res_invalid = client.post("/api/stocknow/session", json={"action": "invalid_action"})
         assert res_invalid.status_code == 422
+
+
+def test_stocknow_live_client_error_status_retention():
+    """Verify that get_status preserves ERROR state and provides reason."""
+    client = StockNowLiveClient()
+    client.state = "ERROR"
+    client.last_error = "Playwright subprocess creation failed"
+    status = client.get_status()
+    assert status["connected"] is False
+    assert status["state"] == "ERROR"
+    assert status["reason"] == "Playwright subprocess creation failed"
+    assert status["last_error"] == "Playwright subprocess creation failed"
+
+
+def test_stocknow_session_launch_error_propagation():
+    """Verify POST /api/stocknow/session surfaces error reason when browser launch fails."""
+    app = create_app()
+    with TestClient(app, base_url="http://localhost") as client:
+        # Patch stocknow_client on app state / routes
+        router_client = app.state.database  # just testing router
+        # Trigger launch with mock failure
+        from unittest.mock import patch
+        with patch("backend.adapters.stocknow_client.StockNowLiveClient.launch") as mock_launch:
+            mock_launch.return_value = {
+                "connected": False,
+                "state": "ERROR",
+                "last_error": "Chromium binary not found",
+            }
+            res = client.post("/api/stocknow/session", json={"action": "launch", "mode": "ONSCREEN_LIVE"})
+            assert res.status_code == 200
+            data = res.json()
+            assert data["connected"] is False
+            assert data["state"] == "ERROR"
+            assert data.get("reason") == "Chromium binary not found"
+

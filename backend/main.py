@@ -6,6 +6,13 @@ import asyncio
 import hmac
 import json
 import logging
+import sys
+
+if sys.platform == "win32":
+    try:
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    except Exception:
+        pass
 from contextlib import asynccontextmanager
 from decimal import Decimal
 from pathlib import Path
