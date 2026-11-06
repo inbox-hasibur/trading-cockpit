@@ -19,7 +19,9 @@ from typing import Any
 from backend.hermes.secret_guard import SecretGuard, redact_secrets
 from backend.hermes_os.config import HermesConfig, ensure_hermes_state_dir, load_hermes_config
 from backend.hermes_os.memory_curator import MemoryCurator
+from backend.hermes_os.skill_learner import SkillLearner
 from backend.hermes_os.skill_loader import SkillLoader
+from backend.hermes_os.toolsets import HermesToolRegistry, ToolContext, default_registry
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +33,20 @@ class HermesOSAgentLoop:
         self,
         hermes_dir: Path | str | None = None,
         db_path: Path | str | None = None,
+        tool_registry: HermesToolRegistry | None = None,
     ):
         self.home_dir = ensure_hermes_state_dir(hermes_dir)
         self.config: HermesConfig = load_hermes_config(self.home_dir)
         self.curator = MemoryCurator(self.home_dir, db_path=db_path)
         self.skill_loader = SkillLoader(self.home_dir)
+        self.learner = SkillLearner(skills_dir=self.home_dir / "skills", state_dir=self.home_dir)
+        self.tools = tool_registry or default_registry
+
+    def execute_tool(self, tool_name: str, args: dict[str, Any], context: ToolContext) -> dict[str, Any]:
+        """Executes a tool from registered toolsets using the provided context."""
+        context.curator = context.curator or self.curator
+        context.learner = context.learner or self.learner
+        return self.tools.execute(tool_name, args, context)
 
     def prepare_turn_messages(
         self,
@@ -119,3 +130,4 @@ class HermesOSAgentLoop:
             "memory_updated": user_curation.get("memory_updated") or assistant_curation.get("memory_updated"),
             "patches": all_patches,
         }
+

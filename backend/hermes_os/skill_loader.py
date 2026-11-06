@@ -26,20 +26,28 @@ FRONTMATTER_PATTERN = re.compile(r"^---\s*[\r\n]+(.*?)\s*[\r\n]+---\s*[\r\n]+(.*
 class Skill:
     name: str
     description: str
+    version: str = "1.0.0"
     tags: list[str] = field(default_factory=list)
     triggers: list[str] = field(default_factory=list)
+    pitfalls: list[str] = field(default_factory=list)
+    steps: list[str] = field(default_factory=list)
     body: str = ""
     filename: str = ""
     file_path: Path | None = None
 
     @property
     def full_content(self) -> str:
-        front = {
+        front: dict[str, Any] = {
             "name": self.name,
             "description": self.description,
-            "tags": self.tags,
+            "version": self.version,
             "triggers": self.triggers,
+            "tags": self.tags,
         }
+        if self.pitfalls:
+            front["pitfalls"] = self.pitfalls
+        if self.steps:
+            front["steps"] = self.steps
         yaml_str = yaml.dump(front, sort_keys=False).strip()
         return f"---\n{yaml_str}\n---\n\n{self.body.strip()}\n"
 
@@ -78,8 +86,11 @@ class SkillLoader:
                 return Skill(
                     name=str(meta.get("name", path.stem)),
                     description=str(meta.get("description", "")),
+                    version=str(meta.get("version", "1.0.0")),
                     tags=[str(t).lower() for t in meta.get("tags", [])],
                     triggers=[str(tr).lower() for tr in meta.get("triggers", [])],
+                    pitfalls=[str(p) for p in meta.get("pitfalls", [])],
+                    steps=[str(s) for s in meta.get("steps", [])],
                     body=body,
                     filename=path.name,
                     file_path=path,
@@ -88,12 +99,15 @@ class SkillLoader:
                 # Support legacy header format (# SKILL: ..., Version: ..., Tags: ...)
                 lines = raw.splitlines()
                 name = path.stem.replace("SKILL_", "").replace("_", " ").title()
+                version = "1.0.0"
                 tags: list[str] = []
                 triggers: list[str] = []
                 body_lines: list[str] = []
                 for line in lines:
                     if line.startswith("# SKILL:"):
                         name = line.replace("# SKILL:", "").strip()
+                    elif line.lower().startswith("version:"):
+                        version = line.split(":", 1)[1].strip()
                     elif line.lower().startswith("tags:"):
                         raw_tags = line.split(":", 1)[1]
                         tags = [t.strip().lower() for t in raw_tags.split(",") if t.strip()]
@@ -104,8 +118,11 @@ class SkillLoader:
                 return Skill(
                     name=name,
                     description=f"{name} trading methodology",
+                    version=version,
                     tags=tags,
                     triggers=triggers,
+                    pitfalls=[],
+                    steps=[],
                     body="\n".join(body_lines).strip(),
                     filename=path.name,
                     file_path=path,

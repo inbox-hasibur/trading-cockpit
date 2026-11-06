@@ -15,7 +15,14 @@ from backend.hermes_os.config import (
     load_hermes_config,
 )
 from backend.hermes_os.memory_curator import MemoryCurator
+from backend.hermes_os.skill_learner import SkillLearner, bump_version
 from backend.hermes_os.skill_loader import Skill, SkillLoader
+from backend.hermes_os.toolsets import (
+    HermesToolRegistry,
+    ToolContext,
+    ToolDefinition,
+    default_registry,
+)
 
 __all__ = [
     "HermesOSAgentLoop",
@@ -25,5 +32,12 @@ __all__ = [
     "load_hermes_config",
     "MemoryCurator",
     "SkillLoader",
+    "SkillLearner",
     "Skill",
+    "bump_version",
+    "HermesToolRegistry",
+    "ToolContext",
+    "ToolDefinition",
+    "default_registry",
 ]
+
