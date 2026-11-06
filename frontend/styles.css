@@ -46,8 +46,20 @@ td,
 .telemetry-strip,
 .session-meta strong,
 .what-if-stats strong,
+.slider-labels strong,
+.slider-labels span,
+.slider-scale span,
+.inspector-stat strong,
+.position-stats strong,
+.allocation-value,
+.decision-quantity,
+.tile-change,
+.tile-turnover,
 .adp-row strong,
-.fee-item strong {
+.fee-item strong,
+.slider-val-tag,
+#telemetry-usage-text,
+#treemap-turnover-badge {
   font-variant-numeric: tabular-nums;
 }
 
