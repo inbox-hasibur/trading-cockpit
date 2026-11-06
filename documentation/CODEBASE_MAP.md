@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 10:43:44 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 11:18:05 UTC**.
 
 ---
 
@@ -8,10 +8,10 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 43 | 11,351 | Python Core Kernel, Engine & Hermes Agent |
+| `.py` | 43 | 11,363 | Python Core Kernel, Engine & Hermes Agent |
 | `.css` | 2 | 7,865 | Custom Dark / Light / Terminal Design System |
 | `.js` | 3 | 3,791 | Vanilla ES6+ Reactive Terminal Controller |
-| `.md` | 11 | 2,382 | Architecture & Strategy Documentation |
+| `.md` | 11 | 2,370 | Architecture & Strategy Documentation |
 | `.html` | 1 | 953 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
 | `.cursorignore` | 1 | 12 | Configuration / Asset |
@@ -114,7 +114,7 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `StockNowLiveClient` | `L80–L590` | `object` | Persistent Playwright browser controller, auto-login assistant & XHR network sniffer. | 14 |
+| `StockNowLiveClient` | `L80–L589` | `object` | Persistent Playwright browser controller, auto-login assistant & XHR network sniffer. | 13 |
 
 
 **Methods in `StockNowLiveClient`:**
@@ -123,18 +123,17 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `__init__` | `L83–L111` | `(self, profile_directory: Path | str...)` | — | — | `Thread`, `_create_proactor_loop`, `get_safe_profile_dir`, `rstrip` |
 | `_run_worker_loop` | `L113–L118` | `(self...)` | `None` | — | `debug`, `format_exception_str`, `run_forever`, `set_event_loop` |
-| `_get_lock` | `L120–L123` | `(self...)` | `asyncio.Lock` | — | `Lock` |
-| `_run_in_proactor` | `L125–L148` | `(self, coro: Any...)` | `Any` | Run a coroutine inside the dedicated proactor event loop thread. | `Thread`, `_create_proactor_loop`, `get_running_loop`, `hasattr` |
-| `_handle_response` | `L150–L181` | `(self, response: Any...)` | `None` | Passively capture JSON responses from stocknow.com.bd. | `debug`, `format_exception_str`, `get`, `getattr` |
-| `launch` | `L183–L185` | `(self, mode: str | None=None...)` | `dict[str, Any]` | Launch or attach persistent Chromium session on dedicated Proactor thread. | `_launch_internal`, `_run_in_proactor` |
-| `_launch_internal` | `L187–L263` | `(self, mode: str | None=None...)` | `dict[str, Any]` | — | `RuntimeError`, `_get_lock`, `_handle_response`, `async_playwright` |
+| `_run_in_proactor` | `L120–L143` | `(self, coro: Any...)` | `Any` | Run a coroutine inside the dedicated proactor event loop thread. | `Thread`, `_create_proactor_loop`, `get_running_loop`, `hasattr` |
+| `_handle_response` | `L145–L176` | `(self, response: Any...)` | `None` | Passively capture JSON responses from stocknow.com.bd. | `debug`, `format_exception_str`, `get`, `getattr` |
+| `launch` | `L178–L180` | `(self, mode: str | None=None...)` | `dict[str, Any]` | Launch or attach persistent Chromium session on dedicated Proactor thread. | `_launch_internal`, `_run_in_proactor` |
+| `_launch_internal` | `L182–L263` | `(self, mode: str | None=None...)` | `dict[str, Any]` | — | `RuntimeError`, `_handle_response`, `async_playwright`, `callable` |
 | `close` | `L265–L267` | `(self...)` | `dict[str, Any]` | Close browser context and stop Playwright cleanly. | `_close_internal`, `_run_in_proactor` |
-| `_close_internal` | `L269–L293` | `(self...)` | `dict[str, Any]` | — | `_get_lock`, `close`, `get_status`, `stop` |
-| `ensure_authenticated` | `L295–L300` | `(self, phone: str='', password: str=...)` | `dict[str, Any]` | Inspect authentication state on stocknow.com.bd, filling credentials if needed. | `_ensure_authenticated_internal`, `_run_in_proactor` |
-| `_ensure_authenticated_internal` | `L302–L490` | `(self, phone: str='', password: str=...)` | `dict[str, Any]` | — | `_discover_portfolio_internal`, `check`, `click`, `debug` |
-| `discover_portfolio` | `L492–L494` | `(self...)` | `dict[str, Any]` | Discover 'Humming Bird' portfolio stats and ID from /portfolios. | `_discover_portfolio_internal`, `_run_in_proactor` |
-| `_discover_portfolio_internal` | `L496–L561` | `(self...)` | `dict[str, Any]` | — | `debug`, `evaluate`, `format_exception_str`, `get` |
-| `get_status` | `L563–L590` | `(self...)` | `dict[str, Any]` | Return structured telemetry for live session status endpoint. | `hasattr`, `is_closed`, `keys`, `len` |
+| `_close_internal` | `L269–L292` | `(self...)` | `dict[str, Any]` | — | `close`, `get_status`, `stop` |
+| `ensure_authenticated` | `L294–L299` | `(self, phone: str='', password: str=...)` | `dict[str, Any]` | Inspect authentication state on stocknow.com.bd, filling credentials if needed. | `_ensure_authenticated_internal`, `_run_in_proactor` |
+| `_ensure_authenticated_internal` | `L301–L489` | `(self, phone: str='', password: str=...)` | `dict[str, Any]` | — | `_discover_portfolio_internal`, `check`, `click`, `debug` |
+| `discover_portfolio` | `L491–L493` | `(self...)` | `dict[str, Any]` | Discover 'Humming Bird' portfolio stats and ID from /portfolios. | `_discover_portfolio_internal`, `_run_in_proactor` |
+| `_discover_portfolio_internal` | `L495–L560` | `(self...)` | `dict[str, Any]` | — | `debug`, `evaluate`, `format_exception_str`, `get` |
+| `get_status` | `L562–L589` | `(self...)` | `dict[str, Any]` | Return structured telemetry for live session status endpoint. | `hasattr`, `is_closed`, `keys`, `len` |
 
 
 #### Standalone Functions
@@ -774,25 +773,26 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `StockNowSessionActionRequest` | `L25–L28` | `BaseModel` | — | 0 |
-| `StockNowMarketSyncRequest` | `L31–L33` | `BaseModel` | — | 0 |
-| `StockNowPortfolioSyncRequest` | `L36–L38` | `BaseModel` | — | 0 |
-| `StockNowExecuteOrderRequest` | `L41–L47` | `BaseModel` | — | 0 |
-| `StockNowSchedulerActionRequest` | `L50–L53` | `BaseModel` | — | 0 |
+| `StockNowSessionActionRequest` | `L29–L32` | `BaseModel` | — | 0 |
+| `StockNowMarketSyncRequest` | `L35–L37` | `BaseModel` | — | 0 |
+| `StockNowPortfolioSyncRequest` | `L40–L42` | `BaseModel` | — | 0 |
+| `StockNowExecuteOrderRequest` | `L45–L51` | `BaseModel` | — | 0 |
+| `StockNowSchedulerActionRequest` | `L54–L57` | `BaseModel` | — | 0 |
 
 
 #### Standalone Functions
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `build_stocknow_router` | `L56–L229` | `(database: Database, settings: Setti...)` | `APIRouter` | — | `APIRouter`, `DSEMarketScheduler`, `StockNowLiveClient`, `get_active_scheduler` |
-| `get_stocknow_status` | `L75–L76` | `(...)` | — | — | `get`, `get_status` |
-| `post_stocknow_session` | `L79–L103` | `(body: StockNowSessionActionRequest...)` | — | — | `HTTPException`, `close`, `ensure_authenticated`, `get` |
-| `post_stocknow_sync_market` | `L106–L115` | `(body: StockNowMarketSyncRequest | N...)` | — | — | `build_snapshot`, `extract_quotes_from_stocknow`, `post`, `publish` |
-| `post_stocknow_sync_portfolio` | `L118–L130` | `(body: StockNowPortfolioSyncRequest ...)` | — | — | `build_snapshot`, `extract_hummingbird_portfolio`, `get`, `post` |
-| `post_stocknow_execute_order` | `L133–L212` | `(body: StockNowExecuteOrderRequest...)` | — | — | `HTTPException`, `all`, `build_snapshot`, `create_checkpoint` |
-| `get_stocknow_scheduler` | `L215–L216` | `(...)` | — | — | `get`, `get_status` |
-| `post_stocknow_scheduler` | `L219–L227` | `(body: StockNowSchedulerActionReques...)` | — | — | `HTTPException`, `post`, `run_scheduled_tick`, `start` |
+| `build_stocknow_router` | `L60–L242` | `(database: Database, settings: Setti...)` | `APIRouter` | — | `APIRouter`, `DSEMarketScheduler`, `StockNowLiveClient`, `get_active_scheduler` |
+| `get_stocknow_status` | `L79–L80` | `(...)` | — | — | `get`, `get_status` |
+| `post_stocknow_session` | `L83–L116` | `(body: StockNowSessionActionRequest...)` | — | — | `HTTPException`, `_background_auth`, `close`, `create_task` |
+| `_background_auth` | `L91–L98` | `(...)` | — | — | `ensure_authenticated`, `get_status`, `publish`, `warning` |
+| `post_stocknow_sync_market` | `L119–L128` | `(body: StockNowMarketSyncRequest | N...)` | — | — | `build_snapshot`, `extract_quotes_from_stocknow`, `post`, `publish` |
+| `post_stocknow_sync_portfolio` | `L131–L143` | `(body: StockNowPortfolioSyncRequest ...)` | — | — | `build_snapshot`, `extract_hummingbird_portfolio`, `get`, `post` |
+| `post_stocknow_execute_order` | `L146–L225` | `(body: StockNowExecuteOrderRequest...)` | — | — | `HTTPException`, `all`, `build_snapshot`, `create_checkpoint` |
+| `get_stocknow_scheduler` | `L228–L229` | `(...)` | — | — | `get`, `get_status` |
+| `post_stocknow_scheduler` | `L232–L240` | `(body: StockNowSchedulerActionReques...)` | — | — | `HTTPException`, `post`, `run_scheduled_tick`, `start` |
 
 
 ---
@@ -902,13 +902,13 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 | `GET` | `/api/auth/session` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L68) | `L68` | `auth_session()` | Route endpoint |
 | `GET` | `/api/settings/keys` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L83) | `L83` | `get_api_keys()` | Route endpoint |
 | `POST` | `/api/settings/keys` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L127) | `L127` | `update_api_keys()` | Route endpoint |
-| `GET` | `/api/stocknow/status` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L75) | `L75` | `get_stocknow_status()` | Route endpoint |
-| `POST` | `/api/stocknow/session` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L79) | `L79` | `post_stocknow_session()` | Route endpoint |
-| `POST` | `/api/stocknow/sync-market` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L106) | `L106` | `post_stocknow_sync_market()` | Route endpoint |
-| `POST` | `/api/stocknow/sync-portfolio` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L118) | `L118` | `post_stocknow_sync_portfolio()` | Route endpoint |
-| `POST` | `/api/stocknow/execute-order` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L133) | `L133` | `post_stocknow_execute_order()` | Route endpoint |
-| `GET` | `/api/stocknow/scheduler` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L215) | `L215` | `get_stocknow_scheduler()` | Route endpoint |
-| `POST` | `/api/stocknow/scheduler` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L219) | `L219` | `post_stocknow_scheduler()` | Route endpoint |
+| `GET` | `/api/stocknow/status` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L79) | `L79` | `get_stocknow_status()` | Route endpoint |
+| `POST` | `/api/stocknow/session` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L83) | `L83` | `post_stocknow_session()` | Route endpoint |
+| `POST` | `/api/stocknow/sync-market` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L119) | `L119` | `post_stocknow_sync_market()` | Route endpoint |
+| `POST` | `/api/stocknow/sync-portfolio` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L131) | `L131` | `post_stocknow_sync_portfolio()` | Route endpoint |
+| `POST` | `/api/stocknow/execute-order` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L146) | `L146` | `post_stocknow_execute_order()` | Route endpoint |
+| `GET` | `/api/stocknow/scheduler` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L228) | `L228` | `get_stocknow_scheduler()` | Route endpoint |
+| `POST` | `/api/stocknow/scheduler` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L232) | `L232` | `post_stocknow_scheduler()` | Route endpoint |
 
 ---
 
@@ -1130,7 +1130,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 
 | File | Function / Method | Length (Lines) | Max Nesting Depth | Recommendation |
 | :--- | :--- | :--- | :--- | :--- |
-| `backend/adapters/stocknow_client.py` | `_launch_internal` | 77 | 5 | Acceptable; well-scoped logic |
+| `backend/adapters/stocknow_client.py` | `_launch_internal` | 82 | 6 | Acceptable; well-scoped logic |
 | `backend/adapters/stocknow_client.py` | `_ensure_authenticated_internal` | 189 | 7 | Decompose into sub-functions |
 | `backend/adapters/stocknow_client.py` | `_discover_portfolio_internal` | 66 | 5 | Acceptable; well-scoped logic |
 | `backend/adapters/stocknow_market_sync.py` | `_normalize_history_series` | 16 | 6 | Acceptable; well-scoped logic |
@@ -1184,8 +1184,8 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/routes_auth_settings.py` | `build_auth_settings_router` | 136 | 2 | Decompose into sub-functions |
 | `backend/routes_hermes.py` | `build_hermes_router` | 184 | 5 | Decompose into sub-functions |
 | `backend/routes_hermes.py` | `system_changes` | 63 | 5 | Acceptable; well-scoped logic |
-| `backend/routes_stocknow.py` | `build_stocknow_router` | 174 | 4 | Decompose into sub-functions |
-| `backend/routes_stocknow.py` | `post_stocknow_session` | 25 | 4 | Acceptable; well-scoped logic |
+| `backend/routes_stocknow.py` | `build_stocknow_router` | 183 | 4 | Decompose into sub-functions |
+| `backend/routes_stocknow.py` | `post_stocknow_session` | 34 | 4 | Acceptable; well-scoped logic |
 | `backend/routes_stocknow.py` | `post_stocknow_execute_order` | 80 | 4 | Acceptable; well-scoped logic |
 | `backend/routes_stocknow.py` | `post_stocknow_scheduler` | 9 | 4 | Acceptable; well-scoped logic |
 | `backend/seed.py` | `seed_demo` | 87 | 3 | Acceptable; well-scoped logic |

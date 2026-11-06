@@ -144,7 +144,7 @@ async def _extract_hummingbird_portfolio_from_browser_impl(client: Any) -> dict[
     # 1. Scrape /show
     show_url = f"https://www.stocknow.com.bd/portfolios/{p_id}/show"
     try:
-        await page.goto(show_url, timeout=20000, wait_until="domcontentloaded")
+        await page.goto(show_url, timeout=15000, wait_until="domcontentloaded")
         await page.wait_for_timeout(1000)
     except Exception as exc:
         logger.debug("Navigation to %s: %s", show_url, exc)
@@ -191,7 +191,7 @@ async def _extract_hummingbird_portfolio_from_browser_impl(client: Any) -> dict[
     # 2. Scrape /ledger
     ledger_url = f"https://www.stocknow.com.bd/portfolios/{p_id}/ledger"
     try:
-        await page.goto(ledger_url, timeout=20000, wait_until="domcontentloaded")
+        await page.goto(ledger_url, timeout=15000, wait_until="domcontentloaded")
         await page.wait_for_timeout(1000)
         ledger_data = await page.evaluate(r"""() => {
             const rows = document.querySelectorAll("tr");

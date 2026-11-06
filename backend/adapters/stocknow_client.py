@@ -99,7 +99,7 @@ class StockNowLiveClient:
         self.last_portfolio_sync_at: str | None = None
         self.last_error: str | None = None
         self.captured_endpoints: dict[str, dict[str, Any]] = {}
-        self._lock: asyncio.Lock | None = None
+        self._is_launching: bool = False
 
         # Dedicated background worker thread with ProactorEventLoop for Windows compatibility
         self._proactor_loop: asyncio.AbstractEventLoop = _create_proactor_loop()
@@ -116,11 +116,6 @@ class StockNowLiveClient:
             self._proactor_loop.run_forever()
         except Exception as e:
             logger.debug("Proactor worker loop terminated: %s", format_exception_str(e))
-
-    def _get_lock(self) -> asyncio.Lock:
-        if self._lock is None:
-            self._lock = asyncio.Lock()
-        return self._lock
 
     async def _run_in_proactor(self, coro: Any) -> Any:
         """Run a coroutine inside the dedicated proactor event loop thread."""
@@ -185,7 +180,10 @@ class StockNowLiveClient:
         return await self._run_in_proactor(self._launch_internal(mode=mode))
 
     async def _launch_internal(self, mode: str | None = None) -> dict[str, Any]:
-        async with self._get_lock():
+        if self._is_launching:
+            return self.get_status()
+        self._is_launching = True
+        try:
             self.ingestion_mode = mode or "ONSCREEN_LIVE"
             if self.context is not None:
                 is_closed = getattr(self.context, "is_closed", None)
@@ -245,12 +243,12 @@ class StockNowLiveClient:
                 # Attach XHR/JSON sniffer
                 self.page.on("response", lambda res: asyncio.create_task(self._handle_response(res)))
 
-                # Auto-navigate to login page
+                # Fast initial navigation without blocking
+                target_url = "https://www.stocknow.com.bd/portfolios/164580/show"
                 try:
-                    login_url = "https://www.stocknow.com.bd/login?nextUrl=/portfolios"
-                    await self.page.goto(login_url, timeout=20000, wait_until="domcontentloaded")
+                    await self.page.goto(target_url, wait_until="commit", timeout=10000)
                 except Exception as nav_exc:
-                    logger.debug("Initial navigation to %s completed/timed out: %s", login_url, format_exception_str(nav_exc))
+                    logger.debug("Initial navigation to %s completed/timed out: %s", target_url, format_exception_str(nav_exc))
 
                 self.state = "READY"
                 self.last_sync_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -261,36 +259,37 @@ class StockNowLiveClient:
                 self.last_error = err_msg
                 logger.error("Failed to launch Playwright persistent browser: %s", redact_secrets(err_msg))
                 return self.get_status()
+        finally:
+            self._is_launching = False
 
     async def close(self) -> dict[str, Any]:
         """Close browser context and stop Playwright cleanly."""
         return await self._run_in_proactor(self._close_internal())
 
     async def _close_internal(self) -> dict[str, Any]:
-        async with self._get_lock():
-            if self.page:
-                try:
-                    await self.page.close()
-                except Exception:
-                    pass
-                self.page = None
+        if self.page:
+            try:
+                await self.page.close()
+            except Exception:
+                pass
+            self.page = None
 
-            if self.context:
-                try:
-                    await self.context.close()
-                except Exception:
-                    pass
-                self.context = None
+        if self.context:
+            try:
+                await self.context.close()
+            except Exception:
+                pass
+            self.context = None
 
-            if self.playwright:
-                try:
-                    await self.playwright.stop()
-                except Exception:
-                    pass
-                self.playwright = None
+        if self.playwright:
+            try:
+                await self.playwright.stop()
+            except Exception:
+                pass
+            self.playwright = None
 
-            self.state = "CLOSED"
-            return self.get_status()
+        self.state = "CLOSED"
+        return self.get_status()
 
     async def ensure_authenticated(self, phone: str = "", password: str = "") -> dict[str, Any]:
         """Inspect authentication state on stocknow.com.bd, filling credentials if needed.
@@ -316,7 +315,7 @@ class StockNowLiveClient:
         try:
             current_url = getattr(self.page, "url", "")
             if not current_url or "stocknow.com.bd" not in current_url:
-                await self.page.goto(self.base_url, timeout=20000, wait_until="domcontentloaded")
+                await self.page.goto(self.base_url, timeout=15000, wait_until="domcontentloaded")
 
             # Check if user is already logged in
             is_logged_in = False
@@ -359,7 +358,7 @@ class StockNowLiveClient:
             login_url = "https://www.stocknow.com.bd/login?nextUrl=/portfolios"
             if "/login" not in current_url:
                 try:
-                    await self.page.goto(login_url, timeout=20000, wait_until="domcontentloaded")
+                    await self.page.goto(login_url, timeout=15000, wait_until="domcontentloaded")
                     await self.page.wait_for_timeout(1000)
                 except Exception as nav_err:
                     logger.debug("Navigation to %s timed out/warned: %s", login_url, format_exception_str(nav_err))

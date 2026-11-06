@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import asyncio
+import logging
 from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
+
+logger = logging.getLogger("hummingbird.stocknow_routes")
 
 from backend.adapters.stocknow_client import StockNowLiveClient
 from backend.adapters.stocknow_market_sync import (
@@ -84,8 +88,17 @@ def build_stocknow_router(
             phone = getattr(settings, "operator_phone", None) or settings.operator_username or "01882082502"
             password = settings.operator_password or "Stocknow#909109"
             if stocknow_client.state == "READY":
-                auth_res = await stocknow_client.ensure_authenticated(phone, password)
-                res["auth"] = auth_res
+                async def _background_auth():
+                    try:
+                        auth_res = await stocknow_client.ensure_authenticated(phone, password)
+                        status_payload = stocknow_client.get_status()
+                        status_payload["auth"] = auth_res
+                        broadcaster.publish("stocknow_session", status_payload)
+                    except Exception as err:
+                        logger.warning("Background StockNow authentication failed: %s", err)
+
+                asyncio.create_task(_background_auth())
+
             if not res.get("connected") or res.get("state") == "ERROR":
                 res["reason"] = res.get("last_error") or stocknow_client.last_error or "Browser launch failed"
         elif action == "check_auth":

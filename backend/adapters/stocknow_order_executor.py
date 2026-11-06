@@ -120,7 +120,7 @@ async def _execute_stocknow_virtual_order_impl(
             current_url = getattr(page, "url", "")
             if target_action not in current_url or p_id not in current_url:
                 try:
-                    await page.goto(target_url, timeout=20000, wait_until="domcontentloaded")
+                    await page.goto(target_url, timeout=15000, wait_until="domcontentloaded")
                     await page.wait_for_timeout(1000)
                 except Exception as nav_exc:
                     logger.debug("Nav to %s: %s", target_url, nav_exc)
