@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 00:22:10 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 00:32:08 UTC**.
 
 ---
 
@@ -9,17 +9,17 @@
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
 | `.py` | 42 | 10,300 | Python Core Kernel, Engine & Hermes Agent |
-| `.css` | 2 | 7,061 | Custom Dark / Light / Terminal Design System |
-| `.js` | 3 | 3,494 | Vanilla ES6+ Reactive Terminal Controller |
+| `.css` | 2 | 7,284 | Custom Dark / Light / Terminal Design System |
+| `.js` | 3 | 3,546 | Vanilla ES6+ Reactive Terminal Controller |
 | `.md` | 11 | 2,267 | Architecture & Strategy Documentation |
-| `.html` | 1 | 853 | Single Page Application DOM Structure |
+| `.html` | 1 | 871 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
 | `.cursorignore` | 1 | 12 | Configuration / Asset |
 | `.opencodeignore` | 1 | 12 | Configuration / Asset |
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **66** | **24,033** | *Entire Humming Bird Repository* |
+| **TOTAL** | **66** | **24,326** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -949,38 +949,38 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 
 | Component Selector | Stylesheet File | Line | Display | Grid / Layout | Position | Background / Color | Flex Wrap |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `.app-shell` | [`frontend/styles.css`](/frontend/styles.css#L228) | `L228` | `grid` | `64px minmax(0, 1fr) var(--hermes-width)` | — | — | — |
-| `.nav-rail` | [`frontend/styles.css`](/frontend/styles.css#L241) | `L241` | `flex` | — | — | `var(--nav-bg)` | — |
-| `.workspace` | [`frontend/styles.css`](/frontend/styles.css#L294) | `L294` | — | — | `relative` | — | — |
-| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L318) | `L318` | `flex` | — | `sticky` | `rgba(10, 16, 24, 0.88)` | `nowrap` |
-| `.topbar-right` | [`frontend/styles.css`](/frontend/styles.css#L354) | `L354` | `flex` | — | — | — | `nowrap` |
-| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L364) | `L364` | `flex` | — | — | — | `nowrap` |
-| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L373) | `L373` | — | — | — | — | — |
-| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L380) | `L380` | — | — | — | — | — |
-| `.engine-controls` | [`frontend/styles.css`](/frontend/styles.css#L421) | `L421` | `flex` | — | — | — | — |
-| `.session-bar` | [`frontend/styles.css`](/frontend/styles.css#L457) | `L457` | `flex` | — | — | `#0e161f` | `wrap` |
-| `.metric-card` | [`frontend/styles.css`](/frontend/styles.css#L509) | `L509` | — | — | — | `var(--panel)` | — |
-| `.skills-drawer` | [`frontend/styles.css`](/frontend/styles.css#L2016) | `L2016` | — | — | — | `#0c141d` | — |
+| `.app-shell` | [`frontend/styles.css`](/frontend/styles.css#L242) | `L242` | `grid` | `64px minmax(0, 1fr) var(--hermes-width)` | — | — | — |
+| `.nav-rail` | [`frontend/styles.css`](/frontend/styles.css#L255) | `L255` | `flex` | — | — | `var(--nav-bg)` | — |
+| `.workspace` | [`frontend/styles.css`](/frontend/styles.css#L356) | `L356` | — | — | `relative` | — | — |
+| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L380) | `L380` | `flex` | — | `sticky` | `rgba(10, 16, 24, 0.88)` | `nowrap` |
+| `.topbar-right` | [`frontend/styles.css`](/frontend/styles.css#L416) | `L416` | `flex` | — | — | — | `nowrap` |
+| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L426) | `L426` | `flex` | — | — | — | `nowrap` |
+| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L435) | `L435` | — | — | — | — | — |
+| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L479) | `L479` | — | — | — | — | — |
+| `.engine-controls` | [`frontend/styles.css`](/frontend/styles.css#L582) | `L582` | `flex` | — | — | — | — |
+| `.session-bar` | [`frontend/styles.css`](/frontend/styles.css#L618) | `L618` | `flex` | — | — | `#0e161f` | `wrap` |
+| `.metric-card` | [`frontend/styles.css`](/frontend/styles.css#L670) | `L670` | — | — | — | `var(--panel)` | — |
+| `.skills-drawer` | [`frontend/styles.css`](/frontend/styles.css#L2187) | `L2187` | — | — | — | `#0c141d` | — |
 | `.session-bar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L69) | `L69` | — | — | — | `#ffffff` | — |
 | `.metric-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L95) | `L95` | — | — | — | `#ffffff` | — |
 | `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L487) | `L487` | — | — | — | `#f8fafc !important` | — |
-| `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L541) | `L541` | — | — | — | `#ffffff !important` | — |
-| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L580) | `L580` | — | — | — | `#ffffff !important` | — |
-| `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L768) | `L768` | — | — | — | `#ccfbf1 !important` | — |
-| `.topbar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L830) | `L830` | — | — | — | `rgba(226, 232, 240, 0.92)` | — |
-| `#hermes-resizer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L853) | `L853` | — | — | `absolute` | `transparent` | — |
-| `.app-shell` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L894) | `L894` | — | — | — | — | — |
-| `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1003) | `L1003` | — | — | — | — | — |
-| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1311) | `L1311` | — | — | — | `var(--panel)` | — |
-| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1440) | `L1440` | — | — | `absolute` | `var(--panel)` | — |
-| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1454) | `L1454` | — | — | — | `#ffffff` | — |
-| `.workspace` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1577) | `L1577` | — | — | — | — | — |
-| `.skills-drawer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1902) | `L1902` | — | — | — | `#ffffff !important` | — |
+| `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L545) | `L545` | — | — | — | `#ffffff !important` | — |
+| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L584) | `L584` | — | — | — | `#ffffff !important` | — |
+| `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L772) | `L772` | — | — | — | `#ccfbf1 !important` | — |
+| `.topbar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L834) | `L834` | — | — | — | `rgba(226, 232, 240, 0.92)` | — |
+| `#hermes-resizer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L857) | `L857` | — | — | `absolute` | `transparent` | — |
+| `.app-shell` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L898) | `L898` | — | — | — | — | — |
+| `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1007) | `L1007` | — | — | — | — | — |
+| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1315) | `L1315` | — | — | — | `var(--panel)` | — |
+| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1444) | `L1444` | — | — | `absolute` | `var(--panel)` | — |
+| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1458) | `L1458` | — | — | — | `#ffffff` | — |
+| `.workspace` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1581) | `L1581` | — | — | — | — | — |
+| `.skills-drawer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1906) | `L1906` | — | — | — | `#ffffff !important` | — |
 
 
 ### Key DOM Identifiers (`frontend/index.html`)
 
-Identified **234** distinct element IDs in the UI shell. Key controller anchors:
+Identified **240** distinct element IDs in the UI shell. Key controller anchors:
 
 `#overview`, `#watchlist`, `#market-map`, `#master-automation-toggle`, `#mode-btn-polling`, `#mode-btn-live`, `#polling-interval-pills`, `#main-chart`, `#bucket-stack`, `#what-if-slider`, `#theme-toggle-btn`, `#topbar-clock-widget`
 
@@ -989,8 +989,8 @@ Identified **234** distinct element IDs in the UI shell. Key controller anchors:
 
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
-| `styles.css` | 4589 | Core design tokens, layout & widgets |
-| `theme_light_hermes.css` | 2472 | Daylight overrides & Hermes IDE sidebar |
+| `styles.css` | 4808 | Core design tokens, layout & widgets |
+| `theme_light_hermes.css` | 2476 | Daylight overrides & Hermes IDE sidebar |
 
 
 ### Frontend API Contract Invocations (`frontend/*.js`)
@@ -1034,30 +1034,30 @@ Identified **234** distinct element IDs in the UI shell. Key controller anchors:
 | `showError()` | `app.js` | `L115` | Reactive DOM rendering / event controller |
 | `api()` | `app.js` | `L122` | Reactive DOM rendering / event controller |
 | `updateControls()` | `app.js` | `L147` | Reactive DOM rendering / event controller |
-| `refresh()` | `app.js` | `L171` | Reactive DOM rendering / event controller |
-| `mutate()` | `app.js` | `L184` | Reactive DOM rendering / event controller |
-| `renderSnapshot()` | `app.js` | `L193` | Reactive DOM rendering / event controller |
-| `renderBuckets()` | `app.js` | `L240` | Reactive DOM rendering / event controller |
-| `cell()` | `app.js` | `L259` | Reactive DOM rendering / event controller |
-| `selectCompany()` | `app.js` | `L261` | Reactive DOM rendering / event controller |
-| `renderWatchlist()` | `app.js` | `L268` | Reactive DOM rendering / event controller |
-| `renderCanaryTheses()` | `app.js` | `L338` | Reactive DOM rendering / event controller |
-| `renderInspector()` | `app.js` | `L372` | Reactive DOM rendering / event controller |
-| `renderDecisions()` | `app.js` | `L407` | Reactive DOM rendering / event controller |
-| `renderLedger()` | `app.js` | `L424` | Reactive DOM rendering / event controller |
-| `initMarketMapResizeObserver()` | `app.js` | `L549` | Reactive DOM rendering / event controller |
-| `initTheme()` | `app.js` | `L575` | Reactive DOM rendering / event controller |
-| `setTheme()` | `app.js` | `L581` | Reactive DOM rendering / event controller |
-| `toggleTheme()` | `app.js` | `L592` | Reactive DOM rendering / event controller |
-| `tickMarketClock()` | `app.js` | `L598` | Reactive DOM rendering / event controller |
-| `tickClock()` | `app.js` | `L663` | Reactive DOM rendering / event controller |
-| `renderAutomationControlBar()` | `app.js` | `L672` | Reactive DOM rendering / event controller |
-| `setAutomationConfig()` | `app.js` | `L798` | Reactive DOM rendering / event controller |
-| `initRealtimeStream()` | `app.js` | `L915` | Reactive DOM rendering / event controller |
-| `switchView()` | `app.js` | `L941` | Reactive DOM rendering / event controller |
-| `initViewRouter()` | `app.js` | `L992` | Reactive DOM rendering / event controller |
-| `initScrollSpy()` | `app.js` | `L1058` | Reactive DOM rendering / event controller |
-| `updateActiveNav()` | `app.js` | `L1071` | Reactive DOM rendering / event controller |
+| `refresh()` | `app.js` | `L178` | Reactive DOM rendering / event controller |
+| `mutate()` | `app.js` | `L191` | Reactive DOM rendering / event controller |
+| `renderSnapshot()` | `app.js` | `L200` | Reactive DOM rendering / event controller |
+| `renderBuckets()` | `app.js` | `L248` | Reactive DOM rendering / event controller |
+| `cell()` | `app.js` | `L267` | Reactive DOM rendering / event controller |
+| `selectCompany()` | `app.js` | `L269` | Reactive DOM rendering / event controller |
+| `renderWatchlist()` | `app.js` | `L276` | Reactive DOM rendering / event controller |
+| `renderCanaryTheses()` | `app.js` | `L346` | Reactive DOM rendering / event controller |
+| `renderInspector()` | `app.js` | `L380` | Reactive DOM rendering / event controller |
+| `renderDecisions()` | `app.js` | `L415` | Reactive DOM rendering / event controller |
+| `renderLedger()` | `app.js` | `L432` | Reactive DOM rendering / event controller |
+| `initMarketMapResizeObserver()` | `app.js` | `L557` | Reactive DOM rendering / event controller |
+| `initTheme()` | `app.js` | `L583` | Reactive DOM rendering / event controller |
+| `setTheme()` | `app.js` | `L589` | Reactive DOM rendering / event controller |
+| `toggleTheme()` | `app.js` | `L600` | Reactive DOM rendering / event controller |
+| `tickMarketClock()` | `app.js` | `L606` | Reactive DOM rendering / event controller |
+| `tickClock()` | `app.js` | `L677` | Reactive DOM rendering / event controller |
+| `renderAutomationControlBar()` | `app.js` | `L686` | Reactive DOM rendering / event controller |
+| `setAutomationConfig()` | `app.js` | `L822` | Reactive DOM rendering / event controller |
+| `initRealtimeStream()` | `app.js` | `L967` | Reactive DOM rendering / event controller |
+| `switchView()` | `app.js` | `L993` | Reactive DOM rendering / event controller |
+| `initViewRouter()` | `app.js` | `L1044` | Reactive DOM rendering / event controller |
+| `initScrollSpy()` | `app.js` | `L1110` | Reactive DOM rendering / event controller |
+| `updateActiveNav()` | `app.js` | `L1123` | Reactive DOM rendering / event controller |
 | `smoothCurvePath()` | `charts.js` | `L8` | Reactive DOM rendering / event controller |
 | `getBezierPointAtContinuousIndex()` | `charts.js` | `L31` | Reactive DOM rendering / event controller |
 | `renderMainChart()` | `charts.js` | `L63` | Reactive DOM rendering / event controller |
@@ -1179,4 +1179,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 24,033 total LOC indexed.
+> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 24,326 total LOC indexed.

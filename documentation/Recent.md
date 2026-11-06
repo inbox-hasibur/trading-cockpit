@@ -159,11 +159,11 @@ Problem: teal is used for brand, active state, primary buttons, positive P/L, BU
 ## Phase 4: Per screen fixes
 
 **Global / top bar**
-- [ ] **4.1. Top bar declutter:** Group into: [status pill + countdown] | [Background Polling / Onscreen Live segmented] | [Pause engine icon button + Run automation cycle primary] | [theme toggle]. Pause engine becomes an icon button with tooltip. Below 1280px collapse the segmented control into a compact version, below 1100px move secondary controls into an overflow menu. Use media queries on the existing `.topbar` rules, do not restructure the DOM beyond what is needed.
-- [ ] **4.2. DSE CLOSED pill & Run cycle tooltips:** "DSE opens Sun 10:00 (Asia/Dhaka)" computed from the scheduler status that already exists. The Run automation cycle button gets a tooltip "Market closed: runs on demo data" when closed.
-- [ ] **4.3. Left nav rail tooltips & active indicator:** on hover and keyboard focus (CSS tooltip, plus `aria-label`), a 3px active indicator bar on the left edge, and `:focus-visible` rings. Labels: Overview, Watchlist, Strategy, Ledger, Settings.
-- [ ] **4.4. Global focus-visible ring & reduced motion:** using `--brand` for buttons, inputs, tabs, table rows that are clickable. Add `@media (prefers-reduced-motion: reduce)` to cut animations and transitions.
-- [ ] **4.5. Skeleton placeholders:** for metric cards, tables and charts until the first `/api/portfolio` response, so zeros do not flash.
+- [x] **4.1. Top bar declutter:** Group into: [status pill + countdown] | [Background Polling / Onscreen Live segmented] | [Pause engine icon button + Run automation cycle primary] | [theme toggle]. Pause engine becomes an icon button with tooltip. Below 1280px collapse the segmented control into a compact version, below 1100px move secondary controls into an overflow menu. Use media queries on the existing `.topbar` rules, do not restructure the DOM beyond what is needed.
+- [x] **4.2. DSE CLOSED pill & Run cycle tooltips:** "DSE opens Sun 10:00 (Asia/Dhaka)" computed from the scheduler status that already exists. The Run automation cycle button gets a tooltip "Market closed: runs on demo data" when closed.
+- [x] **4.3. Left nav rail tooltips & active indicator:** on hover and keyboard focus (CSS tooltip, plus `aria-label`), a 3px active indicator bar on the left edge, and `:focus-visible` rings. Labels: Overview, Watchlist, Strategy, Ledger, Settings.
+- [x] **4.4. Global focus-visible ring & reduced motion:** using `--brand` for buttons, inputs, tabs, table rows that are clickable. Add `@media (prefers-reduced-motion: reduce)` to cut animations and transitions.
+- [x] **4.5. Skeleton placeholders:** for metric cards, tables and charts until the first `/api/portfolio` response, so zeros do not flash.
 
 **Screen 1: Overview**
 - [ ] **4.6. Overview Metric cards styling:** Keep the highlighted Net Liquidation card.

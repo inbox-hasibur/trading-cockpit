@@ -160,8 +160,15 @@ function updateControls() {
   setText("run-label", state.busy ? "Working…" : "Run automation cycle");
   if (ready) {
     const paused = state.snapshot.app.paused;
-    setText("pause-button", paused ? "Resume engine" : "Pause engine");
-    $("pause-button").classList.toggle("pause-active", paused);
+    const pauseTitle = paused ? "Resume engine" : "Pause engine";
+    const pauseBtn = $("pause-button");
+    if (pauseBtn) {
+      pauseBtn.title = pauseTitle;
+      pauseBtn.setAttribute("aria-label", pauseTitle);
+      const pauseLabel = $("pause-label");
+      if (pauseLabel) pauseLabel.textContent = pauseTitle;
+      pauseBtn.classList.toggle("pause-active", paused);
+    }
     setText("engine-state", paused ? "ENGINE PAUSED" : "MANUAL CYCLES");
     $("engine-state").classList.toggle("paused", paused);
     renderAutomationControlBar();
@@ -191,6 +198,7 @@ async function mutate(action) {
 }
 
 function renderSnapshot() {
+  document.querySelectorAll(".skeleton-placeholder").forEach((el) => { el.classList.remove("skeleton-placeholder"); });
   const { app, metrics } = state.snapshot;
   setText("demo-date", sessionDate(app.date));
   setText("snapshot-label", `Snapshot ${app.revision} · Rules ${app.rules_revision}`);
@@ -624,6 +632,8 @@ function tickMarketClock() {
     const remM = Math.floor((diffSec % 3600) / 60);
     const remS = diffSec % 60;
     setText("market-countdown-text", `Closes in ${String(remH).padStart(2, "0")}h ${String(remM).padStart(2, "0")}m ${String(remS).padStart(2, "0")}s`);
+    if ($("topbar-clock-widget")) $("topbar-clock-widget").title = "DSE trading session open until 14:30 (Asia/Dhaka)";
+    if ($("run-cycle")) $("run-cycle").title = "Run live automation cycle";
   } else {
     dot.className = "status-dot clock-dot closed";
     setText("market-status-text", "DSE CLOSED");
@@ -641,6 +651,10 @@ function tickMarketClock() {
     const nextSession = new Date(dhakaDate);
     nextSession.setDate(nextSession.getDate() + daysToAdd);
     nextSession.setHours(10, 0, 0, 0);
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const nextDayName = dayNames[nextSession.getDay()];
+    if ($("topbar-clock-widget")) $("topbar-clock-widget").title = `DSE opens ${nextDayName} 10:00 (Asia/Dhaka)`;
+    if ($("run-cycle")) $("run-cycle").title = "Market closed: runs on demo data";
 
     const diffMs = nextSession.getTime() - dhakaDate.getTime();
     if (diffMs > 0) {
@@ -734,6 +748,16 @@ function renderAutomationControlBar() {
   if (hdrLive) {
     hdrLive.classList.toggle("active", isLive);
     hdrLive.disabled = state.busy;
+  }
+  const overflowPolling = $("overflow-mode-polling");
+  const overflowLive = $("overflow-mode-live");
+  if (overflowPolling) {
+    overflowPolling.classList.toggle("active", mode === "BACKGROUND_POLLING");
+    overflowPolling.disabled = state.busy;
+  }
+  if (overflowLive) {
+    overflowLive.classList.toggle("active", isLive);
+    overflowLive.disabled = state.busy;
   }
 
   // Polling Range Slider & Interval Pills
@@ -871,6 +895,34 @@ if ($("hdr-mode-polling")) {
 if ($("hdr-mode-live")) {
   $("hdr-mode-live").addEventListener("click", () => {
     setAutomationConfig({ ingestion_mode: "ONSCREEN_LIVE" });
+  });
+}
+const overflowBtn = $("topbar-overflow-btn");
+const overflowMenu = $("topbar-overflow-menu");
+if (overflowBtn && overflowMenu) {
+  overflowBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isHidden = overflowMenu.hidden;
+    overflowMenu.hidden = !isHidden;
+    overflowBtn.setAttribute("aria-expanded", String(isHidden));
+  });
+  document.addEventListener("click", (e) => {
+    if (!overflowMenu.hidden && !overflowMenu.contains(e.target) && e.target !== overflowBtn) {
+      overflowMenu.hidden = true;
+      overflowBtn.setAttribute("aria-expanded", "false");
+    }
+  });
+}
+if ($("overflow-mode-polling")) {
+  $("overflow-mode-polling").addEventListener("click", () => {
+    setAutomationConfig({ ingestion_mode: "BACKGROUND_POLLING" });
+    if (overflowMenu) overflowMenu.hidden = true;
+  });
+}
+if ($("overflow-mode-live")) {
+  $("overflow-mode-live").addEventListener("click", () => {
+    setAutomationConfig({ ingestion_mode: "ONSCREEN_LIVE" });
+    if (overflowMenu) overflowMenu.hidden = true;
   });
 }
 

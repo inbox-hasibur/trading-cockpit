@@ -161,8 +161,22 @@ button, input, select, textarea {
   outline-offset: 4px;
 }
 
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="tab"]:focus-visible,
+.tab-btn:focus-visible,
+.hdr-slider-btn:focus-visible,
+.period-tabs button:focus-visible,
+.timeframe-tabs button:focus-visible,
+tr[data-symbol]:focus-visible,
+tbody tr:focus-visible,
+a:focus-visible,
+.nav-item:focus-visible,
 :focus-visible {
-  outline: 2px solid var(--teal);
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
 }
 
 [hidden] {
@@ -265,6 +279,7 @@ h2 {
 }
 
 .nav-item {
+  position: relative;
   width: 38px; height: 38px; display: grid; place-items: center; border-radius: 8px; color: #71849a; transition: background .15s, color .15s;
 }
 
@@ -277,7 +292,54 @@ h2 {
 }
 
 .nav-item.active {
-  color: var(--teal); background: #15312c; box-shadow: inset 0 0 0 1px #23453d;
+  color: var(--brand); background: var(--brand-bg); box-shadow: inset 0 0 0 1px rgba(93, 228, 199, 0.25);
+}
+
+.nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--brand);
+}
+
+.nav-item[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: var(--fs-xs, 11px);
+  font-weight: 550;
+  white-space: nowrap;
+  padding: 4px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 1000;
+}
+
+[data-theme="light"] .nav-item[data-tooltip]::after {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.nav-item[data-tooltip]:hover::after,
+.nav-item[data-tooltip]:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(2px);
 }
 
 .nav-bottom {
@@ -377,10 +439,109 @@ h2 {
   white-space: nowrap;
 }
 
+.button.icon-button {
+  width: 31px;
+  min-width: 31px;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#pause-button svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+#pause-button .play-icon {
+  display: none;
+}
+
+#pause-button .pause-icon {
+  display: block;
+}
+
+#pause-button.pause-active {
+  background: var(--amber-bg);
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+#pause-button.pause-active .play-icon {
+  display: block;
+}
+
+#pause-button.pause-active .pause-icon {
+  display: none;
+}
+
 .topbar .theme-toggle-btn {
   padding: 6px 9px;
   min-height: 31px;
   white-space: nowrap;
+}
+
+.topbar-overflow-wrap {
+  display: none;
+}
+
+.topbar-overflow-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+  padding: 10px;
+  min-width: 180px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+[data-theme="light"] .topbar-overflow-menu {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+}
+
+.overflow-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+}
+
+.overflow-mode-options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.overflow-opt-btn {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: var(--fs-xs, 11px);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.overflow-opt-btn:hover {
+  background: var(--panel-hover);
+}
+
+.overflow-opt-btn.active {
+  background: var(--brand-bg);
+  color: var(--brand);
+  border-color: var(--brand);
+  font-weight: 600;
 }
 
 .demo-badge {
@@ -1775,7 +1936,17 @@ input[type=checkbox] {
   .chat-header { padding-left: 16px; padding-right: 16px; gap: 8px; }
 }
 
+@media (max-width: 1280px) {
+  .hdr-mode-full { display: none; }
+  .hdr-mode-short { display: inline; }
+  .hdr-slider-btn { padding: 4px 8px; font-size: var(--fs-xs, 11px); }
+}
+
 @media (max-width: 1100px) {
+  .header-mode-slider { display: none; }
+  .topbar-overflow-wrap { display: block; position: relative; }
+  .topbar .theme-toggle-btn #theme-name { display: none; }
+  .topbar .theme-toggle-btn { padding: 6px 8px; min-height: 31px; }
   .app-shell { grid-template-columns: 54px minmax(0, 1fr); }
   .workspace { padding-left: 24px; padding-right: 24px; }
   .chat-panel { grid-column: 2; position: static; height: 600px; border-top: 1px solid var(--line); border-left: 0; margin: 0 24px 24px; border: 1px solid var(--line); border-radius: 10px; }
@@ -3494,6 +3665,47 @@ input[type=checkbox] {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
+.hdr-mode-full {
+  display: inline;
+}
+
+.hdr-mode-short {
+  display: none;
+}
+
+.skeleton-placeholder {
+  display: inline-block;
+  min-width: 60px;
+  border-radius: 4px;
+  background: rgba(148, 163, 184, 0.12) !important;
+  color: transparent !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-placeholder::after {
+  content: "";
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  animation: skeleton-shimmer 1.5s infinite;
+}
+
+[data-theme="light"] .skeleton-placeholder {
+  background: rgba(100, 116, 139, 0.12) !important;
+}
+
+[data-theme="light"] .skeleton-placeholder::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 .bottom-model-btn {
   display: inline-flex;
   align-items: center;
@@ -4584,6 +4796,13 @@ button.local-avatar:hover {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  * { transition: none !important; }
+  html {
+    scroll-behavior: auto !important;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
