@@ -137,6 +137,13 @@ async function sendChat(message) {
   if (message.toLowerCase() === "/model" || message.toLowerCase() === "/models") {
     const inp = $("chat-input");
     if (inp) inp.value = "";
+    const quickSelect = $("hermes-quick-model-select");
+    if (quickSelect) {
+      quickSelect.focus();
+      if (typeof quickSelect.showPicker === "function") {
+        try { quickSelect.showPicker(); } catch {}
+      }
+    }
     const modelDrop = $("model-dropup-menu") || $("model-picker-dropdown");
     if (modelDrop) {
       modelDrop.hidden = false;
@@ -511,6 +518,19 @@ async function loadHermesModels() {
     const isLocal = active === "local-quant-brain";
     setText("provider-prefix-label", isGemini ? "GEMINI ·" : (isLocal ? "LOCAL ·" : "OPENROUTER ·"));
 
+    // Sync bottom quick select
+    const quickSelect = $("hermes-quick-model-select");
+    if (quickSelect) {
+      quickSelect.innerHTML = models.map((m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.name)}</option>`).join("");
+      if (active && !Array.from(quickSelect.options).some((opt) => opt.value === active)) {
+        const opt = document.createElement("option");
+        opt.value = active;
+        opt.textContent = `${active} (Active)`;
+        quickSelect.prepend(opt);
+      }
+      quickSelect.value = active;
+    }
+
     // Sync dropdown menu
     const dropdownList = $("model-dropdown-list");
     if (dropdownList) {
@@ -603,6 +623,16 @@ async function switchHermesModel(modelId) {
   const isGemini = modelId.startsWith("google/") || modelId.startsWith("gemini");
   const isLocal = modelId === "local-quant-brain";
   setText("provider-prefix-label", isGemini ? "GEMINI ·" : (isLocal ? "LOCAL ·" : "OPENROUTER ·"));
+  const quickSelect = $("hermes-quick-model-select");
+  if (quickSelect && quickSelect.value !== modelId) {
+    if (!Array.from(quickSelect.options).some((opt) => opt.value === modelId)) {
+      const opt = document.createElement("option");
+      opt.value = modelId;
+      opt.textContent = `${modelId} (Active)`;
+      quickSelect.prepend(opt);
+    }
+    quickSelect.value = modelId;
+  }
   const select = $("settings-model-select");
   if (select && select.value !== modelId) {
     if (!Array.from(select.options).some((opt) => opt.value === modelId)) {
@@ -1025,6 +1055,14 @@ function initHermesChatListeners() {
         event.preventDefault();
         sendChat(chatInput.value);
       }
+    });
+  }
+
+  // Quick Model select in chat composer
+  const quickModelSelect = $("hermes-quick-model-select");
+  if (quickModelSelect) {
+    quickModelSelect.addEventListener("change", (e) => {
+      switchHermesModel(e.target.value);
     });
   }
 

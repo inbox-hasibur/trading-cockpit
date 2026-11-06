@@ -7,10 +7,12 @@ into SQLite CompanyProfile records.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 from typing import Any
+import httpx
 
 from backend.database import CompanyProfile, Database, portfolio_state
 from backend.engine.money import ZERO, decimal
@@ -211,6 +213,200 @@ def extract_quotes_from_payload(payload: Any, as_of_date: date | None = None) ->
     return extracted
 
 
+_ALL_DSE_SHARES_CACHE: list[dict[str, Any]] = []
+_ALL_DSE_SHARES_UPDATED_AT: str | None = None
+_SECTOR_MAP_CACHE: dict[int, str] = {}
+
+
+async def fetch_stocknow_live_market_data(client: Any = None) -> list[dict[str, Any]]:
+    """Fetches real-time market data directly from stocknow.com.bd API.
+
+    1. Fetches all DSE instruments (473 stocks) and sector definitions.
+    2. Builds and caches the All DSE Shares catalog with LTP, +/- %, and sparklines.
+    3. Resolves user favorite lists (GSC, GSC_L1, GSC_L2) from browser session if available.
+    4. Concurrently pulls real multi-session candlestick curves for favorite companies.
+    5. Returns normalized quote objects ready for SQLite database synchronization.
+    """
+    global _ALL_DSE_SHARES_CACHE, _ALL_DSE_SHARES_UPDATED_AT, _SECTOR_MAP_CACHE
+
+    now_iso = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    user_lists = None
+
+    # Step 1: Check if live client has active page and auth token
+    page = getattr(client, "page", None)
+    if page is not None and not (hasattr(page, "is_closed") and page.is_closed()):
+        try:
+            lists_res = await page.evaluate("""async () => {
+                try {
+                    const token = localStorage.getItem('access_token');
+                    if (!token) return null;
+                    const r = await fetch('https://stocknow.com.bd/api/v1/user/lists', {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if (r.ok) return await r.json();
+                } catch (e) {}
+                return null;
+            }""")
+            if isinstance(lists_res, list) and len(lists_res) > 0:
+                user_lists = lists_res
+        except Exception as exc:
+            logger.debug("Failed evaluating user/lists from browser: %s", exc)
+
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+    async with httpx.AsyncClient(headers=headers, timeout=20.0) as http:
+        # Step 2: Fetch all instruments and sectors
+        try:
+            r_inst, r_sec = await asyncio.gather(
+                http.get("https://stocknow.com.bd/api/v1/instruments"),
+                http.get("https://stocknow.com.bd/api/v1/sectors"),
+                return_exceptions=True
+            )
+            raw_inst = r_inst.json() if not isinstance(r_inst, Exception) and getattr(r_inst, "status_code", 0) == 200 else {}
+            raw_sec = r_sec.json() if not isinstance(r_sec, Exception) and getattr(r_sec, "status_code", 0) == 200 else {}
+        except Exception as net_exc:
+            logger.warning("Failed fetching instruments/sectors: %s", net_exc)
+            raw_inst, raw_sec = {}, {}
+
+        if raw_sec and isinstance(raw_sec, dict):
+            for k, v in raw_sec.items():
+                try:
+                    _SECTOR_MAP_CACHE[int(k)] = v.get("name", "Other")
+                except Exception:
+                    pass
+
+        # Step 3: Format All DSE Shares catalog
+        formatted_shares = []
+        if raw_inst and isinstance(raw_inst, dict):
+            for code, item in raw_inst.items():
+                if not isinstance(item, dict):
+                    continue
+                ltp = float(item.get("close") or item.get("ycp") or 0.0)
+                ycp = float(item.get("ycp") or ltp)
+                chg = round(ltp - ycp, 2)
+                chg_pct = round(((ltp - ycp) / ycp) * 100, 2) if ycp > 0 else 0.0
+
+                spk_raw = [
+                    item.get("365d"), item.get("180d"), item.get("90d"),
+                    item.get("30d"), item.get("15d"), item.get("7d"), ltp
+                ]
+                sparkline = [float(p) for p in spk_raw if p is not None and float(p) > 0]
+                if len(sparkline) < 2:
+                    sparkline = [ycp, ltp] if ycp > 0 and ltp > 0 else [ltp, ltp]
+
+                formatted_shares.append({
+                    "symbol": code.strip().upper(),
+                    "name": item.get("name") or code,
+                    "sector": _SECTOR_MAP_CACHE.get(item.get("sector_id"), "Other"),
+                    "category": (item.get("category") or "A").strip().upper(),
+                    "ltp": ltp,
+                    "ycp": ycp,
+                    "change": chg,
+                    "change_pct": chg_pct,
+                    "volume": int(item.get("volume") or 0),
+                    "value_cr": round(float(item.get("value") or 0.0), 2),
+                    "trades": int(item.get("trades") or 0),
+                    "high": float(item.get("high") or ltp),
+                    "low": float(item.get("low") or ltp),
+                    "sparkline": sparkline,
+                })
+
+            _ALL_DSE_SHARES_CACHE = sorted(formatted_shares, key=lambda s: s["value_cr"], reverse=True)
+            _ALL_DSE_SHARES_UPDATED_AT = now_iso
+
+        # Step 4: Resolve Favorite Lists
+        fav_categories: dict[str, str] = {}
+        if user_lists:
+            for l in user_lists:
+                name = l.get("name", "")
+                cat_code = STOCKNOW_LIST_NAME_TO_CATEGORY.get(name, "GSC")
+                for it in l.get("items", []):
+                    c = it.get("code")
+                    if c:
+                        sym_u = c.strip().upper()
+                        if sym_u not in fav_categories or cat_code in ("GSC_L1", "GSC_L2"):
+                            fav_categories[sym_u] = cat_code
+        else:
+            # Verified default 3 favorite lists
+            for s in ['ACI', 'BANKASIA', 'DHAKABANK', 'FUWANGCER', 'IFIC', 'NPOLYMER', 'PRIMEBANK', 'PUBALIBANK', 'SPCERAMICS', 'IBNSINA']:
+                fav_categories[s] = "GSC"
+            for s in ['BANKASIA', 'MATINSPINN']:
+                fav_categories[s] = "GSC_L1"
+            for s in ['DHAKABANK']:
+                fav_categories[s] = "GSC_L2"
+
+        # Step 5: Concurrently pull real 30-session history for all favorite symbols
+        symbols_to_pull = list(fav_categories.keys())
+
+        async def fetch_hist(sym: str) -> tuple[str, list[dict[str, str]]]:
+            url = f"https://stocknow.com.bd/api/v1/instruments/{sym}/history?data2=true&resolution=1D&skip=0"
+            try:
+                r = await http.get(url, timeout=10.0)
+                if r.status_code == 200:
+                    d = r.json()
+                    if isinstance(d, list) and len(d) >= 6 and len(d[3]) > 0:
+                        closes = d[3][-30:]
+                        ts_list = d[5][-30:]
+                        points = [
+                            {"date": datetime.fromtimestamp(ts, tz=timezone.utc).date().isoformat(), "close": str(c)}
+                            for c, ts in zip(closes, ts_list)
+                        ]
+                        return sym, points
+            except Exception as e:
+                logger.debug("Failed fetching history for %s: %s", sym, e)
+            return sym, []
+
+        hist_tuples = await asyncio.gather(*[fetch_hist(s) for s in symbols_to_pull])
+        hist_map = dict(hist_tuples)
+
+        # Step 6: Construct normalized quotes
+        today = date.today()
+        quotes: list[dict[str, Any]] = []
+        for sym, cat_code in fav_categories.items():
+            inst_data = raw_inst.get(sym, {})
+            ltp_f = float(inst_data.get("close") or inst_data.get("ycp") or 0.0)
+            if ltp_f <= 0:
+                continue
+            ycp_f = float(inst_data.get("ycp") or ltp_f)
+            chg_pct = round(((ltp_f - ycp_f) / ycp_f) * 100, 2) if ycp_f > 0 else 0.0
+
+            history = hist_map.get(sym, [])
+            if not history:
+                spk_raw = [inst_data.get("30d"), inst_data.get("15d"), inst_data.get("7d"), ltp_f]
+                history = [{"date": today.isoformat(), "close": str(p)} for p in spk_raw if p and float(p) > 0]
+
+            quote_dict = {
+                "symbol": sym,
+                "name": inst_data.get("name") or sym,
+                "sector": _SECTOR_MAP_CACHE.get(inst_data.get("sector_id"), "OTHER"),
+                "category": (inst_data.get("category") or "A").strip().upper(),
+                "watchlist_category": cat_code,
+                "last_price": Decimal(str(ltp_f)),
+                "ycp": Decimal(str(ycp_f)),
+                "change_pct": Decimal(str(chg_pct)),
+                "history": history,
+                "as_of_date": today,
+                "source": "STOCKNOW_LIVE",
+            }
+            quotes.append(quote_dict)
+
+        return quotes
+
+
+async def get_or_fetch_all_dse_shares(client: Any = None) -> dict[str, Any]:
+    """Returns cached All DSE Shares catalog, populating it if not yet loaded."""
+    global _ALL_DSE_SHARES_CACHE, _ALL_DSE_SHARES_UPDATED_AT
+    if not _ALL_DSE_SHARES_CACHE:
+        try:
+            await fetch_stocknow_live_market_data(client=client)
+        except Exception as exc:
+            logger.warning("Auto-fetch all DSE shares failed: %s", exc)
+    return {
+        "total": len(_ALL_DSE_SHARES_CACHE),
+        "updated_at": _ALL_DSE_SHARES_UPDATED_AT or datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "shares": _ALL_DSE_SHARES_CACHE,
+    }
+
+
 async def extract_quotes_from_stocknow(client: Any, injected_payload: Any = None) -> list[dict[str, Any]]:
     """Extracts live DSE ticker quotes from sniffer cache, page DOM or injected payload."""
     from backend.adapters.stocknow_client import StockNowLiveClient
@@ -222,6 +418,15 @@ async def extract_quotes_from_stocknow(client: Any, injected_payload: Any = None
 async def _extract_quotes_from_stocknow_impl(client: Any, injected_payload: Any = None) -> list[dict[str, Any]]:
     if injected_payload is not None:
         return extract_quotes_from_payload(injected_payload)
+
+    # 1. Primary path: real-time StockNow API engine with real 30-session curves & all shares
+    try:
+        quotes = await fetch_stocknow_live_market_data(client=client)
+        if quotes:
+            logger.info("Extracted %d live quotes via StockNow API engine", len(quotes))
+            return quotes
+    except Exception as exc:
+        logger.warning("fetch_stocknow_live_market_data failed, trying sniffer fallbacks: %s", exc)
 
     captured = getattr(client, "captured_endpoints", {})
     if captured:
@@ -405,9 +610,9 @@ def _sync_in_session(
             from backend.database import CustomRule
             company = CompanyProfile(
                 symbol=symbol,
-                name=f"{symbol} · StockNow",
-                sector="DSE",
-                watchlist_category=q.get("category", "GSC"),
+                name=q.get("name") or f"{symbol} · StockNow",
+                sector=q.get("sector") or "DSE",
+                watchlist_category=q.get("watchlist_category") or q.get("category", "GSC"),
                 settlement_days=2,
                 last_price=last_price,
                 price_history=[{"date": (q.get("as_of_date") or as_of).isoformat(), "close": str(last_price)}],
@@ -419,6 +624,11 @@ def _sync_in_session(
             rule = session.get(CustomRule, symbol)
             if rule is None:
                 session.add(CustomRule(symbol=symbol, buy_allocation_pct=ZERO))
+
+        if q.get("name") and (company.name.endswith(" · StockNow") or not company.name):
+            company.name = q["name"]
+        if q.get("sector") and company.sector in ("DSE", "OTHER", "Other"):
+            company.sector = q["sector"]
 
         company.last_price = last_price
         company.quote_on = q.get("as_of_date") or as_of

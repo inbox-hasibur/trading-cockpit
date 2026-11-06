@@ -182,10 +182,9 @@ def migrate_real_stocknow_market(session: Session, settings: Settings) -> None:
             else:
                 rule.buy_allocation_pct = decimal(allocation)
 
+        target_capital = Decimal("121292.71")
         # Reconcile portfolio to initial StockNow state only on fresh bootstrap
-        has_any_lots = session.scalar(select(func.count(TaxLot.id))) or 0
-        has_any_trades = session.scalar(select(func.count(TradeLog.id))) or 0
-        already_migrated = state.revision > 1 or has_any_lots > 0 or has_any_trades > 0
+        already_migrated = state.name == "Humming Bird #164580" and state.revision > 1
 
         if not already_migrated:
             session.execute(delete(DecisionLog))

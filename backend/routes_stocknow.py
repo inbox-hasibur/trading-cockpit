@@ -15,6 +15,7 @@ logger = logging.getLogger("hummingbird.stocknow_routes")
 from backend.adapters.stocknow_client import StockNowLiveClient
 from backend.adapters.stocknow_market_sync import (
     extract_quotes_from_stocknow,
+    get_or_fetch_all_dse_shares,
     sync_live_market_to_db,
 )
 from backend.adapters.stocknow_portfolio_sync import (
@@ -141,6 +142,27 @@ def build_stocknow_router(
         payload = {"result": result, "snapshot": snapshot}
         broadcaster.publish("market_sync", payload)
         return payload
+
+    @router.get("/all-shares")
+    async def get_all_dse_shares():
+        """Returns the full 470+ DSE shares catalog with live LTP, +/- %, and sparkline curves."""
+        return await get_or_fetch_all_dse_shares(stocknow_client)
+
+    @router.get("/history/{symbol}")
+    async def get_stocknow_symbol_history(symbol: str):
+        """Returns real 400-candle daily history for any DSE company directly from StockNow."""
+        sym_clean = symbol.strip().upper()
+        import httpx
+        url = f"https://stocknow.com.bd/api/v1/instruments/{sym_clean}/history?data2=true&resolution=1D&skip=0"
+        try:
+            async with httpx.AsyncClient(headers={"User-Agent": "Mozilla/5.0"}, timeout=12.0) as http:
+                res = await http.get(url)
+                if res.status_code != 200:
+                    raise HTTPException(status_code=res.status_code, detail=f"StockNow history unavailable for {sym_clean}")
+                data = res.json()
+                return {"symbol": sym_clean, "data": data}
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=f"Failed fetching StockNow history: {exc}")
 
     @router.post("/sync-portfolio")
     async def post_stocknow_sync_portfolio(body: StockNowPortfolioSyncRequest | None = None):

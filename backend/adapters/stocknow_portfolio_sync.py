@@ -314,7 +314,9 @@ def _execute_reconciliation(
     bucket_spends: dict[str, Decimal] = {"A": Decimal("0"), "B": Decimal("0"), "C": Decimal("0")}
 
     for holding in portfolio_data.get("holdings", []):
-        sym, qty, avg_cost = holding["symbol"], holding["quantity"], holding["avg_cost"]
+        sym = holding["symbol"]
+        qty = int(holding.get("quantity") or holding.get("shares") or 0)
+        avg_cost = Decimal(str(holding["avg_cost"]))
         if not session.get(CompanyProfile, sym):
             session.add(CompanyProfile(
                 symbol=sym, name=holding.get("name") or sym, sector=holding.get("sector") or "OTHER",
@@ -361,7 +363,7 @@ def _execute_reconciliation(
 
     session.flush()
     total_cost = sum((lot.remaining_cost_basis for lot in created_lots), Decimal("0"))
-    cash_bal = portfolio_data.get("cash_balance", Decimal("0"))
+    cash_bal = Decimal(str(portfolio_data.get("cash_balance") or 0))
     min_required_capital = (max(bucket_spends.values()) if bucket_spends else Decimal("0")) * 3
 
     state.initial_capital = money(max(cash_bal + total_cost, min_required_capital))

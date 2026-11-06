@@ -7,11 +7,11 @@
   <meta name="description" content="Humming Bird: a local, synthetic paper-trading cockpit for Bangladesh-market strategy experiments.">
   <title>Humming Bird · Trading Cockpit</title>
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
-  <link rel="stylesheet" href="/assets/styles.css?v=2.3">
-  <link rel="stylesheet" href="/assets/theme_light_hermes.css?v=2.3">
-  <script src="/assets/charts.js?v=2.3" defer></script>
-  <script src="/assets/hermes_ui.js?v=2.3" defer></script>
-  <script src="/assets/app.js?v=2.3" defer></script>
+  <link rel="stylesheet" href="/assets/styles.css?v=2.4">
+  <link rel="stylesheet" href="/assets/theme_light_hermes.css?v=2.4">
+  <script src="/assets/charts.js?v=2.4" defer></script>
+  <script src="/assets/hermes_ui.js?v=2.4" defer></script>
+  <script src="/assets/app.js?v=2.4" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#overview">Skip to portfolio</a>
@@ -202,16 +202,22 @@
 
         <section class="panel watchlist-panel section-anchor" id="watchlist">
           <div class="panel-heading">
-            <div class="heading-with-count"><h2>Company watchlist</h2><span id="company-count" class="count-badge">5</span><span class="source-label">SYNTHETIC PRICES</span></div>
+            <div class="heading-with-count"><h2>Company watchlist</h2><span id="company-count" class="count-badge">11</span><span class="source-label" id="watchlist-source-label">STOCKNOW LIVE</span></div>
             <div class="category-tabs" id="category-tabs" role="group" aria-label="Watchlist Category Filters">
-              <button class="active" data-cat="ALL" type="button">All (<span id="cat-all-count">5</span>)</button>
-              <button data-cat="GSC" type="button" title="Big Giant Stable Companies">Big Giant Stable (<span id="cat-gsc-count">3</span>)</button>
-              <button data-cat="GSC_L1" type="button" title="GSC Upper Trends L1 (Long-term Comeback)">Upper Trends L1 (<span id="cat-l1-count">1</span>)</button>
+              <button class="active" data-cat="ALL" type="button">Favorites (All) (<span id="cat-all-count">11</span>)</button>
+              <button data-cat="GSC" type="button" title="Big Giant Stable Companies">Big Giant Stable (<span id="cat-gsc-count">9</span>)</button>
+              <button data-cat="GSC_L1" type="button" title="GSC Upper Trends L1 (Long-term Comeback)">Upper Trends L1 (<span id="cat-l1-count">2</span>)</button>
               <button data-cat="GSC_L2" type="button" title="GSC Upper Trends L2 (Short-term Fluctuation Scalp)">Upper Trends L2 (<span id="cat-l2-count">1</span>)</button>
+              <button data-cat="ALL_DSE" type="button" title="All 470+ Dhaka Stock Exchange Listed Companies" class="all-dse-tab-btn">All DSE Shares (<span id="cat-dse-count">473</span>)</button>
             </div>
-            <label class="search-field"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8" cy="8" r="4.5"/><path d="m12 12 4 4"/></svg><input type="search" id="company-search" placeholder="Find a company" aria-label="Find a company"></label>
+            <label class="search-field"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8" cy="8" r="4.5"/><path d="m12 12 4 4"/></svg><input type="search" id="company-search" placeholder="Find a company / symbol" aria-label="Find a company"></label>
           </div>
-          <div class="table-scroll"><table class="watchlist-table"><thead><tr><th scope="col">COMPANY</th><th scope="col" class="align-right">PRICE ৳</th><th scope="col" class="align-right">DAY</th><th scope="col">7–15 SESSION CURVE</th><th scope="col">CURVE SIGNAL</th><th scope="col" class="align-right">HELD / MATURE</th><th scope="col" class="align-right">BUY CAP</th><th scope="col" class="align-center">TREND</th></tr></thead><tbody id="watchlist-body"><tr><td colspan="8" class="loading-cell">Loading local portfolio…</td></tr></tbody></table></div>
+          <div class="table-scroll"><table class="watchlist-table"><thead id="watchlist-thead"><tr><th scope="col">COMPANY</th><th scope="col" class="align-right">PRICE ৳</th><th scope="col" class="align-right">DAY</th><th scope="col">7–15 SESSION CURVE</th><th scope="col" id="col-curve-signal">CURVE SIGNAL</th><th scope="col" class="align-right" id="col-held-mature">HELD / MATURE</th><th scope="col" class="align-right" id="col-buy-cap">BUY CAP</th><th scope="col" class="align-center">TREND</th></tr></thead><tbody id="watchlist-body"><tr><td colspan="8" class="loading-cell">Loading local portfolio…</td></tr></tbody></table></div>
+          <div class="watchlist-pagination" id="watchlist-pagination" hidden>
+            <button type="button" class="button secondary small-button" id="watchlist-prev-page" disabled>◀ Previous</button>
+            <span class="pagination-info" id="watchlist-page-info">Page 1 of 10 (473 shares)</span>
+            <button type="button" class="button secondary small-button" id="watchlist-next-page">Next ▶</button>
+          </div>
           <div class="panel-note watchlist-note"><span>Choose a company to inspect its lots, or click Deep Trend for 7D/1M/6M/1Y curves & fundamentals.</span><span>Sector preference is not a safety guarantee.</span></div>
         </section>
 
@@ -684,17 +690,12 @@
           </div>
           <div class="provider-status">
             <div class="model-picker-wrap bottom-model-picker">
-              <button type="button" class="bottom-model-btn" id="hermes-model-trigger" onclick="toggleHermesModelPicker(event)" title="Switch AI Brain Model (/model)">
-                <span class="muted-label" id="provider-prefix-label">OPENROUTER ·</span>
-                <strong id="hermes-active-model-name">mimo-v2.6-pro</strong>
-                <span class="badge-caret">▾</span>
-              </button>
-              <div class="model-dropup-menu" id="model-dropup-menu" hidden>
-                <div class="dropup-header">HERMES AI BRAIN</div>
-                <div class="dropdown-list" id="model-dropdown-list">
-                  <div class="empty-state-small" style="padding: 8px 10px; font-size: 11px; color: var(--muted, #94a3b8);">Loading models…</div>
-                </div>
-              </div>
+              <span class="muted-label" id="provider-prefix-label">OPENROUTER ·</span>
+              <select id="hermes-quick-model-select" class="bottom-model-select" title="Switch Hermes AI Brain Model" aria-label="Switch AI Brain Model">
+                <option value="xiaomi/mimo-v2.6-pro">Xiaomi MiMo-v2.6-Pro (Primary Brain)</option>
+              </select>
+              <button type="button" id="hermes-model-trigger" class="sr-only" aria-hidden="true" tabindex="-1">Switch model</button>
+              <strong id="hermes-active-model-name" hidden>mimo-v2.6-pro</strong>
             </div>
           </div>
           <form id="chat-form" class="chat-form">

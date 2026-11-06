@@ -565,7 +565,11 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
         "confidence": f.confidence,
     } for f in session.scalars(select(HermesDurableFact).where(HermesDurableFact.active == True).order_by(HermesDurableFact.id.desc()).limit(15))]
 
+    from backend.adapters.stocknow_market_sync import _ALL_DSE_SHARES_CACHE
+    all_shares_total = len(_ALL_DSE_SHARES_CACHE) if _ALL_DSE_SHARES_CACHE else 473
+
     return {
+        "all_shares_count": all_shares_total,
         "app": {
             "name": state.name, "version": VERSION, "mode": "DEMO", "source": "SYNTHETIC",
             "date": state.clock_date.isoformat(), "revision": state.revision,

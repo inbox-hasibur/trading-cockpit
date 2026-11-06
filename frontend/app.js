@@ -455,6 +455,14 @@ function selectCompany(symbol) {
   renderInspector();
 }
 
+function formatCompactNumber(num) {
+  const n = Number(num) || 0;
+  if (n >= 10000000) return (n / 10000000).toFixed(2) + " Cr";
+  if (n >= 100000) return (n / 100000).toFixed(2) + " L";
+  if (n >= 1000) return (n / 1000).toFixed(1) + "K";
+  return String(n);
+}
+
 function renderWatchlist() {
   const query = $("company-search").value.trim().toLowerCase();
   const all = state.snapshot.companies;
@@ -467,6 +475,132 @@ function renderWatchlist() {
   if ($("cat-gsc-count")) setText("cat-gsc-count", gscCount);
   if ($("cat-l1-count")) setText("cat-l1-count", l1Count);
   if ($("cat-l2-count")) setText("cat-l2-count", l2Count);
+  if ($("cat-dse-count") && state.allDseShares) setText("cat-dse-count", state.allDseShares.length);
+
+  const thead = $("watchlist-thead");
+  const paginationBar = $("watchlist-pagination");
+
+  if (cat === "ALL_DSE") {
+    if (thead) {
+      thead.innerHTML = '<tr><th scope="col">COMPANY</th><th scope="col" class="align-right">PRICE ৳</th><th scope="col" class="align-right">DAY</th><th scope="col">7–15 SESSION CURVE</th><th scope="col">VOL / VALUE</th><th scope="col" class="align-center">CAT</th><th scope="col" class="align-right">HIGH / LOW</th><th scope="col" class="align-center">ACTION</th></tr>';
+    }
+    if (paginationBar) paginationBar.hidden = false;
+
+    if (!state.allDseShares) {
+      if (!state.loadingAllDse) {
+        state.loadingAllDse = true;
+        api("/api/stocknow/all-shares")
+          .then((res) => {
+            state.allDseShares = res.shares || [];
+            state.loadingAllDse = false;
+            if ($("cat-dse-count")) setText("cat-dse-count", state.allDseShares.length);
+            renderWatchlist();
+          })
+          .catch((err) => {
+            state.loadingAllDse = false;
+            notify(`Failed loading All DSE Shares: ${err.message}`, true);
+            const row = element("tr");
+            const td = cell(`Failed loading All DSE Shares: ${err.message}`, "loading-cell");
+            td.colSpan = 8;
+            row.append(td);
+            $("watchlist-body").replaceChildren(row);
+          });
+      }
+      const row = element("tr");
+      const td = cell("Loading 470+ live DSE shares catalog from StockNow…", "loading-cell");
+      td.colSpan = 8;
+      row.append(td);
+      $("watchlist-body").replaceChildren(row);
+      return;
+    }
+
+    const filtered = (state.allDseShares || []).filter((s) => {
+      const haystack = `${s.symbol} ${s.name} ${s.sector} ${s.category || ""}`.toLowerCase();
+      return haystack.includes(query);
+    });
+    setText("company-count", query ? `${filtered.length}/${state.allDseShares.length}` : state.allDseShares.length);
+
+    const pageSize = 50;
+    const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+    state.dsePage = Math.max(1, Math.min(state.dsePage || 1, totalPages));
+    const paged = filtered.slice((state.dsePage - 1) * pageSize, state.dsePage * pageSize);
+
+    setText("watchlist-page-info", `Page ${state.dsePage} of ${totalPages} (${filtered.length} shares)`);
+    const prevBtn = $("watchlist-prev-page");
+    const nextBtn = $("watchlist-next-page");
+    if (prevBtn) prevBtn.disabled = state.dsePage <= 1;
+    if (nextBtn) nextBtn.disabled = state.dsePage >= totalPages;
+
+    const rows = paged.map((s) => {
+      const row = element("tr", s.symbol === state.selectedSymbol ? "selected" : "");
+      row.dataset.symbol = s.symbol;
+      const companyCell = cell();
+      const button = element("button", "company-button");
+      button.type = "button";
+      button.setAttribute("aria-label", `Inspect ${s.symbol}`);
+      const secClass = (s.sector || "other").toLowerCase().replace(/[^a-z0-9]/g, "_");
+      button.append(element("span", `company-icon sector-${secClass}`, s.symbol[0]));
+      const name = element("span");
+      const symSpan = element("span", "company-symbol", s.symbol);
+      name.append(symSpan, element("span", "company-subtitle", (s.name || s.sector || "").slice(0, 26)));
+      button.append(name);
+      companyCell.append(button);
+
+      const priceCell = cell(numberFormat.format(s.ltp), "align-right");
+      const day = cell(percentage(s.change_pct), `align-right ${s.change_pct >= 0 ? "positive" : "negative"}`);
+      const chart = cell();
+      chart.append(sparkline(s.sparkline || [s.ltp]));
+
+      const volVal = cell(undefined, "vol-val-cell");
+      const volStr = formatCompactNumber(s.volume);
+      const valStr = s.value_cr ? `৳${Number(s.value_cr).toFixed(2)} Cr` : "—";
+      volVal.append(element("span", "volume-text", volStr), element("span", "muted small", ` · ${valStr}`));
+
+      const catBadgeCell = cell(undefined, "align-center");
+      if (s.category) {
+        catBadgeCell.append(element("span", `cat-tag cat-${s.category.toLowerCase()}`, s.category));
+      } else {
+        catBadgeCell.append(element("span", "muted", "—"));
+      }
+
+      const hlCell = cell(undefined, "align-right");
+      hlCell.append(
+        element("span", "small positive", `H: ${s.high || s.ltp}`),
+        element("span", "muted small", " / "),
+        element("span", "small negative", `L: ${s.low || s.ltp}`)
+      );
+
+      const actionCell = cell(undefined, "align-center");
+      const trendBtn = element("button", "button secondary small-button deep-trend-btn", "Trend ⤢");
+      trendBtn.type = "button";
+      trendBtn.title = `View ${s.symbol} Deep Trend & Real 400-Candle History`;
+      trendBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openDeepTrendModal(s.symbol);
+      });
+      actionCell.append(trendBtn);
+
+      row.append(companyCell, priceCell, day, chart, volVal, catBadgeCell, hlCell, actionCell);
+      row.addEventListener("click", () => selectCompany(s.symbol));
+      return row;
+    });
+
+    if (!rows.length) {
+      const row = element("tr");
+      const td = cell("No matching DSE shares found for this search.", "loading-cell");
+      td.colSpan = 8;
+      row.append(td);
+      rows.push(row);
+    }
+    $("watchlist-body").replaceChildren(...rows);
+    return;
+  }
+
+  // Standard category view
+  if (thead) {
+    thead.innerHTML = '<tr><th scope="col">COMPANY</th><th scope="col" class="align-right">PRICE ৳</th><th scope="col" class="align-right">DAY</th><th scope="col">7–15 SESSION CURVE</th><th scope="col" id="col-curve-signal">CURVE SIGNAL</th><th scope="col" class="align-right" id="col-held-mature">HELD / MATURE</th><th scope="col" class="align-right" id="col-buy-cap">BUY CAP</th><th scope="col" class="align-center">TREND</th></tr>';
+  }
+  if (paginationBar) paginationBar.hidden = true;
 
   const companies = all.filter((company) => {
     const matchesQuery = `${company.symbol} ${company.name} ${company.sector}`.toLowerCase().includes(query);
@@ -715,10 +849,29 @@ document.querySelectorAll("[data-period]").forEach((button) => button.addEventLi
 document.querySelectorAll("#category-tabs button").forEach((button) => button.addEventListener("click", () => {
   if (state.snapshot) {
     state.category = button.dataset.cat;
+    state.dsePage = 1;
     document.querySelectorAll("#category-tabs button").forEach((b) => b.classList.toggle("active", b === button));
     renderWatchlist();
   }
 }));
+
+const watchlistPrev = $("watchlist-prev-page");
+if (watchlistPrev) {
+  watchlistPrev.addEventListener("click", () => {
+    if ((state.dsePage || 1) > 1) {
+      state.dsePage = (state.dsePage || 1) - 1;
+      renderWatchlist();
+    }
+  });
+}
+
+const watchlistNext = $("watchlist-next-page");
+if (watchlistNext) {
+  watchlistNext.addEventListener("click", () => {
+    state.dsePage = (state.dsePage || 1) + 1;
+    renderWatchlist();
+  });
+}
 document.querySelectorAll(".nav-links a").forEach((link) => link.addEventListener("click", () => {
   document.querySelectorAll(".nav-links a").forEach((node) => node.classList.toggle("active", node === link));
 }));

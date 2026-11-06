@@ -348,15 +348,16 @@ function renderMainChart() {
 }
 
 function sparkline(history) {
-  const values = history.map((point) => Number(point.close));
-  if (values.length < 2 || values.some((value) => !Number.isFinite(value) || value <= 0)) return element("span", "muted small", "Invalid data");
+  if (!history || !history.length) return element("span", "muted small", "—");
+  const values = history.map((point) => Number(point && typeof point === "object" ? point.close : point));
+  if (values.length < 2 || values.some((value) => !Number.isFinite(value) || value <= 0)) return element("span", "muted small", "—");
   const low = Math.min(...values), high = Math.max(...values);
   const coords = values.map((val, i) => ({
     x: 2 + (i / (values.length - 1)) * 92,
     y: 25 - ((val - low) / (high - low || 1)) * 22,
   }));
   const path = smoothCurvePath(coords);
-  const svg = svgElement("svg", { viewBox: "0 0 96 28", class: "sparkline", role: "img", "aria-label": "Synthetic recent price curve" });
+  const svg = svgElement("svg", { viewBox: "0 0 96 28", class: "sparkline", role: "img", "aria-label": "Recent price curve" });
   svg.append(svgElement("path", { d: path, class: values[values.length - 1] >= values[0] ? "spark-up" : "spark-down", fill: "none" }));
   return svg;
 }
@@ -902,10 +903,62 @@ function updateModalSimulator(company) {
 
 // --- Individual Company Deep-Trend View & Fundamentals Modal ---
 function openDeepTrendModal(symbol) {
-  if (!state.snapshot || !state.snapshot.companies) return;
-  const company = state.snapshot.companies.find((c) => c.symbol === symbol)
-    || state.snapshot.companies[0];
+  let company = state.snapshot && state.snapshot.companies
+    ? state.snapshot.companies.find((c) => c.symbol === symbol)
+    : null;
+  if (!company && state.allDseShares) {
+    const dse = state.allDseShares.find((s) => s.symbol === symbol);
+    if (dse) {
+      company = {
+        symbol: dse.symbol,
+        name: dse.name,
+        sector: dse.sector,
+        price: dse.ltp,
+        watchlist_category: dse.category,
+        history: (dse.sparkline || []).map((p, idx) => ({ date: `Point ${idx + 1}`, close: String(p) })),
+        curve: {
+          support: dse.low,
+          resistance: dse.high,
+          signal: "RANGE_OSCILLATION",
+          day_change_pct: dse.change_pct,
+          reason: `Trading at ৳${dse.ltp} (${dse.change_pct >= 0 ? '+' : ''}${dse.change_pct}%). Volume: ${Number(dse.volume).toLocaleString()}.`,
+        },
+        fundamentals: {
+          category: dse.category,
+          high_52w: dse.high,
+          low_52w: dse.low,
+          market_cap_cr: dse.value_cr,
+        },
+        holding_qty: 0,
+        mature_qty: 0,
+        rule: { buy_allocation_pct: 0, enabled: false },
+      };
+    }
+  }
+  if (!company && state.snapshot && state.snapshot.companies) {
+    company = state.snapshot.companies[0];
+  }
   if (!company) return;
+
+  // Asynchronously load real 400-candle history from StockNow if available
+  if (typeof api === "function" && symbol) {
+    api(`/api/stocknow/history/${symbol}`).then((res) => {
+      if (res && res.data && Array.isArray(res.data) && res.data[3] && res.data[5]) {
+        const closes = res.data[3];
+        const ts = res.data[5];
+        const realHist = closes.map((c, i) => {
+          const d = new Date(ts[i] * 1000).toISOString().split("T")[0];
+          return { date: d, close: String(c) };
+        });
+        if (realHist.length >= 2) {
+          company.history = realHist;
+          if (state.deepCompany && state.deepCompany.symbol === symbol) {
+            renderDeepTrendChart(company, state.deepTimeframe || "7d");
+          }
+        }
+      }
+    }).catch(() => {});
+  }
 
   state.deepCompany = company;
   const modal = $("deep-trend-modal");
