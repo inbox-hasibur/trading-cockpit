@@ -2574,3 +2574,23 @@ body.is-resizing-hermes .app-shell {
 [data-theme="light"] .bottom-model-btn:hover .badge-caret {
   color: #0d9488 !important;
 }
+
+/* Phase 5: Decision Filter Chips (Light Theme) */
+[data-theme="light"] .decision-filter-chip {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+}
+
+[data-theme="light"] .decision-filter-chip:hover {
+  background: #e2e8f0 !important;
+  border-color: #0d9488 !important;
+  color: #0f766e !important;
+}
+
+[data-theme="light"] .decision-filter-chip.active {
+  background: #ccfbf1 !important;
+  border-color: #0d9488 !important;
+  color: #0f766e !important;
+  font-weight: 700 !important;
+}

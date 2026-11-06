@@ -215,6 +215,7 @@ function renderSnapshot() {
   setText("quarantined-count", metrics.quarantined_count);
   setText("fees-paid", currency(metrics.fees_paid));
   setText("ledger-status", metrics.book_reconciled && metrics.equity_reconciled ? "✓ Ledger reconciled" : "! Reconciliation failed");
+  renderEquitySparkline();
   renderBuckets();
   renderMainChart();
   renderWatchlist();
@@ -243,6 +244,20 @@ function renderSnapshot() {
     }
   }
   updateControls();
+}
+
+function renderEquitySparkline() {
+  const container = $("equity-sparkline");
+  if (!container) return;
+  const points = state.snapshot?.normalized_curve;
+  if (!points || points.length < 2) {
+    container.replaceChildren();
+    return;
+  }
+  const recentPoints = points.slice(-7).map((p) => ({ close: p.value }));
+  const svg = sparkline(recentPoints);
+  svg.classList.add("equity-mini-sparkline");
+  container.replaceChildren(svg);
 }
 
 function renderBuckets() {
@@ -428,8 +443,31 @@ function renderInspector() {
 function renderDecisions() {
   const { latest_cycle: cycle, decisions } = state.snapshot;
   setText("cycle-badge", cycle ? `SNAPSHOT ${cycle.revision} · ${cycle.trades.length} TRADES` : "NO CYCLES YET");
-  if (!decisions.length) return;
-  const entries = decisions.slice(0, 24).map((decision) => {
+  if (!decisions || !decisions.length) return;
+
+  const filter = state.decisionFilter || "ALL";
+  const filtered = decisions.filter((d) => {
+    const act = (d.action || "").toUpperCase();
+    if (filter === "BUYS") return act === "BUY" || (act.startsWith("BUY") && !act.includes("BLOCKED"));
+    if (filter === "SELLS") return act === "SELL" || act.startsWith("SELL");
+    if (filter === "BLOCKED") return act.includes("BLOCKED");
+    if (filter === "LOCKS") return act.includes("LOCK");
+    return true;
+  });
+
+  document.querySelectorAll(".decision-filter-chip").forEach((chip) => {
+    chip.classList.toggle("active", chip.dataset.decisionFilter === filter);
+  });
+
+  if (!filtered.length) {
+    const empty = element("div", "decision-feed-empty muted small", "No decisions match this filter.");
+    empty.style.padding = "20px 14px";
+    empty.style.textAlign = "center";
+    $("decision-feed").replaceChildren(empty);
+    return;
+  }
+
+  const entries = filtered.slice(0, 24).map((decision) => {
     const entry = element("article", "decision-entry");
     const top = element("div", "decision-top");
     top.append(element("strong", "", decision.symbol), badge(decision.action));
@@ -448,7 +486,14 @@ function renderLedger() {
   setText("period-buy", currency(period.buy_turnover));
   setText("period-sell", currency(period.sell_turnover));
   setText("period-trades", `${period.buy_count} buy / ${period.sell_count} sell`);
-  document.querySelectorAll("[data-period]").forEach((button) => {
+  document.querySelectorAll(".decision-filter-chip").forEach((button) => {
+  button.addEventListener("click", () => {
+    state.decisionFilter = button.dataset.decisionFilter;
+    if (state.snapshot) renderDecisions();
+  });
+});
+
+document.querySelectorAll("[data-period]").forEach((button) => {
     const active = button.dataset.period === state.period;
     button.classList.toggle("active", active); button.setAttribute("aria-pressed", String(active));
   });
@@ -502,6 +547,13 @@ $("buy-allocation").addEventListener("input", () => { state.allocationDirty = tr
 $("company-enabled").addEventListener("change", () => { state.allocationDirty = true; });
 $("company-search").addEventListener("input", () => { if (state.snapshot) renderWatchlist(); });
 $("dismiss-error").addEventListener("click", () => { $("error-banner").hidden = true; });
+
+document.querySelectorAll(".decision-filter-chip").forEach((button) => {
+  button.addEventListener("click", () => {
+    state.decisionFilter = button.dataset.decisionFilter;
+    if (state.snapshot) renderDecisions();
+  });
+});
 
 document.querySelectorAll("[data-period]").forEach((button) => button.addEventListener("click", () => {
   if (state.snapshot) { state.period = button.dataset.period; renderLedger(); }

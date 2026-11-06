@@ -5021,3 +5021,57 @@ button.local-avatar:hover {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* Phase 5: Net Liquidation 7-Session Sparkline & Decision Filter Chips */
+.metric-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.equity-sparkline-slot {
+  width: 68px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.equity-mini-sparkline {
+  width: 64px;
+  height: 20px;
+}
+
+.decision-filter-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  margin-right: 12px;
+}
+
+.decision-filter-chip {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--fs-xs, 11px);
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-weight: 500;
+}
+
+.decision-filter-chip:hover {
+  background: var(--panel-hover);
+  border-color: var(--teal);
+  color: var(--text);
+}
+
+.decision-filter-chip.active {
+  background: var(--teal-bg, rgba(20, 184, 166, 0.15));
+  border-color: var(--teal);
+  color: var(--teal);
+  font-weight: 700;
+}

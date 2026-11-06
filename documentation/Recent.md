@@ -198,9 +198,9 @@ Problem: teal is used for brand, active state, primary buttons, positive P/L, BU
 
 ## Phase 5: Small extras (only after phases 1 to 4 pass)
 
-- [ ] **5.1. 7-session sparkline in Net Liquidation Equity card:** the Net Liquidation Equity card using data already in the snapshot.
-- [ ] **5.2. Filter chips on Decision stream:** (All, Buys, Sells, Blocked, Locks), client side only.
-- [ ] **5.3. Copy button on Hermes replies:** (skip per spec) or number heavy Hermes replies is NOT required. Skip anything that needs new backend fields.
+- [x] **5.1. 7-session sparkline in Net Liquidation Equity card:** the Net Liquidation Equity card using data already in the snapshot.
+- [x] **5.2. Filter chips on Decision stream:** (All, Buys, Sells, Blocked, Locks), client side only.
+- [x] **5.3. Copy button on Hermes replies:** (skip per spec) or number heavy Hermes replies is NOT required. Skip anything that needs new backend fields.
 
 ---
 
