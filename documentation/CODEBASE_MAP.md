@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 00:45:18 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 00:48:51 UTC**.
 
 ---
 
@@ -9,17 +9,17 @@
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
 | `.py` | 42 | 10,300 | Python Core Kernel, Engine & Hermes Agent |
-| `.css` | 2 | 7,456 | Custom Dark / Light / Terminal Design System |
-| `.js` | 3 | 3,559 | Vanilla ES6+ Reactive Terminal Controller |
+| `.css` | 2 | 7,493 | Custom Dark / Light / Terminal Design System |
+| `.js` | 3 | 3,562 | Vanilla ES6+ Reactive Terminal Controller |
 | `.md` | 11 | 2,267 | Architecture & Strategy Documentation |
-| `.html` | 1 | 899 | Single Page Application DOM Structure |
+| `.html` | 1 | 900 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
 | `.cursorignore` | 1 | 12 | Configuration / Asset |
 | `.opencodeignore` | 1 | 12 | Configuration / Asset |
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **66** | **24,539** | *Entire Humming Bird Repository* |
+| **TOTAL** | **66** | **24,580** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -980,7 +980,7 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 
 ### Key DOM Identifiers (`frontend/index.html`)
 
-Identified **240** distinct element IDs in the UI shell. Key controller anchors:
+Identified **241** distinct element IDs in the UI shell. Key controller anchors:
 
 `#overview`, `#watchlist`, `#market-map`, `#master-automation-toggle`, `#mode-btn-polling`, `#mode-btn-live`, `#polling-interval-pills`, `#main-chart`, `#bucket-stack`, `#what-if-slider`, `#theme-toggle-btn`, `#topbar-clock-widget`
 
@@ -989,8 +989,8 @@ Identified **240** distinct element IDs in the UI shell. Key controller anchors:
 
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
-| `styles.css` | 4925 | Core design tokens, layout & widgets |
-| `theme_light_hermes.css` | 2531 | Daylight overrides & Hermes IDE sidebar |
+| `styles.css` | 4957 | Core design tokens, layout & widgets |
+| `theme_light_hermes.css` | 2536 | Daylight overrides & Hermes IDE sidebar |
 
 
 ### Frontend API Contract Invocations (`frontend/*.js`)
@@ -1052,12 +1052,12 @@ Identified **240** distinct element IDs in the UI shell. Key controller anchors:
 | `tickMarketClock()` | `app.js` | `L619` | Reactive DOM rendering / event controller |
 | `tickClock()` | `app.js` | `L690` | Reactive DOM rendering / event controller |
 | `renderAutomationControlBar()` | `app.js` | `L699` | Reactive DOM rendering / event controller |
-| `setAutomationConfig()` | `app.js` | `L835` | Reactive DOM rendering / event controller |
-| `initRealtimeStream()` | `app.js` | `L980` | Reactive DOM rendering / event controller |
-| `switchView()` | `app.js` | `L1006` | Reactive DOM rendering / event controller |
-| `initViewRouter()` | `app.js` | `L1057` | Reactive DOM rendering / event controller |
-| `initScrollSpy()` | `app.js` | `L1123` | Reactive DOM rendering / event controller |
-| `updateActiveNav()` | `app.js` | `L1136` | Reactive DOM rendering / event controller |
+| `setAutomationConfig()` | `app.js` | `L840` | Reactive DOM rendering / event controller |
+| `initRealtimeStream()` | `app.js` | `L985` | Reactive DOM rendering / event controller |
+| `switchView()` | `app.js` | `L1011` | Reactive DOM rendering / event controller |
+| `initViewRouter()` | `app.js` | `L1062` | Reactive DOM rendering / event controller |
+| `initScrollSpy()` | `app.js` | `L1128` | Reactive DOM rendering / event controller |
+| `updateActiveNav()` | `app.js` | `L1141` | Reactive DOM rendering / event controller |
 | `smoothCurvePath()` | `charts.js` | `L8` | Reactive DOM rendering / event controller |
 | `getBezierPointAtContinuousIndex()` | `charts.js` | `L31` | Reactive DOM rendering / event controller |
 | `renderMainChart()` | `charts.js` | `L63` | Reactive DOM rendering / event controller |
@@ -1179,4 +1179,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 24,539 total LOC indexed.
+> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 24,580 total LOC indexed.

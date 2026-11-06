@@ -2529,3 +2529,8 @@ body.is-resizing-hermes .app-shell {
 [data-theme="light"] .ledger-table tbody tr:hover {
   background: #f1f5f9 !important;
 }
+
+/* Screen 4: Settings Polling Disabled Hint */
+[data-theme="light"] .polling-disabled-hint {
+  color: #64748b !important;
+}

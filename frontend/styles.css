@@ -3471,9 +3471,19 @@ input[type=checkbox] {
   transition: opacity 0.2s ease;
 }
 
-.polling-interval-wrap.disabled {
-  opacity: 0.35;
+.polling-interval-wrap.disabled,
+#polling-interval-wrap.disabled {
+  opacity: 0.42;
   pointer-events: none;
+  filter: grayscale(0.5);
+  transition: opacity 0.2s ease;
+}
+
+.polling-disabled-hint {
+  font-size: var(--fs-xs, 11px);
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 8px;
 }
 
 .pill-group {
@@ -3539,10 +3549,14 @@ input[type=checkbox] {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .settings-subgroup {
-  margin-top: 14px;
+  margin-top: 20px;
 }
 
 .settings-sub-label {
@@ -4922,4 +4936,22 @@ button.local-avatar:hover {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Spinner for buttons */
+.btn-spinner {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: btnSpin 0.6s linear infinite;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+
+@keyframes btnSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

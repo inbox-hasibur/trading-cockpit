@@ -778,6 +778,11 @@ function renderAutomationControlBar() {
   const isPollingActive = enabled && mode === "BACKGROUND_POLLING";
   if (intervalWrap) {
     intervalWrap.classList.toggle("disabled", !isPollingActive);
+    intervalWrap.setAttribute("aria-disabled", String(!isPollingActive));
+  }
+  const pollingHint = $("polling-disabled-hint");
+  if (pollingHint) {
+    pollingHint.style.display = !isPollingActive ? "block" : "none";
   }
   const rangeSlider = $("polling-range-slider");
   if (rangeSlider) {

@@ -1003,66 +1003,67 @@ function initHermesChatListeners() {
   const rbSkillsBtn = $("rollback-skills-btn");
   if (rbSkillsBtn) rbSkillsBtn.addEventListener("click", executeRollback);
 
-  // StockNow Live Session Action Buttons
+  // StockNow Live Session Action Buttons with spinner & toast feedback
+  const setStockNowBusy = (isBusy) => {
+    const actionButtons = document.querySelectorAll(".stocknow-live-actions button");
+    actionButtons.forEach(b => { b.disabled = isBusy; });
+  };
+
+  const runBridgeAction = async (btn, loadingLabel, defaultLabel, actionFn) => {
+    setStockNowBusy(true);
+    btn.classList.add("is-loading");
+    btn.innerHTML = `<span class="btn-spinner"></span> ${loadingLabel}`;
+    try {
+      await actionFn();
+    } finally {
+      btn.classList.remove("is-loading");
+      btn.textContent = defaultLabel;
+      setStockNowBusy(false);
+    }
+  };
+
   const btnLaunch = $("btn-stocknow-launch");
   if (btnLaunch) {
-    btnLaunch.addEventListener("click", async () => {
+    btnLaunch.addEventListener("click", () => runBridgeAction(btnLaunch, "Launching...", "Launch Live Browser", async () => {
       try {
-        btnLaunch.disabled = true;
-        btnLaunch.textContent = "Launching…";
         const res = await api("/api/stocknow/session", { method: "POST", body: { action: "launch", mode: "ONSCREEN_LIVE" } });
         notify(res.connected ? "StockNow live browser launched (READY)." : (res.reason || "Browser launched."));
       } catch (err) {
         notify("Failed to launch browser: " + err.message, true);
-      } finally {
-        btnLaunch.disabled = false;
-        btnLaunch.textContent = "Launch Live Browser";
       }
-    });
+    }));
   }
 
   const btnAuth = $("btn-stocknow-auth");
   if (btnAuth) {
-    btnAuth.addEventListener("click", async () => {
+    btnAuth.addEventListener("click", () => runBridgeAction(btnAuth, "Checking...", "Check / Auto-Login", async () => {
       try {
-        btnAuth.disabled = true;
-        btnAuth.textContent = "Checking…";
         const res = await api("/api/stocknow/session", { method: "POST", body: { action: "check_auth" } });
         notify(res.message || "Auth checked.");
       } catch (err) {
         notify("Auth check failed: " + err.message, true);
-      } finally {
-        btnAuth.disabled = false;
-        btnAuth.textContent = "Check / Auto-Login";
       }
-    });
+    }));
   }
 
   const btnSync = $("btn-stocknow-sync");
   if (btnSync) {
-    btnSync.addEventListener("click", async () => {
+    btnSync.addEventListener("click", () => runBridgeAction(btnSync, "Syncing...", "Sync Live Prices", async () => {
       try {
-        btnSync.disabled = true;
-        btnSync.textContent = "Syncing…";
         const res = await api("/api/stocknow/sync-market", { method: "POST", body: {} });
         const count = res.result?.synced_count ?? 0;
         notify(`Synchronized ${count} live DSE quotes into database.`);
         if (typeof refresh === "function") await refresh();
       } catch (err) {
         notify("Sync failed: " + err.message, true);
-      } finally {
-        btnSync.disabled = false;
-        btnSync.textContent = "Sync Live Prices";
       }
-    });
+    }));
   }
 
   const btnSyncPortfolio = $("btn-stocknow-sync-portfolio");
   if (btnSyncPortfolio) {
-    btnSyncPortfolio.addEventListener("click", async () => {
+    btnSyncPortfolio.addEventListener("click", () => runBridgeAction(btnSyncPortfolio, "Syncing Portfolio...", 'Sync "Humming Bird" Portfolio', async () => {
       try {
-        btnSyncPortfolio.disabled = true;
-        btnSyncPortfolio.textContent = "Syncing Portfolio…";
         const res = await api("/api/stocknow/sync-portfolio", { method: "POST", body: {} });
         const count = res.result?.synced_holdings_count ?? 0;
         const cash = res.result?.cash_balance ?? 0;
@@ -1070,11 +1071,8 @@ function initHermesChatListeners() {
         if (typeof refresh === "function") await refresh();
       } catch (err) {
         notify("Portfolio sync failed: " + err.message, true);
-      } finally {
-        btnSyncPortfolio.disabled = false;
-        btnSyncPortfolio.textContent = 'Sync "Humming Bird" Portfolio';
       }
-    });
+    }));
   }
 }
 

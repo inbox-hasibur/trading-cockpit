@@ -181,10 +181,10 @@ Problem: teal is used for brand, active state, primary buttons, positive P/L, BU
 - [x] **4.14. Trade ledger alignment & sticky header:** PRICE, FEE, NET REALIZED. Net Realized uses green/red by sign, "no value" rows show a muted dash. Sticky header. Zebra striping very subtle (about 2 to 3% lighter) or hover only. SIDE badges per Phase 3.
 
 **Screen 4: Settings**
-- [ ] **4.15. Settings cards equal height & spacing:** and consistent inner spacing (use one spacing unit, 12px between a label and its input, 20px between groups).
-- [ ] **4.16. Settings API card badge alignment & gaps:** sits on the label row, aligned right, never overlapping the input. Add a 16px gap above the Daily External AI Call Limit block and above the Save button (they currently touch the inputs above).
-- [ ] **4.17. Polling interval disabled state in Method B:** (Onscreen Live) is active, show it in a clearly disabled state (reduced opacity, `aria-disabled`, helper text "Used only in Method A"). Do not hide it.
-- [ ] **4.18. StockNow Bridge spinner & toast feedback:** and disabled state while the request is running, then a toast with the result. Make "Sync Humming Bird Portfolio" visually the primary one, others secondary.
+- [x] **4.15. Settings cards equal height & spacing:** and consistent inner spacing (use one spacing unit, 12px between a label and its input, 20px between groups).
+- [x] **4.16. Settings API card badge alignment & gaps:** sits on the label row, aligned right, never overlapping the input. Add a 16px gap above the Daily External AI Call Limit block and above the Save button (they currently touch the inputs above).
+- [x] **4.17. Polling interval disabled state in Method B:** (Onscreen Live) is active, show it in a clearly disabled state (reduced opacity, `aria-disabled`, helper text "Used only in Method A"). Do not hide it.
+- [x] **4.18. StockNow Bridge spinner & toast feedback:** and disabled state while the request is running, then a toast with the result. Make "Sync Humming Bird Portfolio" visually the primary one, others secondary.
 
 **Screen 5: Hermes chat panel**
 - [ ] **4.19. Hermes empty state & chips placement:** merge the orphan "Bangla, Banglish, or English" line into the intro paragraph, remove the large empty gaps, and show the quick action chips directly under the intro while the conversation is empty. Once messages exist, chips return to the composer area.
