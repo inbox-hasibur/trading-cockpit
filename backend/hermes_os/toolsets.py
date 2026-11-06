@@ -499,6 +499,50 @@ def tool_rollback_checkpoint(args: dict[str, Any], ctx: ToolContext) -> dict[str
     return {"status": "SUCCESS", "tool": "rollback_checkpoint", "reverted_count": len(results), "rollbacks": results}
 
 
+def tool_schedule_cron_task(args: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
+    from backend.hermes_os.cron_manager import CronManager
+    natural = args.get("natural_instruction") or args.get("instruction") or ""
+    schedule_expr = args.get("schedule_expr")
+    name = args.get("name")
+    action_type = args.get("action_type")
+    params = args.get("params") or {}
+    job = CronManager.schedule_task(
+        session=ctx.session,
+        instruction=natural or None,
+        schedule_expr=schedule_expr,
+        name=name,
+        action_type=action_type,
+        params=params,
+    )
+    return {
+        "status": "SUCCESS",
+        "tool": "schedule_cron_task",
+        "job": {
+            "id": job.id,
+            "name": job.name,
+            "schedule_expr": job.schedule_expr,
+            "action_type": job.action_type,
+            "natural_instruction": job.natural_instruction,
+            "enabled": job.enabled,
+        },
+    }
+
+
+def tool_list_or_remove_cron_tasks(args: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
+    from backend.hermes_os.cron_manager import CronManager
+    action = str(args.get("action", "LIST")).upper()
+    job_id = args.get("job_id")
+    if action == "DELETE" and job_id:
+        deleted = CronManager.delete_job(ctx.session, job_id)
+        return {"status": "SUCCESS", "tool": "list_or_remove_cron_tasks", "action": "DELETE", "deleted": deleted, "job_id": job_id}
+    elif action == "TOGGLE" and job_id:
+        toggled = CronManager.toggle_job(ctx.session, job_id)
+        return {"status": "SUCCESS", "tool": "list_or_remove_cron_tasks", "action": "TOGGLE", "job": toggled}
+    else:
+        jobs = CronManager.list_jobs(ctx.session)
+        return {"status": "SUCCESS", "tool": "list_or_remove_cron_tasks", "action": "LIST", "jobs": jobs, "total": len(jobs)}
+
+
 # ==============================================================================
 # Central Tool Registry
 # ==============================================================================
@@ -673,6 +717,35 @@ class HermesToolRegistry:
             parameters={"type": "object", "properties": {"steps_back": {"type": "integer"}}},
             handler=tool_rollback_checkpoint,
         ))
+        self.register(ToolDefinition(
+            name="schedule_cron_task",
+            description="Schedules an autonomous recurring cron task using natural language instruction or structured cron expression.",
+            toolset="cron_scheduler_toolset",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "natural_instruction": {"type": "string"},
+                    "name": {"type": "string"},
+                    "schedule_expr": {"type": "string"},
+                    "action_type": {"type": "string", "enum": ["SYNC_MARKET", "SYNC_ALL_SHARES", "SYNC_PORTFOLIO", "CHECK_CANARY", "INSPECT_CURVE"]},
+                    "params": {"type": "object"},
+                },
+            },
+            handler=tool_schedule_cron_task,
+        ))
+        self.register(ToolDefinition(
+            name="list_or_remove_cron_tasks",
+            description="Lists all scheduled Hermes OS cron jobs, or toggles/deletes a job by ID.",
+            toolset="cron_scheduler_toolset",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "action": {"type": "string", "enum": ["LIST", "DELETE", "TOGGLE"]},
+                    "job_id": {"type": "string"},
+                },
+            },
+            handler=tool_list_or_remove_cron_tasks,
+        ))
 
     def execute(self, tool_name: str, args: dict[str, Any], context: ToolContext) -> dict[str, Any]:
         """Routes and executes a registered tool within the provided ToolContext."""
@@ -705,3 +778,4 @@ class HermesToolRegistry:
 
 # Global singleton registry
 default_registry = HermesToolRegistry()
+

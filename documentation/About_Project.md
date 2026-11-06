@@ -323,6 +323,43 @@ Hermes operates on a resilient 3-Tier AI model execution architecture designed f
 
 ### Seamless Model Switching
 - **Conversational Chat Command:** `/model <name>` supports full model IDs as well as colloquial aliases (`/model mimov2.6 pro`, `/model deepseek 4.1 flash`, `/model gemini lite`, `/model local`).
-- **UI Bottom Drop-Up Menu:** Dedicated `#hermes-model-trigger` with active provider indicator (`OPENROUTER ·`, `GEMINI ·`, `LOCAL ·`).
+- **UI Bottom Drop-Up Menu:** Dedicated `#hermes-model-trigger` with active provider indicator (`OPENROUTER ·`, `GEMINI ·`, `LOCAL ·`) and transparent `<select id="hermes-quick-model-select">` overlay for 100% bug-free native browser selection across all 12 models.
 - **Settings View Selector:** `#settings-model-select` dropdown with synchronized fallback chain status badges.
 - Every model switch automatically records a state checkpoint for 1-click `/rollback`.
+
+---
+
+## 7. Hermes OS Vendor Architecture & Agent-Curated Memory (`backend/hermes_os/`)
+
+Adapted from the official **Nous Research `hermes-agent`** architecture (`NousResearch/hermes-agent`), customized for DSE trading:
+
+1. **Isolated Runtime State (`backend/data/.hermes/`):**
+   - Protected by `SecretGuard` to prevent token/credential leaks.
+   - `config.yaml`: Provider-agnostic model routing with OpenRouter, Google Gemini multi-key rotation, and local fallbacks.
+   - `USER.md`: Agent-curated operator profile, automatically patched as Hermes learns Hasibur's preferences, risk appetite, and trading directives.
+   - `MEMORY.md`: Working market context and thesis scratchpad, automatically curated and compressed across turns so token usage stays tiny.
+   - `skills/`: Versioned procedural skills (`SKILL_*.md`) loaded on-demand based on prompt triggers.
+2. **SQLite FTS5 Full-Text Session Search (`memory_curator.py`):**
+   - True full-text BM25 search over past session transcripts (`hermes_fts` virtual table).
+3. **Closed Learning Loop & Auto-Skill Generation (`skill_learner.py`):**
+   - When Hermes executes a multi-step task and succeeds after discovering a reusable procedural methodology, it automatically compiles or patches an executable `SKILL_<name>.md` with YAML frontmatter, execution steps, and pitfalls.
+4. **Structured DSE Toolsets (`toolsets.py`):**
+   - `stocknow_browser_toolset`: `launch_browser`, `login_stocknow`, `sync_favorites_3_lists`, `sync_all_dse_shares`, `sync_portfolio_164580`, `execute_live_order`.
+   - `quant_strategy_toolset`: `inspect_curve_and_support`, `trigger_canary_90_10_quarantine`, `evaluate_canary_outcomes`, `restore_quarantine`, `set_watchlist_tier`, `update_buy_allocation`.
+   - `memory_and_skill_toolset`: `curate_memory_md`, `curate_user_md`, `session_search_fts5`, `create_or_patch_skill`, `rollback_checkpoint`.
+   - `cron_scheduler_toolset`: `schedule_cron_task`, `list_or_remove_cron_tasks`.
+
+---
+
+## 8. Natural-Language Cron Scheduler & Watchdog Manager (`cron_manager.py`)
+
+Operators can schedule recurring autonomous tasks via natural Bangla, Banglish, or English chat in Hermes or via the Cockpit Skills drawer:
+
+- **Supported Expressions:**
+  - *"Protidin sokal 10 tay StockNow sync kore L1 list check koro"* $\rightarrow$ `0 10 * * 0-4` (DSE trading days Sun-Thu at 10:00 AM).
+  - *"Every 5 minutes during market hours sync portfolio and check canary theses"* $\rightarrow$ `*/5 10-14 * * 0-4`.
+  - *"Protidin dupur 12 tay all dse shares sync koro"* $\rightarrow$ `0 12 * * 0-4`.
+  - *"Every day at 11:30 am inspect curve for BANKASIA"* $\rightarrow$ `30 11 * * 0-4`.
+- **Database Model:** `HermesCronJob` in `backend/database.py` tracking schedule expression, execution status, last result, and next run time.
+- **Engine Tick Integration:** Automatically evaluated on every `DSEMarketScheduler` tick.
+- **Cockpit Skills Drawer Inspector:** Displays active skills, curated `USER.md` / `MEMORY.md` summaries, and scheduled cron jobs with 1-click Delete (🗑) / Pause-Resume toggles.

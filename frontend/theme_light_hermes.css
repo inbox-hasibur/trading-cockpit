@@ -1272,6 +1272,188 @@ body.is-resizing-hermes .app-shell {
   text-decoration: line-through; opacity: 0.6;
 }
 
+/* Quick Model Select Overlay on hermes-model-trigger */
+.hermes-quick-model-select-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 5;
+}
+
+/* Hermes OS Skills, Memory & Cron Styles */
+.skill-badge-autolearned {
+  font-size: var(--fs-xs, 10px);
+  color: #10b981;
+  background: #064e3b;
+  border: 1px solid #059669;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.section-title-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.mini-cron-btn {
+  background: #142838;
+  border: 1px solid #1f4e70;
+  color: #38bdf8;
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.mini-cron-btn:hover {
+  background: #1a3952;
+  border-color: #38bdf8;
+}
+
+.crons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cron-empty-hint {
+  font-size: 11px;
+  color: #64748b;
+  font-style: italic;
+  padding: 6px 4px;
+}
+
+.cron-card {
+  background: #111a24;
+  border: 1px solid #1e2c3a;
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cron-card.disabled {
+  opacity: 0.55;
+}
+
+.cron-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.cron-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.cron-status-badge {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.cron-status-badge.active {
+  background: #064e3b;
+  color: #34d399;
+  border: 1px solid #059669;
+}
+
+.cron-status-badge.paused {
+  background: #451a03;
+  color: #fbbf24;
+  border: 1px solid #b45309;
+}
+
+.cron-details {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.cron-expr {
+  font-family: monospace;
+  background: #0d151e;
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: #38bdf8;
+}
+
+.cron-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.cron-action-btn {
+  background: transparent;
+  border: 1px solid #2a3d50;
+  color: #94a3b8;
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.cron-action-btn:hover {
+  background: #1e2c3a;
+  color: #f1f5f9;
+}
+
+.cron-action-btn.del:hover {
+  border-color: #ef4444;
+  color: #f87171;
+}
+
+.memory-preview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.memory-card {
+  background: #111a24;
+  border: 1px solid #1e2c3a;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.memory-head {
+  background: #0d151e;
+  padding: 5px 8px;
+  border-bottom: 1px solid #1e2c3a;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.memory-code-preview {
+  margin: 0;
+  padding: 8px;
+  font-size: 11px;
+  font-family: Consolas, monospace;
+  color: #cbd5e1;
+  max-height: 140px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: transparent;
+}
+
 [data-theme="light"] .sector-gainer-chart-wrap {
   background: #ffffff !important;
   border-color: #cbd5e1 !important;

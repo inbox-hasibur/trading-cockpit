@@ -618,6 +618,41 @@ def dispatch_tool(
         return handle_evaluate_canary_theses(session, state, skills_mgr)
     elif tool_name == "control_stocknow_session":
         return handle_control_stocknow_session(args, session, state, settings, checkpoint_mgr)
+    elif tool_name in ("schedule_cron_task", "schedule_task"):
+        from backend.hermes_os.cron_manager import CronManager
+        job = CronManager.schedule_task(
+            session=session,
+            instruction=args.get("natural_instruction") or args.get("instruction"),
+            schedule_expr=args.get("schedule_expr"),
+            name=args.get("name"),
+            action_type=args.get("action_type"),
+            params=args.get("params") or {},
+        )
+        return {
+            "status": "SUCCESS",
+            "tool": tool_name,
+            "job": {
+                "id": job.id,
+                "name": job.name,
+                "schedule_expr": job.schedule_expr,
+                "action_type": job.action_type,
+                "natural_instruction": job.natural_instruction,
+                "enabled": job.enabled,
+            },
+        }
+    elif tool_name in ("list_or_remove_cron_tasks", "manage_cron_jobs"):
+        from backend.hermes_os.cron_manager import CronManager
+        action = str(args.get("action", "LIST")).upper()
+        job_id = args.get("job_id")
+        if action == "DELETE" and job_id:
+            del_ok = CronManager.delete_job(session, job_id)
+            return {"status": "SUCCESS", "tool": tool_name, "action": "DELETE", "deleted": del_ok, "job_id": job_id}
+        elif action == "TOGGLE" and job_id:
+            toggled = CronManager.toggle_job(session, job_id)
+            return {"status": "SUCCESS", "tool": tool_name, "action": "TOGGLE", "job": toggled}
+        else:
+            jobs = CronManager.list_jobs(session)
+            return {"status": "SUCCESS", "tool": tool_name, "action": "LIST", "jobs": jobs, "total": len(jobs)}
     else:
         raise ValueError(f"Unknown tool: {tool_name}")
 

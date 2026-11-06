@@ -164,6 +164,21 @@ class DSEMarketScheduler:
             self.last_error = str(exc)
             logger.info("Scheduler cycle execution notice: %s", exc)
 
+        # Hermes OS Autonomous Cron Jobs evaluation
+        cron_results = []
+        try:
+            from backend.hermes_os.cron_manager import CronManager
+            with self.database.write() as session:
+                cron_results = CronManager.check_and_execute_due_jobs(
+                    session=session,
+                    settings=self.settings,
+                    client=self.stocknow_client,
+                )
+                if cron_results:
+                    logger.info("Hermes OS executed %d scheduled cron job(s) in tick.", len(cron_results))
+        except Exception as exc:
+            logger.debug("Hermes OS cron scheduler check notice: %s", exc)
+
         self.tick_count += 1
         now_dse = datetime.now(DHAKA)
         self.last_tick_at = now_dse.strftime("%Y-%m-%d %H:%M:%S %Z")
@@ -217,6 +232,21 @@ class DSEMarketScheduler:
         except Exception as exc:
             self.last_error = str(exc)
             logger.info("Scheduler cycle execution notice: %s", exc)
+
+        # Hermes OS Autonomous Cron Jobs evaluation
+        cron_results = []
+        try:
+            from backend.hermes_os.cron_manager import CronManager
+            with self.database.write() as session:
+                cron_results = CronManager.check_and_execute_due_jobs(
+                    session=session,
+                    settings=self.settings,
+                    client=self.stocknow_client,
+                )
+                if cron_results:
+                    logger.info("Hermes OS executed %d scheduled cron job(s) in tick.", len(cron_results))
+        except Exception as exc:
+            logger.debug("Hermes OS cron scheduler check notice: %s", exc)
 
         self.tick_count += 1
         now_dse = datetime.now(DHAKA)

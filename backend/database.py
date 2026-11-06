@@ -239,6 +239,22 @@ class HermesStateCheckpoint(Base):
     created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
 
 
+class HermesCronJob(Base):
+    __tablename__ = "hermes_cron_jobs"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    name: Mapped[str] = mapped_column(String(120))
+    schedule_expr: Mapped[str] = mapped_column(String(64))
+    natural_instruction: Mapped[str] = mapped_column(String(500), default="")
+    action_type: Mapped[str] = mapped_column(String(64))
+    params: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    last_run_at: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    last_status: Mapped[str] = mapped_column(String(32), default="PENDING")
+    last_result: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    next_run_at: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
+
+
 class CycleRequestKey(Base):
     __tablename__ = "cycle_request_keys"
     request_id: Mapped[str] = mapped_column(String(36), primary_key=True)

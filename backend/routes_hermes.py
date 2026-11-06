@@ -206,4 +206,101 @@ def build_hermes_router(database: Database, settings: Settings, chat: ChatServic
             broadcaster.publish("rollback", result)
             return result
 
+    @router.get("/api/hermes/crons")
+    def get_hermes_crons():
+        from backend.hermes_os.cron_manager import CronManager
+        with database.read() as session:
+            jobs = CronManager.list_jobs(session)
+            return {"crons": jobs, "total": len(jobs)}
+
+    @router.post("/api/hermes/crons")
+    def create_hermes_cron(payload: dict):
+        from backend.hermes_os.cron_manager import CronManager
+        instruction = payload.get("natural_instruction") or payload.get("instruction")
+        name = payload.get("name")
+        schedule_expr = payload.get("schedule_expr")
+        action_type = payload.get("action_type")
+        params = payload.get("params") or {}
+        with database.write() as session:
+            job = CronManager.schedule_task(
+                session=session,
+                instruction=instruction,
+                schedule_expr=schedule_expr,
+                name=name,
+                action_type=action_type,
+                params=params,
+            )
+            return {
+                "status": "ok",
+                "cron": {
+                    "id": job.id,
+                    "name": job.name,
+                    "schedule_expr": job.schedule_expr,
+                    "action_type": job.action_type,
+                    "natural_instruction": job.natural_instruction,
+                    "enabled": job.enabled,
+                    "created_at": job.created_at,
+                },
+            }
+
+    @router.delete("/api/hermes/crons/{job_id}")
+    def delete_hermes_cron(job_id: str):
+        from backend.hermes_os.cron_manager import CronManager
+        with database.write() as session:
+            ok = CronManager.delete_job(session, job_id)
+            if not ok:
+                raise HTTPException(404, f"Cron job '{job_id}' not found.")
+            return {"status": "ok", "deleted_id": job_id}
+
+    @router.post("/api/hermes/crons/{job_id}/toggle")
+    def toggle_hermes_cron(job_id: str, payload: dict | None = None):
+        from backend.hermes_os.cron_manager import CronManager
+        enabled = payload.get("enabled") if payload else None
+        with database.write() as session:
+            toggled = CronManager.toggle_job(session, job_id, enabled=enabled)
+            if not toggled:
+                raise HTTPException(404, f"Cron job '{job_id}' not found.")
+            return {"status": "ok", "job": toggled}
+
+    @router.get("/api/hermes/state")
+    def get_hermes_state():
+        from backend.hermes_os.config import get_hermes_home
+        from backend.hermes_os.cron_manager import CronManager
+        from backend.hermes_os.skill_loader import SkillLoader
+        home_dir = get_hermes_home()
+        user_md_path = home_dir / "USER.md"
+        memory_md_path = home_dir / "MEMORY.md"
+
+        user_md_text = user_md_path.read_text(encoding="utf-8") if user_md_path.exists() else ""
+        memory_md_text = memory_md_path.read_text(encoding="utf-8") if memory_md_path.exists() else ""
+
+        loader = SkillLoader(home_dir)
+        skills = [
+            {
+                "name": s.name,
+                "filename": s.filename,
+                "version": s.version,
+                "description": s.description,
+                "triggers": s.triggers,
+                "tags": s.tags,
+                "pitfalls": s.pitfalls,
+                "steps": s.steps,
+                "is_auto_learned": "auto-learned" in s.tags or s.filename.startswith("SKILL_auto_"),
+            }
+            for s in loader.list_skills()
+        ]
+
+        with database.read() as session:
+            state = portfolio_state(session)
+            active_model = getattr(state, "active_model", settings.openrouter_model)
+            crons = CronManager.list_jobs(session)
+
+        return {
+            "user_md": user_md_text,
+            "memory_md": memory_md_text,
+            "skills": skills,
+            "crons": crons,
+            "active_model": active_model,
+        }
+
     return router

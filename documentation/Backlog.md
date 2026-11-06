@@ -95,6 +95,20 @@
     - **Tier 2:** 1st Fallback — Free Google Gemini API (`google/gemini-2.5-flash`).
     - **Tier 3:** 2nd Fallback — Deterministic Local Quant Brain ($0 offline).
     - API endpoints: `GET /api/hermes/models` and `POST /api/hermes/model`.
+    - Integrated transparent native `<select id="hermes-quick-model-select">` overlay over `#hermes-model-trigger` for 100% reliable, zero-bug model switching in all desktop & mobile browsers across all 12 models.
+  - **Hermes OS Architecture Integration (`backend/hermes_os/`):**
+    - Adopted official Nous Research `hermes-agent` vendor architecture.
+    - Curated disk memory: `USER.md` (operator preferences) & `MEMORY.md` (market working context) with automatic compression (>50% -> 20%).
+    - SQLite FTS5 BM25 session search (`hermes_fts`) across all past conversations.
+    - Closed learning loop (`skill_learner.py`): automatically creates versioned `SKILL_<name>.md` upon discovering procedural breakthroughs.
+    - Full DSE toolsets: `stocknow_browser_toolset`, `quant_strategy_toolset`, `memory_and_skill_toolset`, `cron_scheduler_toolset`.
+  - **Natural-Language Cron Scheduler & Watchdog Manager (`cron_manager.py`):**
+    - Persistent SQLite `HermesCronJob` model supporting recurring autonomous jobs via natural Bangla, Banglish, or English.
+    - Integrated with `DSEMarketScheduler` tick engine.
+    - Cockpit Skills Drawer Inspector (`#pane-hermes-skills`): displays active skills, curated `USER.md` / `MEMORY.md` summaries, and scheduled cron jobs with 1-click Delete (🗑) / Pause-Resume toggles and "+ Schedule Cron" button.
+  - **All DSE Shares Live Market Board:**
+    - Live sync and scraping of the full 470+ DSE shares catalog (`/api/stocknow/all-shares`).
+    - Dedicated "All DSE Shares" tab in `#watchlist` with instant search, category badges, LTP, +/- %, and sparkline price curves.
   - **Settings Page Overhaul & Telemetry Pipeline Controls:**
     - Interactive Method A (Background HTTP Polling) vs Method B (Onscreen Live Mode CDP) selector tiles with status pills, smooth polling interval slider (30s to 300s), and quick preset cadence pills (30s Hyper, 60s Fast, 120s Standard, 180s Relaxed).
     - API Keys & Live Telemetry credential manager with masked inputs (`sk-or-v1-...`, Gemini key, Telegram Bot token & chat ID), toggleable password visibility eyes, and quota usage tracking.

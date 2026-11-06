@@ -260,3 +260,4 @@ class SkillLearner:
                 logger.debug("Failed recording HermesSkillRevision in DB: %s", exc)
 
         return skill
+

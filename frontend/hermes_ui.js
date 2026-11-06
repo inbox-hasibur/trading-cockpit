@@ -16,10 +16,10 @@ function renderHermesSkills() {
     const skillCards = skills.map((s) => {
       const card = element("div", "skill-card");
       const top = element("div", "skill-card-top");
-      top.append(element("strong", "", s.title));
-      top.append(element("span", "skill-rev", `v${s.version} · ${s.revision_count} patches`));
+      top.append(element("strong", "", s.title || s.name));
+      top.append(element("span", "skill-rev", `v${s.version || "1.0.0"}${s.revision_count ? ` · ${s.revision_count} patches` : ""}`));
       const tags = element("div", "skill-tags");
-      s.tags.forEach((t) => tags.append(element("span", "skill-tag", t)));
+      (s.tags || []).forEach((t) => tags.append(element("span", "skill-tag", t)));
       card.append(top, tags);
       return card;
     });
@@ -47,7 +47,119 @@ function renderHermesSkills() {
     });
     cpList.replaceChildren(...(cpItems.length ? cpItems : [element("div", "muted small", "No checkpoints recorded yet.")]));
   }
+
+  // Also trigger full state load in background
+  loadHermesOSState();
 }
+
+async function loadHermesOSState() {
+  try {
+    const data = await api("/api/hermes/state");
+
+    // 1. Procedural Skills
+    const skillsList = $("skills-list");
+    const skillsBadge = $("skills-badge");
+    const skills = data.skills || [];
+    if (skillsBadge) skillsBadge.textContent = skills.length;
+
+    if (skillsList && skills.length) {
+      skillsList.innerHTML = skills.map((s) => `
+        <div class="skill-card">
+          <div class="skill-card-top">
+            <strong>${escapeHtml(s.name)}</strong>
+            <span class="skill-rev">v${escapeHtml(s.version || "1.0.0")}</span>
+            ${s.is_auto_learned ? '<span class="skill-badge-autolearned">AUTO-LEARNED</span>' : ""}
+          </div>
+          <div class="muted small">${escapeHtml(s.description || "")}</div>
+          <div class="skill-tags">
+            ${(s.triggers || []).map((t) => `<span class="skill-tag">⚡ ${escapeHtml(t)}</span>`).join("")}
+            ${(s.tags || []).map((t) => `<span class="skill-tag">#${escapeHtml(t)}</span>`).join("")}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    // 2. Memory & Profile Previews
+    const userPreview = $("user-md-preview");
+    if (userPreview) {
+      userPreview.textContent = data.user_md || "No operator preferences curated yet in USER.md.";
+    }
+    const memPreview = $("memory-md-preview");
+    if (memPreview) {
+      memPreview.textContent = data.memory_md || "No working market memory curated yet in MEMORY.md.";
+    }
+
+    // 3. Autonomous Cron Jobs
+    renderHermesCronJobs(data.crons || []);
+  } catch (err) {
+    console.debug("Hermes OS state notice:", err);
+  }
+}
+
+function renderHermesCronJobs(crons) {
+  const cronsList = $("crons-list");
+  if (!cronsList) return;
+  if (!crons || !crons.length) {
+    cronsList.innerHTML = '<div class="cron-empty-hint">No cron jobs scheduled yet. Type natural instructions in chat or click + Schedule Cron.</div>';
+    return;
+  }
+  cronsList.innerHTML = crons.map((j) => {
+    const isEnabled = j.enabled !== false;
+    return `
+      <div class="cron-card ${isEnabled ? "" : "disabled"}" data-cron-id="${escapeHtml(j.id)}">
+        <div class="cron-head">
+          <span class="cron-name">${escapeHtml(j.name)}</span>
+          <span class="cron-status-badge ${isEnabled ? "active" : "paused"}">${isEnabled ? "ACTIVE" : "PAUSED"}</span>
+        </div>
+        <div class="cron-details">
+          <span class="cron-expr">${escapeHtml(j.schedule_expr)}</span>
+          <span class="muted">${escapeHtml(j.action_type || "")}</span>
+        </div>
+        ${j.natural_instruction ? `<div class="muted small">"${escapeHtml(j.natural_instruction)}"</div>` : ""}
+        <div class="cron-actions">
+          <button type="button" class="cron-action-btn" onclick="window.toggleCron('${escapeHtml(j.id)}')">${isEnabled ? "Pause" : "Resume"}</button>
+          <button type="button" class="cron-action-btn del" onclick="window.deleteCron('${escapeHtml(j.id)}')">🗑 Delete</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+window.promptAddCron = async function() {
+  const promptText = prompt("Enter natural scheduling instruction in Bangla, Banglish, or English:\n(e.g., 'Protidin sokal 10 tay StockNow sync kore L1 list check koro')", "Protidin sokal 10 tay StockNow sync kore L1 list check koro");
+  if (!promptText || !promptText.trim()) return;
+  try {
+    const res = await api("/api/hermes/crons", {
+      method: "POST",
+      body: { natural_instruction: promptText.trim() },
+    });
+    notify(`✓ Scheduled cron: ${res.cron?.name || "Autonomous Task"}`);
+    await loadHermesOSState();
+  } catch (err) {
+    notify(`Failed to schedule cron: ${err.message}`, true);
+  }
+};
+
+window.toggleCron = async function(jobId) {
+  if (!jobId) return;
+  try {
+    await api(`/api/hermes/crons/${encodeURIComponent(jobId)}/toggle`, { method: "POST", body: {} });
+    await loadHermesOSState();
+  } catch (err) {
+    notify(`Failed to toggle cron: ${err.message}`, true);
+  }
+};
+
+window.deleteCron = async function(jobId) {
+  if (!jobId || !confirm("Delete this scheduled cron job?")) return;
+  try {
+    await api(`/api/hermes/crons/${encodeURIComponent(jobId)}`, { method: "DELETE" });
+    notify("✓ Cron job removed.");
+    await loadHermesOSState();
+  } catch (err) {
+    notify(`Failed to delete cron: ${err.message}`, true);
+  }
+};
 
 function formatChatMarkdown(text) {
   if (!text) return "";
@@ -313,7 +425,7 @@ function initHermesSidebar() {
     { id: "tab-hermes-chat", paneId: "pane-hermes-chat" },
     { id: "tab-hermes-conversations", paneId: "pane-hermes-conversations", onOpen: loadConversations },
     { id: "tab-hermes-changes", paneId: "pane-hermes-changes", onOpen: loadSystemChanges },
-    { id: "tab-hermes-skills", paneId: "pane-hermes-skills" },
+    { id: "tab-hermes-skills", paneId: "pane-hermes-skills", onOpen: loadHermesOSState },
   ];
 
   tabs.forEach(({ id, paneId, onOpen }) => {

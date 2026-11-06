@@ -697,10 +697,58 @@
               </button>
               <div id="model-dropup-menu" class="model-dropup-menu" hidden>
                 <div class="dropup-header">SELECT AI BRAIN MODEL</div>
-                <div id="model-dropdown-list"></div>
+                <div id="model-dropdown-list">
+                  <button type="button" class="model-dropup-item" data-model="xiaomi/mimo-v2.6-pro" onclick="window.selectHermesModelItem(event, 'xiaomi/mimo-v2.6-pro')">
+                    <span class="model-item-name">Xiaomi MiMo-v2.6-Pro (Primary Brain)</span>
+                  </button>
+                  <button type="button" class="model-dropup-item" data-model="xiaomi/mimo-v2-flash" onclick="window.selectHermesModelItem(event, 'xiaomi/mimo-v2-flash')">
+                    <span class="model-item-name">xiaomi/mimo-v2-flash (Configured)</span>
+                  </button>
+                  <button type="button" class="model-dropup-item" data-model="xiaomi/mimo-v2.6-flash" onclick="window.selectHermesModelItem(event, 'xiaomi/mimo-v2.6-flash')">
+                    <span class="model-item-name">Xiaomi MiMo-v2.6-Flash (Ultra Fast)</span>
+                  </button>
+                  <button type="button" class="model-dropup-item" data-model="deepseek/deepseek-chat" onclick="window.selectHermesModelItem(event, 'deepseek/deepseek-chat')">
+                    <span class="model-item-name">DeepSeek V3 / 4.1 Flash (Deep Reasoning)</span>
+                  </button>
+                  <button type="button" class="model-dropup-item" data-model="deepseek/deepseek-r1" onclick="window.selectHermesModelItem(event, 'deepseek/deepseek-r1')">
+                    <span class="model-item-name">DeepSeek R1 (Reasoning / Math)</span>
+                  </button>
+                  <button type="button" class="model-dropup-item" data-model="meta-llama/llama-3.3-70b-instruct" onclick="window.selectHermesModelItem(event, 'meta-llama/llama-3.3-70b-instruct')">
+                    <span class="model-item-name">Llama 3.3 70B (High Precision)</span>
+                  </button>
+                  <button type="button" class="model-dropup-item" data-model="anthropic/claude-3.5-sonnet" onclick="window.selectHermesModelItem(event, 'anthropic/claude-3.5-sonnet')">
+                    <span class="model-item-name">Claude 3.5 Sonnet (Elite Quant)</span>
+                  </button>
+                  <button type="button" class="model-dropup-item" data-model="google/gemini-3.1-flash-lite" onclick="window.selectHermesModelItem(event, 'google/gemini-3.1-flash-lite')">
+                    <span class="model-item-name">Google Gemini 3.1 Flash-Lite (Fastest ~1.5s)</span>
+                  </button>
+                  <button type="button" class="model-dropup-item" data-model="google/gemini-3.5-flash" onclick="window.selectHermesModelItem(event, 'google/gemini-3.5-flash')">
+                    <span class="model-item-name">Google Gemini 3.5 Flash (Balanced Analysis)</span>
+                  </button>
+                  <button type="button" class="model-dropup-item" data-model="google/gemini-3.8-flash" onclick="window.selectHermesModelItem(event, 'google/gemini-3.8-flash')">
+                    <span class="model-item-name">Google Gemini 3.8 Flash (Latest Preview)</span>
+                  </button>
+                  <button type="button" class="model-dropup-item" data-model="google/gemini-3.7-flash" onclick="window.selectHermesModelItem(event, 'google/gemini-3.7-flash')">
+                    <span class="model-item-name">Google Gemini 3.7 Flash (Hybrid Reasoning)</span>
+                  </button>
+                  <button type="button" class="model-dropup-item" data-model="local-quant-brain" onclick="window.selectHermesModelItem(event, 'local-quant-brain')">
+                    <span class="model-item-name">Local Deterministic Quant Brain ($0 Offline)</span>
+                  </button>
+                </div>
               </div>
-              <select id="hermes-quick-model-select" class="sr-only" title="Switch Hermes AI Brain Model" aria-label="Switch AI Brain Model">
+              <select id="hermes-quick-model-select" class="hermes-quick-model-select-overlay" title="Switch Hermes AI Brain Model" aria-label="Switch AI Brain Model">
                 <option value="xiaomi/mimo-v2.6-pro">Xiaomi MiMo-v2.6-Pro (Primary Brain)</option>
+                <option value="xiaomi/mimo-v2-flash">xiaomi/mimo-v2-flash (Configured)</option>
+                <option value="xiaomi/mimo-v2.6-flash">Xiaomi MiMo-v2.6-Flash (Ultra Fast)</option>
+                <option value="deepseek/deepseek-chat">DeepSeek V3 / 4.1 Flash (Deep Reasoning)</option>
+                <option value="deepseek/deepseek-r1">DeepSeek R1 (Reasoning / Math)</option>
+                <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B (High Precision)</option>
+                <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet (Elite Quant)</option>
+                <option value="google/gemini-3.1-flash-lite">Google Gemini 3.1 Flash-Lite (Fastest ~1.5s)</option>
+                <option value="google/gemini-3.5-flash">Google Gemini 3.5 Flash (Balanced Analysis)</option>
+                <option value="google/gemini-3.8-flash">Google Gemini 3.8 Flash (Latest Preview)</option>
+                <option value="google/gemini-3.7-flash">Google Gemini 3.7 Flash (Hybrid Reasoning)</option>
+                <option value="local-quant-brain">Local Deterministic Quant Brain ($0 Offline)</option>
               </select>
             </div>
           </div>
@@ -766,6 +814,32 @@
           <div class="drawer-section">
             <span class="drawer-title">PROCEDURAL SKILLS (SKILL_*.md)</span>
             <div id="skills-list" class="skills-list"></div>
+          </div>
+          <div class="drawer-section">
+            <div class="section-title-strip">
+              <span class="drawer-title">AUTONOMOUS CRON JOBS</span>
+              <button type="button" class="mini-cron-btn" id="btn-add-cron" onclick="window.promptAddCron()" title="Schedule a recurring autonomous task">+ Schedule Cron</button>
+            </div>
+            <div id="crons-list" class="crons-list">
+              <div class="cron-empty-hint">No cron jobs scheduled yet. Type natural instructions in chat or click + Schedule Cron.</div>
+            </div>
+          </div>
+          <div class="drawer-section">
+            <span class="drawer-title">AGENT-CURATED PROFILES (USER.md & MEMORY.md)</span>
+            <div id="hermes-memory-preview" class="memory-preview-container">
+              <div class="memory-card">
+                <div class="memory-head">
+                  <span>USER.md (Operator Directives)</span>
+                </div>
+                <div id="user-md-preview" class="memory-code-preview">Loading operator profile...</div>
+              </div>
+              <div class="memory-card">
+                <div class="memory-head">
+                  <span>MEMORY.md (Working Market Memory)</span>
+                </div>
+                <div id="memory-md-preview" class="memory-code-preview">Loading market working context...</div>
+              </div>
+            </div>
           </div>
           <div class="drawer-section">
             <span class="drawer-title">DURABLE COMPANY FACTS (LAYER 3)</span>

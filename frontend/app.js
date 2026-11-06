@@ -1512,6 +1512,7 @@ initHermesSidebar();
 loadConversations();
 loadHermesModels();
 loadSystemChanges();
+if (typeof loadHermesOSState === "function") loadHermesOSState();
 initAuthAndSettings();
 initViewRouter();
 initScrollSpy();
