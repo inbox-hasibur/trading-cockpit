@@ -165,7 +165,7 @@ function renderMainChart() {
     y: y(support) + 3,
     "text-anchor": "start",
     fill: "#22c55e",
-    "font-size": 8.5,
+    "font-size": 11,
     "font-weight": 700,
   });
   supLbl.textContent = `SUP ৳${support.toFixed(1)}`;
@@ -186,7 +186,7 @@ function renderMainChart() {
     y: y(resistance) + 3,
     "text-anchor": "start",
     fill: "#ef4444",
-    "font-size": 8.5,
+    "font-size": 11,
     "font-weight": 700,
   });
   resLbl.textContent = `RES ৳${resistance.toFixed(1)}`;
@@ -1048,7 +1048,7 @@ function renderDeepTrendChart(company, timeframe = "7d") {
     "stroke-width": 1.5,
     "stroke-dasharray": "4 4",
   }));
-  const supLbl = svgElement("text", { x: width - right - 4, y: y(support) - 4, "text-anchor": "end", fill: "#22c55e", "font-size": 9, "font-weight": 700 });
+  const supLbl = svgElement("text", { x: width - right - 4, y: y(support) - 4, "text-anchor": "end", fill: "#22c55e", "font-size": 11, "font-weight": 700 });
   supLbl.textContent = `SUPPORT ৳${support.toFixed(1)}`;
   svg.append(supLbl);
 
@@ -1062,7 +1062,7 @@ function renderDeepTrendChart(company, timeframe = "7d") {
     "stroke-width": 1.5,
     "stroke-dasharray": "4 4",
   }));
-  const resLbl = svgElement("text", { x: width - right - 4, y: y(resistance) - 4, "text-anchor": "end", fill: "#ef4444", "font-size": 9, "font-weight": 700 });
+  const resLbl = svgElement("text", { x: width - right - 4, y: y(resistance) - 4, "text-anchor": "end", fill: "#ef4444", "font-size": 11, "font-weight": 700 });
   resLbl.textContent = `RESISTANCE ৳${resistance.toFixed(1)}`;
   svg.append(resLbl);
 
