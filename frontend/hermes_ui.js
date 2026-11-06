@@ -600,6 +600,8 @@ window.toggleHermesModelPicker = function(e) {
   if (!modelDrop) return;
   const willOpen = modelDrop.hidden;
   modelDrop.hidden = !willOpen;
+  const modelBtn = $("hermes-model-trigger") || $("hermes-bottom-model-btn");
+  if (modelBtn) modelBtn.setAttribute("aria-expanded", String(willOpen));
   if (willOpen) {
     loadHermesModels();
   }

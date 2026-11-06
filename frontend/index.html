@@ -690,12 +690,18 @@
           </div>
           <div class="provider-status">
             <div class="model-picker-wrap bottom-model-picker">
-              <span class="muted-label" id="provider-prefix-label">OPENROUTER ·</span>
-              <select id="hermes-quick-model-select" class="bottom-model-select" title="Switch Hermes AI Brain Model" aria-label="Switch AI Brain Model">
+              <button type="button" id="hermes-model-trigger" class="bottom-model-btn" title="Switch Hermes AI Brain Model" aria-haspopup="true" aria-expanded="false" onclick="window.toggleHermesModelPicker(event)">
+                <span class="muted-label" id="provider-prefix-label">OPENROUTER ·</span>
+                <strong id="hermes-active-model-name">mimo-v2.6-pro</strong>
+                <span class="badge-caret">▾</span>
+              </button>
+              <div id="model-dropup-menu" class="model-dropup-menu" hidden>
+                <div class="dropup-header">SELECT AI BRAIN MODEL</div>
+                <div id="model-dropdown-list"></div>
+              </div>
+              <select id="hermes-quick-model-select" class="sr-only" title="Switch Hermes AI Brain Model" aria-label="Switch AI Brain Model">
                 <option value="xiaomi/mimo-v2.6-pro">Xiaomi MiMo-v2.6-Pro (Primary Brain)</option>
               </select>
-              <button type="button" id="hermes-model-trigger" class="sr-only" aria-hidden="true" tabindex="-1">Switch model</button>
-              <strong id="hermes-active-model-name" hidden>mimo-v2.6-pro</strong>
             </div>
           </div>
           <form id="chat-form" class="chat-form">

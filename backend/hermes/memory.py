@@ -7,12 +7,13 @@ Layer 3: Durable Facts & Canary Thesis Memory per Company
 
 from __future__ import annotations
 
+import logging
 from datetime import date
 from typing import Any
+from uuid import uuid4
 
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
-from uuid import uuid4
 
 from backend.database import (
     CanaryThesis,
@@ -24,10 +25,24 @@ from backend.database import (
 )
 from backend.hermes.secret_guard import redact_secrets
 
+logger = logging.getLogger(__name__)
+
 
 class HermesMemory:
-    def __init__(self, session: Session):
+    def __init__(self, session: Session, curator: Any | None = None):
         self.session = session
+        self._curator = curator
+
+    @property
+    def curator(self):
+        if self._curator is None:
+            try:
+                from backend.hermes_os.memory_curator import MemoryCurator
+                self._curator = MemoryCurator()
+            except Exception as e:
+                logger.debug("Could not initialize MemoryCurator: %s", e)
+                return None
+        return self._curator
 
     # -------------------------------------------------------------
     # Layer 1: Operator Profile & Core Directives
@@ -60,13 +75,21 @@ class HermesMemory:
     def format_layer_1_prompt(self) -> str:
         prof = self.get_user_profile()
         directives_str = "\n".join(f"- {d}" for d in prof["directives"])
-        return (
+        base_layer1 = (
             f"[LAYER 1 MEMORY: OPERATOR DIRECTIVES & POSTURE]\n"
             f"Operator: {prof['operator_name']}\n"
             f"Language: {prof['language_preference']}\n"
             f"Risk Posture: {prof['risk_posture']}\n"
             f"Core Rules:\n{directives_str}\n"
         )
+        if self.curator:
+            try:
+                user_md = self.curator.read_user_md().strip()
+                if user_md:
+                    return f"{base_layer1}\n[AGENT-CURATED OPERATOR PROFILE (USER.md)]\n{user_md}\n"
+            except Exception as e:
+                logger.debug("Failed to read USER.md: %s", e)
+        return base_layer1
 
     # -------------------------------------------------------------
     # Layer 2: Searchable Session History & Conversation Threads
@@ -152,13 +175,50 @@ class HermesMemory:
         self.session.add(mem)
         self.session.flush()
 
+        if self.curator:
+            try:
+                self.curator.index_message(
+                    conversation_id=conversation_id or "default",
+                    role=role,
+                    content=clean_content,
+                    symbol=symbol_mentioned,
+                )
+                self.curator.curate_turn(
+                    role=role,
+                    message=clean_content,
+                    context={"symbol": symbol_mentioned, "action": action_taken},
+                )
+            except Exception as exc:
+                logger.debug("Curator indexing/curation error: %s", exc)
+
     def search_sessions(self, query: str, limit: int = 4) -> list[dict[str, Any]]:
-        text_query = query.strip().lower()
+        text_query = query.strip()
         if not text_query:
             return []
-        tokens = [token for token in text_query.split() if len(token) >= 3]
+
+        # 1. Try SQLite FTS5 search via MemoryCurator first
+        if self.curator:
+            try:
+                fts_hits = self.curator.session_search(text_query, limit=limit)
+                if fts_hits:
+                    return [
+                        {
+                            "date": (h.get("created_at") or "")[:10] or "2026-11-06",
+                            "role": h.get("role", "user"),
+                            "content": (h.get("content") or "")[:300],
+                            "symbol": h.get("symbol"),
+                            "action": None,
+                        }
+                        for h in fts_hits
+                    ]
+            except Exception as exc:
+                logger.debug("Curator FTS5 search error: %s", exc)
+
+        # 2. Fallback to token matching over DB rows
+        text_query_lower = text_query.lower()
+        tokens = [token for token in text_query_lower.split() if len(token) >= 3]
         if not tokens:
-            tokens = [text_query]
+            tokens = [text_query_lower]
 
         results = []
         stmt = (
@@ -169,7 +229,7 @@ class HermesMemory:
         records = list(self.session.scalars(stmt))
         for r in records:
             content_lower = r.content.lower()
-            if any(t in content_lower for t in tokens) or (r.symbol_mentioned and r.symbol_mentioned.lower() in text_query):
+            if any(t in content_lower for t in tokens) or (r.symbol_mentioned and r.symbol_mentioned.lower() in text_query_lower):
                 results.append({
                     "date": r.session_date.isoformat(),
                     "role": r.role,
@@ -230,8 +290,6 @@ class HermesMemory:
         return recalled
 
     def format_layer_3_prompt(self, symbols: list[str]) -> str:
-        if not symbols:
-            return ""
         sections = []
         for sym in symbols:
             items = self.recall_facts_for_symbol(sym)
@@ -243,7 +301,20 @@ class HermesMemory:
                     else:
                         lines.append(f"  - [CANARY {it['status']}] Thesis: {it['thesis']} | Notes: {it['notes']}")
                 sections.append(f"Durable Knowledge for {sym}:\n" + "\n".join(lines))
-        if not sections:
+
+        memory_notes = ""
+        if self.curator:
+            try:
+                mem_md = self.curator.read_memory_md().strip()
+                if mem_md:
+                    memory_notes = f"\n[AGENT-CURATED WORKING MEMORY (MEMORY.md)]\n{mem_md}\n"
+            except Exception as exc:
+                logger.debug("Failed reading MEMORY.md: %s", exc)
+
+        if not sections and not memory_notes:
             return ""
-        return "[LAYER 3 MEMORY: DURABLE COMPANY FACTS & CANARY PROBES]\n" + "\n\n".join(sections) + "\n"
+
+        body = "\n\n".join(sections) if sections else ""
+        header = "[LAYER 3 MEMORY: DURABLE COMPANY FACTS & CANARY PROBES]\n" if sections else ""
+        return f"{header}{body}{memory_notes}"
 

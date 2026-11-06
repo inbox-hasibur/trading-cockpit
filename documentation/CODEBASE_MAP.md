@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 21:11:03 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 21:34:04 UTC**.
 
 ---
 
@@ -8,12 +8,12 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 65 | 12,932 | Python Core Kernel, Engine & Hermes Agent |
+| `.py` | 71 | 14,185 | Python Core Kernel, Engine & Hermes Agent |
 | `.png` | 3 | 11,100 | Configuration / Asset |
 | `.css` | 2 | 8,013 | Custom Dark / Light / Terminal Design System |
-| `.js` | 3 | 4,061 | Vanilla ES6+ Reactive Terminal Controller |
-| `.md` | 11 | 2,469 | Architecture & Strategy Documentation |
-| `.html` | 1 | 956 | Single Page Application DOM Structure |
+| `.js` | 3 | 4,063 | Vanilla ES6+ Reactive Terminal Controller |
+| `.md` | 11 | 2,607 | Architecture & Strategy Documentation |
+| `.html` | 1 | 962 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
 | `.cursorignore` | 1 | 12 | Configuration / Asset |
 | `.opencodeignore` | 1 | 12 | Configuration / Asset |
@@ -24,7 +24,7 @@
 | `.bat` | 1 | 8 | Configuration / Asset |
 | `.svg` | 1 | 1 | Configuration / Asset |
 | `.db` | 1 | 0 | Configuration / Asset |
-| **TOTAL** | **96** | **39,618** | *Entire Humming Bird Repository* |
+| **TOTAL** | **102** | **41,017** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -53,10 +53,15 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | [`backend/engine/t2_ledger.py`](/backend/engine/t2_ledger.py) | `backend.database.PortfolioState`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.engine.money.CENT`, `backend.engine.money.ZERO`, `backend.engine.money.money` |
 | [`backend/hermes/__init__.py`](/backend/hermes/__init__.py) | `backend.hermes.secret_guard.SecretGuard`, `backend.hermes.secret_guard.SecurityViolation`, `backend.hermes.secret_guard.redact_secrets` |
 | [`backend/hermes/agent_loop.py`](/backend/hermes/agent_loop.py) | `backend.chat.local_summary`, `backend.config.DHAKA`, `backend.config.Settings`, `backend.database.ChatBudget`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.HermesStateCheckpoint`, `backend.database.PortfolioState`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.database.portfolio_state`, `backend.engine.money.decimal`, `backend.engine.t2_ledger.assert_ledger`, `backend.hermes.memory.HermesMemory`, `backend.hermes.secret_guard.SecretGuard`, `backend.hermes.secret_guard.redact_secrets`, `backend.hermes.skills_manager.SkillsManager`, `backend.hermes.tools_dispatcher.detect_intent_and_tool`, `backend.hermes.tools_dispatcher.dispatch_tool`, `backend.hermes.tools_dispatcher.format_tool_response`, `backend.portfolio.build_snapshot` |
-| [`backend/hermes/memory.py`](/backend/hermes/memory.py) | `backend.config.utc_now_iso`, `backend.database.CanaryThesis`, `backend.database.CompanyProfile`, `backend.database.HermesConversationThread`, `backend.database.HermesDurableFact`, `backend.database.HermesSessionMemory`, `backend.database.HermesUserProfile`, `backend.hermes.secret_guard.redact_secrets` |
+| [`backend/hermes/memory.py`](/backend/hermes/memory.py) | `backend.config.utc_now_iso`, `backend.database.CanaryThesis`, `backend.database.CompanyProfile`, `backend.database.HermesConversationThread`, `backend.database.HermesDurableFact`, `backend.database.HermesSessionMemory`, `backend.database.HermesUserProfile`, `backend.hermes.secret_guard.redact_secrets`, `backend.hermes_os.memory_curator.MemoryCurator` |
 | [`backend/hermes/secret_guard.py`](/backend/hermes/secret_guard.py) | *Independent Core Module* |
 | [`backend/hermes/skills_manager.py`](/backend/hermes/skills_manager.py) | `backend.database.HermesSkillRevision`, `backend.hermes.secret_guard.SecretGuard` |
 | [`backend/hermes/tools_dispatcher.py`](/backend/hermes/tools_dispatcher.py) | `backend.adapters.stocknow_client.StockNowLiveClient`, `backend.adapters.stocknow_market_sync.extract_quotes_from_payload`, `backend.adapters.stocknow_market_sync.extract_quotes_from_stocknow`, `backend.adapters.stocknow_market_sync.sync_live_market_to_db`, `backend.adapters.stocknow_order_executor.execute_stocknow_virtual_order`, `backend.adapters.stocknow_portfolio_sync.extract_hummingbird_portfolio`, `backend.adapters.stocknow_portfolio_sync.reconcile_portfolio_to_db`, `backend.config.Settings`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.PortfolioState`, `backend.database.RuleAudit`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.engine.agent_actions.check_canary_theses`, `backend.engine.agent_actions.emergency_quarantine_and_canary`, `backend.engine.agent_actions.execute_agentic_buy`, `backend.engine.agent_actions.execute_agentic_sell`, `backend.engine.agent_actions.restore_quarantine`, `backend.engine.money.decimal`, `backend.engine.scheduler.get_active_scheduler`, `backend.hermes.memory.HermesMemory`, `backend.hermes.skills_manager.SkillsManager` |
+| [`backend/hermes_os/__init__.py`](/backend/hermes_os/__init__.py) | `backend.hermes_os.agent_loop.HermesOSAgentLoop`, `backend.hermes_os.config.HermesConfig`, `backend.hermes_os.config.ensure_hermes_state_dir`, `backend.hermes_os.config.get_hermes_home`, `backend.hermes_os.config.load_hermes_config`, `backend.hermes_os.memory_curator.MemoryCurator`, `backend.hermes_os.skill_loader.Skill`, `backend.hermes_os.skill_loader.SkillLoader` |
+| [`backend/hermes_os/agent_loop.py`](/backend/hermes_os/agent_loop.py) | `backend.hermes.secret_guard.SecretGuard`, `backend.hermes.secret_guard.redact_secrets`, `backend.hermes_os.config.HermesConfig`, `backend.hermes_os.config.ensure_hermes_state_dir`, `backend.hermes_os.config.load_hermes_config`, `backend.hermes_os.memory_curator.MemoryCurator`, `backend.hermes_os.skill_loader.SkillLoader` |
+| [`backend/hermes_os/config.py`](/backend/hermes_os/config.py) | `backend.hermes.secret_guard.SecretGuard` |
+| [`backend/hermes_os/memory_curator.py`](/backend/hermes_os/memory_curator.py) | `backend.hermes.secret_guard.SecretGuard`, `backend.hermes.secret_guard.redact_secrets`, `backend.hermes_os.config.ensure_hermes_state_dir`, `backend.hermes_os.config.load_hermes_config` |
+| [`backend/hermes_os/skill_loader.py`](/backend/hermes_os/skill_loader.py) | `backend.hermes.secret_guard.SecretGuard`, `backend.hermes.secret_guard.redact_secrets`, `backend.hermes_os.config.ensure_hermes_state_dir` |
 | [`backend/main.py`](/backend/main.py) | `backend.adapters.stocknow_adapter.StockNowAdapter`, `backend.adapters.stocknow_client.StockNowLiveClient`, `backend.adapters.stocknow_market_sync.extract_quotes_from_stocknow`, `backend.adapters.stocknow_market_sync.sync_live_market_to_db`, `backend.chat.ChatRequest`, `backend.chat.ChatService`, `backend.config.ROOT`, `backend.config.Settings`, `backend.config.VERSION`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.RuleAudit`, `backend.database.portfolio_state`, `backend.engine.auto_trader.AutoTrader`, `backend.engine.auto_trader.AutomationPaused`, `backend.engine.money.ZERO`, `backend.engine.scheduler.DSEMarketScheduler`, `backend.market_map.build_market_map_payload`, `backend.portfolio.build_snapshot`, `backend.portfolio.rule_view`, `backend.routes_auth_settings.KeysSettingsRequest`, `backend.routes_auth_settings.LoginRequest`, `backend.routes_auth_settings.build_auth_settings_router`, `backend.routes_hermes.CreateThreadRequest`, `backend.routes_hermes.build_hermes_router`, `backend.routes_stocknow.build_stocknow_router`, `backend.seed.migrate_real_stocknow_market`, `backend.seed.seed_demo` |
 | [`backend/market_map.py`](/backend/market_map.py) | *Independent Core Module* |
 | [`backend/portfolio.py`](/backend/portfolio.py) | `backend.adapters.stocknow_adapter.StockNowAdapter`, `backend.adapters.stocknow_market_sync._ALL_DSE_SHARES_CACHE`, `backend.config.DHAKA`, `backend.config.Settings`, `backend.config.VERSION`, `backend.database.AutomationCycle`, `backend.database.CanaryThesis`, `backend.database.ChatBudget`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.DecisionLog`, `backend.database.HermesDurableFact`, `backend.database.HermesSkillRevision`, `backend.database.HermesStateCheckpoint`, `backend.database.HermesUserProfile`, `backend.database.RuleAudit`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.database.portfolio_state`, `backend.engine.money.HUNDRED`, `backend.engine.money.ZERO`, `backend.engine.money.decimal`, `backend.engine.money.money`, `backend.engine.money.sale_amount`, `backend.engine.signals.assess_company`, `backend.engine.t2_ledger.TradingCalendar`, `backend.engine.t2_ledger.bucket_balances`, `backend.hermes.skills_manager.SkillsManager`, `backend.market_map.build_market_map_payload` |
@@ -543,24 +548,25 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `HermesMemory` | `L28–L248` | `object` | — | 11 |
+| `HermesMemory` | `L31–L319` | `object` | — | 12 |
 
 
 **Methods in `HermesMemory`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__init__` | `L29–L30` | `(self, session: Session...)` | — | — | — |
-| `get_user_profile` | `L35–L58` | `(self...)` | `dict[str, Any]` | — | `HermesUserProfile`, `add`, `flush`, `get` |
-| `format_layer_1_prompt` | `L60–L69` | `(self...)` | `str` | — | `get_user_profile`, `join` |
-| `get_or_create_thread` | `L74–L86` | `(self, conversation_id: str | None=N...)` | `HermesConversationThread` | — | `HermesConversationThread`, `add`, `flush`, `get` |
-| `list_threads` | `L88–L107` | `(self...)` | `list[dict[str, Any]]` | — | `append`, `count`, `desc`, `get_or_create_thread` |
-| `get_thread_messages` | `L109–L123` | `(self, conversation_id: str, limit: ...)` | `list[dict[str, Any]]` | — | `asc`, `isoformat`, `limit`, `list` |
-| `record_turn` | `L125–L153` | `(self, session_date: date, role: str...)` | `None` | — | `HermesSessionMemory`, `add`, `flush`, `get` |
-| `search_sessions` | `L155–L182` | `(self, query: str, limit: int=4...)` | `list[dict[str, Any]]` | — | `any`, `append`, `desc`, `isoformat` |
-| `record_fact` | `L187–L204` | `(self, symbol: str, fact: str, categ...)` | `HermesDurableFact` | — | `HermesDurableFact`, `add`, `flush`, `redact_secrets` |
-| `recall_facts_for_symbol` | `L206–L230` | `(self, symbol: str...)` | `list[dict[str, Any]]` | — | `append`, `desc`, `float`, `limit` |
-| `format_layer_3_prompt` | `L232–L248` | `(self, symbols: list[str]...)` | `str` | — | `append`, `join`, `recall_facts_for_symbol` |
+| `__init__` | `L32–L34` | `(self, session: Session, curator: An...)` | — | — | — |
+| `curator` | `L37–L45` | `(self...)` | — | — | `MemoryCurator`, `debug` |
+| `get_user_profile` | `L50–L73` | `(self...)` | `dict[str, Any]` | — | `HermesUserProfile`, `add`, `flush`, `get` |
+| `format_layer_1_prompt` | `L75–L92` | `(self...)` | `str` | — | `debug`, `get_user_profile`, `join`, `read_user_md` |
+| `get_or_create_thread` | `L97–L109` | `(self, conversation_id: str | None=N...)` | `HermesConversationThread` | — | `HermesConversationThread`, `add`, `flush`, `get` |
+| `list_threads` | `L111–L130` | `(self...)` | `list[dict[str, Any]]` | — | `append`, `count`, `desc`, `get_or_create_thread` |
+| `get_thread_messages` | `L132–L146` | `(self, conversation_id: str, limit: ...)` | `list[dict[str, Any]]` | — | `asc`, `isoformat`, `limit`, `list` |
+| `record_turn` | `L148–L192` | `(self, session_date: date, role: str...)` | `None` | — | `HermesSessionMemory`, `add`, `curate_turn`, `debug` |
+| `search_sessions` | `L194–L242` | `(self, query: str, limit: int=4...)` | `list[dict[str, Any]]` | — | `any`, `append`, `debug`, `desc` |
+| `record_fact` | `L247–L264` | `(self, symbol: str, fact: str, categ...)` | `HermesDurableFact` | — | `HermesDurableFact`, `add`, `flush`, `redact_secrets` |
+| `recall_facts_for_symbol` | `L266–L290` | `(self, symbol: str...)` | `list[dict[str, Any]]` | — | `append`, `desc`, `float`, `limit` |
+| `format_layer_3_prompt` | `L292–L319` | `(self, symbols: list[str]...)` | `str` | — | `append`, `debug`, `join`, `read_memory_md` |
 
 
 ---
@@ -638,6 +644,126 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | `_fmt_ai_model` | `L716–L746` | `(tool_res: dict[str, Any], bangla: b...)` | `str` | — | `get`, `join` |
 | `format_tool_response` | `L749–L928` | `(tool_name: str, tool_res: dict[str,...)` | `str` | Formats human-friendly Bangla/English message summarizing the executed tool's outcome. | `_fmt_ai_model`, `_fmt_automation_config`, `_fmt_report_threat`, `_fmt_rollback` |
 | `detect_intent_and_tool` | `L935–L1188` | `(message: str, snapshot: dict...)` | `tuple[str | None, dict[str, Any]]` | High-precision intent detector for Bangla, Banglish & English agent commands. | `any`, `float`, `get`, `int` |
+
+
+---
+
+### 📄 [`backend/hermes_os/__init__.py`](/backend/hermes_os/__init__.py)
+
+---
+
+### 📄 [`backend/hermes_os/agent_loop.py`](/backend/hermes_os/agent_loop.py)
+
+#### Classes & Methods
+
+| Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
+| :--- | :--- | :--- | :--- | :--- |
+| `HermesOSAgentLoop` | `L27–L121` | `object` | Core autonomous agent loop implementing NousResearch Hermes Agent mechanics. | 3 |
+
+
+**Methods in `HermesOSAgentLoop`:**
+
+| Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `__init__` | `L30–L38` | `(self, hermes_dir: Path | str | None...)` | — | — | `MemoryCurator`, `SkillLoader`, `ensure_hermes_state_dir`, `load_hermes_config` |
+| `prepare_turn_messages` | `L40–L94` | `(self, user_message: str, history: l...)` | `list[dict[str, Any]]` | Assembles prompt context: Base System Prompt + USER.md + MEMORY.md + Matched Skills + FTS Recall. | `append`, `check_and_compress_context`, `format_matched_skills_prompt`, `format_system_context` |
+| `post_turn` | `L96–L121` | `(self, conversation_id: str, user_me...)` | `dict[str, Any]` | Post-turn processing: indexes turns into SQLite FTS5 and curates USER.md and MEMORY.md. | `curate_turn`, `get`, `index_message`, `redact_secrets` |
+
+
+---
+
+### 📄 [`backend/hermes_os/config.py`](/backend/hermes_os/config.py)
+
+#### Classes & Methods
+
+| Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
+| :--- | :--- | :--- | :--- | :--- |
+| `HermesConfig` | `L159–L195` | `object` | — | 7 |
+
+
+**Methods in `HermesConfig`:**
+
+| Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `primary_model` | `L166–L167` | `(self...)` | `str` | — | `get` |
+| `active_model` | `L170–L171` | `(self...)` | `str` | — | — |
+| `fallback_chain` | `L174–L179` | `(self...)` | `list[dict[str, Any]]` | — | — |
+| `compression_threshold` | `L182–L183` | `(self...)` | `float` | — | `float`, `get` |
+| `compression_target` | `L186–L187` | `(self...)` | `float` | — | `float`, `get` |
+| `max_context_tokens` | `L190–L191` | `(self...)` | `int` | — | `get`, `int` |
+| `fts_enabled` | `L194–L195` | `(self...)` | `bool` | — | `bool`, `get` |
+
+
+#### Standalone Functions
+
+| Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `get_hermes_home` | `L112–L124` | `(custom_path: Path | str | None=None...)` | `Path` | Returns the isolated runtime state directory for Hermes OS. | `Path`, `assert_safe_path`, `getenv`, `resolve` |
+| `ensure_hermes_state_dir` | `L127–L155` | `(hermes_dir: Path | str | None=None...)` | `Path` | Initializes the official Hermes state directory layout. | `Path`, `exists`, `get_hermes_home`, `glob` |
+| `load_hermes_config` | `L198–L212` | `(hermes_dir: Path | str | None=None...)` | `HermesConfig` | Loads and validates the Hermes configuration. | `HermesConfig`, `ensure_hermes_state_dir`, `get`, `read_text` |
+
+
+---
+
+### 📄 [`backend/hermes_os/memory_curator.py`](/backend/hermes_os/memory_curator.py)
+
+#### Classes & Methods
+
+| Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
+| :--- | :--- | :--- | :--- | :--- |
+| `MemoryCurator` | `L45–L402` | `object` | NousResearch-style autonomous memory curator with FTS5 search and disk markdown storage. | 14 |
+
+
+**Methods in `MemoryCurator`:**
+
+| Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `__init__` | `L48–L64` | `(self, hermes_dir: Path | str | None...)` | — | — | `Path`, `_init_fts`, `assert_safe_path`, `ensure_hermes_state_dir` |
+| `_connection` | `L67–L73` | `(self...)` | — | — | `close`, `connect`, `str` |
+| `_init_fts` | `L75–L92` | `(self...)` | `None` | Initializes the FTS5 virtual table for lightning-fast transcript recall. | `_connection`, `commit`, `cursor`, `execute` |
+| `index_message` | `L97–L119` | `(self, conversation_id: str, role: s...)` | `None` | Indexes a conversation message into the FTS5 virtual table after zero-secret scrubbing. | `_connection`, `commit`, `cursor`, `execute` |
+| `session_search` | `L121–L179` | `(self, query: str, limit: int=5...)` | `list[dict[str, Any]]` | Performs full-text search across transcripts using SQLite FTS5 with safe fallback. | `_connection`, `cursor`, `debug`, `execute` |
+| `read_user_md` | `L184–L189` | `(self...)` | `str` | Reads USER.md from disk. | `assert_safe_path`, `exists`, `read_text` |
+| `write_user_md` | `L191–L195` | `(self, content: str...)` | `None` | Writes scrubbed markdown content to USER.md. | `assert_safe_path`, `redact_secrets`, `write_text` |
+| `patch_user_profile` | `L197–L218` | `(self, preference_statement: str, se...)` | `bool` | Appends a new learned rule or preference to USER.md without duplicates. | `info`, `lower`, `lstrip`, `read_user_md` |
+| `read_memory_md` | `L223–L228` | `(self...)` | `str` | Reads MEMORY.md from disk. | `assert_safe_path`, `exists`, `read_text` |
+| `write_memory_md` | `L230–L234` | `(self, content: str...)` | `None` | Writes scrubbed markdown content to MEMORY.md. | `assert_safe_path`, `redact_secrets`, `write_text` |
+| `patch_memory` | `L236–L256` | `(self, fact_statement: str, section:...)` | `bool` | Appends a new market note or distilled thesis to MEMORY.md without duplicates. | `info`, `lower`, `lstrip`, `read_memory_md` |
+| `curate_turn` | `L261–L316` | `(self, role: str, message: str, cont...)` | `dict[str, Any]` | Inspects turn content and automatically curates learned operator preferences into USER.md | `append`, `get`, `group`, `len` |
+| `check_and_compress_context` | `L321–L386` | `(self, messages: list[dict[str, Any]...)` | `tuple[list[dict[str, Any]], bool]` | Calculates context fill. | `append`, `extend`, `get`, `info` |
+| `format_system_context` | `L391–L402` | `(self...)` | `str` | Assembles USER.md and MEMORY.md into a structured context block for injection into Hermes prompt. | `append`, `join`, `read_memory_md`, `read_user_md` |
+
+
+---
+
+### 📄 [`backend/hermes_os/skill_loader.py`](/backend/hermes_os/skill_loader.py)
+
+#### Classes & Methods
+
+| Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
+| :--- | :--- | :--- | :--- | :--- |
+| `Skill` | `L26–L44` | `object` | — | 1 |
+| `SkillLoader` | `L47–L167` | `object` | Manages versioned markdown skills with on-demand retrieval and execution. | 7 |
+
+
+**Methods in `Skill`:**
+
+| Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `full_content` | `L36–L44` | `(self...)` | `str` | — | `dump`, `strip` |
+
+
+**Methods in `SkillLoader`:**
+
+| Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `__init__` | `L50–L54` | `(self, hermes_dir: Path | str | None...)` | — | — | `assert_safe_path`, `ensure_hermes_state_dir`, `mkdir` |
+| `list_skills` | `L56–L63` | `(self...)` | `list[Skill]` | Loads and parses all skills found in the skills directory. | `append`, `glob`, `load_skill`, `sorted` |
+| `load_skills` | `L65–L67` | `(self...)` | `list[Skill]` | Alias for list_skills. | `list_skills` |
+| `load_skill` | `L69–L115` | `(self, path: Path...)` | `Skill | None` | Parses a single skill file into a Skill object. | `Skill`, `append`, `assert_safe_path`, `get` |
+| `match_skills` | `L117–L141` | `(self, prompt: str, max_skills: int=...)` | `list[Skill]` | Matches skills based on triggers, tags, and keywords in the user prompt. | `append`, `len`, `list_skills`, `lower` |
+| `format_matched_skills_prompt` | `L143–L155` | `(self, skills: list[Skill]...)` | `str` | Formats matched skills for injection into the system prompt. | `append`, `join`, `strip` |
+| `save_skill` | `L157–L167` | `(self, skill: Skill...)` | `Path` | Saves a skill to disk after zero-secret scrubbing. | `assert_safe_path`, `lower`, `redact_secrets`, `replace` |
 
 
 ---
@@ -1012,7 +1138,7 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 
 ### Key DOM Identifiers (`frontend/index.html`)
 
-Identified **262** distinct element IDs in the UI shell. Key controller anchors:
+Identified **264** distinct element IDs in the UI shell. Key controller anchors:
 
 `#overview`, `#watchlist`, `#market-map`, `#master-automation-toggle`, `#mode-btn-polling`, `#mode-btn-live`, `#polling-interval-pills`, `#main-chart`, `#bucket-stack`, `#what-if-slider`, `#theme-toggle-btn`, `#topbar-clock-widget`
 
@@ -1126,18 +1252,18 @@ Identified **262** distinct element IDs in the UI shell. Key controller anchors:
 | `escapeHtml()` | `hermes_ui.js` | `L475` | Reactive DOM rendering / event controller |
 | `executeRollback()` | `hermes_ui.js` | `L485` | Reactive DOM rendering / event controller |
 | `loadHermesModels()` | `hermes_ui.js` | `L508` | Reactive DOM rendering / event controller |
-| `switchHermesModel()` | `hermes_ui.js` | `L618` | Reactive DOM rendering / event controller |
-| `loadApiKeysSettings()` | `hermes_ui.js` | `L679` | Reactive DOM rendering / event controller |
-| `saveApiKeysSettings()` | `hermes_ui.js` | `L745` | Reactive DOM rendering / event controller |
-| `checkAuthSession()` | `hermes_ui.js` | `L797` | Reactive DOM rendering / event controller |
-| `openOperatorProfile()` | `hermes_ui.js` | `L815` | Reactive DOM rendering / event controller |
-| `closeOperatorProfile()` | `hermes_ui.js` | `L820` | Reactive DOM rendering / event controller |
-| `handleOperatorLogin()` | `hermes_ui.js` | `L825` | Reactive DOM rendering / event controller |
-| `handleOperatorLogout()` | `hermes_ui.js` | `L854` | Reactive DOM rendering / event controller |
-| `markKeysDirty()` | `hermes_ui.js` | `L864` | Reactive DOM rendering / event controller |
-| `initAuthAndSettings()` | `hermes_ui.js` | `L874` | Reactive DOM rendering / event controller |
-| `loadSystemChanges()` | `hermes_ui.js` | `L951` | Reactive DOM rendering / event controller |
-| `initHermesChatListeners()` | `hermes_ui.js` | `L1039` | Reactive DOM rendering / event controller |
+| `switchHermesModel()` | `hermes_ui.js` | `L620` | Reactive DOM rendering / event controller |
+| `loadApiKeysSettings()` | `hermes_ui.js` | `L681` | Reactive DOM rendering / event controller |
+| `saveApiKeysSettings()` | `hermes_ui.js` | `L747` | Reactive DOM rendering / event controller |
+| `checkAuthSession()` | `hermes_ui.js` | `L799` | Reactive DOM rendering / event controller |
+| `openOperatorProfile()` | `hermes_ui.js` | `L817` | Reactive DOM rendering / event controller |
+| `closeOperatorProfile()` | `hermes_ui.js` | `L822` | Reactive DOM rendering / event controller |
+| `handleOperatorLogin()` | `hermes_ui.js` | `L827` | Reactive DOM rendering / event controller |
+| `handleOperatorLogout()` | `hermes_ui.js` | `L856` | Reactive DOM rendering / event controller |
+| `markKeysDirty()` | `hermes_ui.js` | `L866` | Reactive DOM rendering / event controller |
+| `initAuthAndSettings()` | `hermes_ui.js` | `L876` | Reactive DOM rendering / event controller |
+| `loadSystemChanges()` | `hermes_ui.js` | `L953` | Reactive DOM rendering / event controller |
+| `initHermesChatListeners()` | `hermes_ui.js` | `L1041` | Reactive DOM rendering / event controller |
 
 ---
 
@@ -1182,9 +1308,10 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/hermes/agent_loop.py` | `run_turn` | 78 | 4 | Acceptable; well-scoped logic |
 | `backend/hermes/agent_loop.py` | `_call_gemini_with_key_rotation` | 91 | 7 | Acceptable; well-scoped logic |
 | `backend/hermes/agent_loop.py` | `_conversational_inference` | 158 | 5 | Decompose into sub-functions |
-| `backend/hermes/memory.py` | `record_turn` | 29 | 4 | Acceptable; well-scoped logic |
-| `backend/hermes/memory.py` | `search_sessions` | 28 | 4 | Acceptable; well-scoped logic |
-| `backend/hermes/memory.py` | `format_layer_3_prompt` | 17 | 5 | Acceptable; well-scoped logic |
+| `backend/hermes/memory.py` | `format_layer_1_prompt` | 18 | 4 | Acceptable; well-scoped logic |
+| `backend/hermes/memory.py` | `record_turn` | 45 | 4 | Acceptable; well-scoped logic |
+| `backend/hermes/memory.py` | `search_sessions` | 49 | 4 | Acceptable; well-scoped logic |
+| `backend/hermes/memory.py` | `format_layer_3_prompt` | 28 | 5 | Acceptable; well-scoped logic |
 | `backend/hermes/secret_guard.py` | `redact_secrets` | 11 | 4 | Acceptable; well-scoped logic |
 | `backend/hermes/skills_manager.py` | `match_skills` | 22 | 4 | Acceptable; well-scoped logic |
 | `backend/hermes/tools_dispatcher.py` | `handle_execute_manual_order` | 115 | 4 | Decompose into sub-functions |
@@ -1192,6 +1319,11 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/hermes/tools_dispatcher.py` | `dispatch_tool` | 36 | 12 | Acceptable; well-scoped logic |
 | `backend/hermes/tools_dispatcher.py` | `format_tool_response` | 180 | 9 | Decompose into sub-functions |
 | `backend/hermes/tools_dispatcher.py` | `detect_intent_and_tool` | 254 | 5 | Decompose into sub-functions |
+| `backend/hermes_os/agent_loop.py` | `prepare_turn_messages` | 55 | 4 | Acceptable; well-scoped logic |
+| `backend/hermes_os/config.py` | `ensure_hermes_state_dir` | 29 | 4 | Acceptable; well-scoped logic |
+| `backend/hermes_os/memory_curator.py` | `curate_turn` | 56 | 6 | Acceptable; well-scoped logic |
+| `backend/hermes_os/skill_loader.py` | `load_skill` | 47 | 6 | Acceptable; well-scoped logic |
+| `backend/hermes_os/skill_loader.py` | `match_skills` | 25 | 4 | Acceptable; well-scoped logic |
 | `backend/main.py` | `create_app` | 252 | 4 | Decompose into sub-functions |
 | `backend/main.py` | `local_security` | 39 | 4 | Acceptable; well-scoped logic |
 | `backend/main.py` | `cycle` | 15 | 4 | Acceptable; well-scoped logic |
@@ -1221,4 +1353,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 33 Python modules inspected, 33 FastAPI endpoints registered, 39,618 total LOC indexed.
+> **Audit Summary:** 38 Python modules inspected, 33 FastAPI endpoints registered, 41,017 total LOC indexed.

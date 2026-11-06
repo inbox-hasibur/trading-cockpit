@@ -23,6 +23,7 @@ backend/data/
 *.log
 
 # Local editor/browser artifacts
+scratch/
 .idea/
 .vscode/
 node_modules/
