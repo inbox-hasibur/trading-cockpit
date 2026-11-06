@@ -1453,18 +1453,27 @@ body.is-resizing-hermes .app-shell {
   color: #0d9488;
 }
 
+.model-picker-wrap,
+.bottom-model-picker {
+  position: relative;
+  display: inline-flex;
+}
+
 .model-dropup-menu {
   position: absolute;
   bottom: calc(100% + 8px);
   left: 0;
-  min-width: 260px;
-  max-width: 330px;
-  background: var(--panel);
-  border: 1px solid var(--line);
+  min-width: 270px;
+  max-width: 340px;
+  max-height: min(390px, calc(100vh - 200px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--panel, #111a24);
+  border: 1px solid var(--line, #243547);
   border-radius: 10px;
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.45);
   padding: 6px;
-  z-index: 9999;
+  z-index: 999999;
 }
 
 [data-theme="light"] .model-dropup-menu {

@@ -7,11 +7,11 @@
   <meta name="description" content="Humming Bird: a local, synthetic paper-trading cockpit for Bangladesh-market strategy experiments.">
   <title>Humming Bird · Trading Cockpit</title>
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
-  <link rel="stylesheet" href="/assets/styles.css">
-  <link rel="stylesheet" href="/assets/theme_light_hermes.css">
-  <script src="/assets/charts.js" defer></script>
-  <script src="/assets/hermes_ui.js" defer></script>
-  <script src="/assets/app.js" defer></script>
+  <link rel="stylesheet" href="/assets/styles.css?v=2.3">
+  <link rel="stylesheet" href="/assets/theme_light_hermes.css?v=2.3">
+  <script src="/assets/charts.js?v=2.3" defer></script>
+  <script src="/assets/hermes_ui.js?v=2.3" defer></script>
+  <script src="/assets/app.js?v=2.3" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#overview">Skip to portfolio</a>
@@ -684,14 +684,16 @@
           </div>
           <div class="provider-status">
             <div class="model-picker-wrap bottom-model-picker">
-              <button type="button" class="bottom-model-btn" id="hermes-model-trigger" title="Switch AI Brain Model (/model)">
+              <button type="button" class="bottom-model-btn" id="hermes-model-trigger" onclick="toggleHermesModelPicker(event)" title="Switch AI Brain Model (/model)">
                 <span class="muted-label" id="provider-prefix-label">OPENROUTER ·</span>
                 <strong id="hermes-active-model-name">mimo-v2.6-pro</strong>
                 <span class="badge-caret">▾</span>
               </button>
               <div class="model-dropup-menu" id="model-dropup-menu" hidden>
                 <div class="dropup-header">HERMES AI BRAIN</div>
-                <div class="dropdown-list" id="model-dropdown-list"></div>
+                <div class="dropdown-list" id="model-dropdown-list">
+                  <div class="empty-state-small" style="padding: 8px 10px; font-size: 11px; color: var(--muted, #94a3b8);">Loading models…</div>
+                </div>
               </div>
             </div>
           </div>

@@ -517,7 +517,7 @@ async function loadHermesModels() {
       dropdownList.innerHTML = models.map((m) => {
         const isCur = m.id === active;
         return `
-          <button type="button" class="model-dropup-item ${isCur ? "is-active" : ""}" data-model="${escapeHtml(m.id)}">
+          <button type="button" class="model-dropup-item ${isCur ? "is-active" : ""}" data-model="${escapeHtml(m.id)}" onclick="window.selectHermesModelItem(event, '${escapeHtml(m.id)}')">
             <span class="model-item-name">${escapeHtml(m.name)}</span>
             ${isCur ? '<span class="model-dropup-check">✓</span>' : ""}
           </button>
@@ -525,12 +525,11 @@ async function loadHermesModels() {
       }).join("");
 
       dropdownList.querySelectorAll(".model-dropup-item").forEach((btn) => {
-        btn.addEventListener("click", () => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
           const modId = btn.dataset.model;
-          const drop = $("model-dropup-menu") || $("model-picker-dropdown");
-          if (drop) drop.hidden = true;
-          switchHermesModel(modId);
-        });
+          window.selectHermesModelItem(e, modId);
+        };
       });
     }
 
@@ -572,13 +571,38 @@ async function loadHermesModels() {
   }
 }
 
+window.toggleHermesModelPicker = function(e) {
+  if (e) {
+    if (typeof e.stopPropagation === "function") e.stopPropagation();
+    if (typeof e.preventDefault === "function") e.preventDefault();
+  }
+  const modelDrop = $("model-dropup-menu") || $("model-picker-dropdown");
+  if (!modelDrop) return;
+  const willOpen = modelDrop.hidden;
+  modelDrop.hidden = !willOpen;
+  if (willOpen) {
+    loadHermesModels();
+  }
+};
+
+window.selectHermesModelItem = function(e, modId) {
+  if (e) {
+    if (typeof e.stopPropagation === "function") e.stopPropagation();
+    if (typeof e.preventDefault === "function") e.preventDefault();
+  }
+  const drop = $("model-dropup-menu") || $("model-picker-dropdown");
+  if (drop) drop.hidden = true;
+  switchHermesModel(modId);
+};
+
 async function switchHermesModel(modelId) {
-  if (!modelId || state.busy) return;
-  state.busy = true;
-  updateControls();
+  if (!modelId) return;
   // Immediately synchronize both controls
   const short = modelId.split("/").pop();
   setText("hermes-active-model-name", short);
+  const isGemini = modelId.startsWith("google/") || modelId.startsWith("gemini");
+  const isLocal = modelId === "local-quant-brain";
+  setText("provider-prefix-label", isGemini ? "GEMINI ·" : (isLocal ? "LOCAL ·" : "OPENROUTER ·"));
   const select = $("settings-model-select");
   if (select && select.value !== modelId) {
     if (!Array.from(select.options).some((opt) => opt.value === modelId)) {
@@ -613,14 +637,11 @@ async function switchHermesModel(modelId) {
       body: { model: modelId },
     });
     notify(`AI Brain switched to ${modelId}`);
-    await refresh();
+    if (typeof refresh === "function") await refresh();
     await loadHermesModels();
     await loadSystemChanges();
   } catch (err) {
     notify(`Failed to switch model: ${err.message}`, true);
-  } finally {
-    state.busy = false;
-    updateControls();
   }
 }
 
@@ -1011,15 +1032,9 @@ function initHermesChatListeners() {
   const modelBtn = $("hermes-model-trigger") || $("hermes-bottom-model-btn") || $("hermes-model-btn");
   const modelDrop = $("model-dropup-menu") || $("model-picker-dropdown");
   if (modelBtn && modelDrop) {
-    modelBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      const willOpen = modelDrop.hidden;
-      modelDrop.hidden = !willOpen;
-      if (willOpen) {
-        loadHermesModels();
-      }
-    });
+    modelBtn.onclick = (e) => {
+      window.toggleHermesModelPicker(e);
+    };
     document.addEventListener("click", (e) => {
       if (!modelDrop.contains(e.target) && !modelBtn.contains(e.target)) {
         modelDrop.hidden = true;
