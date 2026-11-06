@@ -2633,6 +2633,17 @@ body.is-resizing-hermes .app-shell {
   border-color: #93c5fd !important;
 }
 
+[data-theme="light"] .holdings-action-btn.sell-all-btn {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+  border-color: #fecaca !important;
+}
+
+[data-theme="light"] .holdings-action-btn.sell-all-btn:hover {
+  background: #fee2e2 !important;
+  border-color: #fca5a5 !important;
+}
+
 [data-theme="light"] .holding-guard-badge {
   background: #f1f5f9 !important;
   color: #475569 !important;

@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 12:42:48 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 13:54:16 UTC**.
 
 ---
 
@@ -9,8 +9,8 @@
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
 | `.py` | 44 | 11,570 | Python Core Kernel, Engine & Hermes Agent |
-| `.css` | 2 | 7,865 | Custom Dark / Light / Terminal Design System |
-| `.js` | 3 | 3,791 | Vanilla ES6+ Reactive Terminal Controller |
+| `.css` | 2 | 7,887 | Custom Dark / Light / Terminal Design System |
+| `.js` | 3 | 3,802 | Vanilla ES6+ Reactive Terminal Controller |
 | `.md` | 11 | 2,395 | Architecture & Strategy Documentation |
 | `.html` | 1 | 953 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
@@ -22,7 +22,7 @@
 | `.sh` | 1 | 9 | Configuration / Asset |
 | `.bat` | 1 | 8 | Configuration / Asset |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **71** | **26,661** | *Entire Humming Bird Repository* |
+| **TOTAL** | **71** | **26,694** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -1011,8 +1011,8 @@ Identified **253** distinct element IDs in the UI shell. Key controller anchors:
 
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
-| `styles.css` | 5225 | Core design tokens, layout & widgets |
-| `theme_light_hermes.css` | 2640 | Daylight overrides & Hermes IDE sidebar |
+| `styles.css` | 5236 | Core design tokens, layout & widgets |
+| `theme_light_hermes.css` | 2651 | Daylight overrides & Hermes IDE sidebar |
 
 
 ### Frontend API Contract Invocations (`frontend/*.js`)
@@ -1062,27 +1062,27 @@ Identified **253** distinct element IDs in the UI shell. Key controller anchors:
 | `renderSnapshot()` | `app.js` | `L200` | Reactive DOM rendering / event controller |
 | `renderEquitySparkline()` | `app.js` | `L250` | Reactive DOM rendering / event controller |
 | `renderActiveHoldings()` | `app.js` | `L264` | Reactive DOM rendering / event controller |
-| `renderBuckets()` | `app.js` | `L393` | Reactive DOM rendering / event controller |
-| `cell()` | `app.js` | `L425` | Reactive DOM rendering / event controller |
-| `selectCompany()` | `app.js` | `L427` | Reactive DOM rendering / event controller |
-| `renderWatchlist()` | `app.js` | `L434` | Reactive DOM rendering / event controller |
-| `renderCanaryTheses()` | `app.js` | `L504` | Reactive DOM rendering / event controller |
-| `renderInspector()` | `app.js` | `L538` | Reactive DOM rendering / event controller |
-| `renderDecisions()` | `app.js` | `L573` | Reactive DOM rendering / event controller |
-| `renderLedger()` | `app.js` | `L613` | Reactive DOM rendering / event controller |
-| `initMarketMapResizeObserver()` | `app.js` | `L752` | Reactive DOM rendering / event controller |
-| `initTheme()` | `app.js` | `L778` | Reactive DOM rendering / event controller |
-| `setTheme()` | `app.js` | `L784` | Reactive DOM rendering / event controller |
-| `toggleTheme()` | `app.js` | `L795` | Reactive DOM rendering / event controller |
-| `tickMarketClock()` | `app.js` | `L801` | Reactive DOM rendering / event controller |
-| `tickClock()` | `app.js` | `L872` | Reactive DOM rendering / event controller |
-| `renderAutomationControlBar()` | `app.js` | `L881` | Reactive DOM rendering / event controller |
-| `setAutomationConfig()` | `app.js` | `L1022` | Reactive DOM rendering / event controller |
-| `initRealtimeStream()` | `app.js` | `L1167` | Reactive DOM rendering / event controller |
-| `switchView()` | `app.js` | `L1193` | Reactive DOM rendering / event controller |
-| `initViewRouter()` | `app.js` | `L1244` | Reactive DOM rendering / event controller |
-| `initScrollSpy()` | `app.js` | `L1310` | Reactive DOM rendering / event controller |
-| `updateActiveNav()` | `app.js` | `L1323` | Reactive DOM rendering / event controller |
+| `renderBuckets()` | `app.js` | `L417` | Reactive DOM rendering / event controller |
+| `cell()` | `app.js` | `L449` | Reactive DOM rendering / event controller |
+| `selectCompany()` | `app.js` | `L451` | Reactive DOM rendering / event controller |
+| `renderWatchlist()` | `app.js` | `L458` | Reactive DOM rendering / event controller |
+| `renderCanaryTheses()` | `app.js` | `L528` | Reactive DOM rendering / event controller |
+| `renderInspector()` | `app.js` | `L562` | Reactive DOM rendering / event controller |
+| `renderDecisions()` | `app.js` | `L597` | Reactive DOM rendering / event controller |
+| `renderLedger()` | `app.js` | `L637` | Reactive DOM rendering / event controller |
+| `initMarketMapResizeObserver()` | `app.js` | `L776` | Reactive DOM rendering / event controller |
+| `initTheme()` | `app.js` | `L802` | Reactive DOM rendering / event controller |
+| `setTheme()` | `app.js` | `L808` | Reactive DOM rendering / event controller |
+| `toggleTheme()` | `app.js` | `L819` | Reactive DOM rendering / event controller |
+| `tickMarketClock()` | `app.js` | `L825` | Reactive DOM rendering / event controller |
+| `tickClock()` | `app.js` | `L896` | Reactive DOM rendering / event controller |
+| `renderAutomationControlBar()` | `app.js` | `L905` | Reactive DOM rendering / event controller |
+| `setAutomationConfig()` | `app.js` | `L1046` | Reactive DOM rendering / event controller |
+| `initRealtimeStream()` | `app.js` | `L1191` | Reactive DOM rendering / event controller |
+| `switchView()` | `app.js` | `L1217` | Reactive DOM rendering / event controller |
+| `initViewRouter()` | `app.js` | `L1268` | Reactive DOM rendering / event controller |
+| `initScrollSpy()` | `app.js` | `L1305` | Reactive DOM rendering / event controller |
+| `updateActiveNav()` | `app.js` | `L1318` | Reactive DOM rendering / event controller |
 | `smoothCurvePath()` | `charts.js` | `L8` | Reactive DOM rendering / event controller |
 | `getBezierPointAtContinuousIndex()` | `charts.js` | `L31` | Reactive DOM rendering / event controller |
 | `renderMainChart()` | `charts.js` | `L63` | Reactive DOM rendering / event controller |
@@ -1106,26 +1106,26 @@ Identified **253** distinct element IDs in the UI shell. Key controller anchors:
 | `syncQuickPromptsPlacement()` | `hermes_ui.js` | `L93` | Reactive DOM rendering / event controller |
 | `addMessage()` | `hermes_ui.js` | `L113` | Reactive DOM rendering / event controller |
 | `sendChat()` | `hermes_ui.js` | `L133` | Reactive DOM rendering / event controller |
-| `initHermesSidebar()` | `hermes_ui.js` | `L208` | Reactive DOM rendering / event controller |
-| `loadConversations()` | `hermes_ui.js` | `L353` | Reactive DOM rendering / event controller |
-| `switchConversation()` | `hermes_ui.js` | `L387` | Reactive DOM rendering / event controller |
-| `createNewConversation()` | `hermes_ui.js` | `L416` | Reactive DOM rendering / event controller |
-| `formatRelativeTime()` | `hermes_ui.js` | `L443` | Reactive DOM rendering / event controller |
-| `escapeHtml()` | `hermes_ui.js` | `L457` | Reactive DOM rendering / event controller |
-| `executeRollback()` | `hermes_ui.js` | `L467` | Reactive DOM rendering / event controller |
-| `loadHermesModels()` | `hermes_ui.js` | `L490` | Reactive DOM rendering / event controller |
-| `switchHermesModel()` | `hermes_ui.js` | `L564` | Reactive DOM rendering / event controller |
-| `loadApiKeysSettings()` | `hermes_ui.js` | `L617` | Reactive DOM rendering / event controller |
-| `saveApiKeysSettings()` | `hermes_ui.js` | `L683` | Reactive DOM rendering / event controller |
-| `checkAuthSession()` | `hermes_ui.js` | `L735` | Reactive DOM rendering / event controller |
-| `openOperatorProfile()` | `hermes_ui.js` | `L753` | Reactive DOM rendering / event controller |
-| `closeOperatorProfile()` | `hermes_ui.js` | `L758` | Reactive DOM rendering / event controller |
-| `handleOperatorLogin()` | `hermes_ui.js` | `L763` | Reactive DOM rendering / event controller |
-| `handleOperatorLogout()` | `hermes_ui.js` | `L792` | Reactive DOM rendering / event controller |
-| `markKeysDirty()` | `hermes_ui.js` | `L802` | Reactive DOM rendering / event controller |
-| `initAuthAndSettings()` | `hermes_ui.js` | `L812` | Reactive DOM rendering / event controller |
-| `loadSystemChanges()` | `hermes_ui.js` | `L889` | Reactive DOM rendering / event controller |
-| `initHermesChatListeners()` | `hermes_ui.js` | `L977` | Reactive DOM rendering / event controller |
+| `initHermesSidebar()` | `hermes_ui.js` | `L219` | Reactive DOM rendering / event controller |
+| `loadConversations()` | `hermes_ui.js` | `L364` | Reactive DOM rendering / event controller |
+| `switchConversation()` | `hermes_ui.js` | `L398` | Reactive DOM rendering / event controller |
+| `createNewConversation()` | `hermes_ui.js` | `L427` | Reactive DOM rendering / event controller |
+| `formatRelativeTime()` | `hermes_ui.js` | `L454` | Reactive DOM rendering / event controller |
+| `escapeHtml()` | `hermes_ui.js` | `L468` | Reactive DOM rendering / event controller |
+| `executeRollback()` | `hermes_ui.js` | `L478` | Reactive DOM rendering / event controller |
+| `loadHermesModels()` | `hermes_ui.js` | `L501` | Reactive DOM rendering / event controller |
+| `switchHermesModel()` | `hermes_ui.js` | `L575` | Reactive DOM rendering / event controller |
+| `loadApiKeysSettings()` | `hermes_ui.js` | `L628` | Reactive DOM rendering / event controller |
+| `saveApiKeysSettings()` | `hermes_ui.js` | `L694` | Reactive DOM rendering / event controller |
+| `checkAuthSession()` | `hermes_ui.js` | `L746` | Reactive DOM rendering / event controller |
+| `openOperatorProfile()` | `hermes_ui.js` | `L764` | Reactive DOM rendering / event controller |
+| `closeOperatorProfile()` | `hermes_ui.js` | `L769` | Reactive DOM rendering / event controller |
+| `handleOperatorLogin()` | `hermes_ui.js` | `L774` | Reactive DOM rendering / event controller |
+| `handleOperatorLogout()` | `hermes_ui.js` | `L803` | Reactive DOM rendering / event controller |
+| `markKeysDirty()` | `hermes_ui.js` | `L813` | Reactive DOM rendering / event controller |
+| `initAuthAndSettings()` | `hermes_ui.js` | `L823` | Reactive DOM rendering / event controller |
+| `loadSystemChanges()` | `hermes_ui.js` | `L900` | Reactive DOM rendering / event controller |
+| `initHermesChatListeners()` | `hermes_ui.js` | `L988` | Reactive DOM rendering / event controller |
 
 ---
 
@@ -1207,4 +1207,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 33 Python modules inspected, 31 FastAPI endpoints registered, 26,661 total LOC indexed.
+> **Audit Summary:** 33 Python modules inspected, 31 FastAPI endpoints registered, 26,694 total LOC indexed.

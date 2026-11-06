@@ -133,6 +133,17 @@ function addMessage(role, content, provider = null, servedBy = null) {
 async function sendChat(message) {
   message = message.trim();
   if (!message || message.length > 2000 || state.chatBusy || !state.snapshot) return;
+
+  if (message.toLowerCase() === "/model" || message.toLowerCase() === "/models") {
+    const inp = $("chat-input");
+    if (inp) inp.value = "";
+    const modelDrop = $("model-dropup-menu") || $("model-picker-dropdown");
+    if (modelDrop) {
+      modelDrop.hidden = false;
+      loadHermesModels();
+    }
+    return;
+  }
   const history = state.history.slice(-8).map((turn) => ({ ...turn, content: turn.content.slice(0, 2000) }));
   addMessage("user", message);
   state.history.push({ role: "user", content: message });
@@ -1002,7 +1013,12 @@ function initHermesChatListeners() {
   if (modelBtn && modelDrop) {
     modelBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      modelDrop.hidden = !modelDrop.hidden;
+      e.preventDefault();
+      const willOpen = modelDrop.hidden;
+      modelDrop.hidden = !willOpen;
+      if (willOpen) {
+        loadHermesModels();
+      }
     });
     document.addEventListener("click", (e) => {
       if (!modelDrop.contains(e.target) && !modelBtn.contains(e.target)) {

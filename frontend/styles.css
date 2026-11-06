@@ -5213,6 +5213,17 @@ button.local-avatar:hover {
   cursor: not-allowed;
 }
 
+.holdings-action-btn.sell-all-btn {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.holdings-action-btn.sell-all-btn:hover {
+  background: rgba(239, 68, 68, 0.28);
+  border-color: #f87171;
+}
+
 .holding-guard-badge {
   font-size: 10px;
   font-weight: 600;

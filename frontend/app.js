@@ -361,7 +361,31 @@ function renderActiveHoldings() {
             sellBtn.textContent = `Sell 25% (${sliceQty})`;
           }
         };
-        statusCell.append(" ", sellBtn);
+
+        const sellAllBtn = element("button", "holdings-action-btn sell-all-btn", `Sell All (${c.mature_qty})`);
+        sellAllBtn.title = `Execute 100% full liquidation (${c.mature_qty} shares) of ${c.symbol}`;
+        sellAllBtn.onclick = async (e) => {
+          e.stopPropagation();
+          sellAllBtn.disabled = true;
+          sellAllBtn.textContent = "Selling...";
+          try {
+            const res = await api("/api/stocknow/execute-order", {
+              method: "POST",
+              body: { symbol: c.symbol, side: "SELL", quantity: c.mature_qty, dry_run: false },
+            });
+            notify(`Order executed: Sold all ${c.mature_qty} shares of ${c.symbol}.`);
+            if (res.snapshot) {
+              state.snapshot = res.snapshot;
+              renderSnapshot();
+            }
+          } catch (err) {
+            notify(`Sell failed: ${err.message}`, true);
+            sellAllBtn.disabled = false;
+            sellAllBtn.textContent = `Sell All (${c.mature_qty})`;
+          }
+        };
+
+        statusCell.append(" ", sellBtn, " ", sellAllBtn);
       } else {
         const guardBadge = element("span", "holding-guard-badge", "No-Loss Hold Guard");
         guardBadge.title = "Strict No-Loss rule: selling blocked while net gain is negative.";
@@ -1271,35 +1295,6 @@ function initViewRouter() {
       switchView("settings");
     });
   }
-
-  // Model Picker Drop-up toggle (Bottom model button above chat input)
-  const modelBtn = $("hermes-model-trigger") || $("hermes-bottom-model-btn") || $("hermes-model-btn");
-  const modelDrop = $("model-dropup-menu") || $("model-picker-dropdown");
-  if (modelBtn && modelDrop) {
-    modelBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      modelDrop.hidden = !modelDrop.hidden;
-    });
-    document.addEventListener("click", (e) => {
-      if (!modelDrop.contains(e.target) && !modelBtn.contains(e.target)) {
-        modelDrop.hidden = true;
-      }
-    });
-  }
-
-  // Model select in Settings page
-  const settingsModelSelect = $("settings-model-select");
-  if (settingsModelSelect) {
-    settingsModelSelect.addEventListener("change", (e) => {
-      switchHermesModel(e.target.value);
-    });
-  }
-
-  // Rollback buttons
-  const rbPaneBtn = $("rollback-pane-btn");
-  if (rbPaneBtn) rbPaneBtn.addEventListener("click", executeRollback);
-  const rbSkillsBtn = $("rollback-skills-btn");
-  if (rbSkillsBtn) rbSkillsBtn.addEventListener("click", executeRollback);
 
   // Initial view from URL hash or default to overview
   const initialHash = window.location.hash.slice(1) || "overview";
