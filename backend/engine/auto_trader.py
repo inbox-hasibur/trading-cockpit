@@ -169,9 +169,30 @@ class AutoTrader:
         balances = bucket_balances(session, state)
         active_name = self.calendar.bucket_for(state.clock_date)
         active = balances[active_name]
-        for company in companies:
+
+        # Prioritize GSC_L1 first, then GSC_L2 second.
+        # Skip base GSC observation pool when active tiers are present.
+        has_active_tiers = any(
+            getattr(c, "watchlist_category", "GSC") in {"GSC_L1", "GSC_L2"} for c in companies
+        )
+
+        def buy_priority(comp: CompanyProfile) -> tuple[int, str]:
+            cat = getattr(comp, "watchlist_category", "GSC")
+            if cat == "GSC_L1":
+                return (1, comp.symbol)
+            if cat == "GSC_L2":
+                return (2, comp.symbol)
+            return (3, comp.symbol)
+
+        sorted_buy_companies = sorted(companies, key=buy_priority)
+        for company in sorted_buy_companies:
             rule = rules[company.symbol]
             analysis, quote = assessments[company.symbol]
+            cat = getattr(company, "watchlist_category", "GSC")
+            is_stocknow = getattr(company, "source", "") == "STOCKNOW_FAVORITES" or "164580" in getattr(state, "name", "")
+            if is_stocknow and has_active_tiers and cat not in {"GSC_L1", "GSC_L2"}:
+                record(company.symbol, "WAIT_OBSERVATION_ONLY", "Observation pool only (not in GSC_L1 or GSC_L2).")
+                continue
             if not rule.enabled or rule.buy_allocation_pct <= ZERO:
                 record(company.symbol, "BUY_DISABLED", "New buying is disabled for this company.")
                 continue

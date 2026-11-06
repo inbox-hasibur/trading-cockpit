@@ -45,17 +45,20 @@ A cheap price is dangerous if the company itself is collapsing.
 - The stock is immediately flagged as **`CRASH_QUARANTINE`**, and **all new buying is strictly blocked** until the curve stabilizes and is reviewed.
 
 ### 3.3 Sector Intelligence & 3-Tier Watchlist Classification
-Not all DSE companies behave the same way. Humming Bird groups stocks into three structured tiers:
+Not all DSE companies behave the same way. Humming Bird groups stocks into three structured tiers based on the operator's real StockNow workflow:
 
-1. **Big Giant Stable Companies (GSC):**
-   - Historically established market leaders with solid fundamentals, decades of operational history, and strong institutional backing (e.g., `GP`, `SQURPHARMA`, `BATBC`, top tier banks like `BANKASIA`).
-   - *Key Concept:* Promisable to survive long-term regardless of short-term market cycles. Even if currently in a dip or recovering from a loss, the existential risk of vanishing overnight is virtually non-existent.
-2. **GSC Upper Trends L1 (Longer-Term Macro Comeback Wave):**
-   - Subset of GSC companies that are in an established upward recovery trend after a prolonged bottom.
-   - *Key Concept:* Filters out daily erratic market noise (where a stock fluctuates red one day and green the next). Focuses on smooth multi-week/multi-month curves showing clear comeback momentum.
-3. **GSC Upper Trends L2 (Short-Term Fluctuation / Momentum Swing Scalp):**
-   - High-turnover swing opportunities capitalizing on short-term price oscillation waves.
-   - *Key Concept:* Trades the transition from red to green (e.g. slight dip turning green -> enter quickly, take profit when greener -> swing scalp). Dynamic list with agile exit thresholds.
+1. **Big Giant Stable Companies (GSC — Master Observation Pool):**
+   - Historically established market leaders with solid fundamentals, decades of operational history, and strong institutional backing (`ACI`, `BANKASIA`, `DHAKABANK`, `FUWANGCER`, `IFIC`, `NPOLYMER`, `PRIMEBANK`, `PUBALIBANK`, `SPCERAMICS`).
+   - *Key Concept:* Long-term survival stability, NOT that the stock is currently on a profit curve. Being in `GSC` means the risk of vanishing overnight is virtually non-existent.
+   - *Trading Rule:* Hermes continuously monitors and analyzes all `GSC` companies to learn their curve character, but `AutoTrader` **skips auto-buying** from base `GSC` (`WAIT_OBSERVATION_ONLY`) unless the stock is promoted to `GSC_L1` or `GSC_L2`.
+2. **GSC Upper Trends L1 (GSC_L1 — Primary Active Trading List):**
+   - GSC companies that were previously in a downward curve and are now visibly turning upward on their genuine company recovery curve (`BANKASIA`, `MATINSPINN`).
+   - *Key Concept:* Filters out 1-day market noise (red today, green tomorrow). Focuses on genuine multi-week/multi-month comeback recovery waves.
+   - *Trading Rule:* Given **Priority #1** by `AutoTrader` when allocating available buying capital.
+3. **GSC Upper Trends L2 (GSC_L2 — Secondary Active Trading List / Fluctuation Scalp):**
+   - GSC companies whose macro curve is not yet fully stable, but are turning green in short-term fluctuation (`DHAKABANK`).
+   - *Key Concept:* Traded like HFT/swing scalps: enter as green momentum starts and sell while still green to profit from short-term market oscillation waves.
+   - *Trading Rule:* Given **Priority #2** by `AutoTrader` when evaluating buy candidates.
 4. **Custom Per-Company Capital Allocation (`Buy %`):**
    - The user assigns exact capital allocation percentages (e.g., `GP: 25%`, `SQURPHARMA: 25%`, `BANKASIA: 20%`) directly from the Cockpit UI or by instructing Hermes.
 
@@ -217,6 +220,13 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
       - Live quote sync from StockNow, execution of AutoTrader paper cycle, and SSE real-time broadcast.
       - API endpoints: `GET /api/stocknow/scheduler`, `POST /api/stocknow/scheduler` (`start`, `stop`, `tick_now`).
       - Hermes conversational commands (*"Start DSE scheduler"*, *"Stop scheduler"*, *"Run scheduler tick now"*).
+    - **Step 2.7 (Real StockNow Portfolio #164580 & 3-Tier Watchlist Implementation):**
+      - Replaced dummy fixtures with the operator's real StockNow "Humming Bird" portfolio (`#164580`) in the runtime database.
+      - Settled Cash: `91,236.00 BDT`, Open Basis: `30,056.71 BDT`, Total Book Assets: `121,292.71 BDT` reconciled to exact 0.00 paisa drift.
+      - Active matured holdings: `BANKASIA` (294 @ 17.09 cost), `IBNSINA` (16 @ 304.31 cost), and `MATINSPINN` (206 @ 97.89 cost).
+      - Dedicated "Humming Bird Active Holdings (StockNow #164580)" card in `#overview` with live summary pills, detailed holdings table, net return percentages, and summary totals row.
+      - AutoTrader buy ordering prioritizes `GSC_L1` #1, `GSC_L2` #2, and skips base `GSC` observation pool (`WAIT_OBSERVATION_ONLY`).
+      - Encoded operator domain knowledge into Hermes skill `SKILL_gsc_tiers.md` (v1.1.0).
 
 ---
 

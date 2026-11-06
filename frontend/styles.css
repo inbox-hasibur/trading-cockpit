@@ -5075,3 +5075,117 @@ button.local-avatar:hover {
   color: var(--teal);
   font-weight: 700;
 }
+
+/* Active Holdings Table (StockNow #164580) */
+.active-holdings-panel {
+  margin-top: 18px;
+}
+
+.holdings-summary-pills {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.summary-pill {
+  font-size: var(--fs-xs, 11px);
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-pill strong {
+  color: var(--text);
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.summary-pill strong.positive {
+  color: var(--green);
+}
+
+.summary-pill strong.negative {
+  color: var(--red);
+}
+
+.holdings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-xs, 11px);
+  font-variant-numeric: tabular-nums;
+  min-width: 720px;
+}
+
+.holdings-table th {
+  padding: 10px 12px;
+  font-size: var(--fs-xs, 11px);
+  color: var(--dim);
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.holdings-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--soft-line);
+}
+
+.holdings-table tbody tr:hover {
+  background: rgba(148, 163, 184, 0.04);
+}
+
+.holdings-total-row {
+  border-top: 2px solid var(--line);
+  font-weight: 700;
+  background: rgba(148, 163, 184, 0.02);
+}
+
+.holdings-total-row td {
+  padding: 12px;
+}
+
+.tier-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.4px;
+}
+
+.tier-pill.tier-gsc_l1 {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.tier-pill.tier-gsc_l2 {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.tier-pill.tier-gsc {
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.holding-status-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.holding-status-tag.mature {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+
+.holding-status-tag.locked {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}

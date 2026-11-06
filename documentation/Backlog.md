@@ -189,6 +189,23 @@
     - Hermes chat empty-state quick action chips placement under intro, responsive composer return, line-height 1.5, high-contrast tab counters, and interactive model trigger caret.
     - Added 7-session Net Liquidation Equity sparkline and client-side Decision stream filter chips (All, Buys, Sells, Blocked, Locks).
 
+- [x] **Step 2.7: Real StockNow Portfolio (#164580) Migration, 3-List GSC Trading Priority & Active Holdings Table:**
+  - **Runtime Database Migration to Real StockNow Portfolio (#164580):**
+    - Transitioned runtime database from dummy fixtures to operator's real StockNow "Humming Bird" portfolio (`#164580`).
+    - Settled cash: `91,236.00 BDT`, open cost basis: `30,056.71 BDT`, total book assets: `121,292.71 BDT` reconciled to exact 0.00 paisa drift (`assert_ledger`).
+    - Active matured holdings: `BANKASIA` (294 sh @ 17.09 cost), `IBNSINA` (16 sh @ 304.31 cost), and `MATINSPINN` (206 sh @ 97.89 cost).
+    - Preserved legacy test fixture isolation so synthetic tests in `tests/` pass with zero regression.
+  - **3-Tier Watchlist Structure & AutoTrader Buy Ordering:**
+    - `GSC` (Giant Stable Companies): Master observation pool of surviving giants (`ACI`, `BANKASIA`, `DHAKABANK`, `FUWANGCER`, `IFIC`, `NPOLYMER`, `PRIMEBANK`, `PUBALIBANK`, `SPCERAMICS`). Analyzed and logged for learning, but skipped for auto-buying (`WAIT_OBSERVATION_ONLY`) unless promoted to `GSC_L1` or `GSC_L2`.
+    - `GSC_L1` (GSC Upper Trends L1): Genuinely recovering comeback curves (`BANKASIA`, `MATINSPINN`), prioritized #1 for buys.
+    - `GSC_L2` (GSC Upper Trends L2): Short-term fluctuation / swing scalps (`DHAKABANK`), prioritized #2 for buys.
+  - **Hermes Procedural Skill (`SKILL_gsc_tiers.md` v1.1.0):**
+    - Encoded operator domain knowledge so Hermes always applies the exact 3-list distinctions in advice and execution.
+  - **Humming Bird Active Holdings Table in `#overview`:**
+    - Dedicated card below top metric grid with live summary pills (Settled Cash, Buy Cost, Sell Value, Unrealized Gain/Loss).
+    - Full holdings table with Company, Tier, Qty @ Avg Cost, LTP, Total Cost, Sell Value (Net), Gain/Loss (%), Status/Action, and Total footer row.
+  - **Full Test Suite Verification:** 62 passing unit tests covering portfolio migration, ledger reconciliation, tier priority, and Hermes skill matching.
+
 ---
 
 ### 🎛️ Sprint 3: Custom Rule Builder UI, Conversational Control & Telegram Bot

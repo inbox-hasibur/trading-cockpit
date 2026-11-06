@@ -2594,3 +2594,30 @@ body.is-resizing-hermes .app-shell {
   color: #0f766e !important;
   font-weight: 700 !important;
 }
+
+/* Active Holdings Light Mode Overrides */
+[data-theme="light"] .summary-pill {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+[data-theme="light"] .summary-pill strong {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .holdings-table th {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-bottom: 2px solid #cbd5e1 !important;
+}
+
+[data-theme="light"] .holdings-table td {
+  border-bottom: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .holdings-total-row {
+  background: #f1f5f9 !important;
+  border-top: 2px solid #cbd5e1 !important;
+}

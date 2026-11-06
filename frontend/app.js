@@ -216,6 +216,7 @@ function renderSnapshot() {
   setText("fees-paid", currency(metrics.fees_paid));
   setText("ledger-status", metrics.book_reconciled && metrics.equity_reconciled ? "✓ Ledger reconciled" : "! Reconciliation failed");
   renderEquitySparkline();
+  renderActiveHoldings();
   renderBuckets();
   renderMainChart();
   renderWatchlist();
@@ -258,6 +259,102 @@ function renderEquitySparkline() {
   const svg = sparkline(recentPoints);
   svg.classList.add("equity-mini-sparkline");
   container.replaceChildren(svg);
+}
+
+function renderActiveHoldings() {
+  const body = $("active-holdings-body");
+  const foot = $("active-holdings-foot");
+  if (!body) return;
+
+  const companies = state.snapshot.companies || [];
+  const holdings = companies.filter((c) => (c.holding_qty || 0) > 0);
+
+  const cash = state.snapshot.metrics?.available_cash ?? 91236;
+  const totalCost = holdings.reduce((sum, c) => sum + (c.cost_basis || 0), 0);
+  const totalGrossValue = holdings.reduce((sum, c) => sum + (c.holding_qty * c.price), 0);
+  const totalNetValue = holdings.reduce((sum, c) => sum + (c.estimated_net_value || 0), 0);
+  const unrealizedGain = totalNetValue - totalCost;
+  const unrealizedPct = totalCost > 0 ? (unrealizedGain / totalCost) * 100 : 0;
+
+  setText("holdings-settled-cash", currency(cash));
+  setText("holdings-buy-cost", currency(Math.round(totalCost)));
+  setText("holdings-sell-value", currency(Math.round(totalGrossValue)));
+
+  const gainEl = $("holdings-unrealized-gain");
+  if (gainEl) {
+    const sign = unrealizedGain >= 0 ? "+" : "";
+    gainEl.textContent = `${sign}${currency(Math.round(unrealizedGain))} (${sign}${unrealizedPct.toFixed(2)}%)`;
+    gainEl.className = unrealizedGain >= 0 ? "positive" : "negative";
+  }
+
+  if (holdings.length === 0) {
+    const emptyRow = element("tr");
+    const td = cell("No open holdings in active portfolio.", "loading-cell");
+    td.colSpan = 8;
+    emptyRow.append(td);
+    body.replaceChildren(emptyRow);
+    if (foot) foot.replaceChildren();
+    return;
+  }
+
+  const rows = holdings.map((c) => {
+    const row = element("tr");
+
+    // COMPANY
+    const compCell = cell();
+    compCell.append(element("strong", "holding-symbol", c.symbol));
+    compCell.append(element("span", "holding-name muted small", ` · ${c.name}`));
+
+    // TIER
+    const tierCell = cell();
+    const tierBadge = element("span", `tier-pill tier-${(c.watchlist_category || "GSC").toLowerCase()}`, c.watchlist_category || "GSC");
+    tierCell.append(tierBadge);
+
+    // QTY @ AVG COST
+    const avgCost = c.holding_qty > 0 ? (c.cost_basis / c.holding_qty) : c.price;
+    const qtyCell = cell(`${c.holding_qty} @ ${currency(avgCost.toFixed(2))}`, "align-right");
+
+    // LTP
+    const ltpCell = cell(numberFormat.format(c.price), "align-right");
+
+    // TOTAL COST
+    const costCell = cell(currency(Math.round(c.cost_basis)), "align-right");
+
+    // SELL VALUE (NET)
+    const sellVal = c.estimated_net_value || (c.holding_qty * c.price * 0.995);
+    const sellCell = cell(currency(Math.round(sellVal)), "align-right");
+
+    // GAIN / LOSS (%)
+    const pnl = c.unrealized_pnl || (sellVal - c.cost_basis);
+    const pct = c.net_return_pct || (c.cost_basis > 0 ? (pnl / c.cost_basis) * 100 : 0);
+    const sign = pnl >= 0 ? "+" : "";
+    const pnlCell = cell(`${sign}${currency(Math.round(pnl))} (${sign}${pct.toFixed(2)}%)`, `align-right ${pnl >= 0 ? "positive" : "negative"}`);
+
+    // STATUS / ACTION
+    const statusCell = cell();
+    const isMature = c.mature_qty > 0;
+    const statusTag = element("span", `holding-status-tag ${isMature ? "mature" : "locked"}`, isMature ? "Matured (T+2)" : "Settling (T+1)");
+    statusCell.append(statusTag);
+
+    row.append(compCell, tierCell, qtyCell, ltpCell, costCell, sellCell, pnlCell, statusCell);
+    return row;
+  });
+
+  body.replaceChildren(...rows);
+
+  if (foot) {
+    const totalRow = element("tr", "holdings-total-row");
+    const totalLabel = cell("Total Portfolio Holdings", "holdings-total-label");
+    totalLabel.colSpan = 4;
+    const totCostCell = cell(currency(Math.round(totalCost)), "align-right bold");
+    const totSellCell = cell(currency(Math.round(totalNetValue)), "align-right bold");
+    const sign = unrealizedGain >= 0 ? "+" : "";
+    const totPnlCell = cell(`${sign}${currency(Math.round(unrealizedGain))} (${sign}${unrealizedPct.toFixed(2)}%)`, `align-right bold ${unrealizedGain >= 0 ? "positive" : "negative"}`);
+    const emptyActionCell = cell();
+
+    totalRow.append(totalLabel, totCostCell, totSellCell, totPnlCell, emptyActionCell);
+    foot.replaceChildren(totalRow);
+  }
 }
 
 function renderBuckets() {

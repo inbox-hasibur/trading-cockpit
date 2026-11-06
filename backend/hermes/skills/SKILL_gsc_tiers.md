@@ -1,21 +1,23 @@
 # SKILL: Big Giant Stable (GSC) 3-Tier Watchlist Methodology
-Version: 1.0.0
-Tags: gsc, watchlist, tier, allocation, trends, momentum, scalp
+Version: 1.1.0
+Tags: gsc, watchlist, tier, allocation, trends, momentum, scalp, observation
 
 ## 1. Core Philosophy
-The DSE has high volatility and regulatory halts. Stocks must be segregated into clear risk confidence tiers:
+The DSE has high volatility and regulatory halts. Stocks are segregated into three distinct risk and execution confidence tiers:
 
-### Tier 1 — Big Giant Stable Companies (GSC)
-- **Profile:** Foundational blue-chips with proven multi-decade operating records (e.g. `GP`, `SQURPHARMA`, `BATBC`, Tier-1 Banks).
-- **Survival Guarantee:** Even during extended macro dips, structural solvency is secure.
-- **Rules:** Never mark as permanently bankrupt on temporary 10-20% sector drawdowns unless audited financial fraud is proven.
+### 1. Giant Stable Companies (GSC — Master Observation Pool)
+- **Profile:** Master observation pool of established, long-surviving giant companies with proven operating records (`ACI`, `BANKASIA`, `DHAKABANK`, `FUWANGCER`, `IFIC`, `NPOLYMER`, `PRIMEBANK`, `PUBALIBANK`, `SPCERAMICS`).
+- **Domain Meaning:** Being in GSC signifies long-term survival stability and fundamental resilience, NOT that the company is currently on a profit curve.
+- **Trading Rules:** Hermes observes, tracks, and analyzes all GSC stocks to build continuous market intelligence. However, `AutoTrader` does NOT auto-buy from the base GSC observation pool (`WAIT_OBSERVATION_ONLY`) unless a stock is actively promoted to `GSC_L1` or `GSC_L2`.
 
-### Tier 2 — GSC Upper Trends L1 (Longer-Term Macro Comeback Wave)
-- **Profile:** GSC companies undergoing sustained multi-week / multi-month upward recovery after a prolonged slump.
-- **Noise Filter:** Strictly ignores single-day fluctuations (where the market is red today, green tomorrow).
-- **Rules:** Enter only when the 15-session smoothed moving average shows consistent positive slope.
+### 2. GSC Upper Trends L1 (GSC_L1 — Primary Active Trading List)
+- **Profile:** GSC companies that were previously in a downward curve and are now visibly turning upward on their genuine company recovery curve.
+- **Noise Filter:** Strictly filters out 1-day market noise (where the market is red today, green tomorrow) to capture sustained recovery momentum.
+- **Active Members:** `BANKASIA`, `MATINSPINN`.
+- **Trading Rules:** Highest buy priority in `AutoTrader` evaluation cycles.
 
-### Tier 3 — GSC Upper Trends L2 (Short-Term Fluctuation / Momentum Swing Scalp)
-- **Profile:** Active oscillation plays that exploit short-term red-to-green transitions.
-- **Tactics:** Rapid wave trading. Buy at the first solid green tick coming out of support; exit in tiered slices (+1.5%, +3.5%) before momentum fades.
-
+### 3. GSC Upper Trends L2 (GSC_L2 — Secondary Active Trading List / Fluctuation Scalp)
+- **Profile:** GSC companies whose macro curve is not yet fully stabilized, but are turning green in short-term oscillation (e.g. `DHAKABANK`).
+- **Tactics:** High-frequency / swing fluctuation scalp. Buy as green momentum starts coming out of support, and sell in tiered slices while still green to profit from market fluctuation before momentum fades.
+- **Active Members:** `DHAKABANK`.
+- **Trading Rules:** Evaluated by `AutoTrader` second, after `GSC_L1` opportunities are satisfied.

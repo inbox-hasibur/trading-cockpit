@@ -115,6 +115,40 @@
             <article class="metric-card"><div class="metric-label">EST. UNREALIZED NET P/L <span class="metric-glyph">∿</span></div><div id="metric-unrealized" class="metric-value skeleton-placeholder">—</div><div class="metric-foot muted">Open holdings · includes exit fee</div></article>
           </div>
 
+          <!-- StockNow #164580 Active Portfolio Holdings -->
+          <article class="panel active-holdings-panel section-anchor" id="active-holdings-card" style="margin-top: 18px;">
+            <div class="panel-heading">
+              <div>
+                <div class="eyebrow" style="margin-bottom: 2px;">STOCKNOW VIRTUAL PORTFOLIO #164580</div>
+                <h2>Humming Bird Active Holdings<span class="heading-dot">.</span></h2>
+              </div>
+              <div class="holdings-summary-pills">
+                <span class="summary-pill">Settled Cash: <strong id="holdings-settled-cash">৳91,236.00</strong></span>
+                <span class="summary-pill">Buy Cost: <strong id="holdings-buy-cost">৳30,057</strong></span>
+                <span class="summary-pill">Sell Value: <strong id="holdings-sell-value">৳31,637</strong></span>
+                <span class="summary-pill">Unrealized Gain/Loss: <strong id="holdings-unrealized-gain" class="positive">+৳1,422 (+4.73%)</strong></span>
+              </div>
+            </div>
+            <div class="table-scroll holdings-table-scroll">
+              <table class="holdings-table">
+                <thead>
+                  <tr>
+                    <th>COMPANY</th>
+                    <th>TIER</th>
+                    <th class="align-right">QTY @ AVG COST</th>
+                    <th class="align-right">LTP ৳</th>
+                    <th class="align-right">TOTAL COST ৳</th>
+                    <th class="align-right">SELL VALUE (NET) ৳</th>
+                    <th class="align-right">GAIN / LOSS (%)</th>
+                    <th>STATUS / ACTION</th>
+                  </tr>
+                </thead>
+                <tbody id="active-holdings-body"></tbody>
+                <tfoot id="active-holdings-foot"></tfoot>
+              </table>
+            </div>
+          </article>
+
           <div class="telemetry-strip"><span><i class="mini-dot teal"></i><strong id="mature-shares">—</strong> mature shares</span><span><i class="mini-dot blue"></i><strong id="locked-shares">—</strong> settlement-locked</span><span><i class="mini-dot amber"></i><strong id="quarantined-count">—</strong> quarantined</span><span class="fee-item">Fees paid <strong id="fees-paid">—</strong></span><span id="ledger-status" class="ledger-status">Checking ledger</span></div>
 
           <div class="overview-grid">
