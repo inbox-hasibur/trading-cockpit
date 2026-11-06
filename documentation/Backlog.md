@@ -162,6 +162,33 @@
   - API endpoints: `GET /api/stocknow/scheduler`, `POST /api/stocknow/scheduler` (`start`, `stop`, `tick_now` with `force`).
   - Hermes agent natural Bangla/English command execution (*"Start DSE scheduler"*, *"Stop scheduler"*, *"Run scheduler tick now"*) with live execution receipts.
 
+- [x] **Step 2.6: Comprehensive UI/UX Polish & Bug Fix Pass (B1 - B11, Readability, Theming & Per-Screen Polish):**
+  - **Critical Bug Fixes (B1 - B11):**
+    - Corrected fee accounting discrepancy in What-If simulator and lot inspector to include exit broker fee.
+    - Resolved double JSON stringification on model switcher.
+    - Verified single source of truth for ChatBudget external AI call counters across Settings, Portfolio, and fallback calls.
+    - Added accurate `served_by` provider/model/fallback_reason metadata to all Hermes chat replies.
+    - Verified multi-session drop wording and accurate support level comparison logic in Hermes analysis summaries.
+    - Re-aligned Overview price curve with dedicated right gutter padding for resistance/support labels and single-row legend.
+    - Fixed Treemap small tile label clipping with `ResizeObserver` and neutral slate 0% unchanged heat token.
+    - Standardized Telegram placeholders and clarified immediate auto-save vs. manual API key save states.
+  - **Readability & Typography:**
+    - Upgraded dark mode contrast tokens (`--dim` to `#8393a6`, `--muted` to `#9aabbd`) to pass WCAG AA.
+    - Enforced `:root` type scale (`--fs-xs: 11px`, `--fs-sm: 12px`, `--fs-md: 13px`, `--fs-lg: 14px`) and eliminated all sub-11px visible text.
+    - Applied `font-variant-numeric: tabular-nums` across all numeric metrics, tables, and clock displays.
+    - Enforced Overview metric cards typography hierarchy with 30px Net Liquidation Equity hero number.
+  - **Semantic Color System:**
+    - Defined semantic tokens for profit/loss (`--green`, `--red`), brand accent (`--brand`), warnings (`--amber`), and order sides (`--buy` blue, `--sell` amber) across both Dark and Light themes.
+    - Enforced strict color mapping where green and red exclusively convey financial direction (P/L, day change, sparklines).
+  - **Per-Screen Refinements:**
+    - Topbar grouped layout with compact mode slider below 1280px, overflow menu below 1100px, next-session DSE scheduler tooltips, and left nav rail tooltips.
+    - Overview rolling capital progress bars and decision stream hierarchy.
+    - Watchlist left/right text/numeric alignment, sticky header, and 3-column Position Inspector grid.
+    - Strategy rules visible +1.005% round-trip breakeven marker, Buy Cap `%` suffix input with toggle switch, and subtle trade ledger zebra striping.
+    - Settings equal-height cards, 12px/20px spacing hierarchy, Method B polling interval disabled state with helper text, and StockNow Bridge spinner feedback.
+    - Hermes chat empty-state quick action chips placement under intro, responsive composer return, line-height 1.5, high-contrast tab counters, and interactive model trigger caret.
+    - Added 7-session Net Liquidation Equity sparkline and client-side Decision stream filter chips (All, Buys, Sells, Blocked, Locks).
+
 ---
 
 ### 🎛️ Sprint 3: Custom Rule Builder UI, Conversational Control & Telegram Bot
