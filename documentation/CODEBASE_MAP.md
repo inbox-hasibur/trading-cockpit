@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 11:18:05 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 11:26:37 UTC**.
 
 ---
 
@@ -8,18 +8,21 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 43 | 11,363 | Python Core Kernel, Engine & Hermes Agent |
+| `.py` | 44 | 11,515 | Python Core Kernel, Engine & Hermes Agent |
 | `.css` | 2 | 7,865 | Custom Dark / Light / Terminal Design System |
 | `.js` | 3 | 3,791 | Vanilla ES6+ Reactive Terminal Controller |
-| `.md` | 11 | 2,370 | Architecture & Strategy Documentation |
+| `.md` | 11 | 2,389 | Architecture & Strategy Documentation |
 | `.html` | 1 | 953 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
 | `.cursorignore` | 1 | 12 | Configuration / Asset |
 | `.opencodeignore` | 1 | 12 | Configuration / Asset |
+| `.json` | 1 | 12 | Configuration / Asset |
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
+| `.sh` | 1 | 9 | Configuration / Asset |
+| `.bat` | 1 | 8 | Configuration / Asset |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **67** | **26,400** | *Entire Humming Bird Repository* |
+| **TOTAL** | **71** | **26,600** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -1201,4 +1204,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 26,400 total LOC indexed.
+> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 26,600 total LOC indexed.

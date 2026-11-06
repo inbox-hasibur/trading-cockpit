@@ -1,0 +1,12 @@
+{
+  "name": "trading-cockpit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Humming Bird — Autonomous Market Telemetry & Execution Cockpit",
+  "scripts": {
+    "dev": "python run.py",
+    "live": "python run.py live",
+    "start": "python run.py --no-reload",
+    "test": "python run.py test"
+  }
+}

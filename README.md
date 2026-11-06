@@ -65,20 +65,39 @@ Designed around a zero-build reactive terminal and a deterministic Python kernel
 
 ## ◈ Quick Start
 
-### 1. Initialize Environment (Windows PowerShell)
+### 🚀 One-Command Launch (Like Next.js `npm run dev`)
+
+```bash
+# If you love npm / Next.js workflows:
+npm run dev      # or npm run live
+
+# Or directly in Git Bash / Terminal:
+./run.sh         # or python run.py
+
+# Or in Windows CMD / PowerShell:
+run              # or .\run
+```
+
+The runner automatically detects `.venv`, handles dependencies, and spins up the live reload server.
+
+---
+
+### Manual Setup (First Time)
+
+#### Windows (PowerShell / Git Bash)
 
 ```powershell
 py -3.12 -m venv .venv
 .venv\Scripts\python.exe -m pip install -r backend/requirements.txt
-.venv\Scripts\python.exe -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+python run.py
 ```
 
-### 2. Initialize Environment (macOS / Linux)
+#### macOS / Linux
 
 ```bash
 python3 -m venv .venv
 .venv/bin/python -m pip install -r backend/requirements.txt
-.venv/bin/python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+python3 run.py
 ```
 
 Once booted, open the operator terminal at **[http://127.0.0.1:8000](http://127.0.0.1:8000)** (Interactive API schema at `/docs`).
