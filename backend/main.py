@@ -95,10 +95,10 @@ class EventBroadcaster:
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings.from_env()
     database = Database(settings.database_url)
-    trader = AutoTrader(database, settings)
-    chat = ChatService(database, settings)
-    broadcaster = EventBroadcaster()
     stocknow_client = StockNowLiveClient(ingestion_mode="BACKGROUND_POLLING")
+    trader = AutoTrader(database, settings)
+    chat = ChatService(database, settings, stocknow_client=stocknow_client)
+    broadcaster = EventBroadcaster()
     scheduler = DSEMarketScheduler(database, settings, broadcaster, stocknow_client, trader)
 
     @asynccontextmanager

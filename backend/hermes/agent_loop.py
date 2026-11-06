@@ -231,15 +231,31 @@ class CheckpointManager:
 
 
 class HermesAgentLoop:
-    def __init__(self, database: Database, settings: Settings, transport: httpx.AsyncBaseTransport | None = None):
+    def __init__(
+        self,
+        database: Database,
+        settings: Settings,
+        transport: httpx.AsyncBaseTransport | None = None,
+        stocknow_client: Any | None = None,
+    ):
         self.database = database
         self.settings = settings
         self.skills_mgr = SkillsManager()
         self.transport = transport
+        self.stocknow_client = stocknow_client
 
     def execute_tool(self, tool_name: str, args: dict[str, Any], session: Session, state: PortfolioState) -> dict[str, Any]:
         """Deterministic execution of Hermes Agent tools with automatic checkpointing and rule diff tracking."""
-        return dispatch_tool(tool_name, args, session, state, self.settings, self.skills_mgr, CheckpointManager)
+        return dispatch_tool(
+            tool_name,
+            args,
+            session,
+            state,
+            self.settings,
+            self.skills_mgr,
+            CheckpointManager,
+            stocknow_client=self.stocknow_client,
+        )
 
     def compress_history(self, history: list[dict[str, str]], max_turns: int = 6) -> list[dict[str, str]]:
         """Summarizes older conversation turns to keep context window compact & lightweight."""

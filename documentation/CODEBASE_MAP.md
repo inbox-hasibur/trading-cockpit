@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 14:34:42 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 15:26:12 UTC**.
 
 ---
 
@@ -8,10 +8,10 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 44 | 11,601 | Python Core Kernel, Engine & Hermes Agent |
+| `.py` | 44 | 11,677 | Python Core Kernel, Engine & Hermes Agent |
 | `.css` | 2 | 7,887 | Custom Dark / Light / Terminal Design System |
 | `.js` | 3 | 3,802 | Vanilla ES6+ Reactive Terminal Controller |
-| `.md` | 11 | 2,407 | Architecture & Strategy Documentation |
+| `.md` | 11 | 2,431 | Architecture & Strategy Documentation |
 | `.html` | 1 | 953 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
 | `.cursorignore` | 1 | 12 | Configuration / Asset |
@@ -22,7 +22,7 @@
 | `.sh` | 1 | 9 | Configuration / Asset |
 | `.bat` | 1 | 8 | Configuration / Asset |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **71** | **26,737** | *Entire Humming Bird Repository* |
+| **TOTAL** | **71** | **26,837** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -208,7 +208,7 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | :--- | :--- | :--- | :--- | :--- |
 | `ChatTurn` | `L46–L49` | `BaseModel` | — | 0 |
 | `ChatRequest` | `L52–L64` | `BaseModel` | — | 1 |
-| `ChatService` | `L204–L228` | `object` | — | 2 |
+| `ChatService` | `L204–L229` | `object` | — | 2 |
 
 
 **Methods in `ChatRequest`:**
@@ -222,8 +222,8 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__init__` | `L205–L210` | `(self, database: Database, settings:...)` | — | — | `HermesAgentLoop` |
-| `respond` | `L212–L228` | `(self, request: ChatRequest...)` | `dict` | — | `get`, `model_dump`, `run_turn`, `upper` |
+| `__init__` | `L205–L211` | `(self, database: Database, settings:...)` | — | — | `HermesAgentLoop` |
+| `respond` | `L213–L229` | `(self, request: ChatRequest...)` | `dict` | — | `get`, `model_dump`, `run_turn`, `upper` |
 
 
 #### Standalone Functions
@@ -503,7 +503,7 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
 | `CheckpointManager` | `L70–L230` | `object` | — | 2 |
-| `HermesAgentLoop` | `L233–L635` | `object` | — | 10 |
+| `HermesAgentLoop` | `L233–L651` | `object` | — | 10 |
 
 
 **Methods in `CheckpointManager`:**
@@ -518,16 +518,16 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__init__` | `L234–L238` | `(self, database: Database, settings:...)` | — | — | `SkillsManager` |
-| `execute_tool` | `L240–L242` | `(self, tool_name: str, args: dict[st...)` | `dict[str, Any]` | Deterministic execution of Hermes Agent tools with automatic checkpointing and rule diff tracking. | `dispatch_tool` |
-| `compress_history` | `L244–L256` | `(self, history: list[dict[str, str]]...)` | `list[dict[str, str]]` | Summarizes older conversation turns to keep context window compact & lightweight. | `append`, `capitalize`, `join`, `len` |
-| `detect_intent_and_tool` | `L258–L260` | `(self, message: str, snapshot: dict...)` | `tuple[str | None, dict[str, Any]]` | High-precision intent detector for Bangla, Banglish & English agent commands. | `detect_intent_and_tool` |
-| `run_turn` | `L262–L339` | `(self, user_message: str, history: l...)` | `dict[str, Any]` | Main turn loop: Layered Memory + Skills Injection + Tool Execution + Context Scrubbing. | `HermesMemory`, `_conversational_inference`, `_format_tool_response`, `build_snapshot` |
-| `_format_tool_response` | `L341–L342` | `(self, tool_name: str, tool_res: dic...)` | `str` | — | `format_tool_response` |
-| `get_gemini_keys` | `L344–L353` | `(self...)` | `list[str]` | — | `append`, `getattr`, `replace`, `split` |
-| `_call_gemini_with_key_rotation` | `L355–L445` | `(self, target_model: str, full_syste...)` | `dict[str, Any] | None` | Calls Google Gemini API with automatic multi-key rotation / rollback on 429, 403, 503 or quota limits. | `AsyncClient`, `ChatBudget`, `HermesMemory`, `Timeout` |
-| `_conversational_inference` | `L447–L604` | `(self, message: str, history: list[d...)` | `dict[str, Any]` | Runs conversational response with Layered Memory and Matched SKILL.md injection. | `AsyncClient`, `ChatBudget`, `HermesMemory`, `Timeout` |
-| `_local_conversational_fallback` | `L606–L635` | `(self, message: str, snapshot: dict,...)` | `dict[str, Any]` | — | `HermesMemory`, `local_summary`, `portfolio_state`, `record_turn` |
+| `__init__` | `L234–L245` | `(self, database: Database, settings:...)` | — | — | `SkillsManager` |
+| `execute_tool` | `L247–L258` | `(self, tool_name: str, args: dict[st...)` | `dict[str, Any]` | Deterministic execution of Hermes Agent tools with automatic checkpointing and rule diff tracking. | `dispatch_tool` |
+| `compress_history` | `L260–L272` | `(self, history: list[dict[str, str]]...)` | `list[dict[str, str]]` | Summarizes older conversation turns to keep context window compact & lightweight. | `append`, `capitalize`, `join`, `len` |
+| `detect_intent_and_tool` | `L274–L276` | `(self, message: str, snapshot: dict...)` | `tuple[str | None, dict[str, Any]]` | High-precision intent detector for Bangla, Banglish & English agent commands. | `detect_intent_and_tool` |
+| `run_turn` | `L278–L355` | `(self, user_message: str, history: l...)` | `dict[str, Any]` | Main turn loop: Layered Memory + Skills Injection + Tool Execution + Context Scrubbing. | `HermesMemory`, `_conversational_inference`, `_format_tool_response`, `build_snapshot` |
+| `_format_tool_response` | `L357–L358` | `(self, tool_name: str, tool_res: dic...)` | `str` | — | `format_tool_response` |
+| `get_gemini_keys` | `L360–L369` | `(self...)` | `list[str]` | — | `append`, `getattr`, `replace`, `split` |
+| `_call_gemini_with_key_rotation` | `L371–L461` | `(self, target_model: str, full_syste...)` | `dict[str, Any] | None` | Calls Google Gemini API with automatic multi-key rotation / rollback on 429, 403, 503 or quota limits. | `AsyncClient`, `ChatBudget`, `HermesMemory`, `Timeout` |
+| `_conversational_inference` | `L463–L620` | `(self, message: str, history: list[d...)` | `dict[str, Any]` | Runs conversational response with Layered Memory and Matched SKILL.md injection. | `AsyncClient`, `ChatBudget`, `HermesMemory`, `Timeout` |
+| `_local_conversational_fallback` | `L622–L651` | `(self, message: str, snapshot: dict,...)` | `dict[str, Any]` | — | `HermesMemory`, `local_summary`, `portfolio_state`, `record_turn` |
 
 
 ---
@@ -619,20 +619,20 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | `handle_restore_quarantined_company` | `L69–L96` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `HermesMemory`, `create_checkpoint`, `get`, `record_fact` |
 | `handle_set_watchlist_tier` | `L99–L134` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `HermesMemory`, `ValueError`, `create_checkpoint`, `flush` |
 | `handle_update_company_allocation` | `L137–L173` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `RuleAudit`, `ValueError`, `add`, `bool` |
-| `handle_execute_manual_order` | `L176–L253` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `ThreadPoolExecutor`, `ValueError`, `all`, `create_checkpoint` |
-| `handle_learn_or_patch_skill` | `L256–L282` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `create_checkpoint`, `get`, `learn_or_patch_skill` |
-| `handle_set_automation_config` | `L285–L331` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `ValueError`, `bool`, `create_checkpoint`, `flush` |
-| `handle_set_ai_model` | `L334–L379` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `create_checkpoint`, `flush`, `get`, `getattr` |
-| `handle_evaluate_canary_theses` | `L382–L398` | `(session: Session, state: PortfolioS...)` | `dict[str, Any]` | — | `check_canary_theses`, `isoformat`, `learn_or_patch_skill` |
-| `handle_control_stocknow_session` | `L401–L543` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `Database`, `StockNowLiveClient`, `ThreadPoolExecutor`, `append` |
-| `dispatch_tool` | `L550–L584` | `(tool_name: str, args: dict[str, Any...)` | `dict[str, Any]` | Routes tool execution to dedicated handlers with low nesting depth (<= 3). | `ValueError`, `handle_control_stocknow_session`, `handle_evaluate_canary_theses`, `handle_execute_manual_order` |
-| `_fmt_rollback` | `L591–L607` | `(res: dict[str, Any], bangla: bool...)` | `str` | — | `join` |
-| `_fmt_report_threat` | `L610–L636` | `(res: dict[str, Any], bangla: bool...)` | `str` | — | — |
-| `_fmt_watchlist_tier` | `L639–L650` | `(tool_res: dict[str, Any], bangla: b...)` | `str` | — | `get` |
-| `_fmt_automation_config` | `L653–L675` | `(tool_res: dict[str, Any], bangla: b...)` | `str` | — | — |
-| `_fmt_ai_model` | `L678–L708` | `(tool_res: dict[str, Any], bangla: b...)` | `str` | — | `get`, `join` |
-| `format_tool_response` | `L711–L888` | `(tool_name: str, tool_res: dict[str,...)` | `str` | Formats human-friendly Bangla/English message summarizing the executed tool's outcome. | `_fmt_ai_model`, `_fmt_automation_config`, `_fmt_report_threat`, `_fmt_rollback` |
-| `detect_intent_and_tool` | `L895–L1129` | `(message: str, snapshot: dict...)` | `tuple[str | None, dict[str, Any]]` | High-precision intent detector for Bangla, Banglish & English agent commands. | `any`, `float`, `get`, `int` |
+| `handle_execute_manual_order` | `L176–L290` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `ThreadPoolExecutor`, `ValueError`, `all`, `create_checkpoint` |
+| `handle_learn_or_patch_skill` | `L293–L319` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `create_checkpoint`, `get`, `learn_or_patch_skill` |
+| `handle_set_automation_config` | `L322–L368` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `ValueError`, `bool`, `create_checkpoint`, `flush` |
+| `handle_set_ai_model` | `L371–L416` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `create_checkpoint`, `flush`, `get`, `getattr` |
+| `handle_evaluate_canary_theses` | `L419–L435` | `(session: Session, state: PortfolioS...)` | `dict[str, Any]` | — | `check_canary_theses`, `isoformat`, `learn_or_patch_skill` |
+| `handle_control_stocknow_session` | `L438–L580` | `(args: dict[str, Any], session: Sess...)` | `dict[str, Any]` | — | `Database`, `StockNowLiveClient`, `ThreadPoolExecutor`, `append` |
+| `dispatch_tool` | `L587–L622` | `(tool_name: str, args: dict[str, Any...)` | `dict[str, Any]` | Routes tool execution to dedicated handlers with low nesting depth (<= 3). | `ValueError`, `handle_control_stocknow_session`, `handle_evaluate_canary_theses`, `handle_execute_manual_order` |
+| `_fmt_rollback` | `L629–L645` | `(res: dict[str, Any], bangla: bool...)` | `str` | — | `join` |
+| `_fmt_report_threat` | `L648–L674` | `(res: dict[str, Any], bangla: bool...)` | `str` | — | — |
+| `_fmt_watchlist_tier` | `L677–L688` | `(tool_res: dict[str, Any], bangla: b...)` | `str` | — | `get` |
+| `_fmt_automation_config` | `L691–L713` | `(tool_res: dict[str, Any], bangla: b...)` | `str` | — | — |
+| `_fmt_ai_model` | `L716–L746` | `(tool_res: dict[str, Any], bangla: b...)` | `str` | — | `get`, `join` |
+| `format_tool_response` | `L749–L928` | `(tool_name: str, tool_res: dict[str,...)` | `str` | Formats human-friendly Bangla/English message summarizing the executed tool's outcome. | `_fmt_ai_model`, `_fmt_automation_config`, `_fmt_report_threat`, `_fmt_rollback` |
+| `detect_intent_and_tool` | `L935–L1188` | `(message: str, snapshot: dict...)` | `tuple[str | None, dict[str, Any]]` | High-precision intent detector for Bangla, Banglish & English agent commands. | `any`, `float`, `get`, `int` |
 
 
 ---
@@ -1173,11 +1173,11 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/hermes/memory.py` | `format_layer_3_prompt` | 17 | 5 | Acceptable; well-scoped logic |
 | `backend/hermes/secret_guard.py` | `redact_secrets` | 11 | 4 | Acceptable; well-scoped logic |
 | `backend/hermes/skills_manager.py` | `match_skills` | 22 | 4 | Acceptable; well-scoped logic |
-| `backend/hermes/tools_dispatcher.py` | `handle_execute_manual_order` | 78 | 3 | Acceptable; well-scoped logic |
+| `backend/hermes/tools_dispatcher.py` | `handle_execute_manual_order` | 115 | 4 | Decompose into sub-functions |
 | `backend/hermes/tools_dispatcher.py` | `handle_control_stocknow_session` | 143 | 12 | Decompose into sub-functions |
-| `backend/hermes/tools_dispatcher.py` | `dispatch_tool` | 35 | 12 | Acceptable; well-scoped logic |
-| `backend/hermes/tools_dispatcher.py` | `format_tool_response` | 178 | 9 | Decompose into sub-functions |
-| `backend/hermes/tools_dispatcher.py` | `detect_intent_and_tool` | 235 | 5 | Decompose into sub-functions |
+| `backend/hermes/tools_dispatcher.py` | `dispatch_tool` | 36 | 12 | Acceptable; well-scoped logic |
+| `backend/hermes/tools_dispatcher.py` | `format_tool_response` | 180 | 9 | Decompose into sub-functions |
+| `backend/hermes/tools_dispatcher.py` | `detect_intent_and_tool` | 254 | 5 | Decompose into sub-functions |
 | `backend/main.py` | `create_app` | 252 | 4 | Decompose into sub-functions |
 | `backend/main.py` | `local_security` | 39 | 4 | Acceptable; well-scoped logic |
 | `backend/main.py` | `cycle` | 15 | 4 | Acceptable; well-scoped logic |
@@ -1207,4 +1207,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 33 Python modules inspected, 31 FastAPI endpoints registered, 26,737 total LOC indexed.
+> **Audit Summary:** 33 Python modules inspected, 31 FastAPI endpoints registered, 26,837 total LOC indexed.

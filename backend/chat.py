@@ -202,12 +202,13 @@ def local_summary(message: str, snapshot: dict) -> str:
 
 
 class ChatService:
-    def __init__(self, database: Database, settings: Settings):
+    def __init__(self, database: Database, settings: Settings, stocknow_client: Any | None = None):
         self.database = database
         self.settings = settings
+        self.stocknow_client = stocknow_client
         self.transport: httpx.AsyncBaseTransport | None = None  # Injectable mock for network-free tests.
         from backend.hermes.agent_loop import HermesAgentLoop
-        self.agent_loop = HermesAgentLoop(database, settings)
+        self.agent_loop = HermesAgentLoop(database, settings, stocknow_client=stocknow_client)
 
     async def respond(self, request: ChatRequest) -> dict:
         self.agent_loop.transport = self.transport

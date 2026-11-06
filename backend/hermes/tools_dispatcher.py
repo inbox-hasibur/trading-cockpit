@@ -179,6 +179,7 @@ def handle_execute_manual_order(
     state: PortfolioState,
     settings: Settings,
     checkpoint_mgr: Any,
+    stocknow_client: Any | None = None,
 ) -> dict[str, Any]:
     symbol = args["symbol"].upper()
     side = args.get("side", "BUY").upper()
@@ -186,6 +187,24 @@ def handle_execute_manual_order(
 
     if side not in ("BUY", "SELL"):
         raise ValueError(f"Unsupported manual order side '{side}'. Must be BUY or SELL.")
+
+    if side == "SELL" and qty <= 0:
+        mature_lots = list(session.scalars(
+            select(TaxLot).where(
+                TaxLot.symbol == symbol,
+                TaxLot.remaining_qty > 0,
+                TaxLot.matures_on <= state.clock_date,
+            )
+        ))
+        qty = sum(l.remaining_qty for l in mature_lots)
+        if qty <= 0:
+            immature_lots = list(session.scalars(
+                select(TaxLot).where(TaxLot.symbol == symbol, TaxLot.remaining_qty > 0)
+            ))
+            if immature_lots:
+                earliest = min(l.matures_on for l in immature_lots)
+                raise ValueError(f"Cannot sell {symbol}: shares are settlement-locked until {earliest.isoformat()} (T+2 lock).")
+            raise ValueError(f"Cannot sell {symbol}: no mature shares available in portfolio.")
 
     lots = session.scalars(select(TaxLot)).all()
     trades = session.scalars(select(TradeLog)).all()
@@ -236,17 +255,35 @@ def handle_execute_manual_order(
     else:
         res = execute_agentic_sell(session, state, settings, symbol, requested_qty=qty)
 
+    is_live = stocknow_client is not None and getattr(stocknow_client, "state", "") == "READY"
+    dry_run = not is_live
+    pid = getattr(stocknow_client, "bound_portfolio_id", "164580") if is_live else "164580"
+
     import asyncio
     try:
         receipt = asyncio.run(execute_stocknow_virtual_order(
-            symbol=symbol, side=side, quantity=res["quantity"], price=res["price"], dry_run=True
+            client=stocknow_client if is_live else None,
+            symbol=symbol,
+            side=side,
+            quantity=res["quantity"],
+            price=res["price"],
+            portfolio_id=pid,
+            dry_run=dry_run,
         ))
     except RuntimeError:
         import concurrent.futures
         with concurrent.futures.ThreadPoolExecutor() as pool:
             receipt = pool.submit(
                 asyncio.run,
-                execute_stocknow_virtual_order(symbol=symbol, side=side, quantity=res["quantity"], price=res["price"], dry_run=True)
+                execute_stocknow_virtual_order(
+                    client=stocknow_client if is_live else None,
+                    symbol=symbol,
+                    side=side,
+                    quantity=res["quantity"],
+                    price=res["price"],
+                    portfolio_id=pid,
+                    dry_run=dry_run,
+                )
             ).result()
 
     res["receipt"] = receipt
@@ -555,6 +592,7 @@ def dispatch_tool(
     settings: Settings,
     skills_mgr: SkillsManager,
     checkpoint_mgr: Any,
+    stocknow_client: Any | None = None,
 ) -> dict[str, Any]:
     """Routes tool execution to dedicated handlers with low nesting depth (<= 3)."""
     if tool_name == "report_company_threat":
@@ -566,7 +604,7 @@ def dispatch_tool(
     elif tool_name == "update_company_allocation":
         return handle_update_company_allocation(args, session, state, checkpoint_mgr)
     elif tool_name == "execute_manual_order":
-        return handle_execute_manual_order(args, session, state, settings, checkpoint_mgr)
+        return handle_execute_manual_order(args, session, state, settings, checkpoint_mgr, stocknow_client=stocknow_client)
     elif tool_name == "learn_or_patch_skill":
         return handle_learn_or_patch_skill(args, session, state, skills_mgr, checkpoint_mgr)
     elif tool_name == "rollback_last_checkpoint":
@@ -755,18 +793,20 @@ def format_tool_response(tool_name: str, tool_res: dict[str, Any], user_msg: str
         receipt = res.get("receipt", {})
         oid = receipt.get("order_id", "N/A")
         emode = receipt.get("execution_mode", "PAPER_VERIFIED")
+        mode_label_bn = " (লাইভ StockNow ব্রাউজারে এক্সিকিউটেড 🟢)" if emode == "STOCKNOW_LIVE_DOM" else " (পেপার ভেরিফাইড)"
+        mode_label_en = " (Live StockNow Browser Executed 🟢)" if emode == "STOCKNOW_LIVE_DOM" else " (Paper Verified)"
         if side == "BUY":
             cost = res.get("cost", 0.0)
             bucket = res.get("bucket", "A")
             return (
                 f"DEMO/PAPER · [Manual Buy Executed]\n"
                 f"✅ {sym}-এর {qty} টি শেয়ার ৳{pr:,.2f} দরে কেনা হয়েছে (মোট খরচ: ৳{cost:,.2f}, বাকেট {bucket})。\n"
-                f"• StockNow ভার্চুয়াল রসিদ: {oid} ({emode})"
+                f"• StockNow ভার্চুয়াল রসিদ: {oid} ({emode}{mode_label_bn})"
                 if bangla
                 else (
                     f"DEMO/PAPER · [Manual Buy Executed]\n"
                     f"✅ Bought {qty} shares of {sym} at ৳{pr:,.2f} (Total: ৳{cost:,.2f}, Bucket {bucket}).\n"
-                    f"• StockNow Virtual Receipt: {oid} ({emode})"
+                    f"• StockNow Virtual Receipt: {oid} ({emode}{mode_label_en})"
                 )
             )
         else:
@@ -775,12 +815,12 @@ def format_tool_response(tool_name: str, tool_res: dict[str, Any], user_msg: str
             return (
                 f"DEMO/PAPER · [Manual Matured Sell Executed]\n"
                 f"✅ {sym}-এর {qty} টি ম্যাচিউরড শেয়ার ৳{pr:,.2f} দরে বিক্রি করা হয়েছে (মোট আদায়: ৳{proceeds:,.2f}, প্রফিট: +৳{pnl:,.2f})。\n"
-                f"• StockNow ভার্চুয়াল রসিদ: {oid} ({emode})"
+                f"• StockNow ভার্চুয়াল রসিদ: {oid} ({emode}{mode_label_bn})"
                 if bangla
                 else (
                     f"DEMO/PAPER · [Manual Matured Sell Executed]\n"
                     f"✅ Sold {qty} mature shares of {sym} at ৳{pr:,.2f} (Net proceeds: ৳{proceeds:,.2f}, Realized P/L: +৳{pnl:,.2f}).\n"
-                    f"• StockNow Virtual Receipt: {oid} ({emode})"
+                    f"• StockNow Virtual Receipt: {oid} ({emode}{mode_label_en})"
                 )
             )
 
@@ -1004,12 +1044,28 @@ def detect_intent_and_tool(message: str, snapshot: dict) -> tuple[str | None, di
         "SQURPHARMA": ["squrpharma", "square pharma", "square pharmaceuticals", "square"],
         "BXPHARMA": ["bxpharma", "beximco pharma", "beximco pharmaceuticals", "beximco"],
         "GP": ["gp", "grameenphone", "grameen phone", "grameen"],
+        "MATINSPINN": ["matinspinn", "matin spinning", "matin spin", "matin"],
+        "IBNSINA": ["ibnsina", "ibn sina", "ibn-sina"],
     }
     matched_sym = None
     for sym, aliases in symbol_aliases.items():
         if any(alias in text_lower for alias in aliases):
             matched_sym = sym
             break
+
+    # Dynamic symbol match against all active watchlist / database companies in snapshot
+    if not matched_sym and snapshot.get("companies"):
+        for comp in snapshot["companies"]:
+            csym = comp.get("symbol", "").upper()
+            if not csym:
+                continue
+            if csym.lower() in text_lower:
+                matched_sym = csym
+                break
+            cname = comp.get("name", "").lower()
+            if cname and len(cname) > 3 and cname in text_lower:
+                matched_sym = csym
+                break
 
     # 3. Emergency threat / bankruptcy alert
     threat_words = (
@@ -1046,14 +1102,17 @@ def detect_intent_and_tool(message: str, snapshot: dict) -> tuple[str | None, di
                 pass
 
     # 7. Explicit Buy
-    buy_words = ("buy koro", "share kino", "explicitly buy", "kine dao", "buy now", "kine felo", "kino", "buy")
+    buy_words = ("buy koro", "share kino", "explicitly buy", "kine dao", "buy now", "kine felo", "kino", "buy", "purchase", "kine nao")
     if matched_sym and any(w in text_lower for w in buy_words):
         digits = "".join(ch for ch in text if ch.isdigit())
         qty = int(digits) if digits else 0
         return "execute_manual_order", {"symbol": matched_sym, "side": "BUY", "quantity": qty}
 
     # 7.1 Explicit Sell
-    sell_words = ("sell koro", "share becho", "explicitly sell", "beche dao", "sell now", "bikri koro", "becho", "sell")
+    sell_words = (
+        "sell koro", "share becho", "explicitly sell", "beche dao", "sell now",
+        "bikri koro", "becho", "sell", "bikri", "beche felo", "sob beche dao", "sob sell koro", "liquidate"
+    )
     if matched_sym and any(w in text_lower for w in sell_words):
         digits = "".join(ch for ch in text if ch.isdigit())
         qty = int(digits) if digits else 0
