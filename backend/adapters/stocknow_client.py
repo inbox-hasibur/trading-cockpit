@@ -366,8 +366,6 @@ class StockNowLiveClient:
             # Look for phone/password inputs
             phone_input = None
             for sel in [
-                'input[name="mobile"]',
-                '#ion-input-0',
                 'input[type="tel"]',
                 'input[name*="mobile"]',
                 'input[name*="phone"]',
@@ -385,12 +383,7 @@ class StockNowLiveClient:
                     pass
 
             password_input = None
-            for sel in [
-                'input[name="password"]',
-                '#ion-input-1',
-                'input[type="password"]',
-                'input[name*="password"]',
-            ]:
+            for sel in ['input[type="password"]', 'input[name*="password"]']:
                 try:
                     password_input = await self.page.query_selector(sel)
                     if password_input:
@@ -403,7 +396,7 @@ class StockNowLiveClient:
                 await password_input.fill(password)
 
                 # Check Remember mobile and password checkbox
-                for cb_sel in ['ion-checkbox', 'input[type="checkbox"]', '#remember', 'input[name*="remember"]']:
+                for cb_sel in ['input[type="checkbox"]', '#remember', 'input[name*="remember"]']:
                     try:
                         cb = await self.page.query_selector(cb_sel)
                         if cb:
@@ -414,10 +407,8 @@ class StockNowLiveClient:
                     except Exception:
                         pass
 
-                # Click Login button (including Ionic Web Components)
+                # Click Login button
                 for sub_sel in [
-                    'ion-button:has-text("Login")',
-                    'ion-button:has-text("লগইন")',
                     'button:has-text("Login")',
                     'button[type="submit"]',
                     'button:has-text("Sign In")',
@@ -431,18 +422,7 @@ class StockNowLiveClient:
                     except Exception:
                         pass
 
-                await self.page.wait_for_timeout(3500)
-
-                # If redirected to /portfolios, click View on Humming Bird
-                curr_url = getattr(self.page, "url", "")
-                if "/portfolios" in curr_url and "/show" not in curr_url:
-                    try:
-                        view_btn = await self.page.query_selector('ion-button:has-text("View"), button:has-text("View"), a:has-text("View")')
-                        if view_btn:
-                            await view_btn.click()
-                            await self.page.wait_for_timeout(2000)
-                    except Exception:
-                        pass
+                await self.page.wait_for_timeout(2500)
 
                 for selector in [
                     'a[href*="logout"]',

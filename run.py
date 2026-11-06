@@ -35,10 +35,8 @@ def ensure_venv() -> None:
 
     if venv_py.exists():
         try:
-            curr = Path(sys.executable).resolve()
-            target = venv_py.resolve()
-            if curr != target:
-                args = [str(target), str(Path(__file__).resolve())] + sys.argv[1:]
+            if sys.prefix == sys.base_prefix:
+                args = [str(venv_py), str(Path(__file__).resolve())] + sys.argv[1:]
                 sys.exit(subprocess.call(args))
         except Exception:
             pass
@@ -126,8 +124,13 @@ def main() -> None:
 
         threading.Thread(target=_open, daemon=True).start()
 
+    venv_py_win = ROOT / ".venv" / "Scripts" / "python.exe"
+    venv_py_nix = ROOT / ".venv" / "bin" / "python"
+    venv_py = venv_py_win if sys.platform == "win32" else venv_py_nix
+    python_bin = str(venv_py) if venv_py.exists() else sys.executable
+
     cmd = [
-        sys.executable,
+        python_bin,
         "-m",
         "uvicorn",
         "backend.main:app",

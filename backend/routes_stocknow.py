@@ -80,6 +80,20 @@ def build_stocknow_router(
     def get_stocknow_status():
         return stocknow_client.get_status()
 
+    @router.get("/page")
+    async def get_stocknow_page():
+        if not stocknow_client.page or getattr(stocknow_client.page, "is_closed", lambda: True)():
+            return {"connected": False, "url": None, "title": None}
+        async def _get_info():
+            p = stocknow_client.page
+            url = getattr(p, "url", "")
+            title = await p.title() if hasattr(p, "title") else ""
+            text = await p.evaluate("() => document.body ? document.body.innerText.substring(0, 1000) : ''") if hasattr(p, "evaluate") else ""
+            return {"connected": True, "url": url, "title": title, "text": text}
+        if hasattr(stocknow_client, "_run_in_proactor"):
+            return await stocknow_client._run_in_proactor(_get_info())
+        return await _get_info()
+
     @router.post("/session")
     async def post_stocknow_session(body: StockNowSessionActionRequest):
         action = body.action
@@ -132,17 +146,14 @@ def build_stocknow_router(
     async def post_stocknow_sync_portfolio(body: StockNowPortfolioSyncRequest | None = None):
         injected = body.injected_portfolio if body is not None else None
         extracted = None
-        if injected is not None:
+        if not injected and stocknow_client.state == "READY":
+            try:
+                extracted = await extract_hummingbird_portfolio_from_browser(stocknow_client)
+            except Exception as exc:
+                logger.warning("Browser extraction from live tab failed, falling back: %s", exc)
+        if not extracted:
             extracted = extract_hummingbird_portfolio(stocknow_client, injected_portfolio=injected)
-        else:
-            has_page = stocknow_client.page is not None and not (hasattr(stocknow_client.page, "is_closed") and stocknow_client.page.is_closed())
-            if has_page:
-                try:
-                    extracted = await extract_hummingbird_portfolio_from_browser(stocknow_client)
-                except Exception as b_err:
-                    logger.debug("Browser portfolio extract fallback: %s", b_err)
-            if not extracted:
-                extracted = extract_hummingbird_portfolio(stocknow_client, injected_portfolio=None)
+
         result = reconcile_portfolio_to_db(database, settings, extracted)
         if result.get("success"):
             stocknow_client.bound_portfolio_name = extracted.get("portfolio_name", "Humming Bird")

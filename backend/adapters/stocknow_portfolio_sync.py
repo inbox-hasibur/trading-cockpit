@@ -12,7 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.config import Settings
-from backend.database import CompanyProfile, CustomRule, Database, PortfolioState, TaxLot, TradeLog
+from backend.database import CompanyProfile, CustomRule, Database, DecisionLog, PortfolioState, TaxLot, TradeLog
 from backend.engine.money import decimal, money, price, purchase_amount
 from backend.engine.t2_ledger import BUCKETS, TradingCalendar, assert_ledger
 
@@ -156,33 +156,54 @@ async def _extract_hummingbird_portfolio_from_browser_impl(client: Any) -> dict[
         if (cashM) cash = parseFloat(cashM[1].replace(/,/g, ''));
 
         const holdings = [];
-        const rows = document.querySelectorAll("tr, div[class*='row']");
         const seen = new Set();
-        for (const r of rows) {
-            const txt = r.innerText || "";
-            const parts = txt.split(/[\t\n]+/).map(s => s.trim()).filter(Boolean);
-            if (parts.length < 3) continue;
-            let sym = null;
-            let qty = 0;
-            let buyPrice = 0;
-            for (const p of parts) {
-                if (!sym && /^[A-Z0-9]{3,12}$/.test(p) && !["TOTAL", "CASH", "LTP", "SHOW", "EDIT", "BUY", "SELL"].includes(p)) {
-                    sym = p;
-                }
-                const qtyAt = p.match(/(\d+)\s*@\s*([0-9.]+)/);
-                if (qtyAt) {
-                    qty = parseInt(qtyAt[1], 10);
-                    buyPrice = parseFloat(qtyAt[2]);
-                }
-            }
-            if (sym && qty > 0 && buyPrice > 0 && !seen.has(sym)) {
+
+        // 1. Match from full text lines
+        const re = /([A-Z0-9]{3,12})\s*[\r\n]+\s*(\d+)\s*@\s*([0-9.]+)\s*[\r\n]+\s*([0-9.]+)/g;
+        let m;
+        while ((m = re.exec(fullText)) !== null) {
+            const sym = m[1].toUpperCase();
+            if (!seen.has(sym) && !["TOTAL", "CASH", "LTP", "SHOW", "EDIT", "BUY", "SELL"].includes(sym)) {
                 seen.add(sym);
                 holdings.push({
                     symbol: sym,
-                    quantity: qty,
-                    avg_cost: buyPrice,
+                    quantity: parseInt(m[2], 10),
+                    avg_cost: parseFloat(m[3]),
+                    ltp: parseFloat(m[4]),
                     name: sym,
                 });
+            }
+        }
+
+        // 2. Also fallback to rows if fullText regex didn't catch
+        if (holdings.length === 0) {
+            const rows = document.querySelectorAll("tr, div[class*='row']");
+            for (const r of rows) {
+                const txt = r.innerText || "";
+                const parts = txt.split(/[\t\n]+/).map(s => s.trim()).filter(Boolean);
+                if (parts.length < 3) continue;
+                let sym = null;
+                let qty = 0;
+                let buyPrice = 0;
+                for (const p of parts) {
+                    if (!sym && /^[A-Z0-9]{3,12}$/.test(p) && !["TOTAL", "CASH", "LTP", "SHOW", "EDIT", "BUY", "SELL"].includes(p)) {
+                        sym = p;
+                    }
+                    const qtyAt = p.match(/(\d+)\s*@\s*([0-9.]+)/);
+                    if (qtyAt) {
+                        qty = parseInt(qtyAt[1], 10);
+                        buyPrice = parseFloat(qtyAt[2]);
+                    }
+                }
+                if (sym && qty > 0 && buyPrice > 0 && !seen.has(sym)) {
+                    seen.add(sym);
+                    holdings.push({
+                        symbol: sym,
+                        quantity: qty,
+                        avg_cost: buyPrice,
+                        name: sym,
+                    });
+                }
             }
         }
         return { cash: cash, holdings: holdings };
@@ -283,6 +304,7 @@ def _execute_reconciliation(
     )
 
     session.query(TradeLog).delete()
+    session.query(DecisionLog).update({"lot_id": None})
     session.query(TaxLot).delete()
     session.flush()
 
