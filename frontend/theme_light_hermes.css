@@ -31,11 +31,20 @@
   --text: #050811;
   --muted: #1e293b;
   --dim: #334155;
-  --teal: #0d9488;
+  --brand: #0f766e;
+  --brand-bg: #ccfbf1;
+  --teal: #0f766e;
   --teal-bg: #ccfbf1;
+  --green: #15803d;
+  --green-bg: #dcfce7;
   --red: #dc2626;
   --red-bg: #fee2e2;
   --amber: #b45309;
+  --amber-bg: #fef3c7;
+  --buy: #1d4ed8;
+  --buy-bg: #dbeafe;
+  --sell: #b45309;
+  --sell-bg: #fef3c7;
   --blue: #1d4ed8;
   --tile-neutral: #cbd5e1;
   --radius: 10px;
@@ -363,9 +372,34 @@
 }
 
 [data-theme="light"] .signal-badge.tone-positive {
-  background: #dcfce7 !important;
-  color: #15803d !important;
+  background: var(--green-bg) !important;
+  color: var(--green) !important;
   border-color: #86efac !important;
+}
+
+[data-theme="light"] .signal-badge.tone-negative {
+  background: var(--red-bg) !important;
+  color: var(--red) !important;
+  border-color: #fca5a5 !important;
+}
+
+[data-theme="light"] .signal-badge.tone-amber,
+[data-theme="light"] .signal-badge.tone-sell {
+  background: var(--sell-bg) !important;
+  color: var(--sell) !important;
+  border-color: #fde68a !important;
+}
+
+[data-theme="light"] .signal-badge.tone-buy {
+  background: var(--buy-bg) !important;
+  color: var(--buy) !important;
+  border-color: #93c5fd !important;
+}
+
+[data-theme="light"] .signal-badge.tone-neutral {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border-color: #cbd5e1 !important;
 }
 
 [data-theme="light"] .tier-chip {
@@ -1518,7 +1552,7 @@ body.is-resizing-hermes .app-shell {
 }
 
 [data-theme="light"] .op-spec-val.positive {
-  color: #059669;
+  color: var(--green);
 }
 
 .login-form {
@@ -1684,7 +1718,7 @@ body.is-resizing-hermes .app-shell {
 }
 
 [data-theme="light"] .ledger-status {
-  color: #047857 !important;
+  color: var(--green) !important;
   font-weight: 700 !important;
 }
 
@@ -1692,13 +1726,47 @@ body.is-resizing-hermes .app-shell {
 /* Positive / Negative Contrast */
 
 [data-theme="light"] .positive {
-  color: #047857 !important;
+  color: var(--green) !important;
   font-weight: 700 !important;
 }
 
 [data-theme="light"] .negative {
-  color: #b91c1c !important;
+  color: var(--red) !important;
   font-weight: 700 !important;
+}
+
+[data-theme="light"] .spark-up {
+  stroke: var(--green) !important;
+}
+
+[data-theme="light"] .spark-down {
+  stroke: var(--red) !important;
+}
+
+[data-theme="light"] .leg-buy {
+  background: var(--buy) !important;
+}
+
+[data-theme="light"] .leg-sell {
+  background: var(--sell) !important;
+}
+
+[data-theme="light"] .chart-trade-marker.buy circle {
+  fill: var(--buy) !important;
+  stroke: #ffffff !important;
+}
+
+[data-theme="light"] .chart-trade-marker.buy text {
+  fill: #ffffff !important;
+}
+
+[data-theme="light"] .chart-trade-marker.sell circle {
+  fill: var(--sell) !important;
+  stroke: #ffffff !important;
+}
+
+[data-theme="light"] .chart-trade-marker.sell text {
+  fill: #ffffff !important;
 }
 
 

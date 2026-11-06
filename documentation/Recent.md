@@ -147,12 +147,12 @@ Measured contrast in dark theme: `--dim #586b80` on panel `#101822` is only **3.
 
 Problem: teal is used for brand, active state, primary buttons, positive P/L, BUY badges and BUY ZONE. Meaning is lost. Also Realized P/L is teal while Unrealized is red.
 
-- [ ] **3.1. Add tokens (dark and light):** `--green` (profit, up), `--red` (loss, down), `--brand` (teal, UI accent only), `--amber` (warning, locked, waiting), `--buy` (blue, order side BUY), `--sell` (amber, order side SELL), plus a `-bg` variant for each. Pick values by computing contrast against panel backgrounds (4.5:1 for text).
-- [ ] **3.2. Rule: green and red are only for money direction.** Positive P/L, up percentages and up sparklines use `--green`. Negative use `--red`. Teal stays for brand: active nav item, primary buttons, focus ring, selected row accent, active bucket, toggles.
-- [ ] **3.3. Apply to: Realized P/L card** (currently teal, make green), Est. Unrealized (red when negative), Net Return in what-if, ledger Net Realized column, watchlist Day column, sparklines (color by direction), Position Inspector values, chart header change.
-- [ ] **3.4. Order side badges (Strategy/Ledger):** BUY uses `--buy` (blue), SELL uses `--sell` (amber). Reason: sells in this strategy are profit locks, so a red SELL would read as a loss. P/L numbers carry the green/red meaning. Use the same tokens for the B and S markers on charts and the chart legend.
-- [ ] **3.5. Decision stream badges:** BUY (buy blue), BUY BLOCKED (red), WAIT NO CHURN and WAIT BUDGET (neutral grey), SETTLEMENT LOCK (amber). Curve signal pills in the watchlist: BUY ZONE (buy blue), MID RANGE (grey), SELL ZONE (amber), CRASH GUARD (red).
-- [ ] **3.6. Light theme: confirm all of the above** look right and pass contrast. No leftover dark backgrounds.
+- [x] **3.1. Add tokens (dark and light):** `--green` (profit, up), `--red` (loss, down), `--brand` (teal, UI accent only), `--amber` (warning, locked, waiting), `--buy` (blue, order side BUY), `--sell` (amber, order side SELL), plus a `-bg` variant for each. Pick values by computing contrast against panel backgrounds (4.5:1 for text).
+- [x] **3.2. Rule: green and red are only for money direction.** Positive P/L, up percentages and up sparklines use `--green`. Negative use `--red`. Teal stays for brand: active nav item, primary buttons, focus ring, selected row accent, active bucket, toggles.
+- [x] **3.3. Apply to: Realized P/L card** (currently teal, make green), Est. Unrealized (red when negative), Net Return in what-if, ledger Net Realized column, watchlist Day column, sparklines (color by direction), Position Inspector values, chart header change.
+- [x] **3.4. Order side badges (Strategy/Ledger):** BUY uses `--buy` (blue), SELL uses `--sell` (amber). Reason: sells in this strategy are profit locks, so a red SELL would read as a loss. P/L numbers carry the green/red meaning. Use the same tokens for the B and S markers on charts and the chart legend.
+- [x] **3.5. Decision stream badges:** BUY (buy blue), BUY BLOCKED (red), WAIT NO CHURN and WAIT BUDGET (neutral grey), SETTLEMENT LOCK (amber). Curve signal pills in the watchlist: BUY ZONE (buy blue), MID RANGE (grey), SELL ZONE (amber), CRASH GUARD (red).
+- [x] **3.6. Light theme: confirm all of the above** look right and pass contrast. No leftover dark backgrounds.
 
 ---
 

@@ -300,7 +300,7 @@ function renderMainChart() {
     let tradeNote = "";
     if (dateTrades.length) {
       tradeNote = `<div style="margin-top:4px;border-top:1px solid var(--soft-line);padding-top:3px;">
-        ${dateTrades.map((tr) => `<strong style="color:${tr.side === "BUY" ? "#22c55e" : "#ef4444"}">${tr.side}</strong> ${tr.symbol} ${tr.quantity} qty @ ৳${tr.price}`).join("<br>")}
+        ${dateTrades.map((tr) => `<strong style="color:${tr.side === "BUY" ? "var(--buy)" : "var(--sell)"}">${tr.side}</strong> ${tr.symbol} ${tr.quantity} qty @ ৳${tr.price}`).join("<br>")}
       </div>`;
     }
 
@@ -1106,20 +1106,20 @@ function renderDeepTrendChart(company, timeframe = "7d") {
       const markerX = x(idx);
       const markerY = y(Number(pt.close));
 
-      const markerG = svgElement("g", { class: "chart-trade-marker" });
+      const markerG = svgElement("g", { class: `chart-trade-marker ${isBuy ? "buy" : "sell"}` });
       markerG.append(svgElement("circle", {
         cx: markerX,
         cy: markerY,
         r: 7,
-        fill: isBuy ? "#16a34a" : "#dc2626",
-        stroke: "#ffffff",
+        fill: isBuy ? "var(--buy)" : "var(--sell)",
+        stroke: "var(--panel)",
         "stroke-width": 1.5,
       }));
       const textM = svgElement("text", {
         x: markerX,
         y: markerY + 3.5,
         "text-anchor": "middle",
-        fill: "#ffffff",
+        fill: isBuy ? "#ffffff" : "#0a1018",
         "font-size": 8.5,
         "font-weight": 800,
       });
@@ -1205,7 +1205,7 @@ function renderDeepTrendChart(company, timeframe = "7d") {
     let tradeNote = "";
     if (dateTrades.length) {
       tradeNote = `<div style="margin-top:4px;border-top:1px solid var(--soft-line);padding-top:3px;">
-        ${dateTrades.map((t) => `<strong style="color:${t.side === "BUY" ? "#22c55e" : "#ef4444"}">${t.side}</strong> ${t.quantity} qty @ ৳${t.price}`).join("<br>")}
+        ${dateTrades.map((t) => `<strong style="color:${t.side === "BUY" ? "var(--buy)" : "var(--sell)"}">${t.side}</strong> ${t.quantity} qty @ ৳${t.price}`).join("<br>")}
       </div>`;
     }
 

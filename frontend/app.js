@@ -87,8 +87,11 @@ function setPnl(id, value, asPercentage = false) {
 
 function tone(action) {
   if (/CRASH|BLOCKED|INVALID|STALE/.test(action)) return "negative";
-  if (/BUY_ZONE|^BUY$|SELL_TIER|^SELL$|MATURE/.test(action)) return "positive";
-  if (/PULLBACK|RECOVERY|LOCK|LOSS|DISABLED|ODD/.test(action)) return "amber";
+  if (/BUY_ZONE|^BUY$/.test(action)) return "buy";
+  if (/SELL_ZONE|^SELL$|SELL_TIER|RECOVERY|PULLBACK|RUNNER/.test(action)) return "sell";
+  if (/WAIT|MID_RANGE|NO_CHURN|BUDGET/.test(action)) return "neutral";
+  if (/LOCK|LOSS|DISABLED|ODD/.test(action)) return "amber";
+  if (/MATURE/.test(action)) return "positive";
   return "neutral";
 }
 
@@ -436,7 +439,7 @@ function renderLedger() {
     company.append(element("div", "trade-source", trade.source === "DEMO_SEED" ? "DEMO SEED" : "PAPER FILL"));
     const side = cell(); side.append(badge(trade.side));
     const settlement = cell(`${trade.bucket} · ${sessionDate(trade.settles_on, true)}`);
-    row.append(cell(sessionDate(trade.date, true)), company, side, cell(trade.quantity, "align-right"), cell(numberFormat.format(trade.price), "align-right"), cell(numberFormat.format(trade.fee), "align-right"), cell(trade.side === "SELL" ? `${trade.realized_pnl >= 0 ? "+" : ""}${numberFormat.format(trade.realized_pnl)}` : "—", `align-right ${trade.side === "SELL" ? "positive" : "muted"}`), settlement);
+    row.append(cell(sessionDate(trade.date, true)), company, side, cell(trade.quantity, "align-right"), cell(numberFormat.format(trade.price), "align-right"), cell(numberFormat.format(trade.fee), "align-right"), cell(trade.side === "SELL" ? `${trade.realized_pnl >= 0 ? "+" : ""}${numberFormat.format(trade.realized_pnl)}` : "—", `align-right ${trade.side === "SELL" ? (trade.realized_pnl >= 0 ? "positive" : "negative") : "muted"}`), settlement);
     return row;
   });
   if (!rows.length) { const row = element("tr"); const td = cell("No trades in this accounting period.", "loading-cell"); td.colSpan = 8; row.append(td); rows.push(row); }

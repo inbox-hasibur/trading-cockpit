@@ -79,11 +79,20 @@ td,
   --text: #e5edf5;
   --muted: #9aabbd;
   --dim: #8393a6;
+  --brand: #5de4c7;
+  --brand-bg: #15362f;
   --teal: #5de4c7;
   --teal-bg: #15362f;
-  --red: #f18a96;
-  --red-bg: #35232c;
-  --amber: #e4bb73;
+  --green: #34d399;
+  --green-bg: rgba(52, 211, 153, 0.15);
+  --red: #f87171;
+  --red-bg: rgba(248, 113, 113, 0.15);
+  --amber: #fbbf24;
+  --amber-bg: rgba(251, 191, 36, 0.15);
+  --buy: #60a5fa;
+  --buy-bg: rgba(96, 165, 250, 0.15);
+  --sell: #fbbf24;
+  --sell-bg: rgba(251, 191, 36, 0.15);
   --blue: #8dacf0;
   --tile-neutral: #334155;
   --radius: 10px;
@@ -185,7 +194,7 @@ h2 {
 }
 
 .positive {
-  color: var(--teal) !important;
+  color: var(--green) !important;
 }
 
 .negative {
@@ -552,6 +561,14 @@ select {
   background: var(--teal);
 }
 
+.green {
+  background: var(--green);
+}
+
+.red {
+  background: var(--red);
+}
+
 .blue {
   background: var(--blue);
 }
@@ -829,31 +846,36 @@ tbody tr:last-child td {
 }
 
 .spark-up {
-  stroke: #61bba8;
+  stroke: var(--green);
 }
 
 .spark-down {
-  stroke: #d58391;
+  stroke: var(--red);
 }
 
 .signal-badge {
-  display: inline-block; border-radius: 4px; padding: 4px 6px; font-size: var(--fs-xs, 11px); font-weight: 500; letter-spacing: .25px; white-space: nowrap; background: #1d2b3a; color: #9bb2cd; border: 1px solid #2b3c50;
+  display: inline-block; border-radius: 4px; padding: 4px 6px; font-size: var(--fs-xs, 11px); font-weight: 600; letter-spacing: .25px; white-space: nowrap; background: #1d2b3a; color: #9bb2cd; border: 1px solid #2b3c50;
 }
 
 .signal-badge.tone-positive {
-  background: #17382f; color: #79cdb2; border-color: #285442;
+  background: var(--green-bg); color: var(--green); border-color: rgba(52, 211, 153, 0.35);
 }
 
 .signal-badge.tone-negative {
-  background: #36232d; color: #e7a1ab; border-color: #58303e;
+  background: var(--red-bg); color: var(--red); border-color: rgba(248, 113, 113, 0.35);
 }
 
-.signal-badge.tone-amber {
-  background: #342c21; color: #d5b77f; border-color: #4e402c;
+.signal-badge.tone-amber,
+.signal-badge.tone-sell {
+  background: var(--sell-bg); color: var(--sell); border-color: rgba(251, 191, 36, 0.35);
+}
+
+.signal-badge.tone-buy {
+  background: var(--buy-bg); color: var(--buy); border-color: rgba(96, 165, 250, 0.35);
 }
 
 .signal-badge.tone-neutral {
-  background: #202d3d; color: #99b2cf; border-color: #2c3f54;
+  background: rgba(148, 163, 184, 0.12); color: var(--muted); border-color: var(--line);
 }
 
 .position-count {
@@ -2497,6 +2519,24 @@ input[type=checkbox] {
   transform: scale(1.3);
 }
 
+.chart-trade-marker.buy circle {
+  fill: var(--buy);
+  stroke: var(--panel);
+}
+
+.chart-trade-marker.buy text {
+  fill: #ffffff;
+}
+
+.chart-trade-marker.sell circle {
+  fill: var(--sell);
+  stroke: var(--panel);
+}
+
+.chart-trade-marker.sell text {
+  fill: #0a1018;
+}
+
 
 /* ==========================================================================
    "What-If" Profit Simulator Slider Card
@@ -2899,11 +2939,11 @@ input[type=checkbox] {
 }
 
 .leg-buy {
-  background: #22c55e; border-radius: 50%;
+  background: var(--buy); border-radius: 50%;
 }
 
 .leg-sell {
-  background: #ef4444; border-radius: 50%;
+  background: var(--sell); border-radius: 50%;
 }
 
 .deep-chart-telemetry {
