@@ -336,6 +336,39 @@ function renderActiveHoldings() {
     const statusTag = element("span", `holding-status-tag ${isMature ? "mature" : "locked"}`, isMature ? "Matured (T+2)" : "Settling (T+1)");
     statusCell.append(statusTag);
 
+    if (isMature) {
+      if (pnl > 0) {
+        const sliceQty = Math.max(1, Math.round(c.holding_qty * 0.25));
+        const sellBtn = element("button", "holdings-action-btn", `Sell 25% (${sliceQty})`);
+        sellBtn.title = `Execute 25% sequential slice sell (${sliceQty} shares) of ${c.symbol}`;
+        sellBtn.onclick = async (e) => {
+          e.stopPropagation();
+          sellBtn.disabled = true;
+          sellBtn.textContent = "Selling...";
+          try {
+            const res = await api("/api/stocknow/execute-order", {
+              method: "POST",
+              body: { symbol: c.symbol, side: "SELL", quantity: sliceQty, dry_run: false },
+            });
+            notify(`Order executed: Sold ${sliceQty} shares of ${c.symbol}.`);
+            if (res.snapshot) {
+              state.snapshot = res.snapshot;
+              renderSnapshot();
+            }
+          } catch (err) {
+            notify(`Sell failed: ${err.message}`, true);
+            sellBtn.disabled = false;
+            sellBtn.textContent = `Sell 25% (${sliceQty})`;
+          }
+        };
+        statusCell.append(" ", sellBtn);
+      } else {
+        const guardBadge = element("span", "holding-guard-badge", "No-Loss Hold Guard");
+        guardBadge.title = "Strict No-Loss rule: selling blocked while net gain is negative.";
+        statusCell.append(" ", guardBadge);
+      }
+    }
+
     row.append(compCell, tierCell, qtyCell, ltpCell, costCell, sellCell, pnlCell, statusCell);
     return row;
   });

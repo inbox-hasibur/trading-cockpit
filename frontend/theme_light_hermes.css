@@ -2621,3 +2621,20 @@ body.is-resizing-hermes .app-shell {
   background: #f1f5f9 !important;
   border-top: 2px solid #cbd5e1 !important;
 }
+
+[data-theme="light"] .holdings-action-btn {
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border-color: #bfdbfe !important;
+}
+
+[data-theme="light"] .holdings-action-btn:hover {
+  background: #dbeafe !important;
+  border-color: #93c5fd !important;
+}
+
+[data-theme="light"] .holding-guard-badge {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border-color: #cbd5e1 !important;
+}

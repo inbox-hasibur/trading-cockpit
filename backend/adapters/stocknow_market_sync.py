@@ -17,6 +17,15 @@ from backend.engine.money import ZERO, decimal
 
 logger = logging.getLogger("hummingbird.stocknow_sync")
 
+STOCKNOW_LIST_NAME_TO_CATEGORY: dict[str, str] = {
+    "Giant Stable Companies": "GSC",
+    "GSC Upper Trends L1": "GSC_L1",
+    "GSC Upper Trends L2": "GSC_L2",
+    "giant stable companies": "GSC",
+    "gsc upper trends l1": "GSC_L1",
+    "gsc upper trends l2": "GSC_L2",
+}
+
 
 def _parse_positive_decimal(val: Any) -> Decimal | None:
     if val is None:
@@ -188,6 +197,15 @@ def extract_quotes_from_payload(payload: Any, as_of_date: date | None = None) ->
         if cat:
             quote_dict["category"] = str(cat).strip().upper()
 
+        # Handle 3-list watchlist category mapping
+        w_cat = item.get("watchlist_category")
+        if not w_cat and str(cat) in ("GSC", "GSC_L1", "GSC_L2"):
+            w_cat = str(cat)
+        if not w_cat and item.get("list_name") in STOCKNOW_LIST_NAME_TO_CATEGORY:
+            w_cat = STOCKNOW_LIST_NAME_TO_CATEGORY[item["list_name"]]
+        if w_cat:
+            quote_dict["watchlist_category"] = w_cat
+
         extracted.append(quote_dict)
 
     return extracted
@@ -263,6 +281,15 @@ async def extract_quotes_from_stocknow(client: Any, injected_payload: Any = None
                 const yearMatch = fullText.match(/Listing\\s*Year[:\\s]+([12][0-9]{3})/i);
                 if (yearMatch) funds.listing_year = parseInt(yearMatch[1], 10);
 
+                let currentListName = null;
+                const candidates = Array.from(document.querySelectorAll("select, div, button, span, [class*='list'], [class*='dropdown']"));
+                for (const el of candidates) {
+                    const txt = (el.innerText || el.value || "").trim();
+                    if (txt.includes("GSC Upper Trends L1")) { currentListName = "GSC_L1"; break; }
+                    if (txt.includes("GSC Upper Trends L2")) { currentListName = "GSC_L2"; break; }
+                    if (txt.includes("Giant Stable Companies")) { currentListName = "GSC"; break; }
+                }
+
                 // 2. Scrape right-hand watchlist rows
                 const rows = document.querySelectorAll("tr, div[class*='row'], div[class*='item']");
                 const seen = new Set();
@@ -300,6 +327,9 @@ async def extract_quotes_from_stocknow(client: Any, injected_payload: Any = None
                     if (sym && ltp !== null && !seen.has(sym)) {
                         seen.add(sym);
                         const item = { symbol: sym, ltp: ltp, change_pct: changePct, category: cat };
+                        if (currentListName) {
+                            item.watchlist_category = currentListName;
+                        }
                         if (activeSym && sym === activeSym && Object.keys(funds).length > 0) {
                             item.fundamentals = funds;
                         }
@@ -379,6 +409,10 @@ def _sync_in_session(
         company.last_price = last_price
         company.quote_on = q.get("as_of_date") or as_of
         company.source = "STOCKNOW_LIVE"
+
+        target_cat = q.get("watchlist_category") or (q.get("category") if q.get("category") in ("GSC", "GSC_L1", "GSC_L2") else None)
+        if target_cat:
+            company.watchlist_category = target_cat
 
         # Update in-memory fundamentals if provided
         if q.get("fundamentals"):

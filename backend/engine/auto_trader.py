@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import logging
 from decimal import Decimal
 from uuid import uuid4
 
@@ -26,6 +28,8 @@ from backend.engine.money import HUNDRED, ZERO, decimal, money, price, purchase_
 from backend.engine.sequential_seller import SellState, plan_sale
 from backend.engine.signals import BLOCK_ALL_TRADING, assess_company
 from backend.engine.t2_ledger import TradingCalendar, assert_ledger, bucket_balances
+
+logger = logging.getLogger("hummingbird.auto_trader")
 
 
 class AutomationPaused(ValueError):
@@ -166,6 +170,24 @@ class AutoTrader:
                 trades.append(self._trade_result(trade, plan.action))
                 sold_symbols.add(lot.symbol)
 
+                if hasattr(self.adapter, "execute_order"):
+                    try:
+                        res = self.adapter.execute_order(
+                            symbol=lot.symbol,
+                            side="SELL",
+                            quantity=plan.quantity,
+                            price=fill_price,
+                            commission_pct=Decimal("0.5"),
+                        )
+                        if asyncio.iscoroutine(res):
+                            try:
+                                loop = asyncio.get_running_loop()
+                                loop.create_task(res)
+                            except RuntimeError:
+                                asyncio.run(res)
+                    except Exception as exc:
+                        logger.debug("AutoTrader adapter sell dispatch error: %s", exc)
+
         balances = bucket_balances(session, state)
         active_name = self.calendar.bucket_for(state.clock_date)
         active = balances[active_name]
@@ -254,6 +276,24 @@ class AutoTrader:
             active.today_buy_spend += cost
             record(company.symbol, "BUY", trade.reason, quantity, lot.id)
             trades.append(self._trade_result(trade, "BUY"))
+
+            if hasattr(self.adapter, "execute_order"):
+                try:
+                    res = self.adapter.execute_order(
+                        symbol=company.symbol,
+                        side="BUY",
+                        quantity=quantity,
+                        price=fill_price,
+                        commission_pct=Decimal("0.5"),
+                    )
+                    if asyncio.iscoroutine(res):
+                        try:
+                            loop = asyncio.get_running_loop()
+                            loop.create_task(res)
+                        except RuntimeError:
+                            asyncio.run(res)
+                except Exception as exc:
+                    logger.debug("AutoTrader adapter buy dispatch error: %s", exc)
 
         session.flush()
         check_canary_theses(session, state)

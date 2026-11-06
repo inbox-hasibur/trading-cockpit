@@ -70,6 +70,7 @@ class StockNowAdapter:
         idempotency_key: str | None = None,
         dry_run: bool = False,
         live_client: Any | None = None,
+        commission_pct: Decimal | float = Decimal("0.5"),
     ) -> dict:
         from backend.adapters.stocknow_order_executor import execute_stocknow_virtual_order
 
@@ -82,6 +83,7 @@ class StockNowAdapter:
             portfolio_id=portfolio_id,
             idempotency_key=idempotency_key,
             dry_run=dry_run,
+            commission_pct=commission_pct,
         )
         self.last_order_receipt = receipt
         return receipt

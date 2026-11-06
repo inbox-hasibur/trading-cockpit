@@ -227,6 +227,14 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
       - Dedicated "Humming Bird Active Holdings (StockNow #164580)" card in `#overview` with live summary pills, detailed holdings table, net return percentages, and summary totals row.
       - AutoTrader buy ordering prioritizes `GSC_L1` #1, `GSC_L2` #2, and skips base `GSC` observation pool (`WAIT_OBSERVATION_ONLY`).
       - Encoded operator domain knowledge into Hermes skill `SKILL_gsc_tiers.md` (v1.1.0).
+    - **Step 2.8 (Live Playwright Automation for /login, /favorites, /show, /ledger, /buy & /sell):**
+      - Exact login flow: `https://www.stocknow.com.bd/login?nextUrl=/portfolios` automatically authenticating with operator mobile `01882082502`, password `Stocknow#909109`, and "Remember mobile and password" checkbox.
+      - Dynamic portfolio discovery: scrapes `/portfolios` to locate "Humming Bird", extracts summary telemetry (`Balance`, `Sell Value`, `Gain/Loss Today`, `Unrealized Gain/Loss`), and binds `bound_portfolio_id = "164580"`.
+      - 3-list favorites extraction: maps dropdown options ("Giant Stable Companies" -> `GSC`, "GSC Upper Trends L1" -> `GSC_L1`, "GSC Upper Trends L2" -> `GSC_L2`) and syncs live quotes, change %, volume, and fundamentals to SQLite.
+      - Holdings (`/show`) and transaction ledger (`/ledger`) scraper: parses `DD/MM/YY` dates (e.g. `02/11/26` -> `2026-11-02`) so T+2 maturity aligns with real purchase dates.
+      - Order execution forms (`/buy` and `/sell`): automated field selection under Item 1 with `0.5%` commission, clearing auto-filled quantities on SELL to submit precise slice sizes.
+      - Active Holdings quick actions: 1-click 25% slice sell on profitable matured holdings (`BANKASIA`, `MATINSPINN`) and locked `No-Loss Hold Guard` on underwater holdings (`IBNSINA`).
+      - AutoTrader integration: dispatches every automated Buy and Sequential Tier Sell through `adapter.execute_order` with `0.5%` commission.
 
 ---
 

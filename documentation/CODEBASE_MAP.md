@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 04:02:10 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 04:25:12 UTC**.
 
 ---
 
@@ -8,10 +8,10 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 43 | 10,597 | Python Core Kernel, Engine & Hermes Agent |
-| `.css` | 2 | 7,814 | Custom Dark / Light / Terminal Design System |
-| `.js` | 3 | 3,733 | Vanilla ES6+ Reactive Terminal Controller |
-| `.md` | 11 | 2,327 | Architecture & Strategy Documentation |
+| `.py` | 43 | 11,088 | Python Core Kernel, Engine & Hermes Agent |
+| `.css` | 2 | 7,865 | Custom Dark / Light / Terminal Design System |
+| `.js` | 3 | 3,766 | Vanilla ES6+ Reactive Terminal Controller |
+| `.md` | 11 | 2,358 | Architecture & Strategy Documentation |
 | `.html` | 1 | 953 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
 | `.cursorignore` | 1 | 12 | Configuration / Asset |
@@ -19,7 +19,7 @@
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **67** | **25,482** | *Entire Humming Bird Repository* |
+| **TOTAL** | **67** | **26,088** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -82,8 +82,8 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | `QuoteError` | `L15–L16` | `ValueError` | — | 0 |
 | `LiveIntegrationNotImplemented` | `L19–L20` | `RuntimeError` | — | 0 |
 | `DemoQuote` | `L24–L29` | `object` | — | 0 |
-| `StockNowAdapter` | `L32–L124` | `object` | Sprint 1's explicitly synthetic data/paper-fill boundary. | 6 |
-| `StockNowBrowserSession` | `L127–L153` | `object` | Opt-in persistent browser foundation, not a login or order implementation. | 2 |
+| `StockNowAdapter` | `L32–L126` | `object` | Sprint 1's explicitly synthetic data/paper-fill boundary. | 6 |
+| `StockNowBrowserSession` | `L129–L155` | `object` | Opt-in persistent browser foundation, not a login or order implementation. | 2 |
 
 
 **Methods in `StockNowAdapter`:**
@@ -94,16 +94,16 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | `quote` | `L39–L53` | `(self, company: CompanyProfile, as_o...)` | `DemoQuote` | — | `DemoQuote`, `QuoteError`, `decimal`, `is_finite` |
 | `paper_fill` | `L55–L58` | `(self, quote: DemoQuote, quantity: i...)` | `Decimal` | — | `ValueError` |
 | `read_virtual_portfolio` | `L60–L61` | `(self...)` | — | — | `LiveIntegrationNotImplemented` |
-| `execute_order` | `L63–L87` | `(self, symbol: str, side: str, quant...)` | `dict` | — | `execute_stocknow_virtual_order` |
-| `get_adapter_status` | `L89–L124` | `(self, ingestion_mode: str='BACKGROU...)` | `dict` | — | `get`, `get_safe_profile_dir`, `get_status`, `getattr` |
+| `execute_order` | `L63–L89` | `(self, symbol: str, side: str, quant...)` | `dict` | — | `Decimal`, `execute_stocknow_virtual_order` |
+| `get_adapter_status` | `L91–L126` | `(self, ingestion_mode: str='BACKGROU...)` | `dict` | — | `get`, `get_safe_profile_dir`, `get_status`, `getattr` |
 
 
 **Methods in `StockNowBrowserSession`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__init__` | `L135–L136` | `(self, profile_directory: Path...)` | — | — | — |
-| `open` | `L139–L153` | `(self...)` | — | — | `async_playwright`, `close`, `launch_persistent_context`, `mkdir` |
+| `__init__` | `L137–L138` | `(self, profile_directory: Path...)` | — | — | — |
+| `open` | `L141–L155` | `(self...)` | — | — | `async_playwright`, `close`, `launch_persistent_context`, `mkdir` |
 
 
 ---
@@ -114,27 +114,28 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `StockNowLiveClient` | `L55–L391` | `object` | Persistent Playwright browser controller, auto-login assistant & XHR network sniffer. | 6 |
+| `StockNowLiveClient` | `L56–L459` | `object` | Persistent Playwright browser controller, auto-login assistant & XHR network sniffer. | 7 |
 
 
 **Methods in `StockNowLiveClient`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__init__` | `L58–L77` | `(self, profile_directory: Path | str...)` | — | — | `Lock`, `get_safe_profile_dir`, `rstrip` |
-| `_handle_response` | `L79–L110` | `(self, response: Any...)` | `None` | Passively capture JSON responses from stocknow.com.bd. | `debug`, `get`, `getattr`, `isoformat` |
-| `launch` | `L112–L169` | `(self, mode: str | None=None...)` | `dict[str, Any]` | Launch or attach persistent Chromium session. | `_handle_response`, `async_playwright`, `callable`, `create_task` |
-| `close` | `L171–L196` | `(self...)` | `dict[str, Any]` | Close browser context and stop Playwright cleanly. | `close`, `get_status`, `stop` |
-| `ensure_authenticated` | `L198–L370` | `(self, phone: str='', password: str=...)` | `dict[str, Any]` | Inspect authentication state on stocknow.com.bd, filling credentials if needed. | `click`, `fill`, `getattr`, `goto` |
-| `get_status` | `L372–L391` | `(self...)` | `dict[str, Any]` | Return structured telemetry for live session status endpoint. | `hasattr`, `is_closed`, `keys`, `len` |
+| `__init__` | `L59–L78` | `(self, profile_directory: Path | str...)` | — | — | `Lock`, `get_safe_profile_dir`, `rstrip` |
+| `_handle_response` | `L80–L111` | `(self, response: Any...)` | `None` | Passively capture JSON responses from stocknow.com.bd. | `debug`, `get`, `getattr`, `isoformat` |
+| `launch` | `L113–L170` | `(self, mode: str | None=None...)` | `dict[str, Any]` | Launch or attach persistent Chromium session. | `_handle_response`, `async_playwright`, `callable`, `create_task` |
+| `close` | `L172–L197` | `(self...)` | `dict[str, Any]` | Close browser context and stop Playwright cleanly. | `close`, `get_status`, `stop` |
+| `ensure_authenticated` | `L199–L370` | `(self, phone: str='', password: str=...)` | `dict[str, Any]` | Inspect authentication state on stocknow.com.bd, filling credentials if needed. | `check`, `click`, `debug`, `discover_portfolio` |
+| `discover_portfolio` | `L372–L438` | `(self...)` | `dict[str, Any]` | Discover 'Humming Bird' portfolio stats and ID from /portfolios. | `debug`, `evaluate`, `get`, `getattr` |
+| `get_status` | `L440–L459` | `(self...)` | `dict[str, Any]` | Return structured telemetry for live session status endpoint. | `hasattr`, `is_closed`, `keys`, `len` |
 
 
 #### Standalone Functions
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `get_safe_profile_dir` | `L24–L42` | `(custom_path: Path | str | None=None...)` | `Path` | Resolve an isolated Playwright profile directory outside OneDrive. | `Path`, `expanduser`, `lower`, `resolve` |
-| `mask_phone` | `L45–L52` | `(phone: str...)` | `str` | Mask phone number for safe display and logging without revealing identity. | `isdigit`, `join`, `len`, `str` |
+| `get_safe_profile_dir` | `L25–L43` | `(custom_path: Path | str | None=None...)` | `Path` | Resolve an isolated Playwright profile directory outside OneDrive. | `Path`, `expanduser`, `lower`, `resolve` |
+| `mask_phone` | `L46–L53` | `(phone: str...)` | `str` | Mask phone number for safe display and logging without revealing identity. | `isdigit`, `join`, `len`, `str` |
 
 
 ---
@@ -145,13 +146,13 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `_parse_positive_decimal` | `L21–L30` | `(val: Any...)` | `Decimal | None` | — | `decimal`, `is_finite`, `replace`, `str` |
-| `_normalize_history_series` | `L33–L48` | `(raw_history: Any, fallback_price: D...)` | `list[dict[str, str]]` | Normalize 7-30 session curve observations into [{"date": "YYYY-MM-DD", "close": "XX.XX"}]. | `_parse_positive_decimal`, `append`, `get`, `isinstance` |
-| `_extract_fundamentals_from_dict` | `L51–L112` | `(item: dict[str, Any]...)` | `dict[str, Any]` | — | `dict`, `float`, `get`, `int` |
-| `extract_quotes_from_payload` | `L115–L193` | `(payload: Any, as_of_date: date | No...)` | `list[dict[str, Any]]` | Extract and normalize quotes from an arbitrary JSON payload. | `_extract_fundamentals_from_dict`, `_normalize_history_series`, `_parse_positive_decimal`, `append` |
-| `extract_quotes_from_stocknow` | `L196–L331` | `(client: Any, injected_payload: Any=...)` | `list[dict[str, Any]]` | Extracts live DSE ticker quotes from sniffer cache, page DOM or injected payload. | `debug`, `evaluate`, `extract_quotes_from_payload`, `get` |
-| `_sync_in_session` | `L334–L422` | `(session: Any, quotes: list[dict[str...)` | `dict[str, Any]` | — | `CompanyProfile`, `CustomRule`, `add`, `append` |
-| `sync_live_market_to_db` | `L425–L434` | `(target: Database | Any, quotes: lis...)` | `dict[str, Any]` | Synchronizes extracted live quotes into SQLite CompanyProfile records. | `_sync_in_session`, `hasattr`, `write` |
+| `_parse_positive_decimal` | `L30–L39` | `(val: Any...)` | `Decimal | None` | — | `decimal`, `is_finite`, `replace`, `str` |
+| `_normalize_history_series` | `L42–L57` | `(raw_history: Any, fallback_price: D...)` | `list[dict[str, str]]` | Normalize 7-30 session curve observations into [{"date": "YYYY-MM-DD", "close": "XX.XX"}]. | `_parse_positive_decimal`, `append`, `get`, `isinstance` |
+| `_extract_fundamentals_from_dict` | `L60–L121` | `(item: dict[str, Any]...)` | `dict[str, Any]` | — | `dict`, `float`, `get`, `int` |
+| `extract_quotes_from_payload` | `L124–L211` | `(payload: Any, as_of_date: date | No...)` | `list[dict[str, Any]]` | Extract and normalize quotes from an arbitrary JSON payload. | `_extract_fundamentals_from_dict`, `_normalize_history_series`, `_parse_positive_decimal`, `append` |
+| `extract_quotes_from_stocknow` | `L214–L361` | `(client: Any, injected_payload: Any=...)` | `list[dict[str, Any]]` | Extracts live DSE ticker quotes from sniffer cache, page DOM or injected payload. | `debug`, `evaluate`, `extract_quotes_from_payload`, `get` |
+| `_sync_in_session` | `L364–L456` | `(session: Any, quotes: list[dict[str...)` | `dict[str, Any]` | — | `CompanyProfile`, `CustomRule`, `add`, `append` |
+| `sync_live_market_to_db` | `L459–L468` | `(target: Database | Any, quotes: lis...)` | `dict[str, Any]` | Synchronizes extracted live quotes into SQLite CompanyProfile records. | `_sync_in_session`, `hasattr`, `write` |
 
 
 ---
@@ -163,7 +164,7 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `clear_idempotency_cache` | `L17–L19` | `(...)` | `None` | Clear in-memory deduplication cache (for testing isolation). | `clear` |
-| `execute_stocknow_virtual_order` | `L22–L122` | `(client: Any | None=None, symbol: st...)` | `dict[str, Any]` | Execute a virtual transaction for 'Humming Bird' portfolio with idempotency. | `Decimal`, `ValueError`, `capitalize`, `click` |
+| `execute_stocknow_virtual_order` | `L22–L202` | `(client: Any | None=None, symbol: st...)` | `dict[str, Any]` | Execute a virtual transaction for 'Humming Bird' portfolio with idempotency. | `Decimal`, `ValueError`, `capitalize`, `click` |
 
 
 ---
@@ -174,11 +175,13 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `_match_portfolio_name` | `L21–L22` | `(name: str...)` | `bool` | — | `lower`, `replace`, `strip` |
-| `_find_portfolio_dict` | `L25–L41` | `(data: Any...)` | `dict[str, Any] | None` | — | `_find_portfolio_dict`, `_match_portfolio_name`, `get`, `isinstance` |
-| `extract_hummingbird_portfolio` | `L44–L86` | `(client: Any | None=None, injected_p...)` | `dict[str, Any]` | Locate and extract 'Humming Bird' virtual portfolio from client or payload. | `Decimal`, `ValueError`, `_find_portfolio_dict`, `append` |
-| `_execute_reconciliation` | `L89–L205` | `(session: Session, settings: Setting...)` | `dict[str, Any]` | — | `CompanyProfile`, `CustomRule`, `Decimal`, `RuntimeError` |
-| `reconcile_portfolio_to_db` | `L208–L215` | `(target: Database | Session, setting...)` | `dict[str, Any]` | Reconcile virtual portfolio holdings and cash balance into SQLite ledger. | `_execute_reconciliation`, `isinstance`, `write` |
+| `parse_stocknow_ledger_date` | `L22–L43` | `(date_str: str...)` | `str` | Parse StockNow DD/MM/YY date string into YYYY-MM-DD ISO date. | `date`, `fromisoformat`, `group`, `int` |
+| `_match_portfolio_name` | `L46–L47` | `(name: str...)` | `bool` | — | `lower`, `replace`, `strip` |
+| `_find_portfolio_dict` | `L50–L66` | `(data: Any...)` | `dict[str, Any] | None` | — | `_find_portfolio_dict`, `_match_portfolio_name`, `get`, `isinstance` |
+| `extract_hummingbird_portfolio` | `L69–L127` | `(client: Any | None=None, injected_p...)` | `dict[str, Any]` | Locate and extract 'Humming Bird' virtual portfolio from client or payload. | `Decimal`, `ValueError`, `_find_portfolio_dict`, `append` |
+| `extract_hummingbird_portfolio_from_browser` | `L130–L232` | `(client: Any...)` | `dict[str, Any]` | Scrapes /portfolios/{id}/show and /portfolios/{id}/ledger from live Playwright session. | `RuntimeError`, `append`, `debug`, `decimal` |
+| `_execute_reconciliation` | `L235–L351` | `(session: Session, settings: Setting...)` | `dict[str, Any]` | — | `CompanyProfile`, `CustomRule`, `Decimal`, `RuntimeError` |
+| `reconcile_portfolio_to_db` | `L354–L361` | `(target: Database | Session, setting...)` | `dict[str, Any]` | Reconcile virtual portfolio holdings and cash balance into SQLite ledger. | `_execute_reconciliation`, `isinstance`, `write` |
 
 
 ---
@@ -320,21 +323,21 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `AutomationPaused` | `L31–L32` | `ValueError` | — | 0 |
-| `AutoTrader` | `L35–L317` | `object` | — | 7 |
+| `AutomationPaused` | `L35–L36` | `ValueError` | — | 0 |
+| `AutoTrader` | `L39–L357` | `object` | — | 7 |
 
 
 **Methods in `AutoTrader`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__init__` | `L36–L40` | `(self, database: Database, settings:...)` | — | — | `StockNowAdapter`, `TradingCalendar` |
-| `run_cycle` | `L42–L46` | `(self, request_id: str | None=None, ...)` | `dict` | — | `_run_cycle_internal`, `write` |
-| `_run_cycle_internal` | `L48–L269` | `(self, session: Session, request_id:...)` | `dict` | — | `AutomationCycle`, `AutomationPaused`, `CycleRequestKey`, `SellState` |
-| `record` | `L84–L92` | `(symbol: str, action: str, reason: s...)` | — | — | `DecisionLog`, `add`, `append` |
-| `buy_priority` | `L179–L185` | `(comp: CompanyProfile...)` | `tuple[int, str]` | — | `getattr` |
-| `_trade_result` | `L272–L278` | `(trade: TradeLog, action: str...)` | `dict` | — | `float` |
-| `advance_demo` | `L280–L317` | `(self, scenario: str...)` | `dict` | — | `Decimal`, `ValueError`, `add_sessions`, `assert_ledger` |
+| `__init__` | `L40–L44` | `(self, database: Database, settings:...)` | — | — | `StockNowAdapter`, `TradingCalendar` |
+| `run_cycle` | `L46–L50` | `(self, request_id: str | None=None, ...)` | `dict` | — | `_run_cycle_internal`, `write` |
+| `_run_cycle_internal` | `L52–L309` | `(self, session: Session, request_id:...)` | `dict` | — | `AutomationCycle`, `AutomationPaused`, `CycleRequestKey`, `Decimal` |
+| `record` | `L88–L96` | `(symbol: str, action: str, reason: s...)` | — | — | `DecisionLog`, `add`, `append` |
+| `buy_priority` | `L201–L207` | `(comp: CompanyProfile...)` | `tuple[int, str]` | — | `getattr` |
+| `_trade_result` | `L312–L318` | `(trade: TradeLog, action: str...)` | `dict` | — | `float` |
+| `advance_demo` | `L320–L357` | `(self, scenario: str...)` | `dict` | — | `Decimal`, `ValueError`, `add_sessions`, `assert_ledger` |
 
 
 ---
@@ -990,8 +993,8 @@ Identified **253** distinct element IDs in the UI shell. Key controller anchors:
 
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
-| `styles.css` | 5191 | Core design tokens, layout & widgets |
-| `theme_light_hermes.css` | 2623 | Daylight overrides & Hermes IDE sidebar |
+| `styles.css` | 5225 | Core design tokens, layout & widgets |
+| `theme_light_hermes.css` | 2640 | Daylight overrides & Hermes IDE sidebar |
 
 
 ### Frontend API Contract Invocations (`frontend/*.js`)
@@ -1012,6 +1015,7 @@ Identified **253** distinct element IDs in the UI shell. Key controller anchors:
 | `/api/hermes/rollback` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
 | `/api/portfolio` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
 | `/api/settings/keys` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
+| `/api/stocknow/execute-order` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
 | `/api/stocknow/session` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
 | `/api/stocknow/sync-market` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
 | `/api/stocknow/sync-portfolio` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
@@ -1040,27 +1044,27 @@ Identified **253** distinct element IDs in the UI shell. Key controller anchors:
 | `renderSnapshot()` | `app.js` | `L200` | Reactive DOM rendering / event controller |
 | `renderEquitySparkline()` | `app.js` | `L250` | Reactive DOM rendering / event controller |
 | `renderActiveHoldings()` | `app.js` | `L264` | Reactive DOM rendering / event controller |
-| `renderBuckets()` | `app.js` | `L360` | Reactive DOM rendering / event controller |
-| `cell()` | `app.js` | `L392` | Reactive DOM rendering / event controller |
-| `selectCompany()` | `app.js` | `L394` | Reactive DOM rendering / event controller |
-| `renderWatchlist()` | `app.js` | `L401` | Reactive DOM rendering / event controller |
-| `renderCanaryTheses()` | `app.js` | `L471` | Reactive DOM rendering / event controller |
-| `renderInspector()` | `app.js` | `L505` | Reactive DOM rendering / event controller |
-| `renderDecisions()` | `app.js` | `L540` | Reactive DOM rendering / event controller |
-| `renderLedger()` | `app.js` | `L580` | Reactive DOM rendering / event controller |
-| `initMarketMapResizeObserver()` | `app.js` | `L719` | Reactive DOM rendering / event controller |
-| `initTheme()` | `app.js` | `L745` | Reactive DOM rendering / event controller |
-| `setTheme()` | `app.js` | `L751` | Reactive DOM rendering / event controller |
-| `toggleTheme()` | `app.js` | `L762` | Reactive DOM rendering / event controller |
-| `tickMarketClock()` | `app.js` | `L768` | Reactive DOM rendering / event controller |
-| `tickClock()` | `app.js` | `L839` | Reactive DOM rendering / event controller |
-| `renderAutomationControlBar()` | `app.js` | `L848` | Reactive DOM rendering / event controller |
-| `setAutomationConfig()` | `app.js` | `L989` | Reactive DOM rendering / event controller |
-| `initRealtimeStream()` | `app.js` | `L1134` | Reactive DOM rendering / event controller |
-| `switchView()` | `app.js` | `L1160` | Reactive DOM rendering / event controller |
-| `initViewRouter()` | `app.js` | `L1211` | Reactive DOM rendering / event controller |
-| `initScrollSpy()` | `app.js` | `L1277` | Reactive DOM rendering / event controller |
-| `updateActiveNav()` | `app.js` | `L1290` | Reactive DOM rendering / event controller |
+| `renderBuckets()` | `app.js` | `L393` | Reactive DOM rendering / event controller |
+| `cell()` | `app.js` | `L425` | Reactive DOM rendering / event controller |
+| `selectCompany()` | `app.js` | `L427` | Reactive DOM rendering / event controller |
+| `renderWatchlist()` | `app.js` | `L434` | Reactive DOM rendering / event controller |
+| `renderCanaryTheses()` | `app.js` | `L504` | Reactive DOM rendering / event controller |
+| `renderInspector()` | `app.js` | `L538` | Reactive DOM rendering / event controller |
+| `renderDecisions()` | `app.js` | `L573` | Reactive DOM rendering / event controller |
+| `renderLedger()` | `app.js` | `L613` | Reactive DOM rendering / event controller |
+| `initMarketMapResizeObserver()` | `app.js` | `L752` | Reactive DOM rendering / event controller |
+| `initTheme()` | `app.js` | `L778` | Reactive DOM rendering / event controller |
+| `setTheme()` | `app.js` | `L784` | Reactive DOM rendering / event controller |
+| `toggleTheme()` | `app.js` | `L795` | Reactive DOM rendering / event controller |
+| `tickMarketClock()` | `app.js` | `L801` | Reactive DOM rendering / event controller |
+| `tickClock()` | `app.js` | `L872` | Reactive DOM rendering / event controller |
+| `renderAutomationControlBar()` | `app.js` | `L881` | Reactive DOM rendering / event controller |
+| `setAutomationConfig()` | `app.js` | `L1022` | Reactive DOM rendering / event controller |
+| `initRealtimeStream()` | `app.js` | `L1167` | Reactive DOM rendering / event controller |
+| `switchView()` | `app.js` | `L1193` | Reactive DOM rendering / event controller |
+| `initViewRouter()` | `app.js` | `L1244` | Reactive DOM rendering / event controller |
+| `initScrollSpy()` | `app.js` | `L1310` | Reactive DOM rendering / event controller |
+| `updateActiveNav()` | `app.js` | `L1323` | Reactive DOM rendering / event controller |
 | `smoothCurvePath()` | `charts.js` | `L8` | Reactive DOM rendering / event controller |
 | `getBezierPointAtContinuousIndex()` | `charts.js` | `L31` | Reactive DOM rendering / event controller |
 | `renderMainChart()` | `charts.js` | `L63` | Reactive DOM rendering / event controller |
@@ -1115,14 +1119,16 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | File | Function / Method | Length (Lines) | Max Nesting Depth | Recommendation |
 | :--- | :--- | :--- | :--- | :--- |
 | `backend/adapters/stocknow_client.py` | `launch` | 58 | 4 | Acceptable; well-scoped logic |
-| `backend/adapters/stocknow_client.py` | `ensure_authenticated` | 173 | 6 | Decompose into sub-functions |
+| `backend/adapters/stocknow_client.py` | `ensure_authenticated` | 172 | 7 | Decompose into sub-functions |
+| `backend/adapters/stocknow_client.py` | `discover_portfolio` | 67 | 5 | Acceptable; well-scoped logic |
 | `backend/adapters/stocknow_market_sync.py` | `_normalize_history_series` | 16 | 6 | Acceptable; well-scoped logic |
-| `backend/adapters/stocknow_market_sync.py` | `extract_quotes_from_payload` | 79 | 6 | Acceptable; well-scoped logic |
-| `backend/adapters/stocknow_market_sync.py` | `extract_quotes_from_stocknow` | 136 | 4 | Decompose into sub-functions |
-| `backend/adapters/stocknow_market_sync.py` | `_sync_in_session` | 89 | 4 | Acceptable; well-scoped logic |
-| `backend/adapters/stocknow_order_executor.py` | `execute_stocknow_virtual_order` | 101 | 5 | Decompose into sub-functions |
+| `backend/adapters/stocknow_market_sync.py` | `extract_quotes_from_payload` | 88 | 6 | Acceptable; well-scoped logic |
+| `backend/adapters/stocknow_market_sync.py` | `extract_quotes_from_stocknow` | 148 | 4 | Decompose into sub-functions |
+| `backend/adapters/stocknow_market_sync.py` | `_sync_in_session` | 93 | 4 | Acceptable; well-scoped logic |
+| `backend/adapters/stocknow_order_executor.py` | `execute_stocknow_virtual_order` | 181 | 6 | Decompose into sub-functions |
 | `backend/adapters/stocknow_portfolio_sync.py` | `_find_portfolio_dict` | 17 | 5 | Acceptable; well-scoped logic |
-| `backend/adapters/stocknow_portfolio_sync.py` | `extract_hummingbird_portfolio` | 43 | 4 | Acceptable; well-scoped logic |
+| `backend/adapters/stocknow_portfolio_sync.py` | `extract_hummingbird_portfolio` | 59 | 6 | Acceptable; well-scoped logic |
+| `backend/adapters/stocknow_portfolio_sync.py` | `extract_hummingbird_portfolio_from_browser` | 103 | 7 | Decompose into sub-functions |
 | `backend/adapters/stocknow_portfolio_sync.py` | `_execute_reconciliation` | 117 | 3 | Decompose into sub-functions |
 | `backend/chat.py` | `match_symbol` | 16 | 4 | Acceptable; well-scoped logic |
 | `backend/chat.py` | `format_canary_updates` | 16 | 4 | Acceptable; well-scoped logic |
@@ -1132,7 +1138,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/engine/agent_actions.py` | `check_canary_theses` | 31 | 4 | Acceptable; well-scoped logic |
 | `backend/engine/agent_actions.py` | `execute_agentic_buy` | 83 | 3 | Acceptable; well-scoped logic |
 | `backend/engine/agent_actions.py` | `execute_agentic_sell` | 101 | 3 | Decompose into sub-functions |
-| `backend/engine/auto_trader.py` | `_run_cycle_internal` | 222 | 4 | Decompose into sub-functions |
+| `backend/engine/auto_trader.py` | `_run_cycle_internal` | 258 | 7 | Decompose into sub-functions |
 | `backend/engine/auto_trader.py` | `advance_demo` | 38 | 5 | Acceptable; well-scoped logic |
 | `backend/engine/curve_analyzer.py` | `analyze_curve` | 82 | 3 | Acceptable; well-scoped logic |
 | `backend/engine/scheduler.py` | `is_dse_market_open` | 44 | 4 | Acceptable; well-scoped logic |
@@ -1183,4 +1189,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 25,482 total LOC indexed.
+> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 26,088 total LOC indexed.

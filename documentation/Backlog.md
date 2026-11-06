@@ -206,6 +206,23 @@
     - Full holdings table with Company, Tier, Qty @ Avg Cost, LTP, Total Cost, Sell Value (Net), Gain/Loss (%), Status/Action, and Total footer row.
   - **Full Test Suite Verification:** 62 passing unit tests covering portfolio migration, ledger reconciliation, tier priority, and Hermes skill matching.
 
+- [x] **Step 2.8: Live Playwright Workflow for /login, /favorites (3 Lists), /show, /ledger, /buy & /sell:**
+  - **Login & Auto-Discovery:**
+    - Live login automation against `https://www.stocknow.com.bd/login?nextUrl=/portfolios` filling mobile `01882082502`, password `Stocknow#909109`, toggling "Remember mobile and password", and clicking Login.
+    - Scrapes `/portfolios` to discover "Humming Bird", extracts balance (`91,236`), sell value (`31,637`), today gain/loss (`-200`), unrealized gain/loss (`1,422`), and binds `bound_portfolio_id = "164580"`.
+  - **3-List Favorites Sync:**
+    - Reads favorites list dropdown on `/favorites`: maps "Giant Stable Companies" -> `GSC`, "GSC Upper Trends L1" -> `GSC_L1`, "GSC Upper Trends L2" -> `GSC_L2`.
+    - Updates each company's `watchlist_category` and live quote telemetry in SQLite.
+  - **Holdings (/show) & Ledger (/ledger) Scraper:**
+    - Parses `/portfolios/164580/show` table for cash `91,236.00` and holding rows (`BANKASIA`, `IBNSINA`, `MATINSPINN`).
+    - Parses `/portfolios/164580/ledger` table with `DD/MM/YY` date parsing (`02/11/26` -> `2026-11-02`) so T+2 maturity is computed from real purchase dates.
+  - **Order Automation with 0.5% Commission:**
+    - Automates `/buy` and `/sell` under Item 1 on `stocknow.com.bd` with default `commission_pct = 0.5%`.
+    - Automatically clears auto-filled quantities on `/sell` to submit exact slice sizes (25% sequential slice or 50% pullback split).
+    - Wired `AutoTrader._run_cycle_internal()` to dispatch every automated Buy and Sequential Tier Sell through `adapter.execute_order` with 0.5% commission.
+    - Wired 1-click 25% slice sell quick action in `#overview` Active Holdings table with locked `No-Loss Hold Guard` on underwater holdings.
+  - **Full Verification:** 67 passing unit tests.
+
 ---
 
 ### 🎛️ Sprint 3: Custom Rule Builder UI, Conversational Control & Telegram Bot
