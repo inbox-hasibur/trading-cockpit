@@ -866,11 +866,32 @@ select {
 }
 
 .bucket-value {
-  font-size: 12px; font-weight: 500; text-align: right; font-variant-numeric: tabular-nums;
+  font-size: 13px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums;
 }
 
-.bucket-value span {
-  display: block; color: var(--dim); font-size: var(--fs-xs, 11px); font-weight: 400; margin-top: 3px;
+.bucket-value span,
+.bucket-caption {
+  display: block; color: var(--muted); font-size: var(--fs-sm, 12px); font-weight: 400; margin-top: 3px;
+}
+
+.bucket-progress-bar {
+  display: flex;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line);
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.bucket-progress-fill.settled {
+  background: var(--green);
+  transition: width 0.3s ease;
+}
+
+.bucket-progress-fill.locked {
+  background: var(--amber);
+  transition: width 0.3s ease;
 }
 
 .panel-note {
@@ -1159,7 +1180,7 @@ input[type=checkbox] {
 }
 
 .decision-entry {
-  padding: 12px 0; border-bottom: 1px solid var(--soft-line);
+  padding: 14px 0; border-bottom: 1px solid var(--soft-line);
 }
 
 .decision-entry:last-child {
@@ -1167,23 +1188,23 @@ input[type=checkbox] {
 }
 
 .decision-top {
-  display: flex; align-items: center; gap: 7px; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
 }
 
 .decision-top strong {
-  font-size: var(--fs-xs, 11px);
+  font-size: var(--fs-md, 13px); font-weight: 700; color: var(--text);
 }
 
 .decision-top time {
-  margin-left: auto; color: var(--dim); font-size: var(--fs-xs, 11px);
+  margin-left: auto; color: var(--dim); font-size: var(--fs-xs, 11px); text-align: right; white-space: nowrap;
 }
 
 .decision-entry p {
-  font-size: var(--fs-xs, 11px); line-height: 1.7; color: #8da0b3;
+  font-size: var(--fs-sm, 12px); line-height: 1.6; color: var(--muted); margin: 0;
 }
 
 .decision-quantity {
-  color: var(--teal); font-size: var(--fs-xs, 11px);
+  color: var(--brand); font-size: var(--fs-xs, 11px); font-weight: 500;
 }
 
 .empty-state {

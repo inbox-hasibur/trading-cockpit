@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 00:32:08 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 00:35:33 UTC**.
 
 ---
 
@@ -9,8 +9,8 @@
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
 | `.py` | 42 | 10,300 | Python Core Kernel, Engine & Hermes Agent |
-| `.css` | 2 | 7,284 | Custom Dark / Light / Terminal Design System |
-| `.js` | 3 | 3,546 | Vanilla ES6+ Reactive Terminal Controller |
+| `.css` | 2 | 7,311 | Custom Dark / Light / Terminal Design System |
+| `.js` | 3 | 3,559 | Vanilla ES6+ Reactive Terminal Controller |
 | `.md` | 11 | 2,267 | Architecture & Strategy Documentation |
 | `.html` | 1 | 871 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
@@ -19,7 +19,7 @@
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **66** | **24,326** | *Entire Humming Bird Repository* |
+| **TOTAL** | **66** | **24,366** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -960,7 +960,7 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 | `.engine-controls` | [`frontend/styles.css`](/frontend/styles.css#L582) | `L582` | `flex` | — | — | — | — |
 | `.session-bar` | [`frontend/styles.css`](/frontend/styles.css#L618) | `L618` | `flex` | — | — | `#0e161f` | `wrap` |
 | `.metric-card` | [`frontend/styles.css`](/frontend/styles.css#L670) | `L670` | — | — | — | `var(--panel)` | — |
-| `.skills-drawer` | [`frontend/styles.css`](/frontend/styles.css#L2187) | `L2187` | — | — | — | `#0c141d` | — |
+| `.skills-drawer` | [`frontend/styles.css`](/frontend/styles.css#L2208) | `L2208` | — | — | — | `#0c141d` | — |
 | `.session-bar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L69) | `L69` | — | — | — | `#ffffff` | — |
 | `.metric-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L95) | `L95` | — | — | — | `#ffffff` | — |
 | `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L487) | `L487` | — | — | — | `#f8fafc !important` | — |
@@ -975,7 +975,7 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 | `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1444) | `L1444` | — | — | `absolute` | `var(--panel)` | — |
 | `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1458) | `L1458` | — | — | — | `#ffffff` | — |
 | `.workspace` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1581) | `L1581` | — | — | — | — | — |
-| `.skills-drawer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1906) | `L1906` | — | — | — | `#ffffff !important` | — |
+| `.skills-drawer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1912) | `L1912` | — | — | — | `#ffffff !important` | — |
 
 
 ### Key DOM Identifiers (`frontend/index.html`)
@@ -989,8 +989,8 @@ Identified **240** distinct element IDs in the UI shell. Key controller anchors:
 
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
-| `styles.css` | 4808 | Core design tokens, layout & widgets |
-| `theme_light_hermes.css` | 2476 | Daylight overrides & Hermes IDE sidebar |
+| `styles.css` | 4829 | Core design tokens, layout & widgets |
+| `theme_light_hermes.css` | 2482 | Daylight overrides & Hermes IDE sidebar |
 
 
 ### Frontend API Contract Invocations (`frontend/*.js`)
@@ -1038,26 +1038,26 @@ Identified **240** distinct element IDs in the UI shell. Key controller anchors:
 | `mutate()` | `app.js` | `L191` | Reactive DOM rendering / event controller |
 | `renderSnapshot()` | `app.js` | `L200` | Reactive DOM rendering / event controller |
 | `renderBuckets()` | `app.js` | `L248` | Reactive DOM rendering / event controller |
-| `cell()` | `app.js` | `L267` | Reactive DOM rendering / event controller |
-| `selectCompany()` | `app.js` | `L269` | Reactive DOM rendering / event controller |
-| `renderWatchlist()` | `app.js` | `L276` | Reactive DOM rendering / event controller |
-| `renderCanaryTheses()` | `app.js` | `L346` | Reactive DOM rendering / event controller |
-| `renderInspector()` | `app.js` | `L380` | Reactive DOM rendering / event controller |
-| `renderDecisions()` | `app.js` | `L415` | Reactive DOM rendering / event controller |
-| `renderLedger()` | `app.js` | `L432` | Reactive DOM rendering / event controller |
-| `initMarketMapResizeObserver()` | `app.js` | `L557` | Reactive DOM rendering / event controller |
-| `initTheme()` | `app.js` | `L583` | Reactive DOM rendering / event controller |
-| `setTheme()` | `app.js` | `L589` | Reactive DOM rendering / event controller |
-| `toggleTheme()` | `app.js` | `L600` | Reactive DOM rendering / event controller |
-| `tickMarketClock()` | `app.js` | `L606` | Reactive DOM rendering / event controller |
-| `tickClock()` | `app.js` | `L677` | Reactive DOM rendering / event controller |
-| `renderAutomationControlBar()` | `app.js` | `L686` | Reactive DOM rendering / event controller |
-| `setAutomationConfig()` | `app.js` | `L822` | Reactive DOM rendering / event controller |
-| `initRealtimeStream()` | `app.js` | `L967` | Reactive DOM rendering / event controller |
-| `switchView()` | `app.js` | `L993` | Reactive DOM rendering / event controller |
-| `initViewRouter()` | `app.js` | `L1044` | Reactive DOM rendering / event controller |
-| `initScrollSpy()` | `app.js` | `L1110` | Reactive DOM rendering / event controller |
-| `updateActiveNav()` | `app.js` | `L1123` | Reactive DOM rendering / event controller |
+| `cell()` | `app.js` | `L280` | Reactive DOM rendering / event controller |
+| `selectCompany()` | `app.js` | `L282` | Reactive DOM rendering / event controller |
+| `renderWatchlist()` | `app.js` | `L289` | Reactive DOM rendering / event controller |
+| `renderCanaryTheses()` | `app.js` | `L359` | Reactive DOM rendering / event controller |
+| `renderInspector()` | `app.js` | `L393` | Reactive DOM rendering / event controller |
+| `renderDecisions()` | `app.js` | `L428` | Reactive DOM rendering / event controller |
+| `renderLedger()` | `app.js` | `L445` | Reactive DOM rendering / event controller |
+| `initMarketMapResizeObserver()` | `app.js` | `L570` | Reactive DOM rendering / event controller |
+| `initTheme()` | `app.js` | `L596` | Reactive DOM rendering / event controller |
+| `setTheme()` | `app.js` | `L602` | Reactive DOM rendering / event controller |
+| `toggleTheme()` | `app.js` | `L613` | Reactive DOM rendering / event controller |
+| `tickMarketClock()` | `app.js` | `L619` | Reactive DOM rendering / event controller |
+| `tickClock()` | `app.js` | `L690` | Reactive DOM rendering / event controller |
+| `renderAutomationControlBar()` | `app.js` | `L699` | Reactive DOM rendering / event controller |
+| `setAutomationConfig()` | `app.js` | `L835` | Reactive DOM rendering / event controller |
+| `initRealtimeStream()` | `app.js` | `L980` | Reactive DOM rendering / event controller |
+| `switchView()` | `app.js` | `L1006` | Reactive DOM rendering / event controller |
+| `initViewRouter()` | `app.js` | `L1057` | Reactive DOM rendering / event controller |
+| `initScrollSpy()` | `app.js` | `L1123` | Reactive DOM rendering / event controller |
+| `updateActiveNav()` | `app.js` | `L1136` | Reactive DOM rendering / event controller |
 | `smoothCurvePath()` | `charts.js` | `L8` | Reactive DOM rendering / event controller |
 | `getBezierPointAtContinuousIndex()` | `charts.js` | `L31` | Reactive DOM rendering / event controller |
 | `renderMainChart()` | `charts.js` | `L63` | Reactive DOM rendering / event controller |
@@ -1179,4 +1179,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 24,326 total LOC indexed.
+> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 24,366 total LOC indexed.

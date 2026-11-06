@@ -166,9 +166,9 @@ Problem: teal is used for brand, active state, primary buttons, positive P/L, BU
 - [x] **4.5. Skeleton placeholders:** for metric cards, tables and charts until the first `/api/portfolio` response, so zeros do not flash.
 
 **Screen 1: Overview**
-- [ ] **4.6. Overview Metric cards styling:** Keep the highlighted Net Liquidation card.
-- [ ] **4.7. Rolling capital progress bar:** per bucket showing locked vs settled share if the data is in the snapshot (do not add backend fields). Caption text 12px.
-- [ ] **4.8. Decision stream hierarchy:** badge next to it, reason line 12px `--muted`, timestamp right aligned and 11px. Increase row padding slightly. Keep the internal scroll.
+- [x] **4.6. Overview Metric cards styling:** Keep the highlighted Net Liquidation card.
+- [x] **4.7. Rolling capital progress bar:** per bucket showing locked vs settled share if the data is in the snapshot (do not add backend fields). Caption text 12px.
+- [x] **4.8. Decision stream hierarchy:** badge next to it, reason line 12px `--muted`, timestamp right aligned and 11px. Increase row padding slightly. Keep the internal scroll.
 
 **Screen 2: Watchlist and Market Map**
 - [ ] **4.9. Watchlist table alignment & sticky header:** Price, Day, Held/Mature, Buy Cap. Left align text. Sticky `thead`. Subtle row hover. Keep the selected row accent. Sparkline colors by direction (Phase 3).

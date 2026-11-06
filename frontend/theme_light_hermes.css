@@ -1791,9 +1791,15 @@ body.is-resizing-hermes .app-shell {
   font-weight: 700 !important;
 }
 
-[data-theme="light"] .bucket-value span {
+[data-theme="light"] .bucket-value span,
+[data-theme="light"] .bucket-caption {
   color: #1e293b !important;
   font-weight: 600 !important;
+  font-size: var(--fs-sm, 12px) !important;
+}
+
+[data-theme="light"] .bucket-progress-bar {
+  background: var(--line) !important;
 }
 
 

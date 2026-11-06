@@ -255,9 +255,22 @@ function renderBuckets() {
     const title = element("div", "bucket-title", `Bucket ${bucket.name}`);
     if (bucket.active) title.append(element("span", "bucket-status", "ACTIVE BUY"));
     details.append(title, element("div", "bucket-meta", `${bucket.mature_shares} mature · ${bucket.locked_shares} locked`));
+
+    const totalCash = (Number(bucket.available_cash) || 0) + (Number(bucket.unsettled_proceeds) || 0);
+    const settledPct = totalCash > 0 ? ((Number(bucket.available_cash) || 0) / totalCash) * 100 : 100;
+    const lockedPct = Math.max(0, 100 - settledPct);
+    const bar = element("div", "bucket-progress-bar");
+    bar.title = `Settled: ${currency(bucket.available_cash)} (${settledPct.toFixed(0)}%) · Unsettled: ${currency(bucket.unsettled_proceeds)} (${lockedPct.toFixed(0)}%)`;
+    const fillSettled = element("div", "bucket-progress-fill settled");
+    fillSettled.style.width = `${settledPct}%`;
+    const fillLocked = element("div", "bucket-progress-fill locked");
+    fillLocked.style.width = `${lockedPct}%`;
+    bar.append(fillSettled, fillLocked);
+    details.append(bar);
+
     left.append(details);
     const value = element("div", "bucket-value", currency(bucket.available_cash));
-    value.append(element("span", "", "SETTLED CASH"));
+    value.append(element("span", "bucket-caption", "SETTLED CASH"));
     card.append(left, value);
     return card;
   });
