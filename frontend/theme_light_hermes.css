@@ -293,10 +293,22 @@
 }
 
 [data-theme="light"] .watchlist-table tbody tr:hover,
-[data-theme="light"] .watchlist-table tbody tr.selected,
 [data-theme="light"] .ledger-table tbody tr:hover,
 [data-theme="light"] .lots-table tbody tr:hover {
   background: #f1f5f9 !important;
+}
+
+[data-theme="light"] .watchlist-table tbody tr.selected {
+  background: #f0fdf4 !important;
+}
+
+[data-theme="light"] .watchlist-table tbody tr.selected td:first-child {
+  box-shadow: inset 3px 0 var(--brand) !important;
+}
+
+[data-theme="light"] .position-stats > div {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
 }
 
 [data-theme="light"] table td,

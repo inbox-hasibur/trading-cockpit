@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 00:35:33 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 00:38:01 UTC**.
 
 ---
 
@@ -9,7 +9,7 @@
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
 | `.py` | 42 | 10,300 | Python Core Kernel, Engine & Hermes Agent |
-| `.css` | 2 | 7,311 | Custom Dark / Light / Terminal Design System |
+| `.css` | 2 | 7,341 | Custom Dark / Light / Terminal Design System |
 | `.js` | 3 | 3,559 | Vanilla ES6+ Reactive Terminal Controller |
 | `.md` | 11 | 2,267 | Architecture & Strategy Documentation |
 | `.html` | 1 | 871 | Single Page Application DOM Structure |
@@ -19,7 +19,7 @@
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **66** | **24,366** | *Entire Humming Bird Repository* |
+| **TOTAL** | **66** | **24,396** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -960,22 +960,22 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 | `.engine-controls` | [`frontend/styles.css`](/frontend/styles.css#L582) | `L582` | `flex` | — | — | — | — |
 | `.session-bar` | [`frontend/styles.css`](/frontend/styles.css#L618) | `L618` | `flex` | — | — | `#0e161f` | `wrap` |
 | `.metric-card` | [`frontend/styles.css`](/frontend/styles.css#L670) | `L670` | — | — | — | `var(--panel)` | — |
-| `.skills-drawer` | [`frontend/styles.css`](/frontend/styles.css#L2208) | `L2208` | — | — | — | `#0c141d` | — |
+| `.skills-drawer` | [`frontend/styles.css`](/frontend/styles.css#L2226) | `L2226` | — | — | — | `#0c141d` | — |
 | `.session-bar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L69) | `L69` | — | — | — | `#ffffff` | — |
 | `.metric-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L95) | `L95` | — | — | — | `#ffffff` | — |
-| `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L487) | `L487` | — | — | — | `#f8fafc !important` | — |
-| `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L545) | `L545` | — | — | — | `#ffffff !important` | — |
-| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L584) | `L584` | — | — | — | `#ffffff !important` | — |
-| `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L772) | `L772` | — | — | — | `#ccfbf1 !important` | — |
-| `.topbar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L834) | `L834` | — | — | — | `rgba(226, 232, 240, 0.92)` | — |
-| `#hermes-resizer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L857) | `L857` | — | — | `absolute` | `transparent` | — |
-| `.app-shell` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L898) | `L898` | — | — | — | — | — |
-| `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1007) | `L1007` | — | — | — | — | — |
-| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1315) | `L1315` | — | — | — | `var(--panel)` | — |
-| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1444) | `L1444` | — | — | `absolute` | `var(--panel)` | — |
-| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1458) | `L1458` | — | — | — | `#ffffff` | — |
-| `.workspace` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1581) | `L1581` | — | — | — | — | — |
-| `.skills-drawer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1912) | `L1912` | — | — | — | `#ffffff !important` | — |
+| `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L499) | `L499` | — | — | — | `#f8fafc !important` | — |
+| `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L557) | `L557` | — | — | — | `#ffffff !important` | — |
+| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L596) | `L596` | — | — | — | `#ffffff !important` | — |
+| `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L784) | `L784` | — | — | — | `#ccfbf1 !important` | — |
+| `.topbar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L846) | `L846` | — | — | — | `rgba(226, 232, 240, 0.92)` | — |
+| `#hermes-resizer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L869) | `L869` | — | — | `absolute` | `transparent` | — |
+| `.app-shell` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L910) | `L910` | — | — | — | — | — |
+| `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1019) | `L1019` | — | — | — | — | — |
+| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1327) | `L1327` | — | — | — | `var(--panel)` | — |
+| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1456) | `L1456` | — | — | `absolute` | `var(--panel)` | — |
+| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1470) | `L1470` | — | — | — | `#ffffff` | — |
+| `.workspace` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1593) | `L1593` | — | — | — | — | — |
+| `.skills-drawer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1924) | `L1924` | — | — | — | `#ffffff !important` | — |
 
 
 ### Key DOM Identifiers (`frontend/index.html`)
@@ -989,8 +989,8 @@ Identified **240** distinct element IDs in the UI shell. Key controller anchors:
 
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
-| `styles.css` | 4829 | Core design tokens, layout & widgets |
-| `theme_light_hermes.css` | 2482 | Daylight overrides & Hermes IDE sidebar |
+| `styles.css` | 4847 | Core design tokens, layout & widgets |
+| `theme_light_hermes.css` | 2494 | Daylight overrides & Hermes IDE sidebar |
 
 
 ### Frontend API Contract Invocations (`frontend/*.js`)
@@ -1179,4 +1179,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 24,366 total LOC indexed.
+> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 24,396 total LOC indexed.

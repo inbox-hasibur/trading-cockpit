@@ -171,9 +171,9 @@ Problem: teal is used for brand, active state, primary buttons, positive P/L, BU
 - [x] **4.8. Decision stream hierarchy:** badge next to it, reason line 12px `--muted`, timestamp right aligned and 11px. Increase row padding slightly. Keep the internal scroll.
 
 **Screen 2: Watchlist and Market Map**
-- [ ] **4.9. Watchlist table alignment & sticky header:** Price, Day, Held/Mature, Buy Cap. Left align text. Sticky `thead`. Subtle row hover. Keep the selected row accent. Sparkline colors by direction (Phase 3).
-- [ ] **4.10. Position Inspector spacing & alignment:** and Position Inspector to 16px. In Position Inspector align the three stat blocks on a grid and right align the lot table numbers.
-- [ ] **4.11. Market map polish (B9):**
+- [x] **4.9. Watchlist table alignment & sticky header:** Price, Day, Held/Mature, Buy Cap. Left align text. Sticky `thead`. Subtle row hover. Keep the selected row accent. Sparkline colors by direction (Phase 3).
+- [x] **4.10. Position Inspector spacing & alignment:** and Position Inspector to 16px. In Position Inspector align the three stat blocks on a grid and right align the lot table numbers.
+- [x] **4.11. Market map polish (B9):**
 
 **Screen 3: Strategy rules and Trade ledger**
 - [ ] **4.12. What-if simulator breakeven marker:** Add a visible breakeven marker at +1.005% on the slider track with a small label. Keep existing calculation.

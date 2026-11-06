@@ -951,8 +951,15 @@ table {
   width: 100%; border-collapse: collapse; text-align: left; font-variant-numeric: tabular-nums;
 }
 
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #0f1721;
+}
+
 th {
-  color: var(--muted); font-weight: 600; font-size: var(--fs-xs, 11px); letter-spacing: .65px; padding: 11px 12px; background: #0f1721; border-top: 1px solid var(--soft-line); border-bottom: 1px solid var(--soft-line); white-space: nowrap;
+  color: var(--muted); font-weight: 600; font-size: var(--fs-xs, 11px); letter-spacing: .65px; padding: 11px 12px; border-top: 1px solid var(--soft-line); border-bottom: 1px solid var(--soft-line); white-space: nowrap;
 }
 
 td {
@@ -979,12 +986,16 @@ tbody tr:last-child td {
   transition: background .15s; cursor: pointer;
 }
 
-.watchlist-table tbody tr:hover, .watchlist-table tbody tr.selected {
-  background: #14242a;
+.watchlist-table tbody tr:hover {
+  background: var(--panel-hover);
+}
+
+.watchlist-table tbody tr.selected {
+  background: rgba(93, 228, 199, 0.08);
 }
 
 .watchlist-table tbody tr.selected td:first-child {
-  box-shadow: inset 2px 0 var(--teal);
+  box-shadow: inset 3px 0 var(--brand);
 }
 
 .company-button {
@@ -1096,15 +1107,22 @@ tbody tr:last-child td {
 }
 
 .position-stats {
-  display: grid; grid-template-columns: repeat(3, 1fr); padding: 0 18px 12px; gap: 10px;
+  display: grid; grid-template-columns: repeat(3, 1fr); padding: 0 16px 14px; gap: 10px;
+}
+
+.position-stats > div {
+  background: var(--panel-hover);
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--soft-line);
 }
 
 .position-stats span {
-  display: block; color: var(--muted); font-size: var(--fs-xs, 11px); margin-bottom: 7px;
+  display: block; color: var(--muted); font-size: var(--fs-xs, 11px); margin-bottom: 6px;
 }
 
 .position-stats strong {
-  font-size: 14px; font-weight: 500;
+  font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums;
 }
 
 .inspector-reason {
