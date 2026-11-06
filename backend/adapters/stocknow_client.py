@@ -11,6 +11,7 @@ import asyncio
 import logging
 import re
 import sys
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
@@ -27,6 +28,22 @@ from backend.hermes.secret_guard import SecretGuard, redact_secrets
 logger = logging.getLogger("hummingbird.stocknow")
 
 DEFAULT_PROFILE_DIR = Path.home() / ".hummingbird_stocknow_profile"
+
+
+def format_exception_str(e: Exception | BaseException) -> str:
+    """Format exception to guarantee non-empty diagnostic message."""
+    s = str(e).strip()
+    return f"{type(e).__name__}: {s}" if s else repr(e)
+
+
+def _create_proactor_loop() -> asyncio.AbstractEventLoop:
+    """Create a new ProactorEventLoop on Windows or standard event loop on POSIX."""
+    if sys.platform == "win32":
+        try:
+            return asyncio.WindowsProactorEventLoopPolicy().new_event_loop()
+        except Exception:
+            return getattr(asyncio, "ProactorEventLoop", asyncio.new_event_loop)()
+    return asyncio.new_event_loop()
 
 
 def get_safe_profile_dir(custom_path: Path | str | None = None) -> Path:
@@ -82,7 +99,53 @@ class StockNowLiveClient:
         self.last_portfolio_sync_at: str | None = None
         self.last_error: str | None = None
         self.captured_endpoints: dict[str, dict[str, Any]] = {}
-        self._lock = asyncio.Lock()
+        self._lock: asyncio.Lock | None = None
+
+        # Dedicated background worker thread with ProactorEventLoop for Windows compatibility
+        self._proactor_loop: asyncio.AbstractEventLoop = _create_proactor_loop()
+        self._worker_thread = threading.Thread(
+            target=self._run_worker_loop,
+            name="StockNowProactorWorker",
+            daemon=True,
+        )
+        self._worker_thread.start()
+
+    def _run_worker_loop(self) -> None:
+        asyncio.set_event_loop(self._proactor_loop)
+        try:
+            self._proactor_loop.run_forever()
+        except Exception as e:
+            logger.debug("Proactor worker loop terminated: %s", format_exception_str(e))
+
+    def _get_lock(self) -> asyncio.Lock:
+        if self._lock is None:
+            self._lock = asyncio.Lock()
+        return self._lock
+
+    async def _run_in_proactor(self, coro: Any) -> Any:
+        """Run a coroutine inside the dedicated proactor event loop thread."""
+        try:
+            current_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            current_loop = None
+
+        if not hasattr(self, "_proactor_loop") or self._proactor_loop is None:
+            return await coro
+
+        if current_loop is self._proactor_loop:
+            return await coro
+
+        if self._proactor_loop.is_closed() or not self._worker_thread.is_alive():
+            self._proactor_loop = _create_proactor_loop()
+            self._worker_thread = threading.Thread(
+                target=self._run_worker_loop,
+                name="StockNowProactorWorker",
+                daemon=True,
+            )
+            self._worker_thread.start()
+
+        future = asyncio.run_coroutine_threadsafe(coro, self._proactor_loop)
+        return await asyncio.wrap_future(future)
 
     async def _handle_response(self, response: Any) -> None:
         """Passively capture JSON responses from stocknow.com.bd."""
@@ -115,11 +178,14 @@ class StockNowLiveClient:
             }
             self.last_sync_at = now_iso
         except Exception as exc:
-            logger.debug("Network sniffer response parsing ignored: %s", exc)
+            logger.debug("Network sniffer response parsing ignored: %s", format_exception_str(exc))
 
     async def launch(self, mode: str | None = None) -> dict[str, Any]:
-        """Launch or attach persistent Chromium session."""
-        async with self._lock:
+        """Launch or attach persistent Chromium session on dedicated Proactor thread."""
+        return await self._run_in_proactor(self._launch_internal(mode=mode))
+
+    async def _launch_internal(self, mode: str | None = None) -> dict[str, Any]:
+        async with self._get_lock():
             self.ingestion_mode = mode or "ONSCREEN_LIVE"
             if self.context is not None:
                 is_closed = getattr(self.context, "is_closed", None)
@@ -167,10 +233,11 @@ class StockNowLiveClient:
                         break
                     except Exception as ch_err:
                         last_launch_err = ch_err
-                        logger.warning("Chromium persistent context launch failed with channel=%s: %s", channel or "bundled", ch_err)
+                        logger.warning("Chromium persistent context launch failed with channel=%s: %s", channel or "bundled", format_exception_str(ch_err))
 
                 if self.context is None:
-                    raise RuntimeError(f"Could not launch browser with bundled Chromium, Chrome, or Edge: {last_launch_err}")
+                    err_msg = format_exception_str(last_launch_err or RuntimeError("No chromium channel could be launched"))
+                    raise RuntimeError(f"Could not launch browser with bundled Chromium, Chrome, or Edge: {err_msg}")
 
                 pages = self.context.pages
                 self.page = pages[0] if pages else await self.context.new_page()
@@ -183,20 +250,24 @@ class StockNowLiveClient:
                     login_url = "https://www.stocknow.com.bd/login?nextUrl=/portfolios"
                     await self.page.goto(login_url, timeout=20000, wait_until="domcontentloaded")
                 except Exception as nav_exc:
-                    logger.debug("Initial navigation to %s completed/timed out: %s", login_url, nav_exc)
+                    logger.debug("Initial navigation to %s completed/timed out: %s", login_url, format_exception_str(nav_exc))
 
                 self.state = "READY"
                 self.last_sync_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
                 return self.get_status()
             except Exception as exc:
                 self.state = "ERROR"
-                self.last_error = str(exc)
-                logger.error("Failed to launch Playwright persistent browser: %s", redact_secrets(str(exc)))
+                err_msg = format_exception_str(exc)
+                self.last_error = err_msg
+                logger.error("Failed to launch Playwright persistent browser: %s", redact_secrets(err_msg))
                 return self.get_status()
 
     async def close(self) -> dict[str, Any]:
         """Close browser context and stop Playwright cleanly."""
-        async with self._lock:
+        return await self._run_in_proactor(self._close_internal())
+
+    async def _close_internal(self) -> dict[str, Any]:
+        async with self._get_lock():
             if self.page:
                 try:
                     await self.page.close()
@@ -226,6 +297,9 @@ class StockNowLiveClient:
 
         Guarantees that credentials are never leaked in logs or error messages.
         """
+        return await self._run_in_proactor(self._ensure_authenticated_internal(phone=phone, password=password))
+
+    async def _ensure_authenticated_internal(self, phone: str = "", password: str = "") -> dict[str, Any]:
         if self.context is None or self.page is None:
             launch_res = await self.launch()
             if self.state == "ERROR" or self.page is None:
@@ -264,7 +338,7 @@ class StockNowLiveClient:
 
             if is_logged_in:
                 self.state = "READY"
-                await self.discover_portfolio()
+                await self._discover_portfolio_internal()
                 p_id = self.bound_portfolio_id or "164580"
                 show_url = f"https://www.stocknow.com.bd/portfolios/{p_id}/show"
                 curr = getattr(self.page, "url", "")
@@ -272,7 +346,7 @@ class StockNowLiveClient:
                     try:
                         await self.page.goto(show_url, timeout=15000, wait_until="domcontentloaded")
                     except Exception as e:
-                        logger.debug("Navigation to %s timed out/warned: %s", show_url, e)
+                        logger.debug("Navigation to %s timed out/warned: %s", show_url, format_exception_str(e))
                 return {
                     "authenticated": True,
                     "state": "READY",
@@ -288,7 +362,7 @@ class StockNowLiveClient:
                     await self.page.goto(login_url, timeout=20000, wait_until="domcontentloaded")
                     await self.page.wait_for_timeout(1000)
                 except Exception as nav_err:
-                    logger.debug("Navigation to %s timed out/warned: %s", login_url, nav_err)
+                    logger.debug("Navigation to %s timed out/warned: %s", login_url, format_exception_str(nav_err))
 
             # Look for phone/password inputs
             phone_input = None
@@ -362,13 +436,13 @@ class StockNowLiveClient:
                         el = await self.page.query_selector(selector)
                         if el:
                             self.state = "READY"
-                            await self.discover_portfolio()
+                            await self._discover_portfolio_internal()
                             p_id = self.bound_portfolio_id or "164580"
                             show_url = f"https://www.stocknow.com.bd/portfolios/{p_id}/show"
                             try:
                                 await self.page.goto(show_url, timeout=15000, wait_until="domcontentloaded")
                             except Exception as e:
-                                logger.debug("Navigation to %s timed out/warned: %s", show_url, e)
+                                logger.debug("Navigation to %s timed out/warned: %s", show_url, format_exception_str(e))
                             return {
                                 "authenticated": True,
                                 "state": "READY",
@@ -380,13 +454,13 @@ class StockNowLiveClient:
                         pass
 
                 # Even if redirect hasn't updated DOM yet, run discovery check
-                await self.discover_portfolio()
+                await self._discover_portfolio_internal()
                 p_id = self.bound_portfolio_id or "164580"
                 show_url = f"https://www.stocknow.com.bd/portfolios/{p_id}/show"
                 try:
                     await self.page.goto(show_url, timeout=15000, wait_until="domcontentloaded")
                 except Exception as e:
-                    logger.debug("Navigation to %s timed out/warned: %s", show_url, e)
+                    logger.debug("Navigation to %s timed out/warned: %s", show_url, format_exception_str(e))
                 self.state = "READY"
                 return {
                     "authenticated": True,
@@ -405,17 +479,21 @@ class StockNowLiveClient:
             }
         except Exception as exc:
             self.state = "ERROR"
-            self.last_error = str(exc)
-            logger.warning("ensure_authenticated encountered error: %s", redact_secrets(str(exc)))
+            err_msg = format_exception_str(exc)
+            self.last_error = err_msg
+            logger.warning("ensure_authenticated encountered error: %s", redact_secrets(err_msg))
             return {
                 "authenticated": False,
                 "state": "ERROR",
-                "reason": redact_secrets(str(exc)),
+                "reason": redact_secrets(err_msg),
                 "phone_masked": masked,
             }
 
     async def discover_portfolio(self) -> dict[str, Any]:
         """Discover 'Humming Bird' portfolio stats and ID from /portfolios."""
+        return await self._run_in_proactor(self._discover_portfolio_internal())
+
+    async def _discover_portfolio_internal(self) -> dict[str, Any]:
         p_id = "164580"
         p_name = "Humming Bird"
         res: dict[str, Any] = {
@@ -441,7 +519,7 @@ class StockNowLiveClient:
                     await self.page.goto("https://www.stocknow.com.bd/portfolios", timeout=15000, wait_until="domcontentloaded")
                     await self.page.wait_for_timeout(1000)
                 except Exception as nav_exc:
-                    logger.debug("Navigation to /portfolios timed out or failed: %s", nav_exc)
+                    logger.debug("Navigation to /portfolios timed out or failed: %s", format_exception_str(nav_exc))
 
             card_info = await self.page.evaluate(r"""() => {
                 const elements = document.querySelectorAll("div, .card, [class*='portfolio']");
@@ -475,7 +553,7 @@ class StockNowLiveClient:
                     if card_info.get(k):
                         res[k] = card_info[k]
         except Exception as exc:
-            logger.debug("discover_portfolio evaluation error: %s", exc)
+            logger.debug("discover_portfolio evaluation error: %s", format_exception_str(exc))
 
         self.bound_portfolio_id = p_id
         self.bound_portfolio_name = p_name

@@ -129,6 +129,13 @@ def extract_hummingbird_portfolio(
 
 async def extract_hummingbird_portfolio_from_browser(client: Any) -> dict[str, Any]:
     """Scrapes /portfolios/{id}/show and /portfolios/{id}/ledger from live Playwright session."""
+    from backend.adapters.stocknow_client import StockNowLiveClient
+    if isinstance(client, StockNowLiveClient) and hasattr(client, "_run_in_proactor"):
+        return await client._run_in_proactor(_extract_hummingbird_portfolio_from_browser_impl(client))
+    return await _extract_hummingbird_portfolio_from_browser_impl(client)
+
+
+async def _extract_hummingbird_portfolio_from_browser_impl(client: Any) -> dict[str, Any]:
     p_id = getattr(client, "bound_portfolio_id", None) or "164580"
     page = getattr(client, "page", None)
     if not page:

@@ -32,6 +32,46 @@ async def execute_stocknow_virtual_order(
     commission_rate: float | None = None,
 ) -> dict[str, Any]:
     """Execute a virtual transaction for 'Humming Bird' portfolio with idempotency."""
+    from backend.adapters.stocknow_client import StockNowLiveClient
+    if client is not None and isinstance(client, StockNowLiveClient) and hasattr(client, "_run_in_proactor"):
+        return await client._run_in_proactor(_execute_stocknow_virtual_order_impl(
+            client=client,
+            symbol=symbol,
+            side=side,
+            quantity=quantity,
+            price=price,
+            portfolio_id=portfolio_id,
+            idempotency_key=idempotency_key,
+            dry_run=dry_run,
+            commission_pct=commission_pct,
+            commission_rate=commission_rate,
+        ))
+    return await _execute_stocknow_virtual_order_impl(
+        client=client,
+        symbol=symbol,
+        side=side,
+        quantity=quantity,
+        price=price,
+        portfolio_id=portfolio_id,
+        idempotency_key=idempotency_key,
+        dry_run=dry_run,
+        commission_pct=commission_pct,
+        commission_rate=commission_rate,
+    )
+
+
+async def _execute_stocknow_virtual_order_impl(
+    client: Any | None = None,
+    symbol: str = "",
+    side: str = "BUY",
+    quantity: int = 0,
+    price: Decimal | float = Decimal("0"),
+    portfolio_id: str | None = None,
+    idempotency_key: str | None = None,
+    dry_run: bool = False,
+    commission_pct: Decimal | float = Decimal("0.5"),
+    commission_rate: float | None = None,
+) -> dict[str, Any]:
     sym = symbol.strip().upper()
     order_side = side.strip().upper()
     qty = int(quantity)

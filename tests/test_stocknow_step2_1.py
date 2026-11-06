@@ -215,3 +215,34 @@ def test_stocknow_session_launch_error_propagation():
             assert data["state"] == "ERROR"
             assert data.get("reason") == "Chromium binary not found"
 
+
+def test_stocknow_launch_inside_selector_event_loop():
+    """Verify launch inside Windows SelectorEventLoop does not raise NotImplementedError."""
+    import sys
+    import tempfile
+
+    async def _run_launch():
+        with tempfile.TemporaryDirectory() as td:
+            client = StockNowLiveClient(profile_directory=td, ingestion_mode="ONSCREEN_LIVE")
+            try:
+                res = await client.launch(mode="ONSCREEN_LIVE")
+                assert res is not None
+                last_err = str(res.get("last_error") or "")
+                reason = str(res.get("reason") or "")
+                assert "NotImplementedError" not in last_err
+                assert "NotImplementedError" not in reason
+                assert res.get("connected") is True or res.get("state") in ("READY", "AUTH_REQUIRED")
+            finally:
+                await client.close()
+
+    if sys.platform == "win32":
+        selector_loop = asyncio.WindowsSelectorEventLoopPolicy().new_event_loop()
+    else:
+        selector_loop = asyncio.new_event_loop()
+
+    asyncio.set_event_loop(selector_loop)
+    try:
+        selector_loop.run_until_complete(_run_launch())
+    finally:
+        selector_loop.close()
+

@@ -213,6 +213,13 @@ def extract_quotes_from_payload(payload: Any, as_of_date: date | None = None) ->
 
 async def extract_quotes_from_stocknow(client: Any, injected_payload: Any = None) -> list[dict[str, Any]]:
     """Extracts live DSE ticker quotes from sniffer cache, page DOM or injected payload."""
+    from backend.adapters.stocknow_client import StockNowLiveClient
+    if isinstance(client, StockNowLiveClient) and hasattr(client, "_run_in_proactor"):
+        return await client._run_in_proactor(_extract_quotes_from_stocknow_impl(client, injected_payload))
+    return await _extract_quotes_from_stocknow_impl(client, injected_payload)
+
+
+async def _extract_quotes_from_stocknow_impl(client: Any, injected_payload: Any = None) -> list[dict[str, Any]]:
     if injected_payload is not None:
         return extract_quotes_from_payload(injected_payload)
 
