@@ -1229,8 +1229,9 @@ body.is-resizing-hermes .app-shell {
 }
 
 [data-theme="light"] .gainer-label {
-  fill: #334155 !important;
-  font-weight: 600;
+  fill: var(--muted, #1e293b) !important;
+  font-size: var(--fs-xs, 11px) !important;
+  font-weight: 600 !important;
 }
 
 [data-theme="light"] .gainer-grid {

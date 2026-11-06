@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 00:05:19 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 00:07:59 UTC**.
 
 ---
 
@@ -9,7 +9,7 @@
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
 | `.py` | 42 | 10,300 | Python Core Kernel, Engine & Hermes Agent |
-| `.css` | 2 | 6,952 | Custom Dark / Light / Terminal Design System |
+| `.css` | 2 | 6,953 | Custom Dark / Light / Terminal Design System |
 | `.js` | 3 | 3,491 | Vanilla ES6+ Reactive Terminal Controller |
 | `.md` | 11 | 2,258 | Architecture & Strategy Documentation |
 | `.html` | 1 | 853 | Single Page Application DOM Structure |
@@ -19,7 +19,7 @@
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.toml` | 1 | 10 | PyProject Configuration |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **66** | **23,912** | *Entire Humming Bird Repository* |
+| **TOTAL** | **66** | **23,913** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -962,11 +962,11 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 | `#hermes-resizer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L819) | `L819` | — | — | `absolute` | `transparent` | — |
 | `.app-shell` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L860) | `L860` | — | — | — | — | — |
 | `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L969) | `L969` | — | — | — | — | — |
-| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1276) | `L1276` | — | — | — | `var(--panel)` | — |
-| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1405) | `L1405` | — | — | `absolute` | `var(--panel)` | — |
-| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1419) | `L1419` | — | — | — | `#ffffff` | — |
-| `.workspace` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1542) | `L1542` | — | — | — | — | — |
-| `.skills-drawer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1833) | `L1833` | — | — | — | `#ffffff !important` | — |
+| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1277) | `L1277` | — | — | — | `var(--panel)` | — |
+| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1406) | `L1406` | — | — | `absolute` | `var(--panel)` | — |
+| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1420) | `L1420` | — | — | — | `#ffffff` | — |
+| `.workspace` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1543) | `L1543` | — | — | — | — | — |
+| `.skills-drawer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1834) | `L1834` | — | — | — | `#ffffff !important` | — |
 
 
 ### Key DOM Identifiers (`frontend/index.html`)
@@ -981,7 +981,7 @@ Identified **234** distinct element IDs in the UI shell. Key controller anchors:
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
 | `styles.css` | 4549 | Core design tokens, layout & widgets |
-| `theme_light_hermes.css` | 2403 | Daylight overrides & Hermes IDE sidebar |
+| `theme_light_hermes.css` | 2404 | Daylight overrides & Hermes IDE sidebar |
 
 
 ### Frontend API Contract Invocations (`frontend/*.js`)
@@ -1170,4 +1170,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 23,912 total LOC indexed.
+> **Audit Summary:** 33 Python modules inspected, 30 FastAPI endpoints registered, 23,913 total LOC indexed.
