@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 13:54:16 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 14:34:42 UTC**.
 
 ---
 
@@ -8,10 +8,10 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 44 | 11,570 | Python Core Kernel, Engine & Hermes Agent |
+| `.py` | 44 | 11,601 | Python Core Kernel, Engine & Hermes Agent |
 | `.css` | 2 | 7,887 | Custom Dark / Light / Terminal Design System |
 | `.js` | 3 | 3,802 | Vanilla ES6+ Reactive Terminal Controller |
-| `.md` | 11 | 2,395 | Architecture & Strategy Documentation |
+| `.md` | 11 | 2,407 | Architecture & Strategy Documentation |
 | `.html` | 1 | 953 | Single Page Application DOM Structure |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
 | `.cursorignore` | 1 | 12 | Configuration / Asset |
@@ -22,7 +22,7 @@
 | `.sh` | 1 | 9 | Configuration / Asset |
 | `.bat` | 1 | 8 | Configuration / Asset |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **71** | **26,694** | *Entire Humming Bird Repository* |
+| **TOTAL** | **71** | **26,737** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -177,7 +177,7 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `clear_idempotency_cache` | `L17–L19` | `(...)` | `None` | Clear in-memory deduplication cache (for testing isolation). | `clear` |
 | `execute_stocknow_virtual_order` | `L22–L60` | `(client: Any | None=None, symbol: st...)` | `dict[str, Any]` | Execute a virtual transaction for 'Humming Bird' portfolio with idempotency. | `Decimal`, `_execute_stocknow_virtual_order_impl`, `_run_in_proactor`, `hasattr` |
-| `_execute_stocknow_virtual_order_impl` | `L63–L242` | `(client: Any | None=None, symbol: st...)` | `dict[str, Any]` | — | `Decimal`, `ValueError`, `capitalize`, `click` |
+| `_execute_stocknow_virtual_order_impl` | `L63–L273` | `(client: Any | None=None, symbol: st...)` | `dict[str, Any]` | — | `Decimal`, `ValueError`, `_ensure_authenticated_internal`, `click` |
 
 
 ---
@@ -1143,7 +1143,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/adapters/stocknow_market_sync.py` | `extract_quotes_from_payload` | 88 | 6 | Acceptable; well-scoped logic |
 | `backend/adapters/stocknow_market_sync.py` | `_extract_quotes_from_stocknow_impl` | 154 | 5 | Decompose into sub-functions |
 | `backend/adapters/stocknow_market_sync.py` | `_sync_in_session` | 93 | 4 | Acceptable; well-scoped logic |
-| `backend/adapters/stocknow_order_executor.py` | `_execute_stocknow_virtual_order_impl` | 180 | 6 | Decompose into sub-functions |
+| `backend/adapters/stocknow_order_executor.py` | `_execute_stocknow_virtual_order_impl` | 211 | 8 | Decompose into sub-functions |
 | `backend/adapters/stocknow_portfolio_sync.py` | `_find_portfolio_dict` | 17 | 5 | Acceptable; well-scoped logic |
 | `backend/adapters/stocknow_portfolio_sync.py` | `extract_hummingbird_portfolio` | 59 | 6 | Acceptable; well-scoped logic |
 | `backend/adapters/stocknow_portfolio_sync.py` | `_extract_hummingbird_portfolio_from_browser_impl` | 123 | 7 | Decompose into sub-functions |
@@ -1207,4 +1207,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 33 Python modules inspected, 31 FastAPI endpoints registered, 26,694 total LOC indexed.
+> **Audit Summary:** 33 Python modules inspected, 31 FastAPI endpoints registered, 26,737 total LOC indexed.
