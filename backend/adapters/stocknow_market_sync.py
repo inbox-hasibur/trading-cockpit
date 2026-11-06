@@ -233,7 +233,14 @@ async def _extract_quotes_from_stocknow_impl(client: Any, injected_payload: Any 
                 return quotes
 
     page = getattr(client, "page", None)
-    if page is not None:
+    if page is not None and not (hasattr(page, "is_closed") and page.is_closed()):
+        curr = getattr(page, "url", "")
+        if "favorites" not in curr:
+            try:
+                await page.goto("https://www.stocknow.com.bd/favorites", timeout=15000, wait_until="domcontentloaded")
+                await page.wait_for_timeout(1500)
+            except Exception as nav_exc:
+                logger.debug("Navigation to /favorites: %s", nav_exc)
         try:
             dom_data = await page.evaluate(r"""() => {
                 const results = [];

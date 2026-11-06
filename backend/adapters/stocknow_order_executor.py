@@ -184,7 +184,7 @@ async def _execute_stocknow_virtual_order_impl(
                     pass
 
             # 2.5 Click Save button
-            save_sel = f"button:has-text('Save'), button:has-text('{order_side.capitalize()}'), button[type='submit']"
+            save_sel = f"ion-button:has-text('Save'), button:has-text('Save'), ion-button:has-text('{order_side.capitalize()}'), button:has-text('{order_side.capitalize()}'), button[type='submit']"
             if hasattr(page, "click"):
                 try:
                     await page.click(save_sel)

@@ -19,6 +19,7 @@ from backend.adapters.stocknow_market_sync import (
 )
 from backend.adapters.stocknow_portfolio_sync import (
     extract_hummingbird_portfolio,
+    extract_hummingbird_portfolio_from_browser,
     reconcile_portfolio_to_db,
 )
 from backend.config import Settings
@@ -130,7 +131,18 @@ def build_stocknow_router(
     @router.post("/sync-portfolio")
     async def post_stocknow_sync_portfolio(body: StockNowPortfolioSyncRequest | None = None):
         injected = body.injected_portfolio if body is not None else None
-        extracted = extract_hummingbird_portfolio(stocknow_client, injected_portfolio=injected)
+        extracted = None
+        if injected is not None:
+            extracted = extract_hummingbird_portfolio(stocknow_client, injected_portfolio=injected)
+        else:
+            has_page = stocknow_client.page is not None and not (hasattr(stocknow_client.page, "is_closed") and stocknow_client.page.is_closed())
+            if has_page:
+                try:
+                    extracted = await extract_hummingbird_portfolio_from_browser(stocknow_client)
+                except Exception as b_err:
+                    logger.debug("Browser portfolio extract fallback: %s", b_err)
+            if not extracted:
+                extracted = extract_hummingbird_portfolio(stocknow_client, injected_portfolio=None)
         result = reconcile_portfolio_to_db(database, settings, extracted)
         if result.get("success"):
             stocknow_client.bound_portfolio_name = extracted.get("portfolio_name", "Humming Bird")
