@@ -2534,3 +2534,43 @@ body.is-resizing-hermes .app-shell {
 [data-theme="light"] .polling-disabled-hint {
   color: #64748b !important;
 }
+
+/* Screen 5: Hermes Chat Typography, Tabs & Fallback (Light Theme) */
+[data-theme="light"] .chat-message.assistant .message-body {
+  color: #1e293b !important;
+  line-height: 1.5 !important;
+}
+
+[data-theme="light"] .response-warning {
+  color: #b45309 !important;
+  background: #fffbeb !important;
+  border-color: #fde68a !important;
+}
+
+[data-theme="light"] .tab-count-badge {
+  background: #e2e8f0 !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+[data-theme="light"] .hermes-tab-btn.active .tab-count-badge {
+  background: #ccfbf1 !important;
+  color: #0f766e !important;
+  border-color: #99f6e4 !important;
+}
+
+[data-theme="light"] .bottom-model-btn {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .bottom-model-btn:hover {
+  background: #e2e8f0 !important;
+  border-color: #0d9488 !important;
+  color: #0f766e !important;
+}
+
+[data-theme="light"] .bottom-model-btn:hover .badge-caret {
+  color: #0d9488 !important;
+}

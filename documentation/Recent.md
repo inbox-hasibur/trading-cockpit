@@ -187,12 +187,12 @@ Problem: teal is used for brand, active state, primary buttons, positive P/L, BU
 - [x] **4.18. StockNow Bridge spinner & toast feedback:** and disabled state while the request is running, then a toast with the result. Make "Sync Humming Bird Portfolio" visually the primary one, others secondary.
 
 **Screen 5: Hermes chat panel**
-- [ ] **4.19. Hermes empty state & chips placement:** merge the orphan "Bangla, Banglish, or English" line into the intro paragraph, remove the large empty gaps, and show the quick action chips directly under the intro while the conversation is empty. Once messages exist, chips return to the composer area.
-- [ ] **4.20. Hermes chips typography:** 6px by 10px padding, keep teal hover.
-- [ ] **4.21. Hermes tab counters contrast:** at least 11px with readable badge contrast.
-- [ ] **4.22. Hermes composer footer model caret:** and hover state so it looks clickable (it opens the drop-up).
-- [ ] **4.23. Hermes message typography:** line-height 1.5, assistant text full width.
-- [ ] **4.24. Hermes fallback notice styling:** subtle amber outline, with the reason (B6).
+- [x] **4.19. Hermes empty state & chips placement:** merge the orphan "Bangla, Banglish, or English" line into the intro paragraph, remove the large empty gaps, and show the quick action chips directly under the intro while the conversation is empty. Once messages exist, chips return to the composer area.
+- [x] **4.20. Hermes chips typography:** 6px by 10px padding, keep teal hover.
+- [x] **4.21. Hermes tab counters contrast:** at least 11px with readable badge contrast.
+- [x] **4.22. Hermes composer footer model caret:** and hover state so it looks clickable (it opens the drop-up).
+- [x] **4.23. Hermes message typography:** line-height 1.5, assistant text full width.
+- [x] **4.24. Hermes fallback notice styling:** subtle amber outline, with the reason (B6).
 
 ---
 

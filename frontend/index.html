@@ -613,21 +613,23 @@
       <!-- Pane 1: Chat Stream -->
       <div class="hermes-pane is-active" id="pane-hermes-chat" role="tabpanel">
         <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation">
-          <article class="chat-message assistant welcome-message">
+          <article class="chat-message assistant welcome-message" id="hermes-welcome-message">
             <div class="message-author"><span class="assistant-avatar">✦</span> HERMES <span class="muted">· ASSISTANT</span></div>
             <div class="message-body">
               <strong>A little context. A measured next move.</strong>
-              <p>I am your human-like share assistant. I can explain holdings, monitor curves, execute crash quarantines with 90% profit-lock + 10% canary probes, and verify your market theses over time.</p>
-              <p>Bangla, Banglish, or English—ask or command away.</p>
+              <p>I am your human-like share assistant. I can explain holdings, monitor curves, execute crash quarantines with 90% profit-lock + 10% canary probes, and verify your market theses over time. Bangla, Banglish, or English - ask or command away.</p>
               <div class="chat-safety-note">Demo Paper Mode: Hermes executes actions on local simulated holdings with strict ledger reconciliation.</div>
+              <div class="welcome-chips-container" id="welcome-chips-slot"></div>
             </div>
           </article>
         </div>
         <div class="chat-bottom">
-          <div class="quick-prompts">
-            <button type="button" data-prompt="Portfolio kemon ache?">Portfolio status <span>↗</span></button>
-            <button type="button" data-prompt="Ajke SQURPHARMA er khoti hoye geche, 1 month e deulia hoye jabe">Alert bankruptcy threat <span>⚡</span></button>
-            <button type="button" data-prompt="SQURPHARMA restore koro">Restore company <span>↺</span></button>
+          <div class="bottom-chips-slot" id="bottom-chips-slot">
+            <div class="quick-prompts" id="chat-quick-prompts">
+              <button type="button" data-prompt="Portfolio kemon ache?">Portfolio status <span>↗</span></button>
+              <button type="button" data-prompt="Ajke SQURPHARMA er khoti hoye geche, 1 month e deulia hoye jabe">Alert bankruptcy threat <span>⚡</span></button>
+              <button type="button" data-prompt="SQURPHARMA restore koro">Restore company <span>↺</span></button>
+            </div>
           </div>
           <div class="provider-status">
             <div class="model-picker-wrap bottom-model-picker">

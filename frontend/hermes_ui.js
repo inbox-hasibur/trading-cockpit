@@ -90,6 +90,26 @@ function formatChatMarkdown(text) {
     .replace(/<\/div><br>/g, "</div>");
 }
 
+function syncQuickPromptsPlacement() {
+  const prompts = $("chat-quick-prompts");
+  const welcomeSlot = $("welcome-chips-slot");
+  const bottomSlot = $("bottom-chips-slot");
+  if (!prompts || !welcomeSlot || !bottomSlot) return;
+
+  const chatContainer = $("chat-messages");
+  const nonWelcomeCount = chatContainer ? chatContainer.querySelectorAll(".chat-message:not(.welcome-message)").length : 0;
+
+  if (nonWelcomeCount > 0) {
+    if (prompts.parentElement !== bottomSlot) {
+      bottomSlot.appendChild(prompts);
+    }
+  } else {
+    if (prompts.parentElement !== welcomeSlot) {
+      welcomeSlot.appendChild(prompts);
+    }
+  }
+}
+
 function addMessage(role, content, provider = null, servedBy = null) {
   const article = element("article", `chat-message ${role}`);
   const author = element("div", "message-author");
@@ -106,6 +126,7 @@ function addMessage(role, content, provider = null, servedBy = null) {
   article.append(author, body);
   $("chat-messages").append(article);
   $("chat-messages").scrollTop = $("chat-messages").scrollHeight;
+  syncQuickPromptsPlacement();
   return article;
 }
 
@@ -187,6 +208,7 @@ async function sendChat(message) {
 function initHermesSidebar() {
   const sidebar = $("hermes-sidebar");
   const resizer = $("hermes-resizer") || $("hermes-resize-handle");
+  syncQuickPromptsPlacement();
   const collapseBtn = $("hermes-collapse-btn");
   const openBtn = $("floating-hermes-open");
   const appShell = document.querySelector(".app-shell");
