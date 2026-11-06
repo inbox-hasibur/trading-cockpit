@@ -2492,3 +2492,40 @@ body.is-resizing-hermes .app-shell {
   border: 0 !important;
   overflow: hidden !important;
 }
+
+/* Screen 3: Strategy Rules & Breakeven Marker (Light Mode) */
+[data-theme="light"] .slider-breakeven-marker .breakeven-line {
+  background: var(--amber, #d97706) !important;
+}
+
+[data-theme="light"] .slider-breakeven-marker .breakeven-label {
+  color: var(--amber, #d97706) !important;
+  background: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .buy-allocation-label {
+  color: #050811 !important;
+}
+
+[data-theme="light"] .input-with-suffix input[type=number] {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .input-with-suffix .input-suffix {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .company-toggle-wrap {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .ledger-table tbody tr:nth-child(even) {
+  background: #f8fafc !important;
+}
+
+[data-theme="light"] .ledger-table tbody tr:hover {
+  background: #f1f5f9 !important;
+}

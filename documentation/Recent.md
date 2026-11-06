@@ -176,9 +176,9 @@ Problem: teal is used for brand, active state, primary buttons, positive P/L, BU
 - [x] **4.11. Market map polish (B9):**
 
 **Screen 3: Strategy rules and Trade ledger**
-- [ ] **4.12. What-if simulator breakeven marker:** Add a visible breakeven marker at +1.005% on the slider track with a small label. Keep existing calculation.
-- [ ] **4.13. Company Rules card layout & toggle:** `%` suffix inside the input, Apply button aligned right, "Automation enabled" checkbox converted to the same toggle component used in Settings. Profit tier chips at least 11px.
-- [ ] **4.14. Trade ledger alignment & sticky header:** PRICE, FEE, NET REALIZED. Net Realized uses green/red by sign, "no value" rows show a muted dash. Sticky header. Zebra striping very subtle (about 2 to 3% lighter) or hover only. SIDE badges per Phase 3.
+- [x] **4.12. What-if simulator breakeven marker:** Add a visible breakeven marker at +1.005% on the slider track with a small label. Keep existing calculation.
+- [x] **4.13. Company Rules card layout & toggle:** `%` suffix inside the input, Apply button aligned right, "Automation enabled" checkbox converted to the same toggle component used in Settings. Profit tier chips at least 11px.
+- [x] **4.14. Trade ledger alignment & sticky header:** PRICE, FEE, NET REALIZED. Net Realized uses green/red by sign, "no value" rows show a muted dash. Sticky header. Zebra striping very subtle (about 2 to 3% lighter) or hover only. SIDE badges per Phase 3.
 
 **Screen 4: Settings**
 - [ ] **4.15. Settings cards equal height & spacing:** and consistent inner spacing (use one spacing unit, 12px between a label and its input, 20px between groups).

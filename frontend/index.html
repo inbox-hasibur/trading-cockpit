@@ -258,7 +258,13 @@
                   <span>Target: <strong id="what-if-target-price">৳20.00</strong></span>
                   <span id="what-if-target-pct" class="positive">+0.00%</span>
                 </div>
-                <input type="range" id="what-if-slider" min="-30" max="40" step="0.5" value="0" aria-label="Price change percentage slider">
+                <div class="slider-track-wrap">
+                  <input type="range" id="what-if-slider" min="-30" max="40" step="0.5" value="0" aria-label="Price change percentage slider">
+                  <div class="slider-breakeven-marker" style="left: 44.29%;" title="Round-trip breakeven (+1.005%)">
+                    <span class="breakeven-line"></span>
+                    <span class="breakeven-label">BE +1.005%</span>
+                  </div>
+                </div>
                 <div class="slider-scale"><span>-30%</span><span>-15%</span><span>0%</span><span>+15%</span><span>+30%</span></div>
               </div>
               <div class="what-if-stats">
@@ -278,7 +284,23 @@
                 <div><h2>Company Rules & Buy Allocation</h2><p>Per-company caps and sequential tier parameters</p></div>
               </div>
               <div class="tier-controls" style="padding: 14px 18px 0;"><span class="muted small">NET PROFIT TIERS</span><div id="profit-tiers" class="tier-list"></div><span class="muted small" id="pullback-setting">3% pullback → 50/50</span></div>
-              <form id="allocation-form" class="allocation-form" style="margin-top: 14px;"><label for="buy-allocation">Buy cap <span class="muted">% of initial capital</span><input type="number" id="buy-allocation" min="0" max="100" step="0.01" required></label><label class="toggle-label"><input id="company-enabled" type="checkbox"><span>Automation enabled</span></label><button type="submit" class="button secondary small-button" id="save-allocation">Apply</button></form>
+              <form id="allocation-form" class="allocation-form" style="margin-top: 14px;">
+                <label for="buy-allocation" class="buy-allocation-label">
+                  <span>Buy cap <span class="muted">% of initial capital</span></span>
+                  <div class="input-with-suffix">
+                    <input type="number" id="buy-allocation" min="0" max="100" step="0.01" required>
+                    <span class="input-suffix">%</span>
+                  </div>
+                </label>
+                <div class="company-toggle-wrap">
+                  <label class="ios-switch" title="Toggle Automation Enabled">
+                    <input id="company-enabled" type="checkbox">
+                    <span class="ios-slider"></span>
+                  </label>
+                  <span>Automation enabled</span>
+                </div>
+                <button type="submit" class="button secondary small-button" id="save-allocation">Apply</button>
+              </form>
               <div class="panel-note" style="margin: 0 18px 14px;">Cap applies to open cost basis, not a new budget on every cycle. Sequential tiers lock gains at +1.5%, +3.5%, and +6.0%.</div>
             </article>
           </div>
@@ -299,7 +321,7 @@
 
           <div class="panel ledger-panel">
             <div class="panel-heading"><div><h2>Trade ledger</h2><p>Realized performance & turnover · demo sessions</p></div><div class="period-tabs" role="group" aria-label="Accounting period"><button class="active" data-period="overall" type="button" aria-pressed="true">Overall</button><button data-period="today" type="button" aria-pressed="false">Today</button><button data-period="weekly" type="button" aria-pressed="false">Week</button><button data-period="monthly" type="button" aria-pressed="false">Month</button><button data-period="yearly" type="button" aria-pressed="false">Year</button></div></div>
-            <div class="period-summary"><div><span>REALIZED NET P/L</span><strong id="period-pnl">—</strong></div><div><span>BUY TURNOVER</span><strong id="period-buy">—</strong></div><div><span>SELL TURNOVER</span><strong id="period-sell">—</strong></div><div><span>EXECUTED TRADES</span><strong id="period-trades">—</strong></div></div>
+            <div class="period-summary"><div><span>REALIZED NET P/L</span><strong id="period-pnl">-</strong></div><div><span>BUY TURNOVER</span><strong id="period-buy">-</strong></div><div><span>SELL TURNOVER</span><strong id="period-sell">-</strong></div><div><span>EXECUTED TRADES</span><strong id="period-trades">-</strong></div></div>
             <div class="table-scroll ledger-scroll"><table class="ledger-table"><thead><tr><th>SESSION</th><th>COMPANY</th><th>SIDE</th><th class="align-right">QTY</th><th class="align-right">PRICE ৳</th><th class="align-right">FEE ৳</th><th class="align-right">NET REALIZED ৳</th><th>BUCKET / SETTLES</th></tr></thead><tbody id="trades-body"></tbody></table></div>
             <div class="panel-note watchlist-note"><span id="ledger-range">Latest 100 trades shown; totals use the complete ledger.</span><span>Sale turnover is not profit.</span></div>
           </div>
@@ -780,7 +802,13 @@
                 <span>Target Price: <strong id="modal-sim-target-price">৳265.00</strong></span>
                 <span id="modal-sim-target-pct" class="positive">+0.00%</span>
               </div>
-              <input type="range" id="modal-sim-slider" min="-30" max="40" step="0.5" value="0" aria-label="Target price slider">
+              <div class="slider-track-wrap">
+                <input type="range" id="modal-sim-slider" min="-30" max="40" step="0.5" value="0" aria-label="Target price slider">
+                <div class="slider-breakeven-marker" style="left: 44.29%;" title="Round-trip breakeven (+1.005%)">
+                  <span class="breakeven-line"></span>
+                  <span class="breakeven-label">BE +1.005%</span>
+                </div>
+              </div>
               <div class="slider-scale"><span>-30%</span><span>-15%</span><span>0%</span><span>+15%</span><span>+30%</span></div>
             </div>
             <div class="what-if-stats">

@@ -460,12 +460,12 @@ function renderLedger() {
     company.append(element("div", "trade-source", trade.source === "DEMO_SEED" ? "DEMO SEED" : "PAPER FILL"));
     const side = cell(); side.append(badge(trade.side));
     const settlement = cell(`${trade.bucket} · ${sessionDate(trade.settles_on, true)}`);
-    row.append(cell(sessionDate(trade.date, true)), company, side, cell(trade.quantity, "align-right"), cell(numberFormat.format(trade.price), "align-right"), cell(numberFormat.format(trade.fee), "align-right"), cell(trade.side === "SELL" ? `${trade.realized_pnl >= 0 ? "+" : ""}${numberFormat.format(trade.realized_pnl)}` : "—", `align-right ${trade.side === "SELL" ? (trade.realized_pnl >= 0 ? "positive" : "negative") : "muted"}`), settlement);
+    row.append(cell(sessionDate(trade.date, true)), company, side, cell(trade.quantity, "align-right"), cell(numberFormat.format(trade.price), "align-right"), cell(numberFormat.format(trade.fee), "align-right"), cell(trade.side === "SELL" ? `${trade.realized_pnl >= 0 ? "+" : ""}${numberFormat.format(trade.realized_pnl)}` : "-", `align-right ${trade.side === "SELL" ? (trade.realized_pnl >= 0 ? "positive" : "negative") : "muted"}`), settlement);
     return row;
   });
   if (!rows.length) { const row = element("tr"); const td = cell("No trades in this accounting period.", "loading-cell"); td.colSpan = 8; row.append(td); rows.push(row); }
   $("trades-body").replaceChildren(...rows);
-  setText("ledger-range", `${sessionDate(period.start, true)} – ${sessionDate(period.end, true)} · Latest 100 records shown; totals use full ledger.`);
+  setText("ledger-range", `${sessionDate(period.start, true)} - ${sessionDate(period.end, true)} · Latest 100 records shown; totals use full ledger.`);
 }
 
 $("run-cycle").addEventListener("click", () => mutate(async () => {

@@ -1166,19 +1166,31 @@ tbody tr:last-child td {
 }
 
 .allocation-form {
-  display: flex; align-items: end; gap: 12px; margin: 0 18px 14px; border: 1px solid #283644; padding: 10px; border-radius: 6px; background: #111c26;
+  display: flex; align-items: center; gap: 14px; margin: 0 18px 14px; border: 1px solid #283644; padding: 10px 14px; border-radius: 6px; background: #111c26;
 }
 
-.allocation-form > label:first-child {
-  color: #bcc9d7; font-size: var(--fs-xs, 11px);
+.buy-allocation-label {
+  display: flex; flex-direction: column; gap: 4px; color: #bcc9d7; font-size: var(--fs-xs, 11px);
 }
 
-.allocation-form > label:first-child > span {
-  font-size: var(--fs-xs, 11px); margin-left: 4px;
+.input-with-suffix {
+  position: relative; display: inline-flex; align-items: center; width: 92px;
 }
 
-.allocation-form input[type=number] {
-  display: block; width: 85px; height: 28px; border: 1px solid #344556; border-radius: 4px; background: #0e1721; color: var(--text); margin-top: 7px; padding: 4px 7px; font-size: var(--fs-xs, 11px);
+.input-with-suffix input[type=number] {
+  display: block; width: 100% !important; height: 28px; border: 1px solid #344556; border-radius: 4px; background: #0e1721; color: var(--text); margin-top: 0 !important; padding: 4px 22px 4px 7px !important; font-size: var(--fs-xs, 11px); font-variant-numeric: tabular-nums;
+}
+
+.input-with-suffix .input-suffix {
+  position: absolute; right: 7px; color: var(--muted, #9aabbd); font-size: var(--fs-xs, 11px); font-weight: 600; pointer-events: none;
+}
+
+.company-toggle-wrap {
+  display: inline-flex; align-items: center; gap: 8px; color: var(--text); font-size: var(--fs-xs, 11px); cursor: pointer; user-select: none;
+}
+
+.allocation-form .small-button {
+  margin-left: auto;
 }
 
 .toggle-label {
@@ -1298,6 +1310,14 @@ input[type=checkbox] {
 
 .ledger-table td {
   font-size: var(--fs-xs, 11px); padding-top: 11px; padding-bottom: 11px;
+}
+
+.ledger-table tbody tr:nth-child(even) {
+  background: rgba(148, 163, 184, 0.025);
+}
+
+.ledger-table tbody tr:hover {
+  background: rgba(148, 163, 184, 0.05);
 }
 
 .ledger-scroll {
@@ -2797,6 +2817,64 @@ input[type=checkbox] {
 .slider-labels strong {
   font-size: 12px;
   color: var(--text);
+}
+
+.slider-track-wrap {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  height: 22px;
+  margin: 4px 0 2px;
+}
+
+.slider-track-wrap input[type="range"] {
+  width: 100%;
+  accent-color: var(--teal);
+  cursor: pointer;
+  height: 5px;
+  background: var(--line);
+  border-radius: 3px;
+  outline: none;
+  position: relative;
+  z-index: 2;
+  margin: 0;
+}
+
+.slider-breakeven-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.slider-breakeven-marker .breakeven-line {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  width: 2px;
+  background: var(--amber, #f59e0b);
+  border-radius: 1px;
+  transform: translateX(-50%);
+  opacity: 0.95;
+}
+
+.slider-breakeven-marker .breakeven-label {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--amber, #f59e0b);
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+  font-variant-numeric: tabular-nums;
+  background: #101822;
+  padding: 0 4px;
+  border-radius: 2px;
 }
 
 .what-if-slider-box input[type="range"] {
