@@ -284,82 +284,74 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
 +-------------------------------------------------------------------------------------------------------+
 |                                 SQLITE TRANSACTIONAL LEDGER (WAL MODE)                                 |
 |  - PortfolioState & Automation Config     - CustomRule & CompanyProfile     - TaxLots (T0, T1, T2)   |
-|  - TradeLog & Financial Ledgers           - CanaryHypothesis Theses         - HermesStateCheckpoints |
-|  - HermesSessionMemory & Threads          - HermesSkillRevisions            - HermesDurableFacts     |
+|  - TradeLog & Financial Ledgers           - CanaryThesis Observation Theses - KernelStateCheckpoints |
+|  - KernelAuditLogs & RuleAudits           - ChatBudget Quota Tracker        - DecisionLogs           |
 +-------------------------------------------------------------------------------------------------------+
 ```
 
 ---
 
-## 6. Hermes 3-Tier Brain Architecture & Gemini Multi-Key Rotation
+## 6. Official Hermes Runtime Integration & Streaming SSE Bridge
 
-Hermes operates on a resilient 3-Tier AI model execution architecture designed for zero disruption, sub-second latency, and automatic quota rollback:
+Humming Bird uses the official **Nous Research Hermes Agent** (`hermes-agent`) as its autonomous intelligence layer, keeping the local repository dedicated strictly to the trading kernel, StockNow adapters, and Cockpit UI.
 
-### 3-Tier Execution Hierarchy
-1. **Tier 1 — Primary Reasoning Brain (OpenRouter):**
-   - High-precision reasoning and quantitative market analysis.
-   - Catalog:
-     - `xiaomi/mimo-v2.6-pro` (*Xiaomi MiMo-v2.6-Pro — Primary Brain default*)
-     - `xiaomi/mimo-v2.6-flash` (*Xiaomi MiMo-v2.6-Flash — Ultra Fast*)
-     - `deepseek/deepseek-chat` (*DeepSeek V3 / 4.1 Flash — Deep Reasoning*)
-     - `deepseek/deepseek-r1` (*DeepSeek R1 — Reasoning / Math*)
-     - `meta-llama/llama-3.3-70b-instruct` (*Llama 3.3 70B — High Precision*)
-     - `anthropic/claude-3.5-sonnet` (*Claude 3.5 Sonnet — Elite Quant*)
-2. **Tier 2 — 1st Fallback & Direct Execution (Google Gemini API):**
-   - Instant failover when OpenRouter fails, experiences rate limits, or has exhausted credits.
-   - Can also be directly selected as the Primary Brain for $0 external API cost.
-   - Tested & verified Gemini 3.x models:
-     - `google/gemini-3.1-flash-lite` (*Fastest response, ~1.5s, fluent Banglish & English*)
-     - `google/gemini-3.5-flash` (*Balanced deep analysis & stability*)
-     - `google/gemini-3.8-flash` (*Latest preview capabilities*)
-     - `google/gemini-3.7-flash` (*Hybrid reasoning*)
-3. **Tier 3 — 2nd Fallback (Local Deterministic Quant Brain):**
-   - Always available, $0 offline fallback generating rule-based portfolio summaries and deterministic trade advice directly from SQLite state.
-
-### Multi-Key Gemini Rotation & 429 Rollback
-- Operators can configure multiple Gemini API keys (comma-separated in `GEMINI_API_KEY` or `GEMINI_API_KEYS`, e.g. `key1, key2, key3`).
-- If an active key returns HTTP 429 (Resource Exhausted / Quota Limit), 403, 503, or connection timeout, Hermes automatically logs a warning and rolls back / rotates immediately to the next configured key without interrupting the operator.
-- Settings page API key viewer displays masked active key status (e.g. `AIza...1234, AIza...5678 (2 keys active)`).
-
-### Seamless Model Switching
-- **Conversational Chat Command:** `/model <name>` supports full model IDs as well as colloquial aliases (`/model mimov2.6 pro`, `/model deepseek 4.1 flash`, `/model gemini lite`, `/model local`).
-- **UI Bottom Drop-Up Menu:** Dedicated `#hermes-model-trigger` with active provider indicator (`OPENROUTER ·`, `GEMINI ·`, `LOCAL ·`) and transparent `<select id="hermes-quick-model-select">` overlay for 100% bug-free native browser selection across all 12 models.
-- **Settings View Selector:** `#settings-model-select` dropdown with synchronized fallback chain status badges.
-- Every model switch automatically records a state checkpoint for 1-click `/rollback`.
+### Integration Path & SSE Chat Bridge (`backend/hermes_bridge.py`)
+- **Gateway Server or Streaming CLI:** The Cockpit connects via `backend/hermes_bridge.py` directly to the running Hermes runtime. If the Hermes Gateway API server (`http://127.0.0.1:8642/v1/chat/completions`) is active, requests stream over standard OpenAI-compatible SSE; otherwise, the bridge transparently invokes `hermes chat --format stream-json --yolo` with `--in` bound to the workspace root.
+- **Granular Streaming Events:** Emits standard Server-Sent Events (`tool_use`, `tool_result`, `text`, `done`, `error`) directly to the web UI.
+- **Tool-Call Inspection Cards:** The Cockpit chat interface dynamically renders interactive collapsible cards showing the tool name, JSON input arguments, running/done status badge, and execution output.
+- **Provider & Model Configuration:** Model selection and API keys are managed exclusively in Hermes' native runtime configuration (`~/.hermes/config.yaml`), completely isolated from repository source code. The active model (`gemini-3.1-flash-lite`, `mimo-v2.6-pro`, etc.) is read dynamically by `GET /api/hermes/bridge/state` and displayed in the sidebar badge.
 
 ---
 
-## 7. Hermes OS Vendor Architecture & Agent-Curated Memory (`backend/hermes_os/`)
+## 7. Humming Bird Plugin & Trading Kernel API (`plugins/humming_bird/` & `backend/kernel_api.py`)
 
-Adapted from the official **Nous Research `hermes-agent`** architecture (`NousResearch/hermes-agent`), customized for DSE trading:
+Trading logic and market execution are exposed to Hermes via an official standalone plugin and an isolated local kernel service.
 
-1. **Isolated Runtime State (`backend/data/.hermes/`):**
-   - Protected by `SecretGuard` to prevent token/credential leaks.
-   - `config.yaml`: Provider-agnostic model routing with OpenRouter, Google Gemini multi-key rotation, and local fallbacks.
-   - `USER.md`: Agent-curated operator profile, automatically patched as Hermes learns Hasibur's preferences, risk appetite, and trading directives.
-   - `MEMORY.md`: Working market context and thesis scratchpad, automatically curated and compressed across turns so token usage stays tiny.
-   - `skills/`: Versioned procedural skills (`SKILL_*.md`) loaded on-demand based on prompt triggers.
-2. **SQLite FTS5 Full-Text Session Search (`memory_curator.py`):**
-   - True full-text BM25 search over past session transcripts (`hermes_fts` virtual table).
-3. **Closed Learning Loop & Auto-Skill Generation (`skill_learner.py`):**
-   - When Hermes executes a multi-step task and succeeds after discovering a reusable procedural methodology, it automatically compiles or patches an executable `SKILL_<name>.md` with YAML frontmatter, execution steps, and pitfalls.
-4. **Structured DSE Toolsets (`toolsets.py`):**
-   - `stocknow_browser_toolset`: `launch_browser`, `login_stocknow`, `sync_favorites_3_lists`, `sync_all_dse_shares`, `sync_portfolio_164580`, `execute_live_order`.
-   - `quant_strategy_toolset`: `inspect_curve_and_support`, `trigger_canary_90_10_quarantine`, `evaluate_canary_outcomes`, `restore_quarantine`, `set_watchlist_tier`, `update_buy_allocation`.
-   - `memory_and_skill_toolset`: `curate_memory_md`, `curate_user_md`, `session_search_fts5`, `create_or_patch_skill`, `rollback_checkpoint`.
-   - `cron_scheduler_toolset`: `schedule_cron_task`, `list_or_remove_cron_tasks`.
+### Humming Bird Plugin (`plugins/humming_bird/`)
+Following the official Hermes Agent plugin architecture (`plugin.yaml`, `__init__.py` with `register(ctx)`, `tools.py`, `schemas.py`):
+1. **Read-Only Tools:**
+   - `hb_portfolio`: Returns cash, gross equity, net liquidation value, unrealized P/L, and holding summaries.
+   - `hb_watchlist`: Inspects companies filtered by tier (`GSC`, `GSC_L1`, `GSC_L2`).
+   - `hb_inspect_curve`: Calculates 7–30 day trend slope, support levels, resistance, and swing bounds.
+   - `hb_market_open`: Checks DSE market hours, holidays, and trading day status.
+   - `hb_canaries`: Returns active 90/10 canary probe theses and price observations.
+   - `hb_lots`: Inspects individual tax lots across settlement buckets (A, B, C) and T+2 maturity.
+2. **Write & Order Tools:**
+   - `hb_set_tier`: Promotes or demotes symbols between `GSC`, `GSC_L1`, and `GSC_L2`.
+   - `hb_set_allocation`: Updates per-symbol buy allocation percentages (capped at 100% total).
+   - `hb_quarantine_canary`: Initiates 90/10 emergency profit lock with canary probe on insolvency threats.
+   - `hb_restore_quarantine`: Releases a stock from quarantine back into active watchlist rotation.
+   - `hb_sync`: Synchronizes live market prices, favorites, or portfolio #164580 holdings from StockNow.
+   - `hb_place_order`: Places virtual orders with `dry_run=true` by default, requiring explicit user confirmation before submitting, and validating DSE market hours.
+   - `hb_rollback_last`: Reverts the last state checkpoint atomically.
+3. **Official Procedural Skills (`plugins/humming_bird/skills/`):**
+   - Encoded as `<name>/SKILL.md` with official `agentskills` YAML frontmatter and registered via `ctx.register_skill`:
+     - `canary_90_10`: Emergency threat response and 90/10 split execution.
+     - `gsc_tiers`: 3-tier GSC watchlist rules and turnaround priority.
+     - `sequential_no_regret`: Multi-tier profit locking, 50/50 pullback split, and T+2 rolling ledger.
+     - `stocknow_dse_quirks`: Virtual portfolio #164580 constraints, latency nuances, and market session rules.
+
+### Deterministic Trading Kernel API (`backend/kernel_api.py`)
+- **Isolation:** Bound strictly to `127.0.0.1` and protected by `X-Kernel-Token` matching `KERNEL_TOKEN` from the environment.
+- **Zero Agent Imports:** Contains no LLM, agent, prompt, or external network code.
+- **Audit & Atomic Checkpoints:** Every state mutation takes a `KernelStateCheckpoint` snapshot and writes a structured `KernelAuditLog` entry before modifying state.
+- **Strict Invariants:** Enforces T+2 maturity, strict no-loss (>= +1.005% gross hurdle after round-trip 1% commission), and target portfolio #164580 constraint.
 
 ---
 
-## 8. Natural-Language Cron Scheduler & Watchdog Manager (`cron_manager.py`)
+## 8. Real Hermes Cron Scheduler & Memory Subsystem
 
-Operators can schedule recurring autonomous tasks via natural Bangla, Banglish, or English chat in Hermes or via the Cockpit Skills drawer:
+Autonomous schedules and long-term memory leverage Hermes' native capabilities rather than custom imitation code:
 
-- **Supported Expressions:**
-  - *"Protidin sokal 10 tay StockNow sync kore L1 list check koro"* $\rightarrow$ `0 10 * * 0-4` (DSE trading days Sun-Thu at 10:00 AM).
-  - *"Every 5 minutes during market hours sync portfolio and check canary theses"* $\rightarrow$ `*/5 10-14 * * 0-4`.
-  - *"Protidin dupur 12 tay all dse shares sync koro"* $\rightarrow$ `0 12 * * 0-4`.
-  - *"Every day at 11:30 am inspect curve for BANKASIA"* $\rightarrow$ `30 11 * * 0-4`.
-- **Database Model:** `HermesCronJob` in `backend/database.py` tracking schedule expression, execution status, last result, and next run time.
-- **Engine Tick Integration:** Automatically evaluated on every `DSEMarketScheduler` tick.
-- **Cockpit Skills Drawer Inspector:** Displays active skills, curated `USER.md` / `MEMORY.md` summaries, and scheduled cron jobs with 1-click Delete (🗑) / Pause-Resume toggles.
+### Hermes Native Cron (`~/.hermes/cron/jobs.json`)
+Scheduled autonomous tasks run via Hermes' native cron engine with timezone `Asia/Dhaka`:
+- **10:00 AM Sun–Thu (`0 10 * * 0-4`):** Morning favorites sync and GSC_L1 turnaround list review (`morning_open_sync_l1`).
+- **Every 5 min 10:00–14:30 Sun–Thu (`*/5 10-14 * * 0-4`):** Active session portfolio sync and canary thesis evaluation (`market_hours_portfolio_canaries`).
+- **12:00 PM Sun–Thu (`0 12 * * 0-4`):** Midday all-shares market quote sync (`midday_all_shares_sync`).
+- **Pre-Execution Hours Gate:** Each job prompt begins by calling `hb_market_open` and halts immediately if the DSE market is closed (weekends, holidays).
+- **Cockpit Management:** The Cockpit Skills drawer inspects `GET /api/hermes/bridge/state` and allows the operator to Pause, Resume, or Delete scheduled jobs via Hermes CLI commands.
+
+### Memory & Learning Subsystem
+- **`USER.md`:** Operator identity (Hasibur Rahman), DSE preferences, Banglish language style, strict no-loss posture, and custom directives managed in Hermes' memory directory.
+- **`MEMORY.md`:** Working market observations and thesis notes maintained directly by Hermes.
+- **Procedural Learning:** Newly learned rules and methodologies discovered by Hermes are created and evolved directly as official skills under Hermes' native skills directory.

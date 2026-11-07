@@ -90,22 +90,20 @@
     - Implemented continuous pixel-level hover interpolation so crosshairs glide smoothly with pixel precision without discrete session hopping.
   - **Rebuilt Hermes `[Changes]` Tab as System & Rule Diff Review:**
     - Replaced raw git files list with visual GitHub/IDE-style structured Before vs. After diff cards (`.diff-card`) featuring red deleted lines (`[-] Previous`) and green added lines (`[+] Updated`), actor badges, timestamps, and 1-click `/rollback`.
-  - **3-Tier AI Brain Switcher (`/model`) in Hermes Header & Settings:**
-    - **Tier 1:** User-selected OpenRouter model (e.g. `xiaomi/mimo-v2-flash`, `deepseek/deepseek-chat`, `meta-llama/llama-3.3-70b-instruct`, `anthropic/claude-3.5-sonnet`, `google/gemini-2.0-flash-001`). Switchable via `/model <name>` in chat or UI dropdown picker in header & settings.
-    - **Tier 2:** 1st Fallback — Free Google Gemini API (`google/gemini-2.5-flash`).
-    - **Tier 3:** 2nd Fallback — Deterministic Local Quant Brain ($0 offline).
-    - API endpoints: `GET /api/hermes/models` and `POST /api/hermes/model`.
-    - Integrated transparent native `<select id="hermes-quick-model-select">` overlay over `#hermes-model-trigger` for 100% reliable, zero-bug model switching in all desktop & mobile browsers across all 12 models.
-  - **Hermes OS Architecture Integration (`backend/hermes_os/`):**
-    - Adopted official Nous Research `hermes-agent` vendor architecture.
-    - Curated disk memory: `USER.md` (operator preferences) & `MEMORY.md` (market working context) with automatic compression (>50% -> 20%).
-    - SQLite FTS5 BM25 session search (`hermes_fts`) across all past conversations.
-    - Closed learning loop (`skill_learner.py`): automatically creates versioned `SKILL_<name>.md` upon discovering procedural breakthroughs.
-    - Full DSE toolsets: `stocknow_browser_toolset`, `quant_strategy_toolset`, `memory_and_skill_toolset`, `cron_scheduler_toolset`.
-  - **Natural-Language Cron Scheduler & Watchdog Manager (`cron_manager.py`):**
-    - Persistent SQLite `HermesCronJob` model supporting recurring autonomous jobs via natural Bangla, Banglish, or English.
-    - Integrated with `DSEMarketScheduler` tick engine.
-    - Cockpit Skills Drawer Inspector (`#pane-hermes-skills`): displays active skills, curated `USER.md` / `MEMORY.md` summaries, and scheduled cron jobs with 1-click Delete (🗑) / Pause-Resume toggles and "+ Schedule Cron" button.
+  - **Real Hermes Agent Integration & Streaming SSE Bridge (`backend/hermes_bridge.py`):**
+    - Official Nous Research `hermes-agent` integrated as the standalone brain, keeping the local repo dedicated strictly to trading kernel and Cockpit UI.
+    - Thin SSE streaming bridge (`backend/hermes_bridge.py`) proxying chat to Hermes Gateway API server (`/v1/chat/completions`) or fallback to `hermes chat --format stream-json --yolo`.
+    - Real-time tool-call cards rendered in chat with tool names, input arguments, running/done status badges, and collapsible execution output.
+    - Active model read directly from Hermes' native configuration (`~/.hermes/config.yaml`).
+  - **Humming Bird Plugin & Trading Kernel API (`plugins/humming_bird/` & `backend/kernel_api.py`):**
+    - Official plugin format (`plugin.yaml`, `__init__.py` with `register(ctx)`, `schemas.py`, `tools.py`).
+    - Read tools (`hb_portfolio`, `hb_watchlist`, `hb_inspect_curve`, `hb_market_open`, `hb_canaries`, `hb_lots`) and Write tools (`hb_set_tier`, `hb_set_allocation`, `hb_quarantine_canary`, `hb_restore_quarantine`, `hb_sync`, `hb_place_order`, `hb_rollback_last`).
+    - Clean localhost-only (`127.0.0.1`) Trading Kernel API with `X-Kernel-Token` security, `KernelStateCheckpoint` snapshots, and `KernelAuditLog` tracking before mutations.
+    - Procedural skills migrated to official format under `plugins/humming_bird/skills/<name>/SKILL.md` (`canary_90_10`, `gsc_tiers`, `sequential_no_regret`, `stocknow_dse_quirks`).
+  - **Native Hermes Cron Scheduler (`~/.hermes/cron/jobs.json`):**
+    - Recurring autonomous jobs scheduled with timezone `Asia/Dhaka`: morning favorites sync (`0 10 * * 0-4`), market-hours portfolio & canary check (`*/5 10-14 * * 0-4`), and midday all-shares sync (`0 12 * * 0-4`).
+    - Every prompt performs pre-execution market hour verification via `hb_market_open` to cleanly stop on weekends and holidays.
+    - Cockpit Skills drawer surfaces live Hermes skills, `USER.md` / `MEMORY.md` previews, and interactive Pause / Resume / Delete buttons executing Hermes cron commands.
   - **All DSE Shares Live Market Board:**
     - Live sync and scraping of the full 470+ DSE shares catalog (`/api/stocknow/all-shares`).
     - Dedicated "All DSE Shares" tab in `#watchlist` with instant search, category badges, LTP, +/- %, and sparkline price curves.
@@ -145,7 +143,6 @@
   - Modular sync engine (`backend/adapters/stocknow_market_sync.py`) extracting quotes and historical curves from sniffer cache or active DOM.
   - SQLite database sync (`sync_live_market_to_db`) updating `CompanyProfile` rows, reconciling curve observations, and activating `"STOCKNOW_LIVE"` source tag.
   - REST endpoint `POST /api/stocknow/sync-market` with SSE portfolio refresh broadcast.
-  - Hermes agentic tool `control_stocknow_session` with natural language Bangla/English command execution (*"Launch StockNow browser"*, *"StockNow login check koro"*, *"Sync live market prices"*).
   - UI action buttons in `#settings` StockNow Bridge card (`Launch Live Browser`, `Check / Auto-Login`, `Sync Live Prices`).
 - [x] **Step 2.3: "Humming Bird" Virtual Portfolio & Holdings Sync:**
   - Automatically bind to the operator's **"Humming Bird"** virtual portfolio on StockNow (`extract_hummingbird_portfolio`).
@@ -154,7 +151,6 @@
   - State checkpointing with full 1-click `/rollback` restoration of previous tax lots and trades.
   - Zero-drift paisa-level ledger balancing guaranteeing `assert_ledger` 100% compliance.
   - API endpoint `POST /api/stocknow/sync-portfolio` with real-time SSE snapshot broadcast.
-  - Hermes agentic tool dispatch with Bangla/English natural commands (*"Sync Humming Bird portfolio"*, *"Humming Bird portfolio sync koro"*).
   - UI control button in `#settings` StockNow Bridge card (`Sync "Humming Bird" Portfolio`).
 - [x] **Step 2.4: Automated Virtual Order Execution on StockNow ("Humming Bird"):**
   - Dedicated virtual order executor (`stocknow_order_executor.py`) supporting live browser DOM automation and paper verified execution.
@@ -162,19 +158,17 @@
   - Updated `StockNowAdapter.execute_order()` delegating to virtual order execution and exposing `last_order_receipt`.
   - REST endpoint `POST /api/stocknow/execute-order` with CheckpointManager state snapshot for 1-click `/rollback`.
   - Strict enforcement of T+2 maturity lock and 1% fee math (blocking immature and net-loss sells under Strict No-Loss policy).
-  - Hermes conversational Buy and Matured Sell execution (*"Buy 10 GP"*, *"GP 10 ta share kine felo"*, *"Sell 5 SQURPHARMA"*) with StockNow virtual order receipt confirmation.
-- [x] **Step 2.4.1: Multi-Key Gemini API Rotation, 429 Rollback & Unified Model Switcher:**
-  - Integrated multi-key rotation supporting comma-separated `GEMINI_API_KEY` with automatic rollback on HTTP 429 quota exhaustion, 403, 503, or rate limits.
-  - Aligned model names across all tiers: Tier 1 OpenRouter (`xiaomi/mimo-v2.6-pro`, `xiaomi/mimo-v2.6-flash`, `deepseek/deepseek-chat`, `deepseek/deepseek-r1`, `meta-llama/llama-3.3-70b-instruct`, `anthropic/claude-3.5-sonnet`), Tier 2 Direct/1st Fallback Gemini 3.x (`google/gemini-3.1-flash-lite`, `google/gemini-3.5-flash`, `google/gemini-3.8-flash`, `google/gemini-3.7-flash`), and Tier 3 Local Deterministic Quant Brain.
-  - Fixed UI model switcher by resolving double `JSON.stringify` serialization in `frontend/hermes_ui.js` and `frontend/app.js`.
-  - Added natural conversational chat aliases (`/model mimov2.6 pro`, `/model deepseek 4.1 flash`, `/model gemini lite`, `/model local`).
+- [x] **Step 2.4.1: Real Hermes Agent Migration & Architecture Clean-Up:**
+  - Replaced imitation agent loop, memory, and custom skill engines with the official Nous Research Hermes runtime.
+  - Implemented streaming SSE bridge in `backend/hermes_bridge.py` and Humming Bird plugin in `plugins/humming_bird/`.
+  - Exposed local trading engine as deterministic `backend/kernel_api.py` with `X-Kernel-Token` authentication and atomic `KernelStateCheckpoint` snapshots.
+  - Dropped legacy `hermes_*` tables with automated backup export, purged imitation code (`backend/hermes/`, `backend/hermes_os/`), and retained all core kernel invariants.
 
 - [x] **Step 2.5: DSE Market-Hours Auto-Scheduler (10:00 AM – 2:30 PM Sun–Thu):**
   - Automated background loop running Sunday–Thursday from **10:00 AM to 2:30 PM (`Asia/Dhaka`)** respecting configured polling intervals (`30s`–`300s`).
   - DSE market hours gate (`is_dse_market_open`) evaluating Asia/Dhaka time, trading days, weekends (Friday/Saturday), and configured DSE holidays.
   - Background async scheduler (`DSEMarketScheduler`) syncing live market quotes from StockNow, executing AutoTrader paper cycle, updating telemetry, and broadcasting SSE snapshots.
   - API endpoints: `GET /api/stocknow/scheduler`, `POST /api/stocknow/scheduler` (`start`, `stop`, `tick_now` with `force`).
-  - Hermes agent natural Bangla/English command execution (*"Start DSE scheduler"*, *"Stop scheduler"*, *"Run scheduler tick now"*) with live execution receipts.
 
 - [x] **Step 2.6: Comprehensive UI/UX Polish & Bug Fix Pass (B1 - B11, Readability, Theming & Per-Screen Polish):**
   - **Critical Bug Fixes (B1 - B11):**
