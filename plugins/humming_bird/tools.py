@@ -1,0 +1,321 @@
+"""Tool handlers for Humming Bird Hermes Plugin."""
+
+from __future__ import annotations
+
+import json
+import logging
+import os
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
+
+def _kernel_get(endpoint: str, params: dict[str, Any] | None = None) -> str:
+    """Perform authenticated GET request to local Humming Bird kernel API."""
+    base_url = (os.getenv("KERNEL_URL") or "http://127.0.0.1:8000").rstrip("/")
+    token = os.getenv("KERNEL_TOKEN") or ""
+
+    clean_endpoint = "/" + endpoint.lstrip("/")
+    url = f"{base_url}{clean_endpoint}"
+    if params:
+        clean_params = {k: v for k, v in params.items() if v is not None}
+        if clean_params:
+            url = f"{url}?{urllib.parse.urlencode(clean_params)}"
+
+    req = urllib.request.Request(
+        url,
+        headers={
+            "X-Kernel-Token": token,
+            "Accept": "application/json",
+            "User-Agent": "Hermes-HummingBird-Plugin/0.2.0",
+        },
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            return resp.read().decode("utf-8")
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        try:
+            parsed = json.loads(body)
+            detail = parsed.get("detail", body)
+        except Exception:
+            detail = body or e.reason
+        return json.dumps({"error": f"HTTP {e.code}: {detail}"})
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+def _kernel_post(endpoint: str, data: dict[str, Any] | None = None) -> str:
+    """Perform authenticated POST request to local Humming Bird kernel API."""
+    base_url = (os.getenv("KERNEL_URL") or "http://127.0.0.1:8000").rstrip("/")
+    token = os.getenv("KERNEL_TOKEN") or ""
+
+    clean_endpoint = "/" + endpoint.lstrip("/")
+    url = f"{base_url}{clean_endpoint}"
+
+    encoded_data = json.dumps(data or {}).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=encoded_data,
+        headers={
+            "X-Kernel-Token": token,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": "Hermes-HummingBird-Plugin/0.2.0",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            return resp.read().decode("utf-8")
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        try:
+            parsed = json.loads(body)
+            detail = parsed.get("detail", body)
+        except Exception:
+            detail = body or e.reason
+        return json.dumps({"error": f"HTTP {e.code}: {detail}"})
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+# --- READ Tools ---
+
+def hb_portfolio(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Fetch current portfolio state from kernel API."""
+    raw = _kernel_get("/k/portfolio")
+    try:
+        data = json.loads(raw)
+        if not isinstance(data, dict) or "metrics" not in data:
+            return raw
+
+        holdings = []
+        for c in data.get("companies", []):
+            if c.get("holding_qty", 0) > 0:
+                holdings.append({
+                    "symbol": c.get("symbol"),
+                    "name": c.get("name"),
+                    "sector": c.get("sector"),
+                    "holding_qty": c.get("holding_qty"),
+                    "mature_qty": c.get("mature_qty"),
+                    "locked_qty": c.get("locked_qty"),
+                    "cost_basis": c.get("cost_basis"),
+                    "estimated_net_value": c.get("estimated_net_value"),
+                    "unrealized_pnl": c.get("unrealized_pnl"),
+                    "net_return_pct": c.get("net_return_pct"),
+                    "quarantined": c.get("quarantined", False),
+                })
+
+        summary = {
+            "metrics": data.get("metrics"),
+            "holdings": holdings,
+            "canary_theses": data.get("canary_theses", []),
+            "market_clock": data.get("market_clock"),
+            "trade_count": data.get("trade_count"),
+        }
+        return json.dumps(summary, indent=2)
+    except Exception:
+        return raw
+
+
+def hb_watchlist(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Fetch watchlist filtered optionally by tier from kernel API."""
+    merged = dict(args or {})
+    merged.update(kwargs)
+    tier = merged.get("tier")
+    params = {"tier": tier} if tier else None
+    return _kernel_get("/k/watchlist", params)
+
+
+def hb_inspect_curve(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Inspect price curve and support/resistance analysis for a symbol."""
+    merged = dict(args or {})
+    merged.update(kwargs)
+    symbol = merged.get("symbol")
+    if not symbol:
+        return json.dumps({"error": "symbol is required"})
+    sym = str(symbol).strip().upper()
+    return _kernel_get(f"/k/curve/{sym}")
+
+
+def hb_market_open(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Check if DSE market is currently open."""
+    return _kernel_get("/k/market-open")
+
+
+def hb_canaries(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Retrieve active canary theses from kernel API."""
+    return _kernel_get("/k/canaries")
+
+
+def hb_lots(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Fetch tax lots and T+2 maturity status."""
+    merged = dict(args or {})
+    merged.update(kwargs)
+    symbol = merged.get("symbol")
+    params = {"symbol": str(symbol).strip().upper()} if symbol else None
+    return _kernel_get("/k/lots", params)
+
+
+# --- WRITE Tools ---
+
+def hb_set_tier(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Set watchlist tier for a company."""
+    merged = dict(args or {})
+    merged.update(kwargs)
+    symbol = merged.get("symbol")
+    tier = merged.get("tier")
+    if not symbol:
+        return json.dumps({"error": "symbol is required"})
+    if not tier:
+        return json.dumps({"error": "tier is required"})
+    payload = {"symbol": str(symbol).strip().upper(), "tier": str(tier).strip()}
+    return _kernel_post("/k/tier", payload)
+
+
+def hb_set_allocation(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Set buy allocation percentage for a symbol."""
+    merged = dict(args or {})
+    merged.update(kwargs)
+    symbol = merged.get("symbol")
+    allocation = merged.get("buy_allocation_pct")
+    if not symbol:
+        return json.dumps({"error": "symbol is required"})
+    if allocation is None:
+        return json.dumps({"error": "buy_allocation_pct is required"})
+    try:
+        pct = float(allocation)
+    except (ValueError, TypeError):
+        return json.dumps({"error": "buy_allocation_pct must be a valid number"})
+    if not (0 <= pct <= 100):
+        return json.dumps({"error": "buy_allocation_pct must be between 0 and 100"})
+
+    enabled = bool(merged.get("enabled", True))
+    payload = {
+        "symbol": str(symbol).strip().upper(),
+        "buy_allocation_pct": pct,
+        "enabled": enabled,
+    }
+    return _kernel_post("/k/allocation", payload)
+
+
+def hb_quarantine_canary(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Trigger emergency crash quarantine (90% liquidation, 10% canary probe)."""
+    merged = dict(args or {})
+    merged.update(kwargs)
+    symbol = merged.get("symbol")
+    if not symbol:
+        return json.dumps({"error": "symbol is required"})
+    reason = str(merged.get("reason") or "Emergency crash quarantine with 90/10 canary split")
+    payload = {
+        "symbol": str(symbol).strip().upper(),
+        "action": "quarantine",
+        "reason": reason,
+    }
+    return _kernel_post("/k/quarantine", payload)
+
+
+def hb_restore_quarantine(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Restore a company from crash quarantine back into active status."""
+    merged = dict(args or {})
+    merged.update(kwargs)
+    symbol = merged.get("symbol")
+    if not symbol:
+        return json.dumps({"error": "symbol is required"})
+    reason = str(merged.get("reason") or "Restored from crash quarantine")
+    payload = {
+        "symbol": str(symbol).strip().upper(),
+        "action": "restore",
+        "reason": reason,
+    }
+    return _kernel_post("/k/quarantine", payload)
+
+
+def hb_sync(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Trigger sync with StockNow market data."""
+    merged = dict(args or {})
+    merged.update(kwargs)
+    target = str(merged.get("target") or "").strip().lower()
+    if target not in ("portfolio", "favorites", "all_shares"):
+        return json.dumps({"error": "target must be 'portfolio', 'favorites', or 'all_shares'"})
+    payload = {"target": target}
+    return _kernel_post("/k/sync", payload)
+
+
+def hb_place_order(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Submit virtual BUY or SELL order enforcing constraints and authorization."""
+    merged = dict(args or {})
+    merged.update(kwargs)
+
+    # 1. Hard-fail if target portfolio is not 164580
+    portfolio_id = str(merged.get("portfolio_id") or "164580").strip()
+    if portfolio_id != "164580":
+        return json.dumps({
+            "error": f"Hard fail: Unauthorized portfolio '{portfolio_id}'. Only target portfolio '164580' is authorized."
+        })
+
+    symbol = merged.get("symbol")
+    if not symbol:
+        return json.dumps({"error": "symbol is required"})
+    sym = str(symbol).strip().upper()
+
+    side = str(merged.get("side") or "").strip().upper()
+    if side not in ("BUY", "SELL"):
+        return json.dumps({"error": "side must be 'BUY' or 'SELL'"})
+
+    try:
+        quantity = int(merged.get("quantity") or 0)
+    except (ValueError, TypeError):
+        return json.dumps({"error": "quantity must be a positive integer"})
+    if quantity <= 0:
+        return json.dumps({"error": "quantity must be greater than zero"})
+
+    price = merged.get("price")
+    dry_run = merged.get("dry_run", True)
+    if isinstance(dry_run, str):
+        dry_run = dry_run.lower() in ("true", "1", "yes")
+
+    confirm = merged.get("confirm", False)
+    if isinstance(confirm, str):
+        confirm = confirm.lower() in ("true", "1", "yes", "confirm")
+
+    # Real submit safety check: needs dry_run=false AND explicit user confirmation
+    if not dry_run and not confirm:
+        return json.dumps({
+            "error": "Real order submission requires explicit user confirmation. Set confirm=true (or confirm in chat) to proceed.",
+            "requires_confirmation": True,
+            "order_preview": {
+                "symbol": sym,
+                "side": side,
+                "quantity": quantity,
+                "price": price,
+                "portfolio_id": "164580",
+                "dry_run": False,
+            },
+        })
+
+    idempotency_key = merged.get("idempotency_key")
+    if not idempotency_key:
+        idempotency_key = f"order-{sym}-{side}-{quantity}-{int(time.time() * 1000)}"
+
+    payload = {
+        "idempotency_key": str(idempotency_key),
+        "symbol": sym,
+        "side": side,
+        "quantity": quantity,
+        "price": float(price) if price is not None else None,
+        "portfolio_id": "164580",
+        "dry_run": dry_run,
+    }
+    return _kernel_post("/k/order", payload)
+
+
+def hb_rollback_last(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Roll back the last state checkpoint atomically."""
+    return _kernel_post("/k/rollback", {})

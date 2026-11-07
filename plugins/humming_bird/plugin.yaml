@@ -1,0 +1,23 @@
+name: humming_bird
+version: 0.2.0
+description: Humming Bird DSE trading kernel integration
+author: Humming Bird
+requires_env:
+  - KERNEL_URL
+  - KERNEL_TOKEN
+provides_tools:
+  - hb_portfolio
+  - hb_watchlist
+  - hb_inspect_curve
+  - hb_market_open
+  - hb_canaries
+  - hb_lots
+  - hb_set_tier
+  - hb_set_allocation
+  - hb_quarantine_canary
+  - hb_restore_quarantine
+  - hb_sync
+  - hb_place_order
+  - hb_rollback_last
+provides_hooks:
+  - pre_tool_call
