@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-07 15:34:11 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-07 15:49:16 UTC**.
 
 ---
 
@@ -11,7 +11,7 @@
 | `.py` | 10819 | 2,664,483 | Python Core Kernel, Engine & Hermes Agent |
 | `.ts` | 3911 | 775,975 | Configuration / Asset |
 | `.png` | 136 | 616,169 | Configuration / Asset |
-| `.md` | 1557 | 452,400 | Architecture & Strategy Documentation |
+| `.md` | 1557 | 452,410 | Architecture & Strategy Documentation |
 | `.tsx` | 1548 | 384,054 | Configuration / Asset |
 | `.json` | 220 | 153,095 | Configuration / Asset |
 | `.jpg` | 6 | 136,243 | Configuration / Asset |
@@ -20,12 +20,12 @@
 | `.tiff` | 1 | 42,784 | Configuration / Asset |
 | `.icns` | 4 | 39,764 | Configuration / Asset |
 | `.woff2` | 13 | 22,964 | Configuration / Asset |
-| `.css` | 36 | 19,836 | Custom Dark / Light / Terminal Design System |
+| `.css` | 36 | 19,886 | Custom Dark / Light / Terminal Design System |
 | `.wav` | 1 | 16,257 | Configuration / Asset |
 | `.pdf` | 4 | 14,579 | Configuration / Asset |
 | `.h` | 3 | 14,533 | Configuration / Asset |
 | `.sh` | 79 | 13,746 | Configuration / Asset |
-| `.js` | 28 | 12,808 | Vanilla ES6+ Reactive Terminal Controller |
+| `.js` | 28 | 12,824 | Vanilla ES6+ Reactive Terminal Controller |
 | `.ps1` | 40 | 11,325 | Configuration / Asset |
 | `.lock` | 3 | 7,975 | Configuration / Asset |
 | `.rs` | 12 | 7,810 | Configuration / Asset |
@@ -206,7 +206,7 @@
 | `dashboard` | 1 | 0 | Configuration / Asset |
 | `main-hermes` | 1 | 0 | Configuration / Asset |
 | `profile-gateways` | 1 | 0 | Configuration / Asset |
-| **TOTAL** | **22525** | **5,645,533** | *Entire Humming Bird Repository* |
+| **TOTAL** | **22525** | **5,645,609** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -1225,7 +1225,7 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 | `.session-bar` | [`frontend/styles.css`](/frontend/styles.css#L618) | `L618` | `flex` | — | — | `#0e161f` | `wrap` |
 | `.metric-card` | [`frontend/styles.css`](/frontend/styles.css#L670) | `L670` | — | — | — | `var(--panel)` | — |
 | `.skills-drawer` | [`frontend/styles.css`](/frontend/styles.css#L2287) | `L2287` | — | — | — | `#0c141d` | — |
-| `.model-dropup-menu` | [`frontend/styles.css`](/frontend/styles.css#L4060) | `L4060` | — | — | `absolute` | `var(--panel, #111a24)` | — |
+| `.model-dropup-menu` | [`frontend/styles.css`](/frontend/styles.css#L4110) | `L4110` | — | — | `absolute` | `var(--panel, #111a24)` | — |
 | `.session-bar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L69) | `L69` | — | — | — | `#ffffff` | — |
 | `.metric-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L95) | `L95` | — | — | — | `#ffffff` | — |
 | `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L499) | `L499` | — | — | — | `#f8fafc !important` | — |
@@ -1254,7 +1254,7 @@ Identified **284** distinct element IDs in the UI shell. Key controller anchors:
 
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
-| `styles.css` | 5587 | Core design tokens, layout & widgets |
+| `styles.css` | 5637 | Core design tokens, layout & widgets |
 | `theme_light_hermes.css` | 2842 | Daylight overrides & Hermes IDE sidebar |
 
 
@@ -1323,14 +1323,14 @@ Identified **284** distinct element IDs in the UI shell. Key controller anchors:
 | `tickMarketClock()` | `app.js` | `L967` | Reactive DOM rendering / event controller |
 | `tickClock()` | `app.js` | `L1038` | Reactive DOM rendering / event controller |
 | `renderAutomationControlBar()` | `app.js` | `L1047` | Reactive DOM rendering / event controller |
-| `setAutomationConfig()` | `app.js` | `L1229` | Reactive DOM rendering / event controller |
-| `switchToLiveHours()` | `app.js` | `L1352` | Reactive DOM rendering / event controller |
-| `switchToTestMode()` | `app.js` | `L1361` | Reactive DOM rendering / event controller |
-| `initRealtimeStream()` | `app.js` | `L1413` | Reactive DOM rendering / event controller |
-| `switchView()` | `app.js` | `L1439` | Reactive DOM rendering / event controller |
-| `initViewRouter()` | `app.js` | `L1490` | Reactive DOM rendering / event controller |
-| `initScrollSpy()` | `app.js` | `L1527` | Reactive DOM rendering / event controller |
-| `updateActiveNav()` | `app.js` | `L1540` | Reactive DOM rendering / event controller |
+| `setAutomationConfig()` | `app.js` | `L1245` | Reactive DOM rendering / event controller |
+| `switchToLiveHours()` | `app.js` | `L1368` | Reactive DOM rendering / event controller |
+| `switchToTestMode()` | `app.js` | `L1377` | Reactive DOM rendering / event controller |
+| `initRealtimeStream()` | `app.js` | `L1429` | Reactive DOM rendering / event controller |
+| `switchView()` | `app.js` | `L1455` | Reactive DOM rendering / event controller |
+| `initViewRouter()` | `app.js` | `L1506` | Reactive DOM rendering / event controller |
+| `initScrollSpy()` | `app.js` | `L1543` | Reactive DOM rendering / event controller |
+| `updateActiveNav()` | `app.js` | `L1556` | Reactive DOM rendering / event controller |
 | `smoothCurvePath()` | `charts.js` | `L8` | Reactive DOM rendering / event controller |
 | `getBezierPointAtContinuousIndex()` | `charts.js` | `L31` | Reactive DOM rendering / event controller |
 | `renderMainChart()` | `charts.js` | `L63` | Reactive DOM rendering / event controller |
@@ -1468,4 +1468,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/restore_db.py` | `restore_database` | 88 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 36 Python modules inspected, 33 FastAPI endpoints registered, 5,645,533 total LOC indexed.
+> **Audit Summary:** 36 Python modules inspected, 33 FastAPI endpoints registered, 5,645,609 total LOC indexed.

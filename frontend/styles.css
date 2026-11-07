@@ -3845,6 +3845,56 @@ input[type=checkbox] {
   display: none;
 }
 
+.topbar-tmode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.topbar-tmode-pill.tmode-test {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.topbar-tmode-pill.tmode-live {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.trading-mode-slider {
+  background: rgba(17, 26, 36, 0.7);
+  border: 1px solid rgba(36, 53, 71, 0.8);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.trading-mode-slider .hdr-slider-btn {
+  padding: 4px 9px;
+  font-size: 10.5px;
+  border-radius: 4px;
+}
+
+.trading-mode-slider .hdr-slider-btn.active[data-tmode="TEST_OFFHOURS"] {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.trading-mode-slider .hdr-slider-btn.active[data-tmode="LIVE_HOURS"] {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
 /* Permanent Virtual Portfolio Banner */
 .permanent-banner {
   display: block;

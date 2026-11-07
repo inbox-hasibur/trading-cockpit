@@ -1125,6 +1125,22 @@ function renderAutomationControlBar() {
   const tradingMode = app.trading_mode || (state.snapshot && state.snapshot.trading_mode) || "LIVE_HOURS";
   const isTestMode = tradingMode === "TEST_OFFHOURS";
 
+  const hdrTmodePill = $("hdr-tmode-pill");
+  const hdrTmodeLabel = $("hdr-tmode-label");
+  const hdrTmodeDot = $("hdr-tmode-dot");
+  if (hdrTmodeLabel) {
+    hdrTmodeLabel.textContent = isTestMode ? "Test Mode 24/7" : "Live Hours (virtual)";
+  }
+  if (hdrTmodePill) {
+    hdrTmodePill.className = `topbar-tmode-pill ${isTestMode ? "tmode-test" : "tmode-live"}`;
+    hdrTmodePill.title = isTestMode
+      ? "Trading Mode: Test Mode 24/7 (Off-hours testing enabled) — Click to open Settings"
+      : "Trading Mode: Live Hours (Strict DSE 10:00-14:30) — Click to open Settings";
+  }
+  if (hdrTmodeDot) {
+    hdrTmodeDot.style.background = isTestMode ? "#f59e0b" : "#10b981";
+  }
+
   const tmodeLive = $("hdr-tmode-live");
   const tmodeTest = $("hdr-tmode-test");
   if (tmodeLive) {

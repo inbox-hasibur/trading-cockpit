@@ -195,9 +195,9 @@ function renderHermesCronJobs(crons) {
         ${j.last_run ? `<div class="muted small">Last: ${escapeHtml(j.last_run)} [${escapeHtml(j.last_status || "ok")}]</div>` : ""}
         <div class="cron-actions">
           ${isPaused
-            ? `<button type="button" class="cron-btn resume" onclick="window.resumeHermesCron('${escapeHtml(j.id)}')">▶ Resume</button>`
-            : `<button type="button" class="cron-btn pause" onclick="window.pauseHermesCron('${escapeHtml(j.id)}')">⏸ Pause</button>`
-          }
+        ? `<button type="button" class="cron-btn resume" onclick="window.resumeHermesCron('${escapeHtml(j.id)}')">▶ Resume</button>`
+        : `<button type="button" class="cron-btn pause" onclick="window.pauseHermesCron('${escapeHtml(j.id)}')">⏸ Pause</button>`
+      }
           <button type="button" class="cron-btn delete" onclick="window.deleteHermesCron('${escapeHtml(j.id)}')">🗑 Delete</button>
         </div>
       </div>
@@ -205,7 +205,7 @@ function renderHermesCronJobs(crons) {
   }).join("");
 }
 
-window.pauseHermesCron = async function(jobId) {
+window.pauseHermesCron = async function (jobId) {
   if (!jobId) return;
   try {
     await api(`/api/hermes/bridge/cron/${encodeURIComponent(jobId)}/pause`, { method: "POST" });
@@ -216,7 +216,7 @@ window.pauseHermesCron = async function(jobId) {
   }
 };
 
-window.resumeHermesCron = async function(jobId) {
+window.resumeHermesCron = async function (jobId) {
   if (!jobId) return;
   try {
     await api(`/api/hermes/bridge/cron/${encodeURIComponent(jobId)}/resume`, { method: "POST" });
@@ -227,7 +227,7 @@ window.resumeHermesCron = async function(jobId) {
   }
 };
 
-window.deleteHermesCron = async function(jobId) {
+window.deleteHermesCron = async function (jobId) {
   if (!jobId || !confirm(`Delete cron job ${jobId} from Hermes?`)) return;
   try {
     await api(`/api/hermes/bridge/cron/${encodeURIComponent(jobId)}`, { method: "DELETE" });
@@ -238,7 +238,7 @@ window.deleteHermesCron = async function(jobId) {
   }
 };
 
-window.toggleCron = function(jobId) {
+window.toggleCron = function (jobId) {
   return window.pauseHermesCron(jobId);
 };
 window.deleteCron = window.deleteHermesCron;
@@ -436,7 +436,7 @@ async function sendChat(message) {
                   try {
                     const parsed = JSON.parse(outText);
                     outText = JSON.stringify(parsed, null, 2);
-                  } catch {}
+                  } catch { }
                   resPre.textContent = outText;
                 }
               }
@@ -772,7 +772,7 @@ async function executeRollback() {
 }
 
 // --- Hermes AI Brain & Runtime Telemetry ---
-window.toggleHermesModelPicker = function(e) {
+window.toggleHermesModelPicker = function (e) {
   if (e) {
     if (typeof e.stopPropagation === "function") e.stopPropagation();
     if (typeof e.preventDefault === "function") e.preventDefault();
@@ -788,7 +788,7 @@ window.toggleHermesModelPicker = function(e) {
   }
 };
 
-window.selectHermesModelItem = function(e, modelId, provider) {
+window.selectHermesModelItem = function (e, modelId, provider) {
   if (e) {
     if (typeof e.stopPropagation === "function") e.stopPropagation();
     if (typeof e.preventDefault === "function") e.preventDefault();
@@ -1088,7 +1088,7 @@ async function handleOperatorLogin(e) {
 async function handleOperatorLogout() {
   try {
     await api("/api/auth/logout", { method: "POST" });
-  } catch (e) {}
+  } catch (e) { }
   closeOperatorProfile();
   const loginGate = $("login-gate-overlay");
   if (loginGate) loginGate.showModal();
@@ -1193,7 +1193,7 @@ function initAuthAndSettings() {
           showToast("Session already verified", "info");
           return;
         }
-      } catch (e) {}
+      } catch (e) { }
       showToast("Please enter your operator credentials", "info");
     });
   }
@@ -1437,7 +1437,7 @@ function initHermesChatListeners() {
 
 // Wrap initHermesSidebar to also init chat listeners and active conversation
 const _origInitHermesSidebar = initHermesSidebar;
-initHermesSidebar = function() {
+initHermesSidebar = function () {
   if (typeof localStorage !== "undefined" && typeof state !== "undefined") {
     // state.activeConversationId is initialized inside initHermesSidebar()
   }
