@@ -15,7 +15,6 @@ from backend.config import DHAKA, VERSION, Settings
 from backend.database import (
     AutomationCycle,
     CanaryThesis,
-    ChatBudget,
     CompanyProfile,
     CustomRule,
     Database,
@@ -514,8 +513,6 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
         AutomationCycle.market_revision.desc(), AutomationCycle.rules_revision.desc()
     ).limit(1))
     now = datetime.now(DHAKA)
-    budget = session.get(ChatBudget, now.date())
-    used_calls = budget.calls if budget else 0
     theses_views = [{
         "id": t.id,
         "symbol": t.symbol,
@@ -603,15 +600,7 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
             "skills": active_skills,
             "checkpoints": recent_checkpoints,
             "durable_facts": durable_facts,
-            "active_model": getattr(state, "active_model", settings.openrouter_model),
-            "calls_used_today": used_calls,
-            "daily_call_limit": settings.chat_daily_call_limit,
-            "calls_remaining": max(0, settings.chat_daily_call_limit - used_calls),
-            "fallback_chain": [
-                {"tier": 1, "name": "Primary Brain", "target": getattr(state, "active_model", settings.openrouter_model), "status": "ACTIVE" if (settings.openrouter_api_key or (getattr(state, "active_model", "").startswith("google/") and (os.getenv("GEMINI_API_KEY") or getattr(settings, "gemini_api_key", "")))) else "STANDBY"},
-                {"tier": 2, "name": "1st Fallback", "target": "google/gemini-3.1-flash-lite", "status": "READY" if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or getattr(settings, "gemini_api_key", "") else "OFFLINE"},
-                {"tier": 3, "name": "2nd Fallback", "target": "Local Deterministic Quant Brain", "status": "ALWAYS AVAILABLE"},
-            ],
+            "active_model": "hermes-agent",
         },
         "latest_cycle": latest.result if latest else None,
         "market_map": build_market_map_payload(),
@@ -627,11 +616,9 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
             ),
         },
         "chat": {
-            "provider": "openrouter" if settings.openrouter_api_key else "local",
-            "model": settings.openrouter_model if settings.openrouter_api_key else None,
-            "read_only": True, "daily_call_limit": settings.chat_daily_call_limit,
-            "external_calls_today": used_calls,
-            "external_calls_remaining": max(0, settings.chat_daily_call_limit - used_calls),
+            "provider": "hermes",
+            "model": "hermes-agent",
+            "read_only": True,
         },
         "connections": {"stocknow": False, "brokerage": False, "bo_account": False, "telegram": False},
         "adapter": adapter.get_adapter_status(

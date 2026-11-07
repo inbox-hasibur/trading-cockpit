@@ -95,7 +95,7 @@
     - Replaced raw git files list with visual GitHub/IDE-style structured Before vs. After diff cards (`.diff-card`) featuring red deleted lines (`[-] Previous`) and green added lines (`[+] Updated`), actor badges, timestamps, and 1-click `/rollback`.
   - **Real Hermes Agent Integration & Streaming SSE Bridge (`backend/hermes_bridge.py`):**
     - Official Nous Research `hermes-agent` integrated as the standalone brain, keeping the local repo dedicated strictly to trading kernel and Cockpit UI.
-    - Thin SSE streaming bridge (`backend/hermes_bridge.py`) proxying chat to Hermes Gateway API server (`/v1/chat/completions`) or fallback to `hermes chat --format stream-json --yolo`.
+    - Thin SSE streaming bridge (`backend/hermes_bridge.py`) proxying chat to Hermes Gateway API server (`/v1/chat/completions`) with granular streaming events, tool cards, and `/api/hermes/bridge/state`.
     - Real-time tool-call cards rendered in chat with tool names, input arguments, running/done status badges, and collapsible execution output.
     - Active model read directly from Hermes' native configuration (`~/.hermes/config.yaml`).
   - **Humming Bird Plugin & Trading Kernel API (`plugins/humming_bird/` & `backend/kernel_api.py`):**
@@ -130,7 +130,7 @@
 - [x] **Repository Documentation Reorganization:**
   - All architecture specs maintained in `documentation/` (`About_Project.md`, `Backlog.md`, `CODEBASE_MAP.md`), keeping only `README.md` at repo root.
 - [x] **Complete Automated Test Suite (28/28 passing):**
-  - Engine tests, settlement calendars, fee basis math, sequential seller tiers, local chat, OpenRouter mock, agentic emergency quarantine & canary exits, watchlist categories, SSE streams, cockpit smoke tests, SecretGuard isolation, on-demand skill loading & self-patching, 3-layer memory, state checkpoint `/rollback`, DSE Market Map `/api/market/map` payload & visualizer tests, company fundamentals/extended history deep trend tests, dual-mode automation controller API tests, Hermes conversation threads & messages, system changes diff endpoint, and AI brain model switcher tests.
+  - Engine tests, settlement calendars, fee basis math, sequential seller tiers, local chat, OpenRouter mock, agentic emergency quarantine & canary exits, watchlist categories, SSE streams, cockpit smoke tests, SecretGuard isolation, official Hermes plugin skills, persistent memory, state checkpoint `/rollback`, DSE Market Map `/api/market/map` payload & visualizer tests, company fundamentals/extended history deep trend tests, dual-mode automation controller API tests, system changes diff endpoint, and read-only Hermes AI brain state tests.
 
 ---
 
@@ -177,8 +177,8 @@
   - **Critical Bug Fixes (B1 - B11):**
     - Corrected fee accounting discrepancy in What-If simulator and lot inspector to include exit broker fee.
     - Resolved double JSON stringification on model switcher.
-    - Verified single source of truth for ChatBudget external AI call counters across Settings, Portfolio, and fallback calls.
-    - Added accurate `served_by` provider/model/fallback_reason metadata to all Hermes chat replies.
+    - Integrated read-only Hermes Brain card fed by `/api/hermes/bridge/state` reflecting native Hermes config.
+    - Added accurate provider/model metadata display synchronized live from Hermes bridge state.
     - Verified multi-session drop wording and accurate support level comparison logic in Hermes analysis summaries.
     - Re-aligned Overview price curve with dedicated right gutter padding for resistance/support labels and single-row legend.
     - Fixed Treemap small tile label clipping with `ResizeObserver` and neutral slate 0% unchanged heat token.
@@ -210,7 +210,7 @@
     - `GSC` (Giant Stable Companies): Master observation pool of surviving giants (`ACI`, `BANKASIA`, `DHAKABANK`, `FUWANGCER`, `IFIC`, `NPOLYMER`, `PRIMEBANK`, `PUBALIBANK`, `SPCERAMICS`). Analyzed and logged for learning, but skipped for auto-buying (`WAIT_OBSERVATION_ONLY`) unless promoted to `GSC_L1` or `GSC_L2`.
     - `GSC_L1` (GSC Upper Trends L1): Genuinely recovering comeback curves (`BANKASIA`, `MATINSPINN`), prioritized #1 for buys.
     - `GSC_L2` (GSC Upper Trends L2): Short-term fluctuation / swing scalps (`DHAKABANK`), prioritized #2 for buys.
-  - **Hermes Procedural Skill (`SKILL_gsc_tiers.md` v1.1.0):**
+  - **Hermes Procedural Skill (`plugins/humming_bird/skills/gsc_tiers/SKILL.md` v1.1.0):**
     - Encoded operator domain knowledge so Hermes always applies the exact 3-list distinctions in advice and execution.
   - **Humming Bird Active Holdings Table in `#overview`:**
     - Dedicated card below top metric grid with live summary pills (Settled Cash, Buy Cost, Sell Value, Unrealized Gain/Loss).

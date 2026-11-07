@@ -104,8 +104,61 @@ async function loadHermesOSState() {
 
     // 4. Autonomous Cron Jobs
     renderHermesCronJobs(data.crons || []);
+
+    // 5. Read-Only Brain Card in Settings
+    renderHermesBrainCard(data);
   } catch (err) {
     console.debug("Hermes OS state notice:", err);
+  }
+}
+
+function renderHermesBrainCard(data) {
+  if (!data) return;
+  const primModel = data.primary_model || data.model || "gemini-3.1-flash-lite";
+  const primProvider = data.primary_provider || data.provider || "gemini";
+  const profileName = data.profile || "hummingbird";
+
+  setText("brain-primary-model", primModel);
+  setText("brain-primary-provider", primProvider);
+  setText("brain-profile-tag", profileName);
+
+  // Render Fallback list
+  const fallbacksList = $("brain-fallbacks-list");
+  if (fallbacksList) {
+    const fbs = data.fallbacks || [];
+    if (!fbs.length) {
+      fallbacksList.innerHTML = `
+        <div class="muted small" id="brain-fallbacks-empty" style="padding: 10px 12px; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 6px;">
+          No fallback providers configured in <code>config.yaml</code>. Run <code>hermes fallback add</code> to append failover models.
+        </div>
+      `;
+    } else {
+      fallbacksList.innerHTML = fbs.map((fb, idx) => `
+        <div class="chain-step-card" style="margin-bottom: 6px;">
+          <span class="step-num">FB ${idx + 1}</span>
+          <div class="step-desc">
+            <strong>${escapeHtml(fb.model || "unknown")}</strong>
+            <span>Provider: ${escapeHtml(fb.provider || "custom")}</span>
+          </div>
+          <span class="chain-status-badge standby">STANDBY</span>
+        </div>
+      `).join("");
+    }
+  }
+
+  // Last turn execution info
+  const lastTurn = data.last_turn || {};
+  setText("brain-last-turn-provider", lastTurn.provider || primProvider);
+  setText("brain-last-turn-model", `(${lastTurn.model || primModel})`);
+  if (lastTurn.timestamp) {
+    try {
+      const dt = new Date(lastTurn.timestamp);
+      setText("brain-last-turn-time", dt.toLocaleTimeString());
+    } catch {
+      setText("brain-last-turn-time", "Recent");
+    }
+  } else {
+    setText("brain-last-turn-time", "Ready");
   }
 }
 
@@ -238,15 +291,12 @@ function syncQuickPromptsPlacement() {
   }
 }
 
-function addMessage(role, content, provider = null, servedBy = null) {
+function addMessage(role, content, provider = null) {
   const article = element("article", `chat-message ${role}`);
   const author = element("div", "message-author");
   if (role === "assistant") author.append(element("span", "assistant-avatar", "✦"));
   author.append(document.createTextNode(role === "user" ? "YOU" : "HERMES"));
-  if (servedBy && servedBy.provider && servedBy.model) {
-    const cleanModel = String(servedBy.model).replace(/^google\//, "");
-    author.append(element("span", "muted", `· ${servedBy.provider} · ${cleanModel}`));
-  } else if (provider) {
+  if (provider) {
     author.append(element("span", "muted", `· ${provider.toUpperCase()}`));
   }
   const body = element("div", "message-body");
@@ -699,7 +749,7 @@ async function executeRollback() {
       notify(`✓ Successfully rolled back: ${res.rolled_back_action || "Last mutation"}`);
       await refresh();
       await loadSystemChanges();
-      await loadHermesModels();
+      await loadHermesOSState();
     }
   } catch (err) {
     notify(`Rollback failed: ${err.message}`, true);
@@ -709,213 +759,29 @@ async function executeRollback() {
   }
 }
 
-// --- Hermes AI Brain Model Switcher (3-Tier Fallback) ---
-async function loadHermesModels() {
-  try {
-    const data = await api("/api/hermes/models");
-    const active = data.active_model;
-    const models = data.models || [];
-    const chain = data.fallback_chain || [];
-
-    const shortName = active.split("/").pop();
-    setText("hermes-active-model-name", shortName);
-    const isGemini = active.startsWith("google/") || active.startsWith("gemini");
-    const isLocal = active === "local-quant-brain";
-    setText("provider-prefix-label", isGemini ? "GEMINI ·" : (isLocal ? "LOCAL ·" : "OPENROUTER ·"));
-
-    // Sync bottom quick select
-    const quickSelect = $("hermes-quick-model-select");
-    if (quickSelect) {
-      quickSelect.innerHTML = models.map((m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.name)}</option>`).join("");
-      if (active && !Array.from(quickSelect.options).some((opt) => opt.value === active)) {
-        const opt = document.createElement("option");
-        opt.value = active;
-        opt.textContent = `${active} (Active)`;
-        quickSelect.prepend(opt);
-      }
-      quickSelect.value = active;
-    }
-
-    // Sync dropdown menu
-    const dropdownList = $("model-dropdown-list");
-    if (dropdownList) {
-      dropdownList.innerHTML = models.map((m) => {
-        const isCur = m.id === active;
-        return `
-          <button type="button" class="model-dropup-item ${isCur ? "is-active" : ""}" data-model="${escapeHtml(m.id)}" onclick="window.selectHermesModelItem(event, '${escapeHtml(m.id)}')">
-            <span class="model-item-name">${escapeHtml(m.name)}</span>
-            ${isCur ? '<span class="model-dropup-check">✓</span>' : ""}
-          </button>
-        `;
-      }).join("");
-
-      dropdownList.querySelectorAll(".model-dropup-item").forEach((btn) => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const modId = btn.dataset.model;
-          window.selectHermesModelItem(e, modId);
-        };
-      });
-    }
-
-    // Sync Settings select
-    const select = $("settings-model-select");
-    if (select) {
-      select.innerHTML = models.map((m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.name)}</option>`).join("");
-      if (active && !Array.from(select.options).some((opt) => opt.value === active)) {
-        const opt = document.createElement("option");
-        opt.value = active;
-        opt.textContent = `${active} (Active)`;
-        select.prepend(opt);
-      }
-      select.value = active;
-    }
-    const errHint = $("settings-model-hint") || $("settings-model-error");
-    if (errHint) errHint.hidden = true;
-
-    // Update settings fallback chain display
-    const tier1Label = $("tier1-label");
-    if (tier1Label) tier1Label.textContent = active;
-
-    const tier2Badge = $("tier2-badge");
-    if (tier2Badge && chain[1]) {
-      tier2Badge.textContent = chain[1].status;
-      tier2Badge.className = `chain-status-badge ${chain[1].status === "READY" ? "live" : "standby"}`;
-    }
-  } catch (err) {
-    console.warn("Failed to load Hermes models:", err);
-    const select = $("settings-model-select");
-    if (select) {
-      select.innerHTML = '<option disabled selected>Models unavailable</option>';
-    }
-    const errHint = $("settings-model-hint") || $("settings-model-error");
-    if (errHint) {
-      errHint.textContent = "Unable to load model list. Please check connection.";
-      errHint.hidden = false;
-    }
-  }
-}
+// --- Hermes AI Brain & Runtime Telemetry ---
+// Hermes runtime configuration is read-only in the Cockpit and synchronized live
+// from ~/.hermes/profiles/hummingbird/config.yaml and state.db via /api/hermes/bridge/state.
 
 window.toggleHermesModelPicker = function(e) {
+  // Read-only indicator
   if (e) {
     if (typeof e.stopPropagation === "function") e.stopPropagation();
     if (typeof e.preventDefault === "function") e.preventDefault();
   }
-  const modelDrop = $("model-dropup-menu") || $("model-picker-dropdown");
-  if (!modelDrop) return;
-  const willOpen = modelDrop.hidden;
-  modelDrop.hidden = !willOpen;
-  const modelBtn = $("hermes-model-trigger") || $("hermes-bottom-model-btn");
-  if (modelBtn) modelBtn.setAttribute("aria-expanded", String(willOpen));
-  if (willOpen) {
-    loadHermesModels();
-  }
+  loadHermesOSState();
 };
 
-window.selectHermesModelItem = function(e, modId) {
-  if (e) {
-    if (typeof e.stopPropagation === "function") e.stopPropagation();
-    if (typeof e.preventDefault === "function") e.preventDefault();
-  }
-  const drop = $("model-dropup-menu") || $("model-picker-dropdown");
-  if (drop) drop.hidden = true;
-  switchHermesModel(modId);
-};
-
-async function switchHermesModel(modelId) {
-  if (!modelId) return;
-  // Immediately synchronize both controls
-  const short = modelId.split("/").pop();
-  setText("hermes-active-model-name", short);
-  const isGemini = modelId.startsWith("google/") || modelId.startsWith("gemini");
-  const isLocal = modelId === "local-quant-brain";
-  setText("provider-prefix-label", isGemini ? "GEMINI ·" : (isLocal ? "LOCAL ·" : "OPENROUTER ·"));
-  const quickSelect = $("hermes-quick-model-select");
-  if (quickSelect && quickSelect.value !== modelId) {
-    if (!Array.from(quickSelect.options).some((opt) => opt.value === modelId)) {
-      const opt = document.createElement("option");
-      opt.value = modelId;
-      opt.textContent = `${modelId} (Active)`;
-      quickSelect.prepend(opt);
-    }
-    quickSelect.value = modelId;
-  }
-  const select = $("settings-model-select");
-  if (select && select.value !== modelId) {
-    if (!Array.from(select.options).some((opt) => opt.value === modelId)) {
-      const opt = document.createElement("option");
-      opt.value = modelId;
-      opt.textContent = `${modelId} (Active)`;
-      select.prepend(opt);
-    }
-    select.value = modelId;
-  }
-  const tier1Label = $("tier1-label");
-  if (tier1Label) tier1Label.textContent = modelId;
-  const dropdownList = $("model-dropdown-list");
-  if (dropdownList) {
-    dropdownList.querySelectorAll(".model-dropup-item").forEach((btn) => {
-      const isCur = btn.dataset.model === modelId;
-      btn.classList.toggle("is-active", isCur);
-      const check = btn.querySelector(".model-dropup-check");
-      if (isCur && !check) {
-        const sp = document.createElement("span");
-        sp.className = "model-dropup-check";
-        sp.textContent = "✓";
-        btn.append(sp);
-      } else if (!isCur && check) {
-        check.remove();
-      }
-    });
-  }
-  try {
-    const res = await api("/api/hermes/model", {
-      method: "POST",
-      body: { model: modelId },
-    });
-    notify(`AI Brain switched to ${modelId}`);
-    if (typeof refresh === "function") await refresh();
-    await loadHermesModels();
-    await loadSystemChanges();
-  } catch (err) {
-    notify(`Failed to switch model: ${err.message}`, true);
-  }
-}
-
-// --- API Keys, Quotas & Telemetry Settings ---
+// --- System Notification Settings (Telegram Bot) ---
 async function loadApiKeysSettings() {
   try {
     const data = await api("/api/settings/keys");
-    const hasOr = Boolean(data.openrouter_configured || data.has_openrouter_key || data.openrouter_key_masked);
-    const hasGemini = Boolean(data.gemini_configured || data.has_gemini_key || data.gemini_key_masked);
-    const hintOr = $("hint-openrouter");
-    if (hintOr) {
-      hintOr.textContent = hasOr ? "● Connected (Masked)" : "○ Not set";
-      hintOr.className = `key-status-badge ${hasOr ? "configured" : "empty"}`;
-    }
-    const hintGemini = $("hint-gemini");
-    if (hintGemini) {
-      hintGemini.textContent = hasGemini ? "● Connected (Masked)" : "○ Not set";
-      hintGemini.className = `key-status-badge ${hasGemini ? "configured" : "empty"}`;
-    }
-
-    const orInput = $("key-openrouter");
-    if (orInput && hasOr && !orInput.value) {
-      orInput.placeholder = data.openrouter_key_masked || "sk-or-v1-••••••••";
-    }
-    const geminiInput = $("key-gemini");
-    if (geminiInput && hasGemini && !geminiInput.value) {
-      geminiInput.placeholder = data.gemini_key_masked || "AIzaSy••••••••";
-    }
     const tgToken = $("key-telegram-token");
     if (tgToken) {
       if (data.telegram_bot_token_masked && !tgToken.value) {
         tgToken.placeholder = data.telegram_bot_token_masked;
       } else if (!tgToken.value) {
         tgToken.placeholder = "123456789:ABC... (optional)";
-      }
-      if (!data.telegram_bot_token_masked && !tgToken.value) {
-        tgToken.value = "";
       }
     }
     const tgChat = $("key-telegram-chat");
@@ -925,41 +791,18 @@ async function loadApiKeysSettings() {
       } else if (!tgChat.value) {
         tgChat.placeholder = "Chat ID (optional)";
       }
-      if (!data.telegram_chat_id && !data.telegram_chat_id_masked) {
-        tgChat.value = "";
-      }
     }
-    const limitVal = data.daily_call_limit || 30;
-    const limitInput = $("key-daily-limit");
-    if (limitInput) limitInput.value = limitVal;
-    const limitSlider = $("daily-limit-slider");
-    if (limitSlider) limitSlider.value = limitVal;
-
-    // Telemetry quota bar & settings budget text (unified single source of truth)
-    const callsUsed = data.daily_calls_used !== undefined ? data.daily_calls_used : (data.calls_used_today || 0);
-    const limit = data.daily_call_limit || 30;
-    const pct = Math.min(100, Math.round((callsUsed / limit) * 100));
-    const budgetStr = `${callsUsed} / ${limit} calls used`;
-    setText("telemetry-usage-text", budgetStr);
-    setText("settings-budget-text", budgetStr);
-    const quotaBar = $("telemetry-quota-bar");
-    if (quotaBar) quotaBar.style.width = `${pct}%`;
   } catch (err) {
-    console.warn("Could not load API keys settings:", err);
+    console.warn("Could not load notification settings:", err);
   }
 }
 
 async function saveApiKeysSettings(e) {
   if (e) e.preventDefault();
-  const orKey = $("key-openrouter")?.value?.trim();
-  const geminiKey = $("key-gemini")?.value?.trim();
   const tgToken = $("key-telegram-token")?.value?.trim();
   const tgChat = $("key-telegram-chat")?.value?.trim();
-  const limit = parseInt($("key-daily-limit")?.value || "30", 10);
 
-  const payload = { daily_call_limit: limit };
-  if (orKey) payload.openrouter_key = orKey;
-  if (geminiKey) payload.gemini_key = geminiKey;
+  const payload = {};
   if (tgToken) payload.telegram_bot_token = tgToken;
   if (tgChat) payload.telegram_chat_id = tgChat;
 
@@ -974,12 +817,7 @@ async function saveApiKeysSettings(e) {
       statusMsg.textContent = "Saved ✓";
       statusMsg.className = "save-status-msg success";
     }
-    if (saveBtn) {
-      saveBtn.disabled = true;
-    }
-    notify("API Keys & Quotas updated successfully");
-    if (orKey && $("key-openrouter")) $("key-openrouter").value = "";
-    if (geminiKey && $("key-gemini")) $("key-gemini").value = "";
+    notify("Notification settings updated successfully");
     if (tgToken && $("key-telegram-token")) $("key-telegram-token").value = "";
     await loadApiKeysSettings();
     setTimeout(() => {
@@ -990,11 +828,8 @@ async function saveApiKeysSettings(e) {
     }, 2000);
   } catch (err) {
     if (statusMsg) {
-      statusMsg.textContent = err.message || "Failed to save configuration";
+      statusMsg.textContent = err.message || "Failed to save settings";
       statusMsg.className = "save-status-msg error";
-    }
-    if (saveBtn) {
-      saveBtn.disabled = false;
     }
     showError(err.message);
   }
@@ -1270,34 +1105,12 @@ function initHermesChatListeners() {
     });
   }
 
-  // Quick Model select in chat composer
-  const quickModelSelect = $("hermes-quick-model-select");
-  if (quickModelSelect) {
-    quickModelSelect.addEventListener("change", (e) => {
-      switchHermesModel(e.target.value);
-    });
-  }
-
-  // Model Picker Drop-up toggle
+  // Model display in status bar
   const modelBtn = $("hermes-model-trigger") || $("hermes-bottom-model-btn") || $("hermes-model-btn");
-  const modelDrop = $("model-dropup-menu") || $("model-picker-dropdown");
-  if (modelBtn && modelDrop) {
+  if (modelBtn) {
     modelBtn.onclick = (e) => {
       window.toggleHermesModelPicker(e);
     };
-    document.addEventListener("click", (e) => {
-      if (!modelDrop.contains(e.target) && !modelBtn.contains(e.target)) {
-        modelDrop.hidden = true;
-      }
-    });
-  }
-
-  // Model select in Settings page
-  const settingsModelSelect = $("settings-model-select");
-  if (settingsModelSelect) {
-    settingsModelSelect.addEventListener("change", (e) => {
-      switchHermesModel(e.target.value);
-    });
   }
 
   // Rollback buttons

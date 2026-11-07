@@ -56,5 +56,22 @@ if (Test-Path (Join-Path $HermesHome "profiles\hummingbird")) {
     }
 }
 
+# Also install cron script into Hermes scripts directories
+$cronScriptSrc = Resolve-Path (Join-Path $PSScriptRoot "check_dse_market_open.py")
+$baseScriptsDir = Join-Path $HermesHome "scripts"
+if (-not (Test-Path $baseScriptsDir)) {
+    New-Item -ItemType Directory -Path $baseScriptsDir -Force | Out-Null
+}
+Copy-Item -Path $cronScriptSrc -Destination (Join-Path $baseScriptsDir "check_dse_market_open.py") -Force
+
+if (Test-Path (Join-Path $HermesHome "profiles\hummingbird")) {
+    $hbScriptsDir = Join-Path $HermesHome "profiles\hummingbird\scripts"
+    if (-not (Test-Path $hbScriptsDir)) {
+        New-Item -ItemType Directory -Path $hbScriptsDir -Force | Out-Null
+    }
+    Copy-Item -Path $cronScriptSrc -Destination (Join-Path $hbScriptsDir "check_dse_market_open.py") -Force
+    Write-Host "Installed check_dse_market_open.py to hummingbird scripts directory"
+}
+
 Write-Host "Humming Bird plugin installed successfully."
 

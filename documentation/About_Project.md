@@ -99,26 +99,27 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
 2. **Three-Tier Watchlist Pulse Cards & Real-Time Filtering:**
    - Tabs for **All**, **Big Giant Stable (GSC)**, **GSC Upper Trends L1**, and **GSC Upper Trends L2**.
    - Displays each tracked company's DSE/StockNow price, last 7 days `+/-` performance, mini curve sparkline, brain state (`BUY_ZONE`, `MID_RANGE`, `SEQUENTIAL_SELL`, `RECOVERY_HOLD`, `CRASH_QUARANTINE`), and custom `Buy %` sliders.
-3. **Hermes: True Self-Improving Agent Architecture (Nous Research Style):**
-   - **Self-Improving Procedural Memory (`SKILL_*.md`):**
-     - Versioned skill documents stored in `backend/hermes/skills/`: `SKILL_gsc_tiers.md`, `SKILL_canary_90_10.md`, `SKILL_sequential_no_regret.md`, `SKILL_stocknow_dse_quirks.md`.
-     - *On-Demand Injection:* Matches relevant skills based on query/market event tags, minimizing prompt tokens.
-     - *Self-Improvement (`learn_or_patch_skill`):* When the operator teaches a rule or when a 10% canary thesis confirms, Hermes patches or creates skill files and audits revisions in SQLite!
-   - **Three-Layer Memory System (`backend/hermes/memory.py`):**
-     - *Layer 1 (Operator Profile):* Hasibur's core directives, risk posture (Strict No-Loss), and strategy principles injected every turn.
-     - *Layer 2 (Searchable Sessions):* Full transcript memory with cross-turn search so Hermes recalls past conversations.
-     - *Layer 3 (Durable Facts & Canary Probes):* Company-specific knowledge (fundamental alerts, historical canary results) recalled whenever that stock is discussed.
+3. **Hermes: Official Nous Research Runtime Integration (`plugins/humming_bird/`):**
+   - **Official Skill Architecture (`plugins/humming_bird/skills/<skill>/SKILL.md`):**
+     - Versioned skill documents stored in official Hermes layout: `canary_90_10/SKILL.md`, `gsc_tiers/SKILL.md`, `sequential_no_regret/SKILL.md`, `stocknow_dse_quirks/SKILL.md`.
+     - *On-Demand Registration:* Registered into Hermes runtime via `ctx.register_skill()`, matching user intents with minimal prompt overhead.
+     - *Autonomous Learning:* Hermes natively learns procedural skills through its built-in runtime as trading patterns and canary outcomes confirm.
+   - **Persistent Memory Architecture (`memories/USER.md` & `memories/MEMORY.md`):**
+     - *Operator Directives (`USER.md`):* Operator risk posture (Strict No-Loss), trading hours, and capital allocations stored in Hermes' native user profile.
+     - *Long-Term Working Memory (`MEMORY.md` & SQLite FTS5):* Curated facts, company alerts, and historical canary outcomes indexed for fast contextual retrieval across sessions.
    - **State Checkpoints & 1-Click Rollback (`/rollback`):**
-     - Before executing any mutating action (quarantine, tier change, allocation update, skill patch), Hermes creates a state checkpoint in SQLite.
+     - Before executing mutating actions (quarantine, tier change, allocation update), the kernel creates atomic checkpoints (`KernelStateCheckpoint`).
      - The operator can command `/rollback` in chat or click the **"Rollback (/rollback)"** button in the Cockpit to instantly restore previous state.
-   - **Context Compression:** Older conversation turns are automatically summarized to keep token costs tiny.
+   - **Context Compression & Script-Gated Cron Jobs:**
+     - Older conversation turns are automatically compressed by Hermes context compression.
+     - Scheduled cron jobs run with `--script check_dse_market_open.py`, emitting `wakeAgent: false` on weekends and off-hours to avoid waking the LLM.
    - **User Thesis Intake & Emergency Intervention:**
      - When you alert Hermes of critical news (e.g., *"আজকে এই কোম্পানির অনেক বড় ক্ষতি হয়ে গেছে, ১ মাসের মাথায় দেউলিয়া হয়ে যাবে"*):
        1. **Instant Crash Quarantine:** Hermes puts the stock under quarantine immediately, blocking all future purchases.
        2. **Emergency 90% Profit Lock:** If the stock is currently in profit, Hermes sells 90% of shares immediately to lock profits before catastrophe strikes.
        3. **10% Canary Observation Holding:** Hermes keeps 10% shares as a "canary probe" to verify if the hypothesis actually plays out in reality.
-       4. **Proactive Follow-up & Feedback Loop:** Over future market sessions and months, Hermes continuously tracks the stock. If it crashes, Hermes reports back and auto-updates procedural skills! If resilient, Hermes reports safety to restore.
-   - **Permissioned Control & Direct Orders:** Command Hermes in natural Bangla, Banglish, or English to change allocations (*"GP-er buy % 25% kore dao"*), move tiers (`set_watchlist_tier`), execute buys/sells, or pause/resume automation.
+       4. **Proactive Follow-up & Feedback Loop:** Over future market sessions and months, Hermes continuously tracks the stock. If it crashes, Hermes reports back and records observations in persistent memory! If resilient, Hermes reports safety to restore.
+   - **Permissioned Control & Direct Orders:** Command Hermes in natural Bangla, Banglish, or English to change allocations (*"GP-er buy % 25% kore dao"*), move tiers (`hb_set_tier`), execute buys/sells (`hb_place_order`), or pause/resume automation (`hb_automation_set`).
 
 4. **Zero-Secret Isolation & Hardened Profile Boundary (`backend/secret_guard.py` & Hermes Profile):**
    - **Profile Toolset Hardening:** The dedicated `hummingbird` profile explicitly disables `terminal`, `file`, `code_execution`, and `browser` toolsets (`agent.disabled_toolsets` and `platform_toolsets`). Hermes physically lacks `read_file`, `write_file`, and `terminal` tools, enforcing a hard architectural boundary where the agent cannot inspect workspace `.env`, database files, or shell commands.
@@ -158,7 +159,7 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
       2. `#watchlist`: Multi-tier company watchlist, Position inspector with maturity lots, DSE Market Map Treemap with Finviz heat scale, and Top Sectors by Gainer chart.
       3. `#rules`: Strategy Rules, "What-If" profit simulator, custom buy cap form, sequential profit tiers (+1.5%, +3.5%, +6.0%), 50/50 pullback setting, and Canary Theses observation board.
       4. `#ledger`: Accounting periods (Overall, Today, Week, Month, Year) and full FIFO tax lot execution table.
-      5. `#settings`: Dedicated page for Master Buy/Sell automation switch, Method A vs Method B ingestion pipeline, polling cadence slider, Hermes AI brain model selector & 3-tier fallback chain display, fee structure & settlement rules, and API credentials.
+      5. `#settings`: Dedicated page for Master Buy/Sell automation switch, Method A vs Method B ingestion pipeline, polling cadence slider, read-only Hermes AI Brain card, fee structure & settlement rules, and notification credentials.
     - **ScrollSpy Left Nav Rail Sync:** Seamlessly tracks operator scrolling across `#overview`, `#watchlist`, `#rules`, and `#ledger` in the main workspace and dynamically highlights the active section icon.
     - **Sticky Top Navbar:** Locked mission-critical navigation with live DSE market clock & countdown, two-way ingestion mode toggle, master engine controls, and theme switcher, allowing all dashboard sections to slide cleanly underneath.
     - **Fixed Viewport Lock Architecture:** Locked outer viewport (`height: 100vh; overflow: hidden;`) with middle `.workspace` scrolling independently (`height: 100vh; overflow-y: auto;`). Left nav rail and right Hermes assistant stay 100% viewport-fixed at all times, never scrolling off screen.
@@ -166,14 +167,13 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
     - **Rebuilt Hermes `[Changes]` Tab as System & Rule Diff Review:** Visual GitHub/IDE-style structured Before vs. After diff cards (`.diff-card`) featuring red deleted lines (`[-] Previous`) and green added lines (`[+] Updated`), actor badges, timestamps, and 1-click `/rollback`.
     - **Settings Page Complete Overhaul:**
       - *Telemetry Ingestion Pipeline Card:* Interactive Method A (Background HTTP Polling) vs Method B (Onscreen Live Mode CDP) selector tiles with status pills, smooth polling interval slider (30s to 300s), and quick preset cadence pills (30s Hyper, 60s Fast, 120s Standard, 180s Relaxed).
-      - *API Keys & Live Telemetry Manager:* Modern credential form with masked secret inputs (`sk-or-v1-...`, Gemini API key, Telegram Bot token & chat ID), toggleable password visibility eyes, quota usage bar, and one-click save.
+      - *System Notifications & Telegram Bot Card:* Masked credential form for Telegram Bot Token & Chat ID with toggleable password visibility and one-click save.
       - *Market Clearing & Settlement Rules Card:* Fee structure (0.50% buy, 0.50% sell, +1.005% gross hurdle) and T+2 settlement rolling bucket explanation.
       - *System & Security Card:* Consolidated technical badges (Realtime SSE status, Demo/Paper mode indicator, and optional session API tokens).
-    - **3-Tier AI Brain Switcher (`/model`):**
-      - **Tier 1:** User-selected OpenRouter model (`xiaomi/mimo-v2-flash`, `deepseek/deepseek-chat`, `meta-llama/llama-3.3-70b-instruct`, `anthropic/claude-3.5-sonnet`, `google/gemini-2.0-flash-001`). Switchable via `/model <name>` in chat, upward drop-up menu in bottom bar, or UI dropdown picker in settings.
-      - **Tier 2:** 1st Fallback — Free Google Gemini API (`google/gemini-2.5-flash`).
-      - **Tier 3:** 2nd Fallback — Deterministic Local Quant Brain ($0 offline).
-      - API endpoints: `GET /api/hermes/models` and `POST /api/hermes/model`.
+    - **Read-Only Hermes AI Brain Card:**
+      - Live telemetry synchronized from `~/.hermes/profiles/hummingbird` via `GET /api/hermes/bridge/state`.
+      - Displays Primary Inference Model (e.g. `gemini-3.1-flash-lite`, `mimo-v2.6-pro`), configured fallback provider chain from `config.yaml` (`fallback_providers`), and the exact provider/model that served the last conversation turn.
+      - Models, fallbacks, and API keys are managed exclusively through Hermes native CLI (`hermes model`, `hermes fallback add`, `config.yaml`).
     - **Exhaustive Light Mode Daylight Uniformity:** Complete elimination of hardcoded dark background artifacts across tables, cards, canvases, settings, and sidebars, featuring 50% lighter pastel treemap tiles and dark legible text contrast.
     - **Developer Productivity & Instant Local Reload:** Disabled aggressive static asset browser caching (`Cache-Control: no-cache, no-store, must-revalidate`) in `DevStaticFiles` and root cockpit endpoint so frontend UI changes reflect immediately upon browser refresh (`F5`) without cache clearing.
 
@@ -286,7 +286,7 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
 |                                 SQLITE TRANSACTIONAL LEDGER (WAL MODE)                                 |
 |  - PortfolioState & Automation Config     - CustomRule & CompanyProfile     - TaxLots (T0, T1, T2)   |
 |  - TradeLog & Financial Ledgers           - CanaryThesis Observation Theses - KernelStateCheckpoints |
-|  - KernelAuditLogs & RuleAudits           - ChatBudget Quota Tracker        - DecisionLogs           |
+|  - KernelAuditLogs & RuleAudits           - SingleWriterTradingLock         - DecisionLogs           |
 +-------------------------------------------------------------------------------------------------------+
 ```
 
@@ -297,7 +297,7 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
 Humming Bird uses the official **Nous Research Hermes Agent** (`hermes-agent`) as its autonomous intelligence layer, keeping the local repository dedicated strictly to the trading kernel, StockNow adapters, and Cockpit UI.
 
 ### Integration Path & SSE Chat Bridge (`backend/hermes_bridge.py`)
-- **Gateway Server or Streaming CLI:** The Cockpit connects via `backend/hermes_bridge.py` directly to the running Hermes runtime. If the Hermes Gateway API server (`http://127.0.0.1:8642/v1/chat/completions`) is active, requests stream over standard OpenAI-compatible SSE; otherwise, the bridge transparently invokes `hermes chat --format stream-json --yolo` with `--in` bound to the workspace root.
+- **Gateway Server & Streaming SSE:** The Cockpit connects via `backend/hermes_bridge.py` directly to the running Hermes Gateway API server (`http://127.0.0.1:8642/v1/chat/completions`) streaming over standard OpenAI-compatible SSE. If the gateway server is offline, the bridge returns a clear error instructing the operator to start it. `--yolo` and `--in` have been removed to preserve profile security boundaries.
 - **Granular Streaming Events:** Emits standard Server-Sent Events (`tool_use`, `tool_result`, `text`, `done`, `error`) directly to the web UI.
 - **Tool-Call Inspection Cards:** The Cockpit chat interface dynamically renders interactive collapsible cards showing the tool name, JSON input arguments, running/done status badge, and execution output.
 - **Provider & Model Configuration:** Model selection and API keys are managed exclusively in Hermes' native runtime configuration (`~/.hermes/config.yaml`), completely isolated from repository source code. The active model (`gemini-3.1-flash-lite`, `mimo-v2.6-pro`, etc.) is read dynamically by `GET /api/hermes/bridge/state` and displayed in the sidebar badge.

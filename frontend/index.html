@@ -479,40 +479,16 @@
             </div>
           </article>
 
-          <!-- Card 2: API Keys, Quotas & Live Telemetry -->
+          <!-- Card 2: System Notifications & Telegram Alerts -->
           <article class="sys-ctrl-card settings-card" id="api-keys-card">
             <div class="ctrl-card-head">
-              <span class="sys-badge teal-badge">CREDENTIALS & QUOTAS</span>
-              <h3>API Keys & Live Telemetry</h3>
+              <span class="sys-badge teal-badge">NOTIFICATIONS</span>
+              <h3>System Notifications & Telegram Bot</h3>
             </div>
-            <p class="muted small">Configures LLM reasoning gateways, notification bots, and daily rate limits with Zero-Secret LLM isolation.</p>
+            <p class="muted small">Configures automated trade execution alerts, session triggers, and critical error dispatches to your Telegram channels.</p>
 
             <form id="api-keys-form" class="settings-form" style="margin-top: 14px;">
-              <div class="modern-field-group">
-                <div class="field-label-row">
-                  <label for="key-openrouter">OpenRouter API Key (Primary Reasoning)</label>
-                  <span class="key-status-badge" id="hint-openrouter">Checking…</span>
-                </div>
-                <div class="key-input-box">
-                  <span class="field-icon">🔑</span>
-                  <input type="password" id="key-openrouter" class="secret-input" placeholder="sk-or-v1-••••••••••••••••" autocomplete="off">
-                  <button type="button" class="key-toggle-btn" data-target="key-openrouter" title="Toggle visibility">👁</button>
-                </div>
-              </div>
-
-              <div class="modern-field-group" style="margin-top: 12px;">
-                <div class="field-label-row">
-                  <label for="key-gemini">Google Gemini API Key (1st Fallback Brain)</label>
-                  <span class="key-status-badge" id="hint-gemini">Checking…</span>
-                </div>
-                <div class="key-input-box">
-                  <span class="field-icon">🧠</span>
-                  <input type="password" id="key-gemini" class="secret-input" placeholder="AIzaSy••••••••••••••••" autocomplete="off">
-                  <button type="button" class="key-toggle-btn" data-target="key-gemini" title="Toggle visibility">👁</button>
-                </div>
-              </div>
-
-              <div class="settings-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
+              <div class="settings-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <div class="modern-field-group">
                   <label for="key-telegram-token" class="simple-label">Telegram Bot Token</label>
                   <div class="key-input-box compact">
@@ -529,68 +505,59 @@
                 </div>
               </div>
 
-              <div class="modern-quota-box" style="margin-top: 14px;">
-                <div class="quota-header">
-                  <label for="key-daily-limit" style="margin: 0; font-weight: 600;">Daily External AI Call Limit</label>
-                  <strong id="telemetry-usage-text" class="small">0 / 30 calls used</strong>
-                </div>
-                <div class="quota-bar-track">
-                  <div id="telemetry-quota-bar" class="quota-bar-fill" style="width: 0%;"></div>
-                </div>
-                <div class="quota-slider-row">
-                  <input type="range" id="daily-limit-slider" min="5" max="300" step="5" value="30" class="styled-range-slider" aria-label="Daily external call limit slider">
-                  <input type="number" id="key-daily-limit" min="5" max="500" value="30" class="quota-num-input" aria-label="Daily limit number">
-                </div>
-              </div>
-
               <div class="form-actions" style="margin-top: 18px; display: flex; gap: 12px; align-items: center;">
                 <button type="submit" class="button primary modern-save-btn" id="btn-save-api-keys">
-                  <span>💾</span> Save API Configuration
+                  <span>💾</span> Save Notification Settings
                 </button>
                 <span class="save-status-msg" id="keys-save-status"></span>
               </div>
             </form>
           </article>
 
-          <!-- Card 2: Hermes AI Brain & 3-Tier Fallback Chain -->
-          <article class="sys-ctrl-card settings-card">
+          <!-- Card 3: Hermes AI Brain (Read-Only) -->
+          <article class="sys-ctrl-card settings-card" id="hermes-brain-card">
             <div class="ctrl-card-head">
-              <span class="sys-badge blue-badge">AI COPILOT</span>
-              <h3>Hermes AI Brain & Fallback Chain</h3>
+              <span class="sys-badge blue-badge">HERMES RUNTIME</span>
+              <h3>Hermes AI Brain</h3>
             </div>
-            <p class="muted small">Select primary OpenRouter reasoning model or configure fallback behavior.</p>
-
-            <div class="settings-subgroup">
-              <label class="settings-sub-label" for="settings-model-select">PRIMARY REASONING MODEL (TIER 1)</label>
-              <select id="settings-model-select" class="settings-select" style="width: 100%; max-width: 100%; margin-top: 6px;">
-                <option value="xiaomi/mimo-v2.6-pro">Xiaomi MiMo-v2.6-Pro (Primary Brain)</option>
-              </select>
-              <div id="settings-model-hint" class="muted small" style="margin-top: 4px;" hidden></div>
-            </div>
+            <p class="muted small">Read-only runtime telemetry synchronized live from the official Hermes profile (<code>~/.hermes/profiles/hummingbird</code>).</p>
 
             <div class="settings-subgroup" style="margin-top: 14px;">
-              <span class="settings-sub-label">ACTIVE 3-TIER FALLBACK CHAIN</span>
-              <div class="fallback-chain-list" id="settings-fallback-list" style="margin-top: 6px;">
-                <div class="chain-step-card active">
-                  <span class="step-num">Tier 1</span>
-                  <div class="step-desc"><strong id="tier1-label">xiaomi/mimo-v2.6-pro</strong><span>OpenRouter Primary Brain</span></div>
-                  <span class="chain-status-badge live" id="tier1-badge">ACTIVE</span>
-                </div>
-                <div class="chain-step-card">
-                  <span class="step-num">Tier 2</span>
-                  <div class="step-desc"><strong>google/gemini-3.1-flash-lite</strong><span>Google Gemini API</span></div>
-                  <span class="chain-status-badge standby" id="tier2-badge">READY</span>
-                </div>
-                <div class="chain-step-card">
-                  <span class="step-num">Tier 3</span>
-                  <div class="step-desc"><strong>Local Quant Brain</strong><span>Deterministic Rules ($0 Offline)</span></div>
-                  <span class="chain-status-badge always">ALWAYS ON</span>
+              <span class="settings-sub-label">PRIMARY INFERENCE MODEL</span>
+              <div class="brain-stat-card" style="margin-top: 6px; padding: 12px 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <strong id="brain-primary-model" style="font-size: 15px; font-family: monospace;">gemini-3.1-flash-lite</strong>
+                    <div class="muted small" style="margin-top: 4px;">Provider: <span id="brain-primary-provider" style="font-weight: 600;">gemini</span> · Profile: <span class="tag" id="brain-profile-tag">hummingbird</span></div>
+                  </div>
+                  <span class="chain-status-badge live" id="brain-primary-status">ACTIVE</span>
                 </div>
               </div>
             </div>
 
-            <div class="adapter-stats-list" style="margin-top: 14px;">
-              <div class="adp-row"><span>Daily External Call Limit:</span><strong id="settings-budget-text">0 / 30 calls used</strong></div>
+            <div class="settings-subgroup" style="margin-top: 16px;">
+              <span class="settings-sub-label">CONFIGURED FALLBACK PROVIDERS</span>
+              <div id="brain-fallbacks-list" class="fallback-chain-list" style="margin-top: 6px;">
+                <div class="muted small" id="brain-fallbacks-empty" style="padding: 10px 12px; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 6px;">
+                  No fallback providers configured in <code>config.yaml</code>. Run <code>hermes fallback add</code> to append failover models.
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-subgroup" style="margin-top: 16px;">
+              <span class="settings-sub-label">LAST TURN EXECUTION</span>
+              <div class="brain-stat-card" style="margin-top: 6px; padding: 10px 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <span class="muted small">Served by:</span>
+                  <strong id="brain-last-turn-provider" style="margin-left: 6px; font-size: 13px;">gemini</strong>
+                  <span class="muted small" id="brain-last-turn-model" style="margin-left: 6px; font-family: monospace;">(gemini-3.1-flash-lite)</span>
+                </div>
+                <span class="muted small" id="brain-last-turn-time">Recent</span>
+              </div>
+            </div>
+
+            <div class="panel-note" style="margin-top: 14px;">
+              Hermes inference models and fallback chains are managed natively in <code>config.yaml</code> or via <code>hermes model</code> and <code>hermes fallback</code> CLI commands.
             </div>
           </article>
 

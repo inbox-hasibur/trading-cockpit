@@ -121,10 +121,11 @@ def read_hermes_state() -> dict[str, Any]:
     """Reads skills, memory (USER.md / MEMORY.md), active model, and cron jobs from Hermes."""
     h_dir = get_hermes_dir()
 
-    # 1. Config & Active Model
+    # 1. Config, Active Model & Fallbacks
     cfg_path = h_dir / "config.yaml"
     model_name = "gemini-3.1-flash-lite"
     provider_name = "gemini"
+    fallbacks: list[dict[str, Any]] = []
     if cfg_path.exists():
         try:
             cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
@@ -132,8 +133,54 @@ def read_hermes_state() -> dict[str, Any]:
             if isinstance(model_cfg, dict):
                 model_name = model_cfg.get("default", model_name)
                 provider_name = model_cfg.get("provider", provider_name)
+            elif isinstance(model_cfg, str):
+                model_name = model_cfg
+                provider_name = "custom"
+
+            # Hermes fallback provider chain
+            raw_fbs = cfg.get("fallback_providers") or cfg.get("fallback_model") or []
+            if isinstance(raw_fbs, dict):
+                raw_fbs = [raw_fbs]
+            if isinstance(raw_fbs, list):
+                for fb in raw_fbs:
+                    if isinstance(fb, dict):
+                        fallbacks.append({
+                            "provider": fb.get("provider", "unknown"),
+                            "model": fb.get("model") or fb.get("default", "unknown"),
+                            "base_url": fb.get("base_url"),
+                        })
         except Exception as exc:
             logger.debug("Hermes config read notice: %s", exc)
+
+    # 1b. Last turn execution info from session_model_usage
+    last_turn = {
+        "provider": provider_name,
+        "model": model_name,
+        "timestamp": None,
+    }
+    state_db_path = h_dir / "state.db"
+    if not state_db_path.exists():
+        local_app = os.environ.get("LOCALAPPDATA")
+        if local_app:
+            state_db_path = Path(local_app) / "hermes" / "state.db"
+    if state_db_path.exists():
+        try:
+            import sqlite3
+            from datetime import datetime, timezone
+            conn = sqlite3.connect(state_db_path)
+            row = conn.execute(
+                "SELECT model, billing_provider, last_seen FROM session_model_usage "
+                "WHERE model IS NOT NULL AND model != '' "
+                "ORDER BY last_seen DESC LIMIT 1"
+            ).fetchone()
+            if row:
+                last_turn["model"] = row[0]
+                last_turn["provider"] = row[1] or provider_name
+                if row[2]:
+                    last_turn["timestamp"] = datetime.fromtimestamp(row[2], timezone.utc).isoformat()
+            conn.close()
+        except Exception as exc:
+            logger.debug("Hermes session_model_usage query notice: %s", exc)
 
     # 2. Memories (USER.md & MEMORY.md)
     user_md_path = h_dir / "memories" / "USER.md"
@@ -207,10 +254,15 @@ def read_hermes_state() -> dict[str, Any]:
     return {
         "model": model_name,
         "provider": provider_name,
+        "primary_model": model_name,
+        "primary_provider": provider_name,
+        "fallbacks": fallbacks,
+        "last_turn": last_turn,
         "skills": skills,
         "user_md": user_md,
         "memory_md": memory_md,
         "crons": crons,
+        "profile": h_dir.name,
     }
 
 
