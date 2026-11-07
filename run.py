@@ -44,7 +44,10 @@ def load_env_file(filepath: Path) -> None:
 
 
 def get_hermes_bin() -> str:
-    """Locates the official hermes CLI binary."""
+    """Locates the hermes CLI binary, preferring the vendor/hermes-agent editable in .venv."""
+    venv_exe = WORKSPACE_ROOT / ".venv" / "Scripts" / ("hermes.exe" if os.name == "nt" else "hermes")
+    if venv_exe.exists():
+        return str(venv_exe)
     local_app = os.environ.get("LOCALAPPDATA")
     if local_app:
         hermes_exe = Path(local_app) / "hermes" / "bin" / ("hermes.exe" if os.name == "nt" else "hermes")

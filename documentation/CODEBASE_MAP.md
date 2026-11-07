@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-07 13:29:28 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-07 13:43:23 UTC**.
 
 ---
 
@@ -8,25 +8,205 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 79 | 16,724 | Python Core Kernel, Engine & Hermes Agent |
-| `.png` | 3 | 11,100 | Configuration / Asset |
-| `.css` | 2 | 8,429 | Custom Dark / Light / Terminal Design System |
-| `.js` | 3 | 4,276 | Vanilla ES6+ Reactive Terminal Controller |
-| `.md` | 13 | 3,321 | Architecture & Strategy Documentation |
-| `.html` | 1 | 1,046 | Single Page Application DOM Structure |
-| `.ps1` | 2 | 295 | Configuration / Asset |
-| `.yaml` | 1 | 32 | Configuration / Asset |
+| `.py` | 10819 | 2,664,187 | Python Core Kernel, Engine & Hermes Agent |
+| `.ts` | 3911 | 775,975 | Configuration / Asset |
+| `.png` | 136 | 616,169 | Configuration / Asset |
+| `.md` | 1557 | 452,219 | Architecture & Strategy Documentation |
+| `.tsx` | 1548 | 384,054 | Configuration / Asset |
+| `.json` | 220 | 153,095 | Configuration / Asset |
+| `.jpg` | 6 | 136,243 | Configuration / Asset |
+| `.yaml` | 1264 | 120,668 | Configuration / Asset |
+| `.mjs` | 282 | 58,247 | Configuration / Asset |
+| `.tiff` | 1 | 42,784 | Configuration / Asset |
+| `.icns` | 4 | 39,764 | Configuration / Asset |
+| `.woff2` | 13 | 22,964 | Configuration / Asset |
+| `.css` | 36 | 19,836 | Custom Dark / Light / Terminal Design System |
+| `.wav` | 1 | 16,257 | Configuration / Asset |
+| `.pdf` | 4 | 14,579 | Configuration / Asset |
+| `.h` | 3 | 14,533 | Configuration / Asset |
+| `.sh` | 79 | 13,746 | Configuration / Asset |
+| `.js` | 28 | 12,710 | Vanilla ES6+ Reactive Terminal Controller |
+| `.ps1` | 40 | 11,312 | Configuration / Asset |
+| `.lock` | 3 | 7,975 | Configuration / Asset |
+| `.rs` | 12 | 7,810 | Configuration / Asset |
+| `.bst` | 5 | 7,756 | Configuration / Asset |
+| `.sty` | 13 | 6,846 | Configuration / Asset |
+| `.nix` | 23 | 6,155 | Configuration / Asset |
+| `.html` | 18 | 5,142 | Single Page Application DOM Structure |
+| `.txt` | 30 | 4,548 | Dependency Specifications |
+| `.tflite` | 1 | 4,542 | Configuration / Asset |
+| `.tex` | 11 | 4,062 | Configuration / Asset |
+| `.ico` | 5 | 3,856 | Configuration / Asset |
+| `.example` | 2 | 2,439 | Environment Configuration Template |
+| `.com` | 1838 | 2,381 | Configuration / Asset |
+| `.toml` | 6 | 1,893 | PyProject Configuration |
+| `.cjs` | 15 | 1,609 | Configuration / Asset |
+| `.mp4` | 1 | 687 | Configuration / Asset |
+| `.webp` | 4 | 680 | Configuration / Asset |
+| `Dockerfile` | 1 | 577 | Configuration / Asset |
+| `PKG-INFO` | 1 | 477 | Configuration / Asset |
+| `.c` | 3 | 474 | Configuration / Asset |
+| `.mts` | 9 | 434 | Configuration / Asset |
+| `LICENSE` | 11 | 422 | Configuration / Asset |
+| `.m` | 2 | 348 | Configuration / Asset |
+| `.mdx` | 5 | 348 | Configuration / Asset |
+| `.tmpl` | 3 | 308 | Configuration / Asset |
+| `.svg` | 14 | 306 | Configuration / Asset |
+| `.bib` | 5 | 291 | Configuration / Asset |
+| `check` | 1 | 290 | Configuration / Asset |
+| `.cs` | 2 | 243 | Configuration / Asset |
+| `.ahk` | 1 | 215 | Configuration / Asset |
+| `.tsv` | 1 | 200 | Configuration / Asset |
+| `.yml` | 4 | 197 | Configuration / Asset |
+| `.jsonl` | 4 | 183 | Configuration / Asset |
+| `activate` | 1 | 181 | Configuration / Asset |
+| `.dockerfile` | 2 | 136 | Configuration / Asset |
+| `.fish` | 1 | 111 | Configuration / Asset |
+| `run` | 3 | 103 | Configuration / Asset |
+| `.local` | 78 | 94 | Configuration / Asset |
+| `.manifest` | 1 | 75 | Configuration / Asset |
+| `015-supervise-perms` | 1 | 75 | Configuration / Asset |
+| `.cts` | 3 | 68 | Configuration / Asset |
+| `.plist` | 4 | 62 | Configuration / Asset |
+| `.xml` | 1 | 62 | Configuration / Asset |
+| `.ai` | 45 | 54 | Configuration / Asset |
+| `.sha256` | 1 | 49 | Configuration / Asset |
+| `.patch` | 2 | 46 | Configuration / Asset |
+| `.me` | 30 | 40 | Configuration / Asset |
+| `justfile` | 1 | 38 | Configuration / Asset |
+| `02-reconcile-profiles` | 1 | 37 | Configuration / Asset |
+| `Makefile` | 1 | 36 | Configuration / Asset |
+| `.service` | 1 | 32 | Configuration / Asset |
+| `run-in-hermes-env` | 1 | 32 | Configuration / Asset |
+| `.net` | 26 | 31 | Configuration / Asset |
+| `finish` | 1 | 30 | Configuration / Asset |
+| `NOTICE` | 1 | 30 | Configuration / Asset |
+| `.cmd` | 1 | 28 | Configuration / Asset |
+| `.dev` | 19 | 24 | Configuration / Asset |
+| `.org` | 19 | 22 | Configuration / Asset |
+| `.cn` | 16 | 19 | Configuration / Asset |
+| `.de` | 16 | 19 | Configuration / Asset |
+| `.io` | 11 | 15 | Configuration / Asset |
+| `.edu` | 10 | 13 | Configuration / Asset |
+| `hermes-gateway` | 1 | 13 | Configuration / Asset |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
 | `.cursorignore` | 1 | 12 | Configuration / Asset |
 | `.opencodeignore` | 1 | 12 | Configuration / Asset |
-| `.json` | 1 | 12 | Configuration / Asset |
-| `.txt` | 2 | 11 | Dependency Specifications |
-| `.toml` | 1 | 10 | PyProject Configuration |
-| `.sh` | 1 | 9 | Configuration / Asset |
+| `.co` | 9 | 11 | Configuration / Asset |
+| `.au` | 9 | 11 | Configuration / Asset |
+| `hermes` | 1 | 11 | Configuration / Asset |
+| `.uk` | 8 | 10 | Configuration / Asset |
+| `.xyz` | 6 | 9 | Configuration / Asset |
+| `.tech` | 6 | 9 | Configuration / Asset |
 | `.bat` | 1 | 8 | Configuration / Asset |
+| `.in` | 5 | 8 | Configuration / Asset |
+| `.ru` | 5 | 8 | Configuration / Asset |
+| `.fr` | 6 | 7 | Configuration / Asset |
+| `.ca` | 5 | 7 | Configuration / Asset |
+| `.br` | 5 | 6 | Configuration / Asset |
+| `.cz` | 3 | 6 | Configuration / Asset |
+| `.jp` | 4 | 6 | Configuration / Asset |
+| `.ch` | 4 | 6 | Configuration / Asset |
+| `.cloud` | 4 | 5 | Configuration / Asset |
+| `.se` | 3 | 5 | Configuration / Asset |
+| `.it` | 4 | 5 | Configuration / Asset |
+| `.eu` | 5 | 5 | Configuration / Asset |
+| `.ini` | 1 | 5 | Configuration / Asset |
+| `.invalid` | 2 | 4 | Configuration / Asset |
+| `.to` | 4 | 4 | Configuration / Asset |
+| `.lan` | 4 | 4 | Configuration / Asset |
+| `.inc` | 2 | 4 | Configuration / Asset |
+| `.so` | 2 | 4 | Configuration / Asset |
+| `.tr` | 3 | 3 | Configuration / Asset |
+| `.systems` | 2 | 3 | Configuration / Asset |
+| `.tw` | 2 | 3 | Configuration / Asset |
+| `.ltd` | 2 | 3 | Configuration / Asset |
+| `.cc` | 3 | 3 | Configuration / Asset |
+| `.pl` | 2 | 3 | Configuration / Asset |
+| `.nl` | 2 | 3 | Configuration / Asset |
+| `.sg` | 2 | 3 | Configuration / Asset |
+| `.kitchen` | 1 | 3 | Configuration / Asset |
+| `type` | 3 | 3 | Configuration / Asset |
 | `.db` | 2 | 2 | Configuration / Asset |
-| `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **116** | **45,312** | *Entire Humming Bird Repository* |
+| `.id` | 2 | 2 | Configuration / Asset |
+| `a@l` | 1 | 2 | Configuration / Asset |
+| `.best` | 1 | 2 | Configuration / Asset |
+| `alberto@localhost` | 1 | 2 | Configuration / Asset |
+| `.fi` | 2 | 2 | Configuration / Asset |
+| `.es` | 1 | 2 | Configuration / Asset |
+| `.no` | 2 | 2 | Configuration / Asset |
+| `.win` | 2 | 2 | Configuration / Asset |
+| `.be` | 1 | 2 | Configuration / Asset |
+| `.vip` | 1 | 2 | Configuration / Asset |
+| `.agent` | 1 | 2 | Configuration / Asset |
+| `hermes-agent@localhost` | 1 | 2 | Configuration / Asset |
+| `.info` | 1 | 2 | Configuration / Asset |
+| `.dk` | 2 | 2 | Configuration / Asset |
+| `.family` | 1 | 2 | Configuration / Asset |
+| `.ar` | 1 | 2 | Configuration / Asset |
+| `.vn` | 1 | 2 | Configuration / Asset |
+| `satoshi@local` | 1 | 2 | Configuration / Asset |
+| `[email protected]` | 1 | 1 | Configuration / Asset |
+| `.pt` | 1 | 1 | Configuration / Asset |
+| `.il` | 1 | 1 | Configuration / Asset |
+| `.zone` | 1 | 1 | Configuration / Asset |
+| `.pro` | 1 | 1 | Configuration / Asset |
+| `BonesGit@local` | 1 | 1 | Configuration / Asset |
+| `.lol` | 1 | 1 | Configuration / Asset |
+| `.is` | 1 | 1 | Configuration / Asset |
+| `.ooo` | 1 | 1 | Configuration / Asset |
+| `.ventures` | 1 | 1 | Configuration / Asset |
+| `.rocks` | 1 | 1 | Configuration / Asset |
+| `.us` | 1 | 1 | Configuration / Asset |
+| `dev@local` | 1 | 1 | Configuration / Asset |
+| `.group` | 1 | 1 | Configuration / Asset |
+| `.test` | 1 | 1 | Configuration / Asset |
+| `.gg` | 1 | 1 | Configuration / Asset |
+| `.mesh` | 1 | 1 | Configuration / Asset |
+| `.za` | 1 | 1 | Configuration / Asset |
+| `.bio` | 1 | 1 | Configuration / Asset |
+| `.ae` | 1 | 1 | Configuration / Asset |
+| `.tv` | 1 | 1 | Configuration / Asset |
+| `hermes-fleet-fix@localhost` | 1 | 1 | Configuration / Asset |
+| `hermes-macair@local` | 1 | 1 | Configuration / Asset |
+| `hermes@local` | 1 | 1 | Configuration / Asset |
+| `.app` | 1 | 1 | Configuration / Asset |
+| `.industries` | 1 | 1 | Configuration / Asset |
+| `.computer` | 1 | 1 | Configuration / Asset |
+| `kiosha@local` | 1 | 1 | Configuration / Asset |
+| `laura@localhost` | 1 | 1 | Configuration / Asset |
+| `lavie@local` | 1 | 1 | Configuration / Asset |
+| `.team` | 1 | 1 | Configuration / Asset |
+| `.video` | 1 | 1 | Configuration / Asset |
+| `ljubomir@macbook2` | 1 | 1 | Configuration / Asset |
+| `.cl` | 1 | 1 | Configuration / Asset |
+| `.kr` | 1 | 1 | Configuration / Asset |
+| `.uy` | 1 | 1 | Configuration / Asset |
+| `.pw` | 1 | 1 | Configuration / Asset |
+| `.at` | 1 | 1 | Configuration / Asset |
+| `nyaruko@hermes` | 1 | 1 | Configuration / Asset |
+| `.ad` | 1 | 1 | Configuration / Asset |
+| `.pet` | 1 | 1 | Configuration / Asset |
+| `probe@local` | 1 | 1 | Configuration / Asset |
+| `.club` | 1 | 1 | Configuration / Asset |
+| `.email` | 1 | 1 | Configuration / Asset |
+| `.online` | 1 | 1 | Configuration / Asset |
+| `.works` | 1 | 1 | Configuration / Asset |
+| `.nu` | 1 | 1 | Configuration / Asset |
+| `stanislav@local` | 1 | 1 | Configuration / Asset |
+| `sysadmin@local` | 1 | 1 | Configuration / Asset |
+| `t@t` | 1 | 1 | Configuration / Asset |
+| `tangyi@DESKTOP-2U4MD8Q` | 1 | 1 | Configuration / Asset |
+| `trading-monitoring@localhost` | 1 | 1 | Configuration / Asset |
+| `vega33@localhost` | 1 | 1 | Configuration / Asset |
+| `vega38@localhost` | 1 | 1 | Configuration / Asset |
+| `.localdomain` | 1 | 1 | Configuration / Asset |
+| `.top` | 1 | 1 | Configuration / Asset |
+| `base` | 3 | 0 | Configuration / Asset |
+| `dashboard` | 1 | 0 | Configuration / Asset |
+| `main-hermes` | 1 | 0 | Configuration / Asset |
+| `profile-gateways` | 1 | 0 | Configuration / Asset |
+| **TOTAL** | **22525** | **5,644,939** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -500,7 +680,7 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `BridgeChatRequest` | `L60–L63` | `BaseModel` | — | 0 |
+| `BridgeChatRequest` | `L63–L66` | `BaseModel` | — | 0 |
 
 
 #### Standalone Functions
@@ -508,17 +688,17 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `get_hermes_dir` | `L28–L47` | `(profile: str='hummingbird'...)` | `Path` | Returns the Hermes profile directory (hummingbird profile if available, else hermes home). | `Path`, `exists`, `get`, `home` |
-| `get_hermes_bin` | `L50–L57` | `(...)` | `str` | Returns path to the hermes executable. | `Path`, `exists`, `get`, `str` |
-| `stream_hermes_chat` | `L66–L121` | `(message: str, session_id: Optional[...)` | `AsyncGenerator[str, None]` | Streams SSE events from running Hermes gateway API server. | `AsyncClient`, `aiter_lines`, `append`, `aread` |
-| `read_hermes_state` | `L124–L283` | `(...)` | `dict[str, Any]` | Reads skills, memory (USER.md / MEMORY.md), active model, and cron jobs from Hermes. | `Path`, `_extract_skill_meta`, `any`, `append` |
-| `_extract_skill_meta` | `L286–L303` | `(path: Path...)` | `dict[str, Any]` | Extracts frontmatter metadata from a SKILL.md file. | `get`, `isinstance`, `len`, `read_text` |
-| `run_hermes_cron_cmd` | `L306–L318` | `(*args: str...)` | `dict[str, Any]` | Runs a hermes cron sub-command synchronously on the hummingbird profile. | `get_hermes_bin`, `run`, `str`, `strip` |
-| `build_hermes_bridge_router` | `L321–L368` | `(database: Any=None, settings: Any=N...)` | `APIRouter` | Builds and returns the Hermes bridge router. | `APIRouter` |
-| `bridge_chat` | `L326–L336` | `(body: BridgeChatRequest...)` | — | Streaming chat endpoint proxying to running Hermes. | `StreamingResponse`, `post`, `stream_hermes_chat` |
-| `bridge_state` | `L340–L342` | `(...)` | — | Returns active model, skills, memory preview, and cron jobs directly from Hermes. | `get`, `read_hermes_state` |
-| `bridge_cron_pause` | `L345–L350` | `(job_id: str...)` | — | Pauses a scheduled Hermes cron job. | `HTTPException`, `get`, `post`, `run_hermes_cron_cmd` |
-| `bridge_cron_resume` | `L353–L358` | `(job_id: str...)` | — | Resumes a paused Hermes cron job. | `HTTPException`, `get`, `post`, `run_hermes_cron_cmd` |
-| `bridge_cron_delete` | `L361–L366` | `(job_id: str...)` | — | Deletes a scheduled Hermes cron job. | `HTTPException`, `delete`, `get`, `run_hermes_cron_cmd` |
+| `get_hermes_bin` | `L50–L60` | `(...)` | `str` | Returns path to the hermes executable, preferring vendor/hermes-agent editable in .venv. | `Path`, `exists`, `get`, `str` |
+| `stream_hermes_chat` | `L69–L124` | `(message: str, session_id: Optional[...)` | `AsyncGenerator[str, None]` | Streams SSE events from running Hermes gateway API server. | `AsyncClient`, `aiter_lines`, `append`, `aread` |
+| `read_hermes_state` | `L127–L286` | `(...)` | `dict[str, Any]` | Reads skills, memory (USER.md / MEMORY.md), active model, and cron jobs from Hermes. | `Path`, `_extract_skill_meta`, `any`, `append` |
+| `_extract_skill_meta` | `L289–L306` | `(path: Path...)` | `dict[str, Any]` | Extracts frontmatter metadata from a SKILL.md file. | `get`, `isinstance`, `len`, `read_text` |
+| `run_hermes_cron_cmd` | `L309–L321` | `(*args: str...)` | `dict[str, Any]` | Runs a hermes cron sub-command synchronously on the hummingbird profile. | `get_hermes_bin`, `run`, `str`, `strip` |
+| `build_hermes_bridge_router` | `L324–L371` | `(database: Any=None, settings: Any=N...)` | `APIRouter` | Builds and returns the Hermes bridge router. | `APIRouter` |
+| `bridge_chat` | `L329–L339` | `(body: BridgeChatRequest...)` | — | Streaming chat endpoint proxying to running Hermes. | `StreamingResponse`, `post`, `stream_hermes_chat` |
+| `bridge_state` | `L343–L345` | `(...)` | — | Returns active model, skills, memory preview, and cron jobs directly from Hermes. | `get`, `read_hermes_state` |
+| `bridge_cron_pause` | `L348–L353` | `(job_id: str...)` | — | Pauses a scheduled Hermes cron job. | `HTTPException`, `get`, `post`, `run_hermes_cron_cmd` |
+| `bridge_cron_resume` | `L356–L361` | `(job_id: str...)` | — | Resumes a paused Hermes cron job. | `HTTPException`, `get`, `post`, `run_hermes_cron_cmd` |
+| `bridge_cron_delete` | `L364–L369` | `(job_id: str...)` | — | Deletes a scheduled Hermes cron job. | `HTTPException`, `delete`, `get`, `run_hermes_cron_cmd` |
 
 
 ---
@@ -1278,4 +1458,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/restore_db.py` | `restore_database` | 88 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 36 Python modules inspected, 31 FastAPI endpoints registered, 45,312 total LOC indexed.
+> **Audit Summary:** 36 Python modules inspected, 31 FastAPI endpoints registered, 5,644,939 total LOC indexed.

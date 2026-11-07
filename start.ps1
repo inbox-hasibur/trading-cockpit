@@ -15,15 +15,20 @@ if (-not $env:HERMES_HOME) {
     $env:HERMES_HOME = Join-Path $LocalApp "hermes"
 }
 
-# Locate hermes executable
-$HermesBin = Join-Path $env:HERMES_HOME "bin\hermes.exe"
-if (-not (Test-Path $HermesBin)) {
-    $HermesCmd = Get-Command "hermes" -ErrorAction SilentlyContinue
-    if ($HermesCmd) {
-        $HermesBin = $HermesCmd.Source
-    } else {
-        Write-Error "Could not locate hermes executable at $HermesBin or in PATH."
-        exit 1
+# Locate hermes executable (prefer vendor/hermes-agent editable in .venv)
+$VenvHermes = Join-Path $ScriptDir ".venv\Scripts\hermes.exe"
+if (Test-Path $VenvHermes) {
+    $HermesBin = $VenvHermes
+} else {
+    $HermesBin = Join-Path $env:HERMES_HOME "bin\hermes.exe"
+    if (-not (Test-Path $HermesBin)) {
+        $HermesCmd = Get-Command "hermes" -ErrorAction SilentlyContinue
+        if ($HermesCmd) {
+            $HermesBin = $HermesCmd.Source
+        } else {
+            Write-Error "Could not locate hermes executable at $HermesBin or in PATH."
+            exit 1
+        }
     }
 }
 
