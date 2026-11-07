@@ -276,13 +276,128 @@ Both `/buy` and `/sell` Vue components intercept form submission with `e.prevent
 
 ---
 
-## 6. Risks and Unknowns
+## 6. Write Contract (Test Portfolio #164580)
 
-1. **Single-Device Session Eviction:**
-   - StockNow sessions can be evicted if logged in from an alternate mobile app or browser session. A background heartbeat check is recommended before executing trades.
-2. **Cleartext Password in LocalStorage:**
-   - Because `rememberCredentials: true` writes the plaintext password to `localStorage.password`, any XSS vulnerability or extension on the client host poses a credential leak risk.
-3. **DSE Market Hours & Latency Spikes:**
-   - Market session runs 10:00 AM – 2:30 PM (Sunday–Thursday). During peak open (10:00–10:15 AM), StockNow API responses can exhibit latency up to 3.5 seconds; caching with local stale-while-revalidate is mandatory.
-4. **Rate Limiting & IP Blocking:**
-   - Requests exceeding 2 req/sec risk temporary IP throttling or Cloudflare challenges. The Cockpit must strictly adhere to rate limits ($\ge 1.0$s interval).
+> **Test Environment & Safety Guard:**  
+> All mutating requests are strictly gated by `backend.adapters.stocknow_write_guard.verify_test_portfolio_post_guard`.  
+> The guard enforces that the target portfolio ID strictly matches `STOCKNOW_TEST_PORTFOLIO_ID` (`164580`) and refuses any POST if unconfigured or pointing to non-test portfolios.  
+> Captured live under HAR recording: `tests/fixtures/stocknow/har/stocknow_write_contract.har`. Sanitized results in `tests/fixtures/stocknow/write_contract_results.json` and `tests/fixtures/stocknow/write_contract_ledger.json`.
+
+### 6.1 Order Execution Contract (UI Buy & Sell)
+
+StockNow virtual portfolio mutations use `POST /api/v1/user/portfolios/{id}` with parallel array structures.
+
+#### 1. Buy Execution (1 Share BANKASIA)
+- **Endpoint:** `POST https://stocknow.com.bd/api/v1/user/portfolios/164580`
+- **Status:** `200 OK`
+- **Request Headers:**
+  ```http
+  Accept: application/json, text/plain, */*
+  Authorization: Bearer <access_token>
+  Content-Type: application/json
+  ```
+- **Request Body:**
+  ```json
+  {
+    "portfolio_name": "",
+    "cash_amount": "",
+    "broker_fee": "0.5",
+    "actions": ["Buy"],
+    "scrip_id": [""],
+    "commission": ["0.5"],
+    "no_of_shares": ["1"],
+    "buying_price": [17.5],
+    "buying_date": [null],
+    "instrument_ids": ["BANKASIA"]
+  }
+  ```
+- **Response Structure (Summary):**
+  Returns the updated portfolio model with newly generated scrip holding ID (`id: 2350594`), cash deduction of ৳17.59 (৳17.50 principal + 0.5% broker fee ৳0.0875), and updated scrips list.
+
+#### 2. Sell Execution (1 Share BANKASIA)
+- **Endpoint:** `POST https://stocknow.com.bd/api/v1/user/portfolios/164580`
+- **Status:** `200 OK`
+- **Request Body:**
+  ```json
+  {
+    "portfolio_name": "Humming Bird",
+    "cash_amount": 129164,
+    "broker_fee": "0.5",
+    "actions": ["Sell"],
+    "scrip_id": [2347779],
+    "commission": ["0.5"],
+    "no_of_shares": ["1"],
+    "buying_price": [17.5],
+    "buying_date": [null],
+    "instrument_ids": []
+  }
+  ```
+- **Response Structure (Summary):**
+  Returns the updated portfolio with credited cash of ৳17.41 (৳17.50 proceeds minus 0.5% broker fee ৳0.0875), and decremented holding quantity.
+
+### 6.2 Post-Trade Ledger Records
+
+Verified from `GET /api/v1/user/portfolios/164580/ledger` and `/portfolios/164580/ledger` DOM:
+
+| Date | Type | Symbol | Qty | Rate (BDT) | Comm (BDT) | Debit/Credit (BDT) | Balance (BDT) |
+|:---|:---|:---|:---|:---|:---|:---|:---|
+| `08/11/26` | `SELL` | `BANKASIA` | 1 | 17.50 | 0.0875 | `+17.4125` | 129,181.00 |
+| `08/11/26` | `BUY` | `BANKASIA` | 1 | 17.50 | 0.0875 | `-17.5875` | 129,164.00 |
+
+*Ledger Item Schema (`GET /api/v1/user/portfolios/{id}/ledger`):*
+```json
+{
+  "id": 3142750,
+  "portfolio_id": 164580,
+  "action": "SELL",
+  "description": "BANKASIA",
+  "qty": 1,
+  "price": 17.5,
+  "commission": 0.0875,
+  "debit": null,
+  "credit": 17.4125,
+  "balance": 129181,
+  "created_at": "2026-11-08 00:00:00",
+  "updated_at": "2026-11-08 01:08:21"
+}
+```
+
+### 6.3 Error Responses & Server Validation Probes
+
+Probes executed against `POST /api/v1/user/portfolios/164580` using valid Bearer token:
+
+| Scenario | Tested Payload Modification | HTTP Status | Response Body | Interpretation |
+|:---|:---|:---|:---|:---|
+| **Quantity 0** | `"no_of_shares": [0]` | `403 Forbidden` | `{"error": {"code": 403, "message": "Invalid request. Please double check your changes."}}` | Server rejects non-positive integer quantities. |
+| **Missing Price** | `"buying_price": [""]` | `403 Forbidden` | `{"error": {"code": 403, "message": "Invalid request. Please double check your changes."}}` | Server rejects empty or null execution rates. |
+| **Unknown Share** | `"instrument_ids": ["UNKNOWN_XYZ_999"]` | `200 OK` | Full portfolio JSON with scrip holding `"UNKNOWN_XYZ_999"` created | **Unexpected:** Virtual portfolio engine does not validate instrument symbol against DSE master catalog. |
+| **Price Far Outside Day Range** | `"buying_price": [999999.0]` | `200 OK` | Full portfolio JSON; cash balance updated to `-875836` | **Unexpected:** Virtual portfolio API completely ignores circuit limits / day range. Accepts arbitrary prices. |
+| **Future Date** | `"buying_date": ["2035-01-01"]` | `200 OK` | Full portfolio JSON with `"buying_date": "2035-01-01 00:00:00"` | Virtual portfolio engine allows speculative future dates without validation. |
+| **Duplicate Submit within 2s** | Two identical POST requests fired $< 2000$ms apart | Both `200 OK` | Both requests process independently; two separate lots created | **No Server-Side Deduplication:** StockNow lacks idempotency keys or fast-submit debounce; client-side rate limits are mandatory. |
+
+### 6.4 Research Questions & Empirical Answers
+
+1. **Does the API validate price against the day range?**
+   - **No.** The API does not enforce daily circuit limits or high/low price ranges on virtual portfolios. A buy at ৳999,999.00 was accepted with `200 OK`. The client-side kernel must strictly validate market prices before order dispatch.
+2. **Does an API login invalidate the browser session (credentials from env, never printed)?**
+   - **No.** Authenticating via `POST /api/v1/auth/login` generates an independent valid token. The browser's active `access_token` remains completely valid (`status: 200` on subsequent requests). Multiple concurrent JWT tokens are permitted per user.
+3. **What does `POST /auth/logout` do to the token?**
+   - Endpoint: `POST https://stocknow.com.bd/api/v1/auth/logout`.
+   - Response: `200 OK` with `{"success": {"code": 200, "message": "Logged out"}}`.
+   - Token Lifecycle: **Strict server-side blacklisting.** Immediately after logout, any request using that token returns `401 Unauthorized` (`{"error": {"code": 401, "message": "Please login."}}`).
+
+---
+
+## 7. Risks and Unknowns
+
+1. **Absence of Server-Side Price Sanity Checks on Virtual Portfolios:**
+   - Because StockNow permits arbitrary prices and unknown symbols on virtual portfolios, any corrupted quote from the aggregator could theoretically corrupt the paper ledger if not guarded by Humming Bird kernel caps.
+2. **No Order Idempotency / Fast Duplicate Safeguards:**
+   - StockNow executes duplicate submissions in rapid succession without server-side deduplication. Humming Bird's client-side order mutex and 2-second rate limiter are critical.
+3. **Single-Device Session Eviction Risk on Password Change / Manual Logout:**
+   - While secondary login does not invalidate existing tokens, calling `POST /auth/logout` immediately invalidates that specific token.
+4. **Cleartext Password in LocalStorage:**
+   - Because `rememberCredentials: true` writes the plaintext password to `localStorage.password`, any client host vulnerability poses a credential leak risk.
+5. **DSE Market Hours & Latency Spikes:**
+   - Market session runs 10:00 AM – 2:30 PM (Sunday–Thursday). Peak open latency can reach 3.5 seconds; caching with local stale-while-revalidate is mandatory.
+
