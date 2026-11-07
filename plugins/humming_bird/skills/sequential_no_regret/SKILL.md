@@ -34,3 +34,4 @@ To eliminate the regret of selling too early or selling too late:
   - Immediately sell 50% of remaining shares to secure profit.
   - Retain the other 50% in `RECOVERY_HOLD`.
   - Once price climbs back above the anchor price, sequential selling rules restart!
+

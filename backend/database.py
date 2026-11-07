@@ -283,6 +283,19 @@ class RuleAudit(Base):
     created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
 
 
+class KernelAuditLog(Base):
+    __tablename__ = "kernel_audit_logs"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    endpoint: Mapped[str] = mapped_column(String(80))
+    action: Mapped[str] = mapped_column(String(80))
+    symbol: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON)
+    result: Mapped[dict[str, Any]] = mapped_column(JSON)
+    checkpoint_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    session_on: Mapped[date] = mapped_column(Date)
+    created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
+
+
 class ChatBudget(Base):
     __tablename__ = "chat_budget"
     day: Mapped[date] = mapped_column(Date, primary_key=True)

@@ -294,6 +294,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(build_hermes_router(database, settings, chat, broadcaster))
     app.include_router(build_auth_settings_router(database, settings, broadcaster))
     app.include_router(build_stocknow_router(database, settings, broadcaster, stocknow_client, scheduler=scheduler))
+    from backend.kernel_api import build_kernel_router
+    app.include_router(build_kernel_router(database, settings, stocknow_client))
 
     @app.get("/api/stream")
     async def event_stream(request: Request):

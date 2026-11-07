@@ -30,3 +30,4 @@ The DSE has high volatility and regulatory halts. Stocks are segregated into thr
 - **Tactics:** High-frequency / swing fluctuation scalp. Buy as green momentum starts coming out of support, and sell in tiered slices while still green to profit from market fluctuation before momentum fades.
 - **Active Members:** `DHAKABANK`.
 - **Trading Rules:** Evaluated by `AutoTrader` second, after `GSC_L1` opportunities are satisfied.
+

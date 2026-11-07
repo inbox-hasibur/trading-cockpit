@@ -30,3 +30,4 @@ When an operator reports insider intelligence, severe operational damage, or imp
    - Track price across subsequent market sessions.
    - If price drops >= 8%: Mark `CONFIRMED_LOSS`. Report: *"আপনার সতর্কবার্তা সত্যি প্রমাণিত হয়েছে; ৯০% বিক্রি করে ক্যাপিটাল রক্ষা করা হয়েছে।"*
    - If price stabilizes or gains across >= 3 sessions: Mark `FALSE_ALARM_STABLE`. Proactively suggest: *"কোম্পানিটি এখনো ভালো করছে; আপনি চাইলে আমরা কোয়ারেন্টাইন রিস্টোর করতে পারি।"*
+
