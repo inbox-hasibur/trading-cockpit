@@ -54,7 +54,18 @@ def on_pre_tool_call(tool_name: str, args: dict[str, Any] | None = None, **kwarg
     if isinstance(dry_run, str):
         dry_run = dry_run.lower() in ("true", "1", "yes")
 
-    bypass = os.getenv("HB_BYPASS_MARKET_HOURS", "").lower() in ("true", "1", "yes")
+    # Check trading mode from kernel if available (TEST_OFFHOURS bypasses market hours gate)
+    is_test_offhours = False
+    try:
+        from plugins.humming_bird.tools import _kernel_get
+        import json as _json
+        mode_res = _json.loads(_kernel_get("/k/mode"))
+        if mode_res.get("trading_mode") == "TEST_OFFHOURS":
+            is_test_offhours = True
+    except Exception:
+        pass
+
+    bypass = is_test_offhours or (os.getenv("HB_BYPASS_MARKET_HOURS", "").lower() in ("true", "1", "yes"))
     allow_dry_run_off_hours = os.getenv("ALLOW_OFF_HOURS_DRY_RUN", "true").lower() in ("true", "1", "yes")
 
     is_open, reason = check_dse_trading_hours()
@@ -63,7 +74,7 @@ def on_pre_tool_call(tool_name: str, args: dict[str, Any] | None = None, **kwarg
         if not dry_run or not allow_dry_run_off_hours:
             return {
                 "action": "block",
-                "message": f"Order blocked: DSE market is closed ({reason}). Orders are strictly limited to Sun-Thu 10:00 to 14:30 Asia/Dhaka.",
+                "message": f"Order blocked: DSE market is closed ({reason}). Orders are strictly limited to Sun-Thu 10:00 to 14:30 Asia/Dhaka in LIVE_HOURS mode.",
             }
 
     # If real submit (dry_run=False), invoke Hermes built-in approval gate

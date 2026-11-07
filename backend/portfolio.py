@@ -508,6 +508,7 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
             "quantity": decision.quantity, "lot_id": decision.lot_id,
             "reason": decision.reason, "date": cycle.session_on.isoformat(),
             "revision": cycle.market_revision,
+            "trading_mode": getattr(decision, "trading_mode", "LIVE_HOURS"),
         })
     latest = session.scalar(select(AutomationCycle).order_by(
         AutomationCycle.market_revision.desc(), AutomationCycle.rules_revision.desc()
@@ -543,8 +544,10 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
 
     return {
         "all_shares_count": all_shares_total,
+        "trading_mode": getattr(state, "trading_mode", "LIVE_HOURS"),
         "app": {
             "name": state.name, "version": VERSION, "mode": "DEMO", "source": "SYNTHETIC",
+            "trading_mode": getattr(state, "trading_mode", "LIVE_HOURS"),
             "date": state.clock_date.isoformat(), "revision": state.revision,
             "rules_revision": state.rules_revision, "paused": state.paused,
             "automation_enabled": getattr(state, "automation_enabled", not state.paused),
@@ -607,6 +610,7 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
         "rule_audit": [{
             "id": audit.id, "symbol": audit.symbol, "before": audit.before,
             "after": audit.after, "date": audit.session_on.isoformat(), "created_at": audit.created_at,
+            "trading_mode": getattr(audit, "trading_mode", "LIVE_HOURS"),
         } for audit in session.scalars(select(RuleAudit).order_by(RuleAudit.id.desc()).limit(10))],
         "normalized_curve": normalized_watchlist(company_views),
         "fees": {

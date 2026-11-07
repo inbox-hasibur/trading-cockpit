@@ -112,6 +112,7 @@ class DSEMarketScheduler:
             auto_enabled = getattr(state, "automation_enabled", True)
             paused = getattr(state, "paused", False)
             poll_sec = getattr(state, "polling_interval_sec", 120)
+            trading_mode = getattr(state, "trading_mode", "LIVE_HOURS")
 
         gate = is_dse_market_open(settings=self.settings)
         return {
@@ -123,6 +124,7 @@ class DSEMarketScheduler:
             "polling_interval_sec": poll_sec,
             "automation_enabled": auto_enabled,
             "paused": paused,
+            "trading_mode": trading_mode,
             "market": gate,
         }
 
@@ -132,10 +134,11 @@ class DSEMarketScheduler:
             state = portfolio_state(session)
             auto_enabled = getattr(state, "automation_enabled", True)
             paused = getattr(state, "paused", False)
+            trading_mode = getattr(state, "trading_mode", "LIVE_HOURS")
 
         gate = is_dse_market_open(settings=self.settings)
         if not force:
-            if not gate["is_open"]:
+            if trading_mode != "TEST_OFFHOURS" and not gate["is_open"]:
                 self.last_skip_reason = f"Market closed: {gate['reason']}"
                 return {"status": "SKIPPED", "reason": self.last_skip_reason, "market": gate}
             if not auto_enabled:

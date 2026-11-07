@@ -88,6 +88,7 @@ def build_hermes_router(database: Database, settings: Settings, *args: Any, **kw
                     "description": cp.description,
                     "date": cp.session_on.isoformat(),
                     "created_at": cp.created_at,
+                    "trading_mode": (cp.snapshot_payload or {}).get("trading_mode", "LIVE_HOURS"),
                     "diff": cp.diff_payload or {
                         "action": cp.action,
                         "actor": getattr(cp, "actor", "Kernel API"),
@@ -106,6 +107,7 @@ def build_hermes_router(database: Database, settings: Settings, *args: Any, **kw
                     "skill_name": a.symbol,
                     "version": 1,
                     "reason": f"Rule changed: {a.before} -> {a.after}",
+                    "trading_mode": getattr(a, "trading_mode", "LIVE_HOURS"),
                     "created_at": a.created_at,
                 }
                 for a in session.scalars(select(RuleAudit).order_by(RuleAudit.id.desc()).limit(10))

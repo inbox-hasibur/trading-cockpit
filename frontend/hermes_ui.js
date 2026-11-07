@@ -1025,6 +1025,7 @@ async function loadSystemChanges() {
                 <div class="diff-head-meta">
                   <span class="diff-action-tag">${escapeHtml(c.action || "MUTATION")}</span>
                   <span class="diff-actor-tag">${escapeHtml(c.actor || "Hermes Agent")}</span>
+                  ${c.trading_mode ? `<span class="diff-mode-tag ${c.trading_mode === "TEST_OFFHOURS" ? "test-mode" : "live-mode"}">${escapeHtml(c.trading_mode === "TEST_OFFHOURS" ? "Test Mode 24/7" : "Live Hours (virtual)")}</span>` : ""}
                   <span class="diff-time">${escapeHtml(formatRelativeTime(c.created_at) || c.date || "")}</span>
                 </div>
                 <button type="button" class="diff-revert-btn" onclick="executeRollback()" title="Undo mutation (/rollback)">↺ Rollback</button>

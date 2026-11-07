@@ -52,6 +52,7 @@ class PortfolioState(Base):
     ingestion_mode: Mapped[str] = mapped_column(String(32), default="BACKGROUND_POLLING")
     polling_interval_sec: Mapped[int] = mapped_column(Integer, default=120)
     active_model: Mapped[str] = mapped_column(String(64), default="xiaomi/mimo-v2-flash")
+    trading_mode: Mapped[str] = mapped_column(String(32), default="LIVE_HOURS")
     calendar_holidays: Mapped[list[str]] = mapped_column(JSON, default=list)
     bucket_anchor: Mapped[date] = mapped_column(Date)
     created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
@@ -198,6 +199,7 @@ class DecisionLog(Base):
     action: Mapped[str] = mapped_column(String(40))
     quantity: Mapped[int] = mapped_column(Integer, default=0)
     reason: Mapped[str] = mapped_column(String(600))
+    trading_mode: Mapped[str] = mapped_column(String(32), default="LIVE_HOURS")
     created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
 
 
@@ -208,6 +210,7 @@ class RuleAudit(Base):
     before: Mapped[dict[str, Any]] = mapped_column(JSON)
     after: Mapped[dict[str, Any]] = mapped_column(JSON)
     session_on: Mapped[date] = mapped_column(Date)
+    trading_mode: Mapped[str] = mapped_column(String(32), default="LIVE_HOURS")
     created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
 
 
@@ -221,6 +224,7 @@ class KernelAuditLog(Base):
     result: Mapped[dict[str, Any]] = mapped_column(JSON)
     checkpoint_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     session_on: Mapped[date] = mapped_column(Date)
+    trading_mode: Mapped[str] = mapped_column(String(32), default="LIVE_HOURS")
     created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
 
 
@@ -273,6 +277,26 @@ class Database:
                     conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN polling_interval_sec INTEGER DEFAULT 120"))
                 if "active_model" not in ps_cols:
                     conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN active_model VARCHAR(64) DEFAULT 'xiaomi/mimo-v2-flash'"))
+                if "trading_mode" not in ps_cols:
+                    conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN trading_mode VARCHAR(32) DEFAULT 'LIVE_HOURS'"))
+                conn.commit()
+
+            result = conn.execute(text("PRAGMA table_info(decision_logs)"))
+            dl_cols = [row[1] for row in result.fetchall()]
+            if dl_cols and "trading_mode" not in dl_cols:
+                conn.execute(text("ALTER TABLE decision_logs ADD COLUMN trading_mode VARCHAR(32) DEFAULT 'LIVE_HOURS'"))
+                conn.commit()
+
+            result = conn.execute(text("PRAGMA table_info(kernel_audit_logs)"))
+            kal_cols = [row[1] for row in result.fetchall()]
+            if kal_cols and "trading_mode" not in kal_cols:
+                conn.execute(text("ALTER TABLE kernel_audit_logs ADD COLUMN trading_mode VARCHAR(32) DEFAULT 'LIVE_HOURS'"))
+                conn.commit()
+
+            result = conn.execute(text("PRAGMA table_info(rule_audit)"))
+            ra_cols = [row[1] for row in result.fetchall()]
+            if ra_cols and "trading_mode" not in ra_cols:
+                conn.execute(text("ALTER TABLE rule_audit ADD COLUMN trading_mode VARCHAR(32) DEFAULT 'LIVE_HOURS'"))
                 conn.commit()
 
             # Drop any legacy hermes_* tables

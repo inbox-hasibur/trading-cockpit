@@ -24,5 +24,7 @@ provides_tools:
   - hb_scheduler
   - hb_run_cycle
   - hb_stocknow_session
+  - hb_mode_get
+  - hb_mode_set
 provides_hooks:
   - pre_tool_call

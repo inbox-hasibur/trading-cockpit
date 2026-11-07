@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 import os
 from decimal import Decimal
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
@@ -667,6 +667,16 @@ def post_order(
                     "note": "Dry run execution validated all constraints (T+2 maturity, strict no-loss, 0.5% fee). No state mutated.",
                 }
 
+            # Market hours gate (bypassed only when trading_mode == 'TEST_OFFHOURS')
+            trading_mode = getattr(state, "trading_mode", "LIVE_HOURS")
+            if not body.dry_run and trading_mode != "TEST_OFFHOURS":
+                market_gate = is_dse_market_open(settings=settings)
+                if not market_gate["is_open"]:
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail=f"DSE market is closed ({market_gate['reason']}). Orders in LIVE_HOURS mode are strictly limited to Sun-Thu 10:00 to 14:30 Asia/Dhaka.",
+                    )
+
             # dry_run is False -> Snapshot first, then mutate state
             cp = CheckpointManager.create_checkpoint(
                 session=session,
@@ -740,6 +750,70 @@ def post_rollback(
 # ─────────────────────────────────────────────────────────────────────────────
 # AUTOMATION CONTROL & SCHEDULER ENDPOINTS
 # ─────────────────────────────────────────────────────────────────────────────
+
+
+class SetTradingModeRequest(BaseModel):
+    trading_mode: Literal["TEST_OFFHOURS", "LIVE_HOURS"]
+    confirm: bool = False
+
+
+@router.get("/mode")
+def get_trading_mode(db: Database = Depends(get_db)) -> dict[str, Any]:
+    """Returns current trading mode (TEST_OFFHOURS or LIVE_HOURS)."""
+    with db.read() as session:
+        state = portfolio_state(session)
+        return {
+            "status": "ok",
+            "trading_mode": getattr(state, "trading_mode", "LIVE_HOURS"),
+            "allowed_modes": ["TEST_OFFHOURS", "LIVE_HOURS"],
+        }
+
+
+@router.post("/mode")
+def post_trading_mode(
+    body: SetTradingModeRequest,
+    db: Database = Depends(get_db),
+) -> dict[str, Any]:
+    """Sets trading mode to TEST_OFFHOURS or LIVE_HOURS with snapshot and audit log."""
+    new_mode = body.trading_mode
+    if new_mode == "TEST_OFFHOURS" and not body.confirm:
+        raise HTTPException(
+            status_code=422,
+            detail="Switching to TEST_OFFHOURS bypasses DSE market hours and requires explicit operator confirmation (confirm=true).",
+        )
+
+    with db.write() as session:
+        state = portfolio_state(session)
+        before_mode = getattr(state, "trading_mode", "LIVE_HOURS")
+
+        cp = CheckpointManager.create_checkpoint(
+            session=session,
+            state=state,
+            action="SET_TRADING_MODE",
+            description=f"Switch trading mode {before_mode} -> {new_mode}",
+            actor="Kernel API",
+        )
+
+        state.trading_mode = new_mode
+
+        audit = KernelAuditLog(
+            endpoint="/k/mode",
+            action="SET_TRADING_MODE",
+            symbol=None,
+            payload=body.model_dump(),
+            result={"status": "SUCCESS", "trading_mode": new_mode, "previous_mode": before_mode},
+            checkpoint_id=cp.id,
+            session_on=state.clock_date,
+            trading_mode=new_mode,
+        )
+        session.add(audit)
+
+        return {
+            "status": "ok",
+            "trading_mode": state.trading_mode,
+            "previous_mode": before_mode,
+            "checkpoint_id": cp.id,
+        }
 
 
 class SetAutomationConfigRequest(BaseModel):

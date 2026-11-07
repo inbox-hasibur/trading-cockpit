@@ -86,15 +86,16 @@ class AutoTrader:
 
         decisions: list[dict] = []
         trades: list[dict] = []
+        mode_val = getattr(state, "trading_mode", "LIVE_HOURS")
 
         def record(symbol: str, action: str, reason: str, quantity: int = 0, lot_id=None):
             session.add(DecisionLog(
                 cycle_id=cycle.id, symbol=symbol, action=action, reason=reason,
-                quantity=quantity, lot_id=lot_id,
+                quantity=quantity, lot_id=lot_id, trading_mode=mode_val,
             ))
             decisions.append({
                 "symbol": symbol, "action": action, "reason": reason,
-                "quantity": quantity, "lot_id": lot_id,
+                "quantity": quantity, "lot_id": lot_id, "trading_mode": mode_val,
             })
 
         companies = list(session.scalars(select(CompanyProfile).order_by(CompanyProfile.symbol)))

@@ -31,6 +31,7 @@
     </nav>
 
     <main class="workspace">
+      <div class="permanent-banner" id="permanent-banner">StockNow virtual portfolio, no real money</div>
       <header class="topbar">
         <div class="workspace-name"><span class="eyebrow">TRADING COCKPIT</span><span class="workspace-title">Humming Bird <span class="version">v0.01</span></span></div>
         <div class="topbar-right">
@@ -47,6 +48,16 @@
             <button type="button" class="hdr-slider-btn" id="hdr-mode-live" data-mode="ONSCREEN_LIVE" title="Method B: Onscreen Live Mode (Playwright Headed CDP Attached)">
               <span class="hdr-mode-full">Onscreen Live Mode</span>
               <span class="hdr-mode-short">Live</span>
+            </button>
+          </div>
+          <div class="header-mode-slider trading-mode-slider" id="trading-mode-toggle" role="radiogroup" aria-label="Trading Mode">
+            <button type="button" class="hdr-slider-btn active" id="hdr-tmode-live" data-tmode="LIVE_HOURS" title="Live Hours (virtual): strictly enforces DSE market hours">
+              <span class="hdr-mode-full">Live Hours (virtual)</span>
+              <span class="hdr-mode-short">Live Hours</span>
+            </button>
+            <button type="button" class="hdr-slider-btn" id="hdr-tmode-test" data-tmode="TEST_OFFHOURS" title="Test Mode 24/7: bypasses market hours gate for off-hours testing">
+              <span class="hdr-mode-full">Test Mode 24/7</span>
+              <span class="hdr-mode-short">Test 24/7</span>
             </button>
           </div>
           <div class="engine-controls">
@@ -66,6 +77,11 @@
               <div class="overflow-mode-options">
                 <button type="button" class="overflow-opt-btn active" id="overflow-mode-polling" data-mode="BACKGROUND_POLLING">Background Polling</button>
                 <button type="button" class="overflow-opt-btn" id="overflow-mode-live" data-mode="ONSCREEN_LIVE">Onscreen Live</button>
+              </div>
+              <div class="overflow-section-label">TRADING MODE</div>
+              <div class="overflow-mode-options">
+                <button type="button" class="overflow-opt-btn active" id="overflow-tmode-live" data-tmode="LIVE_HOURS">Live Hours (virtual)</button>
+                <button type="button" class="overflow-opt-btn" id="overflow-tmode-test" data-tmode="TEST_OFFHOURS">Test Mode 24/7</button>
               </div>
             </div>
           </div>
@@ -476,6 +492,38 @@
                 <button class="pill-btn" data-sec="180" type="button">180s · Relaxed</button>
               </div>
               <div class="polling-disabled-hint" id="polling-disabled-hint" style="display: none;">Used only in Method A (Background Polling)</div>
+            </div>
+
+            <div class="settings-subgroup" style="margin-top: 18px;" id="settings-trading-mode-wrap">
+              <div class="subgroup-heading">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="settings-sub-label">TRADING MODE</span>
+                  <span class="autosave-tag">Gated</span>
+                </div>
+                <span class="mode-indicator-pill" id="settings-trading-mode-pill">Live Hours (virtual)</span>
+              </div>
+              <div class="segmented-mode-tiles trading-mode-tiles" id="settings-trading-mode-toggle" role="radiogroup" aria-label="Trading Mode">
+                <button class="mode-tile-btn active" id="settings-tmode-live" data-tmode="LIVE_HOURS" type="button">
+                  <div class="tile-icon-box">🏛️</div>
+                  <div class="tile-content">
+                    <div class="tile-title-row">
+                      <strong>Live Hours (virtual)</strong>
+                      <span class="tile-badge">DSE Hours</span>
+                    </div>
+                    <span class="tile-desc">Orders strictly restricted to Sun-Thu 10:00-14:30 Asia/Dhaka</span>
+                  </div>
+                </button>
+                <button class="mode-tile-btn" id="settings-tmode-test" data-tmode="TEST_OFFHOURS" type="button">
+                  <div class="tile-icon-box">⚡</div>
+                  <div class="tile-content">
+                    <div class="tile-title-row">
+                      <strong>Test Mode 24/7</strong>
+                      <span class="tile-badge live-tag">Bypass Gate</span>
+                    </div>
+                    <span class="tile-desc">Allows paper execution 24/7 (bypasses market hours gate only)</span>
+                  </div>
+                </button>
+              </div>
             </div>
           </article>
 

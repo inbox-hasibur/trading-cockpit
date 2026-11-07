@@ -744,6 +744,11 @@ function renderDecisions() {
     const top = element("div", "decision-top");
     top.append(element("strong", "", decision.symbol), badge(decision.action));
     if (decision.quantity) top.append(element("span", "decision-quantity", `${decision.quantity} shares`));
+    if (decision.trading_mode) {
+      const modeText = decision.trading_mode === "TEST_OFFHOURS" ? "Test Mode 24/7" : "Live Hours (virtual)";
+      const modeClass = decision.trading_mode === "TEST_OFFHOURS" ? "badge badge-test-mode" : "badge badge-live-mode";
+      top.append(element("span", modeClass, modeText));
+    }
     const time = element("time", "", `#${decision.revision} · ${sessionDate(decision.date, true)}`);
     time.dateTime = decision.date; top.append(time);
     entry.append(top, element("p", "", decision.reason));
@@ -1116,6 +1121,47 @@ function renderAutomationControlBar() {
     overflowLive.disabled = state.busy;
   }
 
+  // Trading Mode (Live Hours vs Test Mode 24/7)
+  const tradingMode = app.trading_mode || (state.snapshot && state.snapshot.trading_mode) || "LIVE_HOURS";
+  const isTestMode = tradingMode === "TEST_OFFHOURS";
+
+  const tmodeLive = $("hdr-tmode-live");
+  const tmodeTest = $("hdr-tmode-test");
+  if (tmodeLive) {
+    tmodeLive.classList.toggle("active", !isTestMode);
+    tmodeLive.disabled = state.busy;
+  }
+  if (tmodeTest) {
+    tmodeTest.classList.toggle("active", isTestMode);
+    tmodeTest.disabled = state.busy;
+  }
+
+  const overflowTmodeLive = $("overflow-tmode-live");
+  const overflowTmodeTest = $("overflow-tmode-test");
+  if (overflowTmodeLive) {
+    overflowTmodeLive.classList.toggle("active", !isTestMode);
+    overflowTmodeLive.disabled = state.busy;
+  }
+  if (overflowTmodeTest) {
+    overflowTmodeTest.classList.toggle("active", isTestMode);
+    overflowTmodeTest.disabled = state.busy;
+  }
+
+  const settingsTmodeLive = $("settings-tmode-live");
+  const settingsTmodeTest = $("settings-tmode-test");
+  if (settingsTmodeLive) {
+    settingsTmodeLive.classList.toggle("active", !isTestMode);
+    settingsTmodeLive.disabled = state.busy;
+  }
+  if (settingsTmodeTest) {
+    settingsTmodeTest.classList.toggle("active", isTestMode);
+    settingsTmodeTest.disabled = state.busy;
+  }
+  const settingsTmodePill = $("settings-trading-mode-pill");
+  if (settingsTmodePill) {
+    settingsTmodePill.textContent = isTestMode ? "Test Mode 24/7" : "Live Hours (virtual)";
+  }
+
   // Polling Range Slider & Interval Pills
   const intervalWrap = $("polling-interval-wrap");
   const isPollingActive = enabled && mode === "BACKGROUND_POLLING";
@@ -1188,6 +1234,10 @@ async function setAutomationConfig(newConfig) {
       body: newConfig,
     });
     if (state.snapshot) {
+      if (res.trading_mode) {
+        state.snapshot.trading_mode = res.trading_mode;
+        if (state.snapshot.app) state.snapshot.app.trading_mode = res.trading_mode;
+      }
       state.snapshot.app.automation_enabled = res.automation_enabled;
       state.snapshot.app.paused = res.paused;
       state.snapshot.app.ingestion_mode = res.ingestion_mode;
@@ -1298,6 +1348,41 @@ if ($("mode-btn-live")) {
     setAutomationConfig({ ingestion_mode: "ONSCREEN_LIVE" });
   });
 }
+
+async function switchToLiveHours() {
+  const current = (state.snapshot && state.snapshot.app && state.snapshot.app.trading_mode) || (state.snapshot && state.snapshot.trading_mode) || "LIVE_HOURS";
+  if (current === "LIVE_HOURS") return;
+  if (!confirm("Switch to Live Hours (virtual)? Real virtual orders will be strictly restricted to Sun-Thu 10:00-14:30 Asia/Dhaka.")) {
+    return;
+  }
+  await setAutomationConfig({ trading_mode: "LIVE_HOURS" });
+}
+
+async function switchToTestMode() {
+  const current = (state.snapshot && state.snapshot.app && state.snapshot.app.trading_mode) || (state.snapshot && state.snapshot.trading_mode) || "LIVE_HOURS";
+  if (current === "TEST_OFFHOURS") return;
+  await setAutomationConfig({ trading_mode: "TEST_OFFHOURS" });
+}
+
+["hdr-tmode-live", "settings-tmode-live", "overflow-tmode-live"].forEach((id) => {
+  const el = $(id);
+  if (el) {
+    el.addEventListener("click", () => {
+      switchToLiveHours();
+      if (overflowMenu) overflowMenu.hidden = true;
+    });
+  }
+});
+
+["hdr-tmode-test", "settings-tmode-test", "overflow-tmode-test"].forEach((id) => {
+  const el = $(id);
+  if (el) {
+    el.addEventListener("click", () => {
+      switchToTestMode();
+      if (overflowMenu) overflowMenu.hidden = true;
+    });
+  }
+});
 
 const pollingSlider = $("polling-range-slider");
 if (pollingSlider) {

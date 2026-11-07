@@ -331,3 +331,35 @@ HB_STOCKNOW_SESSION_SCHEMA = {
         "additionalProperties": False,
     },
 }
+
+HB_MODE_GET_SCHEMA = {
+    "name": "hb_mode_get",
+    "description": "Get current DSE trading mode (TEST_OFFHOURS or LIVE_HOURS).",
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": False,
+    },
+}
+
+HB_MODE_SET_SCHEMA = {
+    "name": "hb_mode_set",
+    "description": "Set DSE trading mode. Values: 'TEST_OFFHOURS' (bypasses market hours gate) or 'LIVE_HOURS' (strictly limits real orders to Sun-Thu 10:00-14:30). Switching to TEST_OFFHOURS strictly requires operator confirmation (confirm=true).",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "trading_mode": {
+                "type": "string",
+                "enum": ["TEST_OFFHOURS", "LIVE_HOURS"],
+                "description": "Trading mode: 'TEST_OFFHOURS' or 'LIVE_HOURS'.",
+            },
+            "confirm": {
+                "type": "boolean",
+                "description": "Mandatory operator confirmation boolean when switching to TEST_OFFHOURS.",
+            },
+        },
+        "required": ["trading_mode"],
+        "additionalProperties": False,
+    },
+}
+

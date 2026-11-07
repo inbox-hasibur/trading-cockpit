@@ -154,6 +154,9 @@ def test_order_portfolio_must_be_164580(client, auth_headers):
 
 
 def test_order_strict_no_loss_rejection(client, auth_headers):
+    # Enable TEST_OFFHOURS mode so test passes regardless of day/market hours
+    client.post("/k/mode", json={"trading_mode": "TEST_OFFHOURS", "confirm": True}, headers=auth_headers)
+
     # First, place a real buy order within active bucket budget (e.g. 5 shares)
     buy_key = str(uuid4())
     buy_res = client.post("/k/order", json={
@@ -256,6 +259,7 @@ def test_snapshot_before_write_and_audit(client, auth_headers):
 
 
 def test_order_idempotency_cache(client, auth_headers):
+    client.post("/k/mode", json={"trading_mode": "TEST_OFFHOURS", "confirm": True}, headers=auth_headers)
     key = str(uuid4())
     req = {
         "idempotency_key": key,

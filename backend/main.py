@@ -58,10 +58,11 @@ class PauseRequest(BaseModel):
 
 
 class AutomationConfigRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
     automation_enabled: StrictBool
     ingestion_mode: Literal["BACKGROUND_POLLING", "ONSCREEN_LIVE", "SIDE_BY_SIDE_LIVE"]
     polling_interval_sec: int = Field(default=120, ge=30, le=300)
+    trading_mode: Literal["TEST_OFFHOURS", "LIVE_HOURS"] | None = None
 
 
 class AdvanceRequest(BaseModel):
@@ -249,6 +250,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             state.paused = not body.automation_enabled
             state.ingestion_mode = body.ingestion_mode
             state.polling_interval_sec = body.polling_interval_sec
+            if body.trading_mode:
+                state.trading_mode = body.trading_mode
 
         # When operator switches to ONSCREEN_LIVE, launch headed Chromium and sync live market
         if body.ingestion_mode == "ONSCREEN_LIVE":
@@ -273,6 +276,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "paused": state.paused,
                 "ingestion_mode": state.ingestion_mode,
                 "polling_interval_sec": state.polling_interval_sec,
+                "trading_mode": getattr(state, "trading_mode", "LIVE_HOURS"),
                 "adapter": adapter_status,
                 "mode": "DEMO",
             }

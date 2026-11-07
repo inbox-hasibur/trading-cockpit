@@ -400,3 +400,28 @@ def hb_stocknow_session(args: dict[str, Any] | None = None, **kwargs) -> str:
         payload["mode"] = str(merged["mode"]).strip().upper()
 
     return _kernel_post("/k/stocknow/session", payload)
+
+
+def hb_mode_get(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Get active trading mode from kernel."""
+    return _kernel_get("/k/mode")
+
+
+def hb_mode_set(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Set trading mode in kernel (TEST_OFFHOURS or LIVE_HOURS)."""
+    merged = dict(args or {})
+    merged.update(kwargs)
+
+    mode = str(merged.get("trading_mode") or "").strip().upper()
+    if mode not in ("TEST_OFFHOURS", "LIVE_HOURS"):
+        return json.dumps({"error": f"Invalid trading_mode '{mode}'. Allowed values: TEST_OFFHOURS, LIVE_HOURS."})
+
+    confirm = bool(merged.get("confirm", False))
+    if mode == "TEST_OFFHOURS" and not confirm:
+        return json.dumps({
+            "error": "Switching to TEST_OFFHOURS bypasses DSE market hours and requires operator confirmation. Please ask the operator for explicit confirmation before calling with confirm=true."
+        })
+
+    payload = {"trading_mode": mode, "confirm": confirm}
+    return _kernel_post("/k/mode", payload)
+

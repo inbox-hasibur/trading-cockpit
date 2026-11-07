@@ -30,6 +30,8 @@ from plugins.humming_bird.schemas import (
     HB_STOCKNOW_SESSION_SCHEMA,
     HB_SYNC_SCHEMA,
     HB_WATCHLIST_SCHEMA,
+    HB_MODE_GET_SCHEMA,
+    HB_MODE_SET_SCHEMA,
 )
 from plugins.humming_bird.tools import (
     _kernel_get,
@@ -40,6 +42,8 @@ from plugins.humming_bird.tools import (
     hb_inspect_curve,
     hb_lots,
     hb_market_open,
+    hb_mode_get,
+    hb_mode_set,
     hb_place_order,
     hb_portfolio,
     hb_quarantine_canary,
@@ -73,11 +77,13 @@ ALL_EXPECTED_TOOLS = [
     "hb_scheduler",
     "hb_run_cycle",
     "hb_stocknow_session",
+    "hb_mode_get",
+    "hb_mode_set",
 ]
 
 
 def test_plugin_yaml_manifest():
-    """Manifest declares proper metadata, 18 tools, and pre_tool_call hook."""
+    """Manifest declares proper metadata, 20 tools, and pre_tool_call hook."""
     with open("plugins/humming_bird/plugin.yaml", "r", encoding="utf-8") as f:
         manifest = yaml.safe_load(f)
 
@@ -90,11 +96,11 @@ def test_plugin_yaml_manifest():
 
 
 def test_plugin_registration():
-    """register(ctx) registers all 18 tools and the pre_tool_call hook."""
+    """register(ctx) registers all 20 tools and the pre_tool_call hook."""
     ctx = MagicMock()
     register(ctx)
 
-    assert ctx.register_tool.call_count == 18
+    assert ctx.register_tool.call_count == 20
     registered_names = [call.kwargs["name"] for call in ctx.register_tool.call_args_list]
     for name in ALL_EXPECTED_TOOLS:
         assert name in registered_names
@@ -401,6 +407,38 @@ def test_hb_stocknow_session_tool(mock_urlopen):
 
     res = hb_stocknow_session({"action": "status"})
     assert json.loads(res)["action"] == "status"
+
+
+@patch("urllib.request.urlopen")
+def test_hb_mode_tools(mock_urlopen):
+    """hb_mode_get returns mode; hb_mode_set requires confirm=True for TEST_OFFHOURS."""
+    fake_response = MagicMock()
+    fake_payload = {"status": "ok", "trading_mode": "LIVE_HOURS"}
+    fake_response.read.return_value = json.dumps(fake_payload).encode("utf-8")
+    fake_response.__enter__.return_value = fake_response
+    mock_urlopen.return_value = fake_response
+
+    # hb_mode_get
+    res = hb_mode_get()
+    assert json.loads(res)["trading_mode"] == "LIVE_HOURS"
+
+    # hb_mode_set to TEST_OFFHOURS without confirm -> blocked with error
+    err_res = hb_mode_set({"trading_mode": "TEST_OFFHOURS"})
+    assert "error" in json.loads(err_res)
+    assert "operator confirmation" in json.loads(err_res)["error"]
+
+    # hb_mode_set to TEST_OFFHOURS with confirm=True -> passes
+    fake_payload = {"status": "ok", "trading_mode": "TEST_OFFHOURS"}
+    fake_response.read.return_value = json.dumps(fake_payload).encode("utf-8")
+    success_res = hb_mode_set({"trading_mode": "TEST_OFFHOURS", "confirm": True})
+    assert json.loads(success_res)["trading_mode"] == "TEST_OFFHOURS"
+
+    # hb_mode_set to LIVE_HOURS without confirm -> allowed
+    fake_payload = {"status": "ok", "trading_mode": "LIVE_HOURS"}
+    fake_response.read.return_value = json.dumps(fake_payload).encode("utf-8")
+    live_res = hb_mode_set({"trading_mode": "LIVE_HOURS"})
+    assert json.loads(live_res)["trading_mode"] == "LIVE_HOURS"
+
 
     err_res = hb_stocknow_session({"action": "destroy"})
     assert "error" in json.loads(err_res)

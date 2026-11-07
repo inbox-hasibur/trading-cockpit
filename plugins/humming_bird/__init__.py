@@ -24,6 +24,8 @@ from .schemas import (
     HB_SCHEDULER_SCHEMA,
     HB_RUN_CYCLE_SCHEMA,
     HB_STOCKNOW_SESSION_SCHEMA,
+    HB_MODE_GET_SCHEMA,
+    HB_MODE_SET_SCHEMA,
 )
 from .tools import (
     hb_automation_get,
@@ -32,6 +34,8 @@ from .tools import (
     hb_inspect_curve,
     hb_lots,
     hb_market_open,
+    hb_mode_get,
+    hb_mode_set,
     hb_place_order,
     hb_portfolio,
     hb_quarantine_canary,
@@ -65,6 +69,8 @@ _TOOLS = (
     ("hb_scheduler", HB_SCHEDULER_SCHEMA, hb_scheduler),
     ("hb_run_cycle", HB_RUN_CYCLE_SCHEMA, hb_run_cycle),
     ("hb_stocknow_session", HB_STOCKNOW_SESSION_SCHEMA, hb_stocknow_session),
+    ("hb_mode_get", HB_MODE_GET_SCHEMA, hb_mode_get),
+    ("hb_mode_set", HB_MODE_SET_SCHEMA, hb_mode_set),
 )
 
 
