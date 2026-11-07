@@ -297,6 +297,26 @@ def test_api_health_telemetry(client):
     assert "state" in data["stocknow"]
 
 
+def test_hermes_models_and_switcher(client):
+    res = client.get("/api/hermes/models")
+    assert res.status_code == 200
+    data = res.json()
+    assert "active_model" in data
+    assert "active_provider" in data
+    assert len(data["models"]) >= 5
+
+    switch_res = client.post("/api/hermes/model", json={"model": "deepseek/deepseek-chat", "provider": "openrouter"})
+    assert switch_res.status_code == 200
+    s_data = switch_res.json()
+    assert s_data["status"] == "ok"
+    assert s_data["active_model"] == "deepseek/deepseek-chat"
+    assert s_data["active_provider"] == "openrouter"
+
+    # Reset back to default
+    client.post("/api/hermes/model", json={"model": "gemini-3.1-flash-lite", "provider": "gemini"})
+
+
+
 
 
 

@@ -59,10 +59,23 @@ async function loadHermesOSState() {
     // 1. Active Model Display
     if (data.model) {
       setText("hermes-active-model-name", data.model);
-      setText("provider-prefix-label", `${(data.provider || "HERMES").toUpperCase()} ·`);
-      const modelDisplay = $("hermes-model-display");
-      if (modelDisplay) {
-        modelDisplay.title = `Active Hermes Model: ${data.model} (${data.provider}) — configured in ~/.hermes/config.yaml`;
+      const rawProv = (data.provider || "gemini").toLowerCase();
+      let prefixLabel = "GOOGLE ·";
+      let provDesc = "Direct Google Gemini API";
+      if (rawProv === "openrouter") {
+        prefixLabel = "OPENROUTER ·";
+        provDesc = "OpenRouter Gateway API";
+      } else if (rawProv === "gemini" || rawProv === "google") {
+        prefixLabel = "GOOGLE ·";
+        provDesc = "Direct Google Gemini API";
+      } else {
+        prefixLabel = `${rawProv.toUpperCase()} ·`;
+        provDesc = `${rawProv.toUpperCase()} API`;
+      }
+      setText("provider-prefix-label", prefixLabel);
+      const modelTrigger = $("hermes-model-trigger") || $("hermes-model-display");
+      if (modelTrigger) {
+        modelTrigger.title = `Active AI Brain: ${data.model} (${provDesc}) — Click to switch model`;
       }
     }
 
@@ -310,7 +323,7 @@ function addMessage(role, content, provider = null) {
 
 async function sendChat(message) {
   message = message.trim();
-  if (!message || message.length > 4000 || state.chatBusy || !state.snapshot) return;
+  if (!message || message.length > 4000 || state.chatBusy) return;
 
   addMessage("user", message);
   state.history.push({ role: "user", content: message });
@@ -474,7 +487,6 @@ async function sendChat(message) {
     updateControls();
     $("chat-input").focus();
   }
-}
 }
 
 // --- Hermes IDE Resizable Sidebar, Tabs & Antigravity History ---
@@ -760,17 +772,93 @@ async function executeRollback() {
 }
 
 // --- Hermes AI Brain & Runtime Telemetry ---
-// Hermes runtime configuration is read-only in the Cockpit and synchronized live
-// from ~/.hermes/profiles/hummingbird/config.yaml and state.db via /api/hermes/bridge/state.
-
 window.toggleHermesModelPicker = function(e) {
-  // Read-only indicator
   if (e) {
     if (typeof e.stopPropagation === "function") e.stopPropagation();
     if (typeof e.preventDefault === "function") e.preventDefault();
   }
-  loadHermesOSState();
+  const modelDrop = $("model-dropup-menu");
+  if (!modelDrop) return;
+  const willOpen = modelDrop.hidden;
+  modelDrop.hidden = !willOpen;
+  const triggerBtn = $("hermes-model-trigger");
+  if (triggerBtn) triggerBtn.setAttribute("aria-expanded", String(willOpen));
+  if (willOpen) {
+    loadHermesModels();
+  }
 };
+
+window.selectHermesModelItem = function(e, modelId, provider) {
+  if (e) {
+    if (typeof e.stopPropagation === "function") e.stopPropagation();
+    if (typeof e.preventDefault === "function") e.preventDefault();
+  }
+  const drop = $("model-dropup-menu");
+  if (drop) drop.hidden = true;
+  const triggerBtn = $("hermes-model-trigger");
+  if (triggerBtn) triggerBtn.setAttribute("aria-expanded", "false");
+  switchHermesModel(modelId, provider);
+};
+
+async function loadHermesModels() {
+  const listEl = $("model-dropdown-list");
+  if (!listEl) return;
+  try {
+    const data = await api("/api/hermes/models");
+    const models = data.models || [];
+    const activeModel = data.active_model || "";
+    if (models.length === 0) {
+      listEl.innerHTML = '<div class="empty-state-small" style="padding:8px 10px; font-size:11px;">No models available.</div>';
+      return;
+    }
+    listEl.innerHTML = models.map((m) => {
+      const isActive = m.id === activeModel || m.name === activeModel;
+      const isGoogle = (m.provider || "").toLowerCase().includes("gemini") || (m.provider || "").toLowerCase().includes("google");
+      const badgeStyle = isGoogle
+        ? "background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);"
+        : "background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);";
+      const badgeText = isGoogle ? "Google Direct" : "OpenRouter";
+      return `
+        <button type="button" class="model-dropup-item ${isActive ? "is-active" : ""}"
+                onclick="window.selectHermesModelItem(event, '${escapeHtml(m.id)}', '${escapeHtml(m.provider)}')">
+          <div style="display:flex; flex-direction:column; gap:2px; width:100%;">
+            <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+              <span class="model-item-name" style="font-weight:600;">${escapeHtml(m.name)}</span>
+              <span style="font-size:9px; padding:1px 5px; border-radius:4px; ${badgeStyle}">${badgeText}</span>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+              <span style="font-size:10px; color:var(--muted, #94a3b8);">${escapeHtml(m.description || m.id)}</span>
+              ${isActive ? '<span style="font-size:10px; color:#10b981; font-weight:bold;">✓ Active</span>' : ''}
+            </div>
+          </div>
+        </button>
+      `;
+    }).join("");
+  } catch (err) {
+    listEl.innerHTML = `<div class="empty-state-small" style="padding:8px 10px; color:#ef4444; font-size:11px;">Failed to load models: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+async function switchHermesModel(modelId, provider) {
+  if (!modelId) return;
+  const short = modelId.split("/").pop();
+  setText("hermes-active-model-name", short);
+  const isGoogle = (provider || "").toLowerCase().includes("gemini") || (provider || "").toLowerCase().includes("google") || modelId.toLowerCase().includes("gemini");
+  setText("provider-prefix-label", isGoogle ? "GOOGLE ·" : "OPENROUTER ·");
+
+  try {
+    const res = await api("/api/hermes/model", {
+      method: "POST",
+      body: { model: modelId, provider: provider },
+    });
+    notify(res.message || `Switched AI Brain to ${modelId}`);
+    if (typeof refresh === "function") await refresh();
+    loadHermesOSState();
+    loadSystemChanges();
+  } catch (err) {
+    showError("Failed to switch model: " + err.message);
+  }
+}
 
 // --- System Notification Settings (Telegram Bot) ---
 let currentRiskCaps = null;
@@ -1228,10 +1316,19 @@ function initHermesChatListeners() {
 
   // Model display in status bar
   const modelBtn = $("hermes-model-trigger") || $("hermes-bottom-model-btn") || $("hermes-model-btn");
+  const modelDrop = $("model-dropup-menu");
   if (modelBtn) {
     modelBtn.onclick = (e) => {
       window.toggleHermesModelPicker(e);
     };
+  }
+  if (modelDrop) {
+    document.addEventListener("click", (e) => {
+      if (modelBtn && !modelDrop.contains(e.target) && !modelBtn.contains(e.target)) {
+        modelDrop.hidden = true;
+        modelBtn.setAttribute("aria-expanded", "false");
+      }
+    });
   }
 
   // Rollback buttons

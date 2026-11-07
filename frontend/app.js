@@ -1573,14 +1573,15 @@ function initScrollSpy() {
   }, { passive: true });
 }
 
+// Initialize view router and scroll spy first so navigation works immediately
+initViewRouter();
+initScrollSpy();
 initCharts();
 updateControls();
 refresh();
 initRealtimeStream();
-initHermesSidebar();
+try { initHermesSidebar(); } catch (err) { console.warn("Sidebar init notice:", err); }
 loadConversations();
 loadSystemChanges();
 if (typeof loadHermesOSState === "function") loadHermesOSState();
-initAuthAndSettings();
-initViewRouter();
-initScrollSpy();
+try { initAuthAndSettings(); } catch (err) { console.warn("Settings init notice:", err); }

@@ -24,7 +24,7 @@ def find_latest_backup(backup_dir: Path | None = None) -> Path:
     if not b_dir.exists():
         raise FileNotFoundError(f"Backup directory does not exist: {b_dir}")
 
-    candidates = sorted(b_dir.glob("hummingbird_*.db"), key=lambda p: p.stat().st_mtime, reverse=True)
+    candidates = sorted(b_dir.glob("hummingbird_*.db"), key=lambda p: (p.name, p.stat().st_mtime), reverse=True)
     if not candidates:
         raise FileNotFoundError(f"No hummingbird_*.db backup files found in {b_dir}")
 
