@@ -20,10 +20,7 @@ from backend.database import (
     CustomRule,
     Database,
     DecisionLog,
-    HermesDurableFact,
-    HermesSkillRevision,
-    HermesStateCheckpoint,
-    HermesUserProfile,
+    KernelStateCheckpoint,
     RuleAudit,
     TaxLot,
     TradeLog,
@@ -32,7 +29,6 @@ from backend.database import (
 from backend.engine.money import HUNDRED, ZERO, decimal, money, sale_amount
 from backend.engine.signals import assess_company
 from backend.engine.t2_ledger import TradingCalendar, bucket_balances
-from backend.hermes.skills_manager import SkillsManager
 from backend.market_map import build_market_map_payload
 
 COMPANY_FUNDAMENTALS: dict[str, dict] = {
@@ -534,20 +530,7 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
         "created_at": t.created_at,
     } for t in session.scalars(select(CanaryThesis).order_by(CanaryThesis.id.desc()))]
 
-    skills_mgr = SkillsManager()
-    active_skills = []
-    for s in skills_mgr.list_skills():
-        rev_count = session.scalar(
-            select(func.count(HermesSkillRevision.id)).where(HermesSkillRevision.skill_name == s.name)
-        ) or 0
-        active_skills.append({
-            "name": s.name,
-            "title": s.title,
-            "version": s.version,
-            "tags": s.tags,
-            "revision_count": rev_count,
-        })
-
+    active_skills: list[dict[str, Any]] = []
     recent_checkpoints = [{
         "id": cp.id,
         "action": cp.action,
@@ -555,15 +538,8 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
         "date": cp.session_on.isoformat(),
         "reverted": cp.reverted,
         "created_at": cp.created_at,
-    } for cp in session.scalars(select(HermesStateCheckpoint).order_by(HermesStateCheckpoint.id.desc()).limit(10))]
-
-    durable_facts = [{
-        "id": f.id,
-        "symbol": f.symbol,
-        "category": f.category,
-        "fact": f.fact,
-        "confidence": f.confidence,
-    } for f in session.scalars(select(HermesDurableFact).where(HermesDurableFact.active == True).order_by(HermesDurableFact.id.desc()).limit(15))]
+    } for cp in session.scalars(select(KernelStateCheckpoint).order_by(KernelStateCheckpoint.id.desc()).limit(10))]
+    durable_facts: list[dict[str, Any]] = []
 
     from backend.adapters.stocknow_market_sync import _ALL_DSE_SHARES_CACHE
     all_shares_total = len(_ALL_DSE_SHARES_CACHE) if _ALL_DSE_SHARES_CACHE else 473

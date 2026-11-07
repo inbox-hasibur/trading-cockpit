@@ -29,7 +29,6 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from backend.adapters.stocknow_adapter import StockNowAdapter
 from backend.adapters.stocknow_client import StockNowLiveClient
 from backend.adapters.stocknow_market_sync import extract_quotes_from_stocknow, sync_live_market_to_db
-from backend.chat import ChatRequest, ChatService
 from backend.config import ROOT, VERSION, Settings
 from backend.database import CustomRule, Database, RuleAudit, portfolio_state
 from backend.engine.auto_trader import AutomationPaused, AutoTrader
@@ -98,7 +97,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     database = Database(settings.database_url)
     stocknow_client = StockNowLiveClient(ingestion_mode="BACKGROUND_POLLING")
     trader = AutoTrader(database, settings)
-    chat = ChatService(database, settings, stocknow_client=stocknow_client)
     broadcaster = EventBroadcaster()
     scheduler = DSEMarketScheduler(database, settings, broadcaster, stocknow_client, trader)
 
@@ -129,7 +127,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.database = database
     app.state.settings = settings
     app.state.trader = trader
-    app.state.chat = chat
     app.state.stocknow_client = stocknow_client
     app.state.scheduler = scheduler
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(settings.trusted_hosts))
@@ -292,7 +289,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             broadcaster.publish("allocation", res)
             return res
 
-    app.include_router(build_hermes_router(database, settings, chat, broadcaster))
+    app.include_router(build_hermes_router(database, settings, broadcaster))
     app.include_router(build_hermes_bridge_router(database, settings, broadcaster))
     app.include_router(build_auth_settings_router(database, settings, broadcaster))
     app.include_router(build_stocknow_router(database, settings, broadcaster, stocknow_client, scheduler=scheduler))

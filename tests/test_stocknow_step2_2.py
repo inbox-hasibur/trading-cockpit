@@ -19,13 +19,6 @@ from backend.adapters.stocknow_market_sync import (
 )
 from backend.config import Settings
 from backend.database import CompanyProfile, Database, portfolio_state
-from backend.hermes.agent_loop import CheckpointManager
-from backend.hermes.skills_manager import SkillsManager
-from backend.hermes.tools_dispatcher import (
-    detect_intent_and_tool,
-    dispatch_tool,
-    format_tool_response,
-)
 from backend.main import create_app
 from backend.seed import seed_demo
 
@@ -162,49 +155,3 @@ def test_api_stocknow_sync_market(test_db):
         comp = session.get(CompanyProfile, "SQURPHARMA")
         assert comp.last_price == Decimal("218.00")
         assert comp.source == "STOCKNOW_LIVE"
-
-
-def test_hermes_tool_control_stocknow_session(test_db):
-    """Verify Hermes intent detection and dispatch for StockNow live commands."""
-    db, settings = test_db
-
-    # Intent detection
-    cmd1, args1 = detect_intent_and_tool("Launch StockNow browser", {})
-    assert cmd1 == "control_stocknow_session"
-    assert args1["action"] == "launch"
-
-    cmd2, args2 = detect_intent_and_tool("StockNow login check koro", {})
-    assert cmd2 == "control_stocknow_session"
-    assert args2["action"] == "check_auth"
-
-    cmd3, args3 = detect_intent_and_tool("Sync live market prices", {})
-    assert cmd3 == "control_stocknow_session"
-    assert args3["action"] == "sync_market"
-
-    # Tool dispatch with injected sync payload
-    skills_mgr = SkillsManager()
-    with db.write() as session:
-        state = portfolio_state(session)
-        dispatch_res = dispatch_tool(
-            "control_stocknow_session",
-            {
-                "action": "sync_market",
-                "payload": [{"symbol": "EXIM1STMF", "ltp": "5.40"}],
-            },
-            session,
-            state,
-            settings,
-            skills_mgr,
-            CheckpointManager,
-        )
-        assert dispatch_res["status"] == "SUCCESS"
-        assert dispatch_res["action"] == "sync_market"
-        assert dispatch_res["result"]["synced_count"] == 1
-
-        # Formatter output
-        formatted_en = format_tool_response("control_stocknow_session", dispatch_res, "Sync live market prices", {})
-        assert "Synchronized 1 live DSE quotes" in formatted_en
-        assert "EXIM1STMF" in formatted_en
-
-        formatted_bn = format_tool_response("control_stocknow_session", dispatch_res, "live price sync koro", {})
-        assert "সিঙ্ক করা হয়েছে" in formatted_bn

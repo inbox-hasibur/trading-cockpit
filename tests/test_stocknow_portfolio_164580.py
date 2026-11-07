@@ -17,6 +17,7 @@ from backend.adapters.stocknow_market_sync import (
     extract_quotes_from_payload,
     sync_live_market_to_db,
 )
+from pathlib import Path
 from backend.adapters.stocknow_order_executor import execute_stocknow_virtual_order
 from backend.adapters.stocknow_portfolio_sync import (
     extract_hummingbird_portfolio,
@@ -27,7 +28,6 @@ from backend.config import Settings
 from backend.database import CompanyProfile, Database, PortfolioState, TaxLot, TradeLog
 from backend.engine.auto_trader import AutoTrader
 from backend.engine.t2_ledger import assert_ledger
-from backend.hermes.skills_manager import SkillsManager
 from backend.seed import REAL_STOCKNOW_COMPANIES, migrate_real_stocknow_market, seed_demo
 
 
@@ -121,10 +121,10 @@ def test_gsc_watchlist_tiers_and_observation_skip(tmp_path):
 
 
 def test_hermes_gsc_skill_content():
-    """Verify Hermes SKILL_gsc_tiers.md encodes the exact operator rules."""
-    skills = {s.name: s.content for s in SkillsManager().list_skills()}
-    content = skills.get("SKILL_gsc_tiers")
-    assert content is not None
+    """Verify Hermes gsc_tiers SKILL.md encodes the exact operator rules."""
+    skill_file = Path(__file__).resolve().parent.parent / "plugins" / "humming_bird" / "skills" / "gsc_tiers" / "SKILL.md"
+    assert skill_file.exists()
+    content = skill_file.read_text(encoding="utf-8")
     assert "Giant Stable Companies" in content
     assert "GSC_L1" in content
     assert "GSC_L2" in content

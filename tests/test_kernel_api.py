@@ -13,8 +13,8 @@ from sqlalchemy import select
 from backend.database import (
     CompanyProfile,
     CustomRule,
-    HermesStateCheckpoint,
     KernelAuditLog,
+    KernelStateCheckpoint,
     PortfolioState,
     RuleAudit,
     TaxLot,
@@ -200,7 +200,7 @@ def test_snapshot_before_write_and_audit(client, auth_headers):
     app = client.app
     db = app.state.database
     with db.read() as session:
-        cp = session.get(HermesStateCheckpoint, cp_id)
+        cp = session.get(KernelStateCheckpoint, cp_id)
         assert cp is not None
         assert cp.action == "SET_TIER"
         assert "GP" in cp.snapshot_payload["companies"]
@@ -226,7 +226,7 @@ def test_snapshot_before_write_and_audit(client, auth_headers):
     alloc_cp = alloc_res.json()["checkpoint_id"]
 
     with db.read() as session:
-        cp_alloc = session.get(HermesStateCheckpoint, alloc_cp)
+        cp_alloc = session.get(KernelStateCheckpoint, alloc_cp)
         assert cp_alloc is not None
         assert cp_alloc.action == "UPDATE_ALLOCATION"
 

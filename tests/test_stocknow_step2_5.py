@@ -104,28 +104,3 @@ def test_stocknow_scheduler_api_endpoints(tmp_path):
         resp_stop = client.post("/api/stocknow/scheduler", json={"action": "stop"})
         assert resp_stop.status_code == 200
         assert resp_stop.json()["status"] == "STOPPED"
-
-
-def test_hermes_scheduler_commands(tmp_path):
-    db_file = tmp_path / "sched_hermes_test.db"
-    settings = Settings(database_url=f"sqlite:///{db_file}")
-    app = create_app(settings)
-
-    with TestClient(app, base_url="http://localhost") as client:
-        # Start DSE scheduler command
-        resp_start = client.post("/api/chat", json={"message": "start dse scheduler"})
-        assert resp_start.status_code == 200
-        reply_start = resp_start.json()["reply"]
-        assert "DSE" in reply_start
-
-        # Run scheduler tick now
-        resp_tick = client.post("/api/chat", json={"message": "run scheduler tick now"})
-        assert resp_tick.status_code == 200
-        reply_tick = resp_tick.json()["reply"]
-        assert "Scheduler" in reply_tick or "টিক" in reply_tick
-
-        # Stop scheduler command
-        resp_stop = client.post("/api/chat", json={"message": "stop dse scheduler"})
-        assert resp_stop.status_code == 200
-        reply_stop = resp_stop.json()["reply"]
-        assert "DSE" in reply_stop

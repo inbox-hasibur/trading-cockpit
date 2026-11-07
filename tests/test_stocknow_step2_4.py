@@ -19,14 +19,8 @@ from backend.adapters.stocknow_order_executor import (
 )
 from backend.config import Settings
 from backend.database import Database, PortfolioState, TaxLot, TradeLog, portfolio_state
+from backend.engine.checkpoint import CheckpointManager
 from backend.engine.t2_ledger import assert_ledger
-from backend.hermes.agent_loop import CheckpointManager
-from backend.hermes.skills_manager import SkillsManager
-from backend.hermes.tools_dispatcher import (
-    detect_intent_and_tool,
-    dispatch_tool,
-    format_tool_response,
-)
 from backend.main import create_app
 from backend.seed import seed_demo
 
@@ -228,67 +222,3 @@ def test_api_execute_order_matured_sell_and_restrictions(test_db):
     resp_loss = api_client.post("/api/stocknow/execute-order", json=loss_payload)
     assert resp_loss.status_code == 400
     assert "strict no-loss" in resp_loss.json()["detail"].lower()
-
-
-def test_hermes_tool_execute_manual_order(test_db):
-    """Verify Hermes conversational Buy and Matured Sell commands attach StockNow order receipt."""
-    db, settings = test_db
-    skills_mgr = SkillsManager()
-
-    # 1. Natural Language Intent Detection
-    tool_buy, args_buy = detect_intent_and_tool("Buy 10 GP", {})
-    assert tool_buy == "execute_manual_order"
-    assert args_buy["symbol"] == "GP"
-    assert args_buy["side"] == "BUY"
-    assert args_buy["quantity"] == 10
-
-    tool_bn, args_bn = detect_intent_and_tool("GP 10 ta share kine felo", {})
-    assert tool_bn == "execute_manual_order"
-    assert args_bn["symbol"] == "GP"
-    assert args_bn["side"] == "BUY"
-    assert args_bn["quantity"] == 10
-
-    tool_sell, args_sell = detect_intent_and_tool("Sell 5 SQURPHARMA", {})
-    assert tool_sell == "execute_manual_order"
-    assert args_sell["symbol"] == "SQURPHARMA"
-    assert args_sell["side"] == "SELL"
-    assert args_sell["quantity"] == 5
-
-    # 2. Dispatch manual BUY via Hermes
-    with db.write() as session:
-        state = session.get(PortfolioState, 1)
-        res_buy = dispatch_tool(
-            "execute_manual_order",
-            {"symbol": "BANKASIA", "side": "BUY", "quantity": 10},
-            session,
-            state,
-            settings,
-            skills_mgr,
-            CheckpointManager,
-        )
-        assert res_buy["status"] == "SUCCESS"
-        assert res_buy["result"]["receipt"]["status"] == "ACKNOWLEDGED"
-
-        fmt_bn = format_tool_response("execute_manual_order", res_buy, "buy koro", {})
-        assert "কেনা হয়েছে" in fmt_bn
-        assert "StockNow ভার্চুয়াল রসিদ" in fmt_bn
-
-    # 3. Dispatch manual SELL via Hermes (SQURPHARMA is mature and profitable)
-    with db.write() as session:
-        state = session.get(PortfolioState, 1)
-        res_sell = dispatch_tool(
-            "execute_manual_order",
-            {"symbol": "SQURPHARMA", "side": "SELL", "quantity": 5},
-            session,
-            state,
-            settings,
-            skills_mgr,
-            CheckpointManager,
-        )
-        assert res_sell["status"] == "SUCCESS"
-        assert res_sell["result"]["side"] == "SELL"
-        assert res_sell["result"]["receipt"]["status"] == "ACKNOWLEDGED"
-
-        fmt_en = format_tool_response("execute_manual_order", res_sell, "sell now", {})
-        assert "Sold 5 mature shares" in fmt_en
-        assert "StockNow Virtual Receipt" in fmt_en

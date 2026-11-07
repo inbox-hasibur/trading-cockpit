@@ -214,7 +214,7 @@ def build_stocknow_router(
 
         from backend.adapters.stocknow_order_executor import execute_stocknow_virtual_order
         from backend.engine.agent_actions import execute_agentic_buy, execute_agentic_sell
-        from backend.hermes.agent_loop import CheckpointManager
+        from backend.engine.checkpoint import CheckpointManager
 
         with database.write() as session:
             state = session.get(PortfolioState, 1)

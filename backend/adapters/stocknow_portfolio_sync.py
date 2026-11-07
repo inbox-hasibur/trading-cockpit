@@ -293,7 +293,7 @@ def _execute_reconciliation(
     } for l in existing_lots}
 
     if checkpoint_mgr is None:
-        from backend.hermes.agent_loop import CheckpointManager
+        from backend.engine.checkpoint import CheckpointManager
         checkpoint_mgr = CheckpointManager
 
     cp = checkpoint_mgr.create_checkpoint(

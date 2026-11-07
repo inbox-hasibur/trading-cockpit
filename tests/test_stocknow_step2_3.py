@@ -18,14 +18,8 @@ from backend.adapters.stocknow_portfolio_sync import (
 )
 from backend.config import Settings
 from backend.database import Database, PortfolioState, TaxLot, TradeLog, portfolio_state
+from backend.engine.checkpoint import CheckpointManager
 from backend.engine.t2_ledger import assert_ledger, bucket_balances
-from backend.hermes.agent_loop import CheckpointManager
-from backend.hermes.skills_manager import SkillsManager
-from backend.hermes.tools_dispatcher import (
-    detect_intent_and_tool,
-    dispatch_tool,
-    format_tool_response,
-)
 from backend.main import create_app
 from backend.seed import seed_demo
 
@@ -202,53 +196,6 @@ def test_tier_preservation_and_rollback(test_db):
         restored_lots = session.scalars(select(TaxLot)).all()
         assert len(restored_lots) == original_lot_count
         assert state.initial_capital == original_initial_cap
-
-
-def test_hermes_tool_sync_portfolio_bangla_and_english(test_db):
-    """Verify natural language commands in Bangla & English dispatch and format portfolio sync."""
-    db, settings = test_db
-    skills_mgr = SkillsManager()
-
-    # Intent detection
-    tool_bn, args_bn = detect_intent_and_tool("Humming Bird portfolio sync koro", {})
-    assert tool_bn == "control_stocknow_session"
-    assert args_bn["action"] == "sync_portfolio"
-
-    tool_en, args_en = detect_intent_and_tool("Sync Humming Bird portfolio", {})
-    assert tool_en == "control_stocknow_session"
-    assert args_en["action"] == "sync_portfolio"
-
-    # Dispatch tool with injected portfolio
-    injected = {
-        "portfolio_id": "hb_hermes_test",
-        "portfolio_name": "Humming Bird",
-        "cash_balance": 4500.0,
-        "holdings": [
-            {"symbol": "BANKASIA", "quantity": 50, "avg_cost": 20.0},
-            {"symbol": "GP", "quantity": 10, "avg_cost": 260.0},
-        ],
-    }
-    with db.write() as session:
-        state = session.get(PortfolioState, 1)
-        dispatch_res = dispatch_tool(
-            "control_stocknow_session",
-            {"action": "sync_portfolio", "injected_portfolio": injected},
-            session,
-            state,
-            settings,
-            skills_mgr,
-            CheckpointManager,
-        )
-        assert dispatch_res["status"] == "SUCCESS"
-        assert dispatch_res["result"]["synced_holdings_count"] == 2
-
-        formatted_bn = format_tool_response("control_stocknow_session", dispatch_res, "portfolio sync koro", {})
-        assert "ভার্চুয়াল পোর্টফোলিও সফলভাবে সিঙ্ক" in formatted_bn
-        assert "হোল্ডিংস: 2 টি" in formatted_bn
-
-        formatted_en = format_tool_response("control_stocknow_session", dispatch_res, "sync portfolio", {})
-        assert "synced successfully" in formatted_en
-        assert "Holdings: 2" in formatted_en
 
 
 def test_api_post_sync_portfolio(test_db):

@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 
 from backend.config import DHAKA, Settings
-from backend.database import ChatBudget, Database, HermesSessionMemory, portfolio_state
+from backend.database import ChatBudget, Database, portfolio_state
 
 
 class LoginRequest(BaseModel):
@@ -102,7 +102,7 @@ def build_auth_settings_router(database: Database, settings: Settings, broadcast
             day = datetime.now(DHAKA).date()
             budget = session.get(ChatBudget, day)
             used_calls = budget.calls if budget else 0
-            total_turns = len(list(session.scalars(select(HermesSessionMemory))))
+            total_turns = 0
 
         gemini_val = os.getenv("GEMINI_API_KEY", "").strip() or os.getenv("GOOGLE_API_KEY", "").strip() or settings.gemini_api_key
 
@@ -125,7 +125,7 @@ def build_auth_settings_router(database: Database, settings: Settings, broadcast
 
     @router.post("/api/settings/keys")
     def update_api_keys(body: KeysSettingsRequest):
-        from backend.hermes.agent_loop import CheckpointManager
+        from backend.engine.checkpoint import CheckpointManager
         updated_fields = []
         if body.openrouter_key is not None:
             clean_val = body.openrouter_key.strip()
