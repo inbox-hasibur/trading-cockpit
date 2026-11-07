@@ -1,10 +1,11 @@
 # Repository Agent Guidelines
 
 ## Git Commit Style
-- Always write natural and short commit messages.
+- Always write natural, ultra-short commit messages strictly between 2 to 5 words (e.g. "update docs and file tree", "drop legacy tables", "add hermes bridge").
+- Do NOT write long explanatory comments as commit messages.
 - Do NOT use colons (`:`) in commit messages.
 - Do NOT use conventional commit prefixes such as `feat:`, `fix:`, `chore:`, etc.
-- Keep messages lowercase or sentence case, direct, concise, and natural (e.g. "update settings page toggles and light mode", "trading dashboard").
+- Keep messages lowercase or sentence case, direct, concise, and natural.
 
 ## Hermes Trading Assistant Operating Context
 - Strict No-Loss: Never sell at net loss (< 0% net P/L after round-trip 1% fees).

@@ -211,3 +211,44 @@ Problem: teal is used for brand, active state, primary buttons, positive P/L, BU
 3. Regenerate the map: `python scripts/generate_code_map.py`.
 4. Add a "Sprint 2.6: UI polish and bug fixes" section to `documentation/Backlog.md` with a checkbox list of what was done.
 5. Final report as a table: ID, status (fixed / not reproducible / partial / skipped), files and approximate line ranges touched, one line on what changed. For every VERIFY item state clearly what you found. List anything you skipped and why.
+
+---
+
+# Migration to Official Nous Research Hermes Agent & Architecture Decoupling
+
+Following Sprint 2.8, the system was decoupled from the custom imitation agent subsystem and re-architected to use the real **Nous Research Hermes Agent** (`hermes-agent`) as the external autonomous brain, keeping the repository focused purely on the deterministic trading kernel, StockNow integration, and Cockpit UI.
+
+## Summary of Accomplished Work
+
+1. **Official Hermes Runtime Installation & Config:**
+   - Real Hermes Agent installed beside the project (`~/.hermes`).
+   - OpenRouter provider configured with tool-calling models (`gemini-3.1-flash-lite`, `mimo-v2.6-pro`) in Hermes' native config (`~/.hermes/config.yaml`), with API keys strictly isolated from this repo.
+
+2. **Standalone Deterministic Trading Kernel API (`backend/kernel_api.py`):**
+   - Created thin, isolated FastAPI service bound to `127.0.0.1` and protected by `X-Kernel-Token`.
+   - Zero imports from LLM/agent libraries.
+   - Enforces T+2 maturity, strict no-loss (+1.005% gross hurdle), 0.5% commission, and portfolio #164580 constraints.
+   - Every write operation takes an atomic `KernelStateCheckpoint` snapshot and writes a `KernelAuditLog` entry.
+
+3. **Official Humming Bird Plugin (`plugins/humming_bird/`):**
+   - Packaged with standard `plugin.yaml`, `__init__.py` with `register(ctx)`, `schemas.py`, `tools.py`, and `hooks.py`.
+   - 6 Read tools: `hb_portfolio`, `hb_watchlist`, `hb_inspect_curve`, `hb_market_open`, `hb_canaries`, `hb_lots`.
+   - 7 Write tools: `hb_set_tier`, `hb_set_allocation`, `hb_quarantine_canary`, `hb_restore_quarantine`, `hb_sync`, `hb_place_order`, `hb_rollback_last`.
+   - Pre-tool execution hook enforcing DSE trading sessions (Sun-Thu 10:00-14:30 Asia/Dhaka).
+   - 4 procedural skills in official `agentskills` format: `canary_90_10`, `gsc_tiers`, `sequential_no_regret`, `stocknow_dse_quirks`.
+
+4. **Real Hermes Streaming Bridge (`backend/hermes_bridge.py`):**
+   - Direct SSE streaming turn bridge connecting to Hermes Gateway API server (`/v1/chat/completions`) or transparent CLI fallback (`hermes chat --format stream-json --yolo`).
+   - Granular events (`tool_use`, `tool_result`, `text`, `done`, `error`) rendered as live tool cards in chat.
+   - Active model state read dynamically from Hermes config and surfaced in the sidebar.
+
+5. **Native Hermes Cron & Memory:**
+   - Scheduled tasks created in `~/.hermes/cron/jobs.json` with timezone `Asia/Dhaka` and market hours pre-check.
+   - Operator directives, strict no-loss rules, and working memory stored in native `USER.md` and `MEMORY.md`.
+
+6. **Imitation Code Removal & Clean Database Migration:**
+   - Removed 7,000+ lines of imitation agent code (`backend/hermes/` and `backend/hermes_os/`).
+   - Ran `scripts/migrate_drop_hermes_tables.py`: dumped legacy rows to `backend/data/hermes_tables_backup.json` and dropped legacy tables.
+   - Retained isolated `SecretGuard` in `backend/secret_guard.py` for adapter credential protection.
+   - Updated documentation (`About_Project.md`, `Backlog.md`, `CODEBASE_MAP.md`, `REAL_HERMES_MIGRATION.md`).
+   - Full test suite passing (74 green tests).

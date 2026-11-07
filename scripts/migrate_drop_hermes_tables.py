@@ -73,3 +73,4 @@ def run_migration(db_path: Path | str | None = None, backup_path: Path | str | N
 if __name__ == "__main__":
     result = run_migration()
     print(json.dumps(result, indent=2))
+

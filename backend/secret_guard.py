@@ -65,3 +65,4 @@ class SecretGuard:
 
 def redact_secrets(text: str, custom_tokens: list[str] | None = None) -> str:
     return SecretGuard.redact_secrets(text, custom_tokens)
+

@@ -33,3 +33,4 @@ def test_secret_guard_isolation_and_redaction():
     assert "[REDACTED_OPENROUTER_KEY]" in redacted
     assert "[REDACTED_API_KEY]" in redacted
     assert "[REDACTED_TOKEN]" in redacted
+

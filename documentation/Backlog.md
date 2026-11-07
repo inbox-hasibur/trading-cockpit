@@ -41,25 +41,27 @@
 - [x] **Real-Time Reactive Streaming (`/api/stream` SSE):**
   - Instant server-sent events pushed to frontend on every trade, cycle, scenario advance, or chat intervention without page reloads.
 
-#### 3. Cockpit Dashboard & True Hermes Agentic Architecture (`backend/hermes/`)
-- [x] **Zero-Secret-Read & `.env` Isolation Guardrails (`secret_guard.py`):**
+#### 3. Cockpit Dashboard & Official Hermes Agentic Architecture
+- [x] **Zero-Secret-Read & `.env` Isolation Guardrails (`backend/secret_guard.py`):**
   - Enforces runtime security boundary: Hermes cannot read `.env`, `.env.*`, `auth.json`, `cookies*`, `browser_profile/`, or `.db` files.
-  - Automatically scrubs `sk-or-v1-*`, `sk-*`, `Bearer *`, and token patterns before memory storage or external API calls.
+  - Automatically scrubs `sk-or-v1-*`, `sk-*`, `Bearer *`, and token patterns before logs or external API calls.
   - Added `.opencodeignore`, `.cursorignore`, and `.agentignore` to protect credentials from coding assistant indexing.
-- [x] **Self-Improving Procedural Memory — Skills Engine (`skills_manager.py`):**
-  - Versioned markdown skills in `backend/hermes/skills/`: `SKILL_gsc_tiers.md`, `SKILL_canary_90_10.md`, `SKILL_sequential_no_regret.md`, `SKILL_stocknow_dse_quirks.md`.
-  - On-demand matching matches only relevant skills by tag/keywords into the agent prompt.
-  - Self-patching tool (`learn_or_patch_skill`) updates `SKILL_*.md` files upon user instruction or confirmed canary thesis outcome.
-- [x] **Three-Layer Memory System (`memory.py`):**
-  - **Layer 1:** Operator Profile & Core Directives (Hasibur, Strict No-Loss posture, T+2 calendar).
-  - **Layer 2:** Searchable Session History with cross-turn search across SQLite transcripts.
-  - **Layer 3:** Durable Company Facts & Canary Probe Memory per stock.
-- [x] **State Checkpoints & 1-Click Rollback (`/rollback`):**
-  - Checkpoint manager saves state snapshots before mutations.
-  - Operator can type `/rollback` in chat or click the Rollback button in Cockpit UI to restore state cleanly.
-- [x] **Turn-based Agent Loop & Context Compression (`agent_loop.py`):**
-  - Structured turn orchestration with automatic older-turn summarization.
-  - Full toolset: `report_company_threat`, `evaluate_canary_theses`, `restore_quarantined_company`, `set_watchlist_tier`, `update_company_allocation`, `execute_manual_order`, `learn_or_patch_skill`, `rollback_last_checkpoint`.
+- [x] **Standalone Trading Kernel Service (`backend/kernel_api.py`):**
+  - Standalone FastAPI router bound strictly to `127.0.0.1` and protected by `X-Kernel-Token`.
+  - Zero imports from agent code; strictly deterministic execution of portfolio reads, tier modifications, and order placement.
+  - Enforces T+2 maturity, strict no-loss hurdle (>= +1.005% gross profit after 1.00% round trip commission), and portfolio #164580 binding.
+  - Snapshot before write via `KernelStateCheckpoint` with structured `KernelAuditLog` entries.
+- [x] **Official Humming Bird Hermes Plugin (`plugins/humming_bird/`):**
+  - Official plugin format (`plugin.yaml`, `__init__.py` with `register(ctx)`, `schemas.py`, `tools.py`).
+  - Read tools: `hb_portfolio`, `hb_watchlist`, `hb_inspect_curve`, `hb_market_open`, `hb_canaries`, `hb_lots`.
+  - Write tools: `hb_set_tier`, `hb_set_allocation`, `hb_quarantine_canary`, `hb_restore_quarantine`, `hb_sync`, `hb_place_order` (dry_run default, confirmation required, market hours hook), `hb_rollback_last`.
+  - Official procedural skills in `plugins/humming_bird/skills/`: `canary_90_10`, `gsc_tiers`, `sequential_no_regret`, `stocknow_dse_quirks`.
+- [x] **Real Hermes SSE Streaming Bridge (`backend/hermes_bridge.py`):**
+  - Proxies chat requests to Hermes Gateway API server (`/v1/chat/completions`) with transparent fallback to `hermes chat --format stream-json --yolo`.
+  - Real-time tool-call cards rendered in chat with tool names, input arguments, running/done status badges, and collapsible execution output.
+- [x] **Real Hermes Native Cron & Memory:**
+  - Scheduled autonomous tasks run via Hermes' native cron engine (`~/.hermes/cron/jobs.json`) with timezone `Asia/Dhaka` and DSE market hours check.
+  - Long-term operator directives and notes managed natively in Hermes' `USER.md` and `MEMORY.md`.
 - [x] **Zero-Build Dark-Mode Web Cockpit (`http://127.0.0.1:8000`):**
   - **Financial Telemetry:** Cash available, unsettled receivables, gross market value, net liquidation equity, realized & unrealized net P/L, and total brokerage fees paid.
   - **Period Accounting:** Today, Weekly, Monthly, and Yearly realized gain and total Buy/Sell volume turnover.
@@ -230,6 +232,32 @@
     - Wired `AutoTrader._run_cycle_internal()` to dispatch every automated Buy and Sequential Tier Sell through `adapter.execute_order` with 0.5% commission.
     - Wired 1-click 25% slice sell quick action in `#overview` Active Holdings table with locked `No-Loss Hold Guard` on underwater holdings.
   - **Full Verification:** 67 passing unit tests.
+
+- [x] **Step 2.9: Official Nous Research Hermes Agent Migration & Architecture Decoupling:**
+  - **Standalone Trading Kernel Service (`backend/kernel_api.py`):**
+    - Isolated local REST endpoints (`127.0.0.1`) secured with `X-Kernel-Token`.
+    - Zero imports of LLM/agent code; strict enforcement of T+2 maturity, strict no-loss (+1.005% gross hurdle), 0.5% buy/sell commission, and portfolio #164580 constraints.
+    - Atomic `KernelStateCheckpoint` snapshots and `KernelAuditLog` entries taken prior to any state mutation.
+  - **Official Humming Bird Plugin (`plugins/humming_bird/`):**
+    - Standalone plugin package (`plugin.yaml`, `__init__.py`, `schemas.py`, `tools.py`).
+    - 6 Read tools: `hb_portfolio`, `hb_watchlist`, `hb_inspect_curve`, `hb_market_open`, `hb_canaries`, `hb_lots`.
+    - 7 Write tools: `hb_set_tier`, `hb_set_allocation`, `hb_quarantine_canary`, `hb_restore_quarantine`, `hb_sync`, `hb_place_order` (dry_run default, explicit confirmation required), `hb_rollback_last`.
+    - Pre-tool execution hooks (`hooks.py`) enforcing DSE trading session hours (Sun-Thu 10:00-14:30 Asia/Dhaka).
+    - 4 official procedural skills in `plugins/humming_bird/skills/`: `canary_90_10`, `gsc_tiers`, `sequential_no_regret`, `stocknow_dse_quirks`.
+  - **Official Hermes Runtime & OpenRouter Configuration:**
+    - Installed official `hermes-agent` beside the project (`~/.hermes`).
+    - Configured OpenRouter provider with tool-calling models (`gemini-3.1-flash-lite`, `mimo-v2.6-pro`) in native Hermes config.
+  - **Streaming SSE Chat Bridge (`backend/hermes_bridge.py`):**
+    - High-performance bridge streaming events (`tool_use`, `tool_result`, `text`, `done`) to the Cockpit UI via Hermes Gateway API server (`/v1/chat/completions`) or transparent CLI fallback.
+    - Live tool-call cards rendered directly in Cockpit chat with inputs, execution badges, and expandable outputs.
+  - **Hermes Native Cron & Memory:**
+    - Native cron jobs created in `~/.hermes/cron/jobs.json` with timezone `Asia/Dhaka` and pre-execution market hours gate.
+    - Operator identity and trading posture persisted in native `USER.md` and `MEMORY.md`.
+  - **Imitation Code Removal & Clean Database Migration:**
+    - Completely deleted 7,000+ lines of imitation code (`backend/hermes/` and `backend/hermes_os/`).
+    - Exported legacy Hermes SQLite tables to `backend/data/hermes_tables_backup.json` and dropped legacy tables.
+    - Preserved `SecretGuard` in `backend/secret_guard.py` for adapter credential isolation.
+    - Verified full test suite passes (74 passing unit tests).
 
 ---
 

@@ -245,11 +245,11 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
 |                                    HUMMING BIRD OPERATOR TERMINAL                                     |
 |  [Left Nav Rail]      [Multi-View Workspace Containers]                   [Hermes IDE Copilot]        |
 |  - 1: #overview       - View 1: Overview (Telemetry, Pulse, Buckets, Strm)- Sticky Viewport (100vh)   |
-|  - 2: #watchlist      - View 2: Watchlist & DSE Market Treemap Heatmap    - Brain Selector (🧠 /model)|
-|  - 3: #rules          - View 3: Strategy Rules, What-If & Canary Theses   - [💬 Chat] Active Turn     |
+|  - 2: #watchlist      - View 2: Watchlist & DSE Market Treemap Heatmap    - Model Badge (Hermes state)|
+|  - 3: #rules          - View 3: Strategy Rules, What-If & Canary Theses   - [💬 Chat] Tool-Call Cards |
 |  - 4: #ledger         - View 4: Trade Ledger & FIFO Tax Lots              - [📂 Topics] Strategy Tabs |
-|  - 5: #settings       - View 5: Dedicated Settings & AI Brain Switcher    - [⚡ Changes] Diff Review  |
-|                       - Independent Scrolling Workspace (100vh)           - [🧠 Skills] SKILL_*.md    |
+|  - 5: #settings       - View 5: Dedicated Settings & Automation Controls  - [⚡ Changes] Diff Review  |
+|                       - Independent Scrolling Workspace (100vh)           - [🧠 Skills] Hermes Native |
 +---------------------------------------------------+---------------------------------------------------+
                                                     | HTTP REST / SSE Stream (/api/stream)
                                                     v
@@ -271,12 +271,12 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
 |                      |                                                         |                      |
 |                      v                                                         v                      |
 |  +---------------------------------------+             +-------------------------------------------+  |
-|  |    HERMES AGENTIC SUBSYSTEM           |             |       MODULAR DATA & ADAPTER LAYER        |  |
-|  | - SecretGuard (Zero-Secret Isolation) |             | - Dual Ingestion Pipeline:                |  |
-|  | - SkillsEngine (Versioned SKILL_*.md) |             |   * Method A: Background HTTP Polling     |  |
-|  | - 3-Layer Memory (Profile, Logs, Facts|             |   * Method B: Playwright Headed CDP Live  |  |
-|  | - CheckpointManager (1-Click Rollback)|             | - StockNowAdapter (DSE Fixtures & Sync)   |  |
-|  | - Multi-Thread Conversation Manager   |             | - Broadcaster (SSE Realtime Stream)       |  |
+|  |     OFFICIAL HERMES INTELLIGENCE      |             |       MODULAR DATA & ADAPTER LAYER        |  |
+|  | - Nous Hermes Agent (~/.hermes)       |             | - Dual Ingestion Pipeline:                |  |
+|  | - Humming Bird Plugin (13 Tools)      |             |   * Method A: Background HTTP Polling     |  |
+|  | - Procedural Skills (4 SKILL.md)      |             |   * Method B: Playwright Headed CDP Live  |  |
+|  | - Real Hermes Cron (Asia/Dhaka)       |             | - StockNowAdapter (DSE Fixtures & Sync)   |  |
+|  | - SSE Chat Bridge & Kernel API        |             | - Broadcaster (SSE Realtime Stream)       |  |
 |  +-------------------+-------------------+             +---------------------+---------------------+  |
 +----------------------|-------------------------------------------------------|------------------------+
                        |                                                       |
@@ -355,3 +355,122 @@ Scheduled autonomous tasks run via Hermes' native cron engine with timezone `Asi
 - **`USER.md`:** Operator identity (Hasibur Rahman), DSE preferences, Banglish language style, strict no-loss posture, and custom directives managed in Hermes' memory directory.
 - **`MEMORY.md`:** Working market observations and thesis notes maintained directly by Hermes.
 - **Procedural Learning:** Newly learned rules and methodologies discovered by Hermes are created and evolved directly as official skills under Hermes' native skills directory.
+
+---
+
+## 9. Repository Topology & Project File Tree
+
+The following tree represents the complete, clean directory structure of the Humming Bird repository after migrating to the official Nous Research Hermes Agent and removing all legacy imitation agent modules:
+
+```text
+trading-cockpit/
+├── .agentignore                             # Coding assistant indexing ignore patterns
+├── .cursorignore                            # Cursor IDE indexing ignore patterns
+├── .env.example                             # Environment variable template
+├── .gitignore                               # Git ignored files & patterns
+├── .opencodeignore                          # OpenCode indexing ignore patterns
+├── AGENTS.md                                # Operator guidelines, commit conventions & operating rules
+├── README.md                                # Project overview, quickstart & setup guide
+├── package.json                             # Root tooling metadata
+├── pyproject.toml                           # Python project configuration & packaging metadata
+├── run.bat                                  # Windows quick-launch script
+├── run.py                                   # Unified server launcher script
+├── run.sh                                   # Linux/macOS launcher script
+│
+├── backend/                                 # Deterministic Trading Kernel & FastAPI Server
+│   ├── .env.example                         # Backend environment variables template
+│   ├── __init__.py                          # Backend package initializer
+│   ├── config.py                            # Application configuration & environment loader
+│   ├── database.py                          # SQLite schema (WAL mode) & SQLAlchemy ORM models
+│   ├── hermes_bridge.py                     # Streaming SSE bridge & CLI fallback to official Hermes
+│   ├── kernel_api.py                        # Standalone local Trading Kernel API (X-Kernel-Token protected)
+│   ├── main.py                              # FastAPI entrypoint, middleware & route mounter
+│   ├── market_map.py                        # DSE sector tree, market capitalization & categorization
+│   ├── portfolio.py                         # Portfolio holdings calculation & valuation engine
+│   ├── requirements.txt                     # Production runtime Python dependencies
+│   ├── requirements-dev.txt                 # Development & testing Python dependencies
+│   ├── routes_auth_settings.py              # Settings, auth tokens & system configuration endpoints
+│   ├── routes_hermes.py                     # Hermes chat streaming bridge & bridge state endpoints
+│   ├── routes_stocknow.py                   # StockNow ingestion routes, telemetry & market data endpoints
+│   ├── secret_guard.py                      # Zero-secret isolation & credential redaction utility
+│   ├── seed.py                              # Database seeder for demo fixtures & initial state
+│   │
+│   ├── adapters/                            # External Exchange & Brokerage Adapters
+│   │   ├── __init__.py                      # Adapters package initializer
+│   │   ├── stocknow_adapter.py              # High-level StockNow client adapter & state synchronizer
+│   │   ├── stocknow_client.py               # Direct HTTP API client with auth & payload parsing
+│   │   ├── stocknow_market_sync.py          # Real-time market prices, indices & quotes sync
+│   │   ├── stocknow_order_executor.py       # Virtual/live order placement executor for StockNow
+│   │   └── stocknow_portfolio_sync.py       # Portfolio #164580 holdings & cash synchronization
+│   │
+│   ├── data/                                # Local persistent database & backup stores
+│   │   ├── hermes_tables_backup.json        # Exported backup rows from dropped legacy Hermes tables
+│   │   └── stocknow_paper.db                # SQLite database file (WAL mode)
+│   │
+│   └── engine/                              # Core Quantitative & Deterministic Trading Engine
+│       ├── __init__.py                      # Engine package initializer
+│       ├── agent_actions.py                 # Deterministic action dispatcher & rule executor
+│       ├── auto_trader.py                   # Automated evaluation cycle runner & signal executor
+│       ├── checkpoint.py                    # Atomic state snapshot & rollback manager (KernelStateCheckpoint)
+│       ├── curve_analyzer.py                # 7-30 day trend slope, support/resistance, & crash detection
+│       ├── money.py                         # Strict decimal brokerage fee math (1.00% round trip)
+│       ├── scheduler.py                     # Market calendar engine & session status evaluator
+│       ├── sequential_seller.py             # Multi-tier profit locking & 50/50 pullback seller
+│       ├── signals.py                       # Quantitative trading signal generators & indicators
+│       └── t2_ledger.py                     # DSE T+2 settlement rolling 3-bucket ledger (A, B, C)
+│
+├── plugins/                                 # Official Hermes Agent Plugins
+│   └── humming_bird/                        # Humming Bird Trading Engine Hermes Plugin
+│       ├── __init__.py                      # Plugin lifecycle & tool registration (register(ctx))
+│       ├── hooks.py                         # Pre-tool execution hooks (DSE market hours enforcement)
+│       ├── plugin.yaml                      # Official Hermes plugin manifest & environment declarations
+│       ├── schemas.py                       # Type definitions & Pydantic validation schemas
+│       ├── tools.py                         # 13 Hermes tools (6 Read-only, 7 Write/Order execution)
+│       └── skills/                          # Official Procedural Skills (agentskills standard)
+│           ├── canary_90_10/
+│           │   └── SKILL.md                 # 90/10 emergency profit lock & canary observation probe
+│           ├── gsc_tiers/
+│           │   └── SKILL.md                 # GSC master observation, L1 turnaround, L2 swing rally tiers
+│           ├── learned_rule_general/
+│           │   └── SKILL.md                 # Dynamic skill learning test case & rule evolution
+│           ├── sequential_no_regret/
+│           │   └── SKILL.md                 # Multi-tier profit locking, 50/50 pullback & T+2 capital rolling
+│           └── stocknow_dse_quirks/
+│               └── SKILL.md                 # Virtual portfolio #164580 constraints & DSE session rules
+│
+├── frontend/                                # Cockpit Single-Page Interface
+│   ├── app.js                               # Reactive state manager, DOM updater & telemetry polling
+│   ├── charts.js                            # Canvas chart renderer (trend curves, sparklines, treemap)
+│   ├── favicon.svg                          # Humming Bird brand icon
+│   ├── hermes_ui.js                         # Hermes SSE chat stream, tool cards, skills drawer & cron controls
+│   ├── index.html                           # Single-page cockpit dashboard layout & DOM structure
+│   ├── styles.css                           # Dark theme styling, terminal aesthetic & design system
+│   └── theme_light_hermes.css               # WCAG AA compliant light theme design system
+│
+├── scripts/                                 # Administrative & Migration Automation Scripts
+│   ├── generate_code_map.py                 # Zero-dependency AST inspection & Codebase Map generator
+│   ├── install_plugin.ps1                   # Hermes plugin installation & linking script
+│   └── migrate_drop_hermes_tables.py        # Legacy Hermes tables data backup & schema drop migration
+│
+├── tests/                                   # Pytest Automated Test Suite
+│   ├── conftest.py                          # Shared test fixtures, mock client & test database setup
+│   ├── test_api.py                          # REST API endpoint tests
+│   ├── test_engine.py                       # Quantitative engine unit tests (T2 ledger, fee math, curves)
+│   ├── test_humming_bird_plugin.py          # Hermes plugin tool handler tests with mock kernel
+│   ├── test_kernel_api.py                   # Local kernel service endpoint, auth & checkpoint tests
+│   ├── test_secret_guard.py                 # Secret isolation & credential redaction tests
+│   ├── test_stocknow_portfolio_164580.py    # Portfolio #164580 constraints & skill validation tests
+│   ├── test_stocknow_step2_1.py             # StockNow adapter authentication tests
+│   ├── test_stocknow_step2_2.py             # StockNow portfolio sync & holdings ingestion tests
+│   ├── test_stocknow_step2_3.py             # StockNow order placement & validation tests
+│   ├── test_stocknow_step2_4.py             # StockNow market data sync & quotes ingestion tests
+│   └── test_stocknow_step2_5.py             # StockNow scheduler & automated cycle runner tests
+│
+└── documentation/                           # System Architecture & Strategy Documentation
+    ├── About_Project.md                     # Core architecture, system philosophy & repo topology
+    ├── Backlog.md                           # Implementation roadmap, sprint plans & backlog items
+    ├── CODEBASE_MAP.md                      # Auto-generated AST map, LOC metrics & endpoint radar
+    ├── REAL_HERMES_MIGRATION.md             # Verified Hermes extension points, runtime docs & evidence
+    └── Recent.md                            # Recent change logs, UI polish passes & migration logs
+```
+
