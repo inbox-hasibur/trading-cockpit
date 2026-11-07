@@ -33,7 +33,7 @@ from backend.adapters.stocknow_adapter import StockNowAdapter
 from backend.adapters.stocknow_client import StockNowLiveClient
 from backend.adapters.stocknow_market_sync import extract_quotes_from_stocknow, sync_live_market_to_db
 from backend.config import ROOT, VERSION, Settings
-from backend.database import CustomRule, Database, RuleAudit, portfolio_state
+from backend.database import CustomRule, Database, KernelAuditLog, RuleAudit, TradeLog, portfolio_state
 from backend.engine.auto_trader import AutomationPaused, AutoTrader
 from backend.engine.scheduler import DSEMarketScheduler
 from backend.engine.money import ZERO
@@ -45,6 +45,7 @@ from backend.routes_auth_settings import (
     build_auth_settings_router,
 )
 from backend.hermes_bridge import build_hermes_bridge_router
+from backend.kernel_api import CapsUpdateRequest
 from backend.routes_hermes import CreateThreadRequest, build_hermes_router
 from backend.routes_stocknow import build_stocknow_router
 from backend.seed import migrate_real_stocknow_market, seed_demo
@@ -281,6 +282,116 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "mode": "DEMO",
             }
             broadcaster.publish("automation_config", res)
+            return res
+
+    @app.get("/api/caps")
+    def get_caps_public():
+        with database.read() as session:
+            state = portfolio_state(session)
+            today_buys_spend = sum(
+                (abs(t.net_cash_change) for t in session.scalars(
+                    select(TradeLog).where(TradeLog.trade_on == state.clock_date, TradeLog.side == "BUY")
+                )),
+                ZERO,
+            )
+            today_orders_count = len(session.scalars(select(TradeLog.id).where(TradeLog.trade_on == state.clock_date)).all())
+            return {
+                "max_order_bdt": float(state.max_order_bdt) if getattr(state, "max_order_bdt", None) is not None else None,
+                "max_symbol_bdt": float(state.max_symbol_bdt) if getattr(state, "max_symbol_bdt", None) is not None else None,
+                "daily_budget_bdt": float(getattr(state, "daily_budget_bdt", Decimal("4000.00"))),
+                "max_orders_per_day": int(getattr(state, "max_orders_per_day", 20)),
+                "kill_switch_active": bool(getattr(state, "kill_switch_active", False)),
+                "today_buy_spend_bdt": float(today_buys_spend),
+                "today_orders_count": int(today_orders_count),
+                "trading_mode": getattr(state, "trading_mode", "LIVE_HOURS"),
+            }
+
+    @app.post("/api/caps")
+    def set_caps_public(body: CapsUpdateRequest):
+        from backend.engine.checkpoint import CheckpointManager
+        with database.write() as session:
+            state = portfolio_state(session)
+            current_max_order = getattr(state, "max_order_bdt", None)
+            current_max_symbol = getattr(state, "max_symbol_bdt", None)
+            current_daily_budget = getattr(state, "daily_budget_bdt", Decimal("4000.00"))
+            current_max_orders = getattr(state, "max_orders_per_day", 20)
+            current_kill_switch = getattr(state, "kill_switch_active", False)
+
+            raising = False
+            if body.max_order_bdt is not None:
+                new_mo = Decimal(str(body.max_order_bdt))
+                if current_max_order is not None and new_mo > current_max_order:
+                    raising = True
+            if body.max_symbol_bdt is not None:
+                new_ms = Decimal(str(body.max_symbol_bdt))
+                if current_max_symbol is not None and new_ms > current_max_symbol:
+                    raising = True
+            if body.daily_budget_bdt is not None:
+                new_db = Decimal(str(body.daily_budget_bdt))
+                if new_db > current_daily_budget:
+                    raising = True
+            if body.max_orders_per_day is not None:
+                if body.max_orders_per_day > current_max_orders:
+                    raising = True
+            if body.kill_switch_active is not None:
+                if current_kill_switch and not body.kill_switch_active:
+                    raising = True
+
+            if raising and not body.confirm:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Raising risk limits requires operator confirmation in the cockpit (confirm=true).",
+                )
+
+            cp = CheckpointManager.create_checkpoint(
+                session=session,
+                state=state,
+                action="SET_CAPS",
+                description=f"Update risk caps (confirm={body.confirm})",
+                actor="Operator",
+            )
+
+            if body.max_order_bdt is not None:
+                state.max_order_bdt = Decimal(str(body.max_order_bdt))
+            if body.max_symbol_bdt is not None:
+                state.max_symbol_bdt = Decimal(str(body.max_symbol_bdt))
+            if body.daily_budget_bdt is not None:
+                state.daily_budget_bdt = Decimal(str(body.daily_budget_bdt))
+            if body.max_orders_per_day is not None:
+                state.max_orders_per_day = int(body.max_orders_per_day)
+            if body.kill_switch_active is not None:
+                state.kill_switch_active = bool(body.kill_switch_active)
+
+            state.rules_revision += 1
+
+            session.add(KernelAuditLog(
+                endpoint="/api/caps",
+                action="SET_CAPS",
+                symbol=None,
+                payload=body.model_dump(mode="json"),
+                result={
+                    "status": "ok",
+                    "max_order_bdt": str(state.max_order_bdt) if state.max_order_bdt is not None else None,
+                    "max_symbol_bdt": str(state.max_symbol_bdt) if state.max_symbol_bdt is not None else None,
+                    "daily_budget_bdt": str(state.daily_budget_bdt),
+                    "max_orders_per_day": state.max_orders_per_day,
+                    "kill_switch_active": state.kill_switch_active,
+                },
+                checkpoint_id=cp.id,
+                session_on=state.clock_date,
+                trading_mode=state.trading_mode,
+            ))
+
+            res = {
+                "status": "ok",
+                "checkpoint_id": cp.id,
+                "max_order_bdt": float(state.max_order_bdt) if state.max_order_bdt is not None else None,
+                "max_symbol_bdt": float(state.max_symbol_bdt) if state.max_symbol_bdt is not None else None,
+                "daily_budget_bdt": float(state.daily_budget_bdt),
+                "max_orders_per_day": int(state.max_orders_per_day),
+                "kill_switch_active": bool(state.kill_switch_active),
+            }
+            broadcaster.publish("caps_updated", res)
             return res
 
     @app.post("/api/demo/advance")

@@ -113,6 +113,13 @@ class AutoTrader:
             record(company.symbol, analysis.signal, analysis.reason)
 
         sold_symbols: set[str] = set()
+
+        # Enforce global kill switch: blocks all order execution mid-cycle
+        if getattr(state, "kill_switch_active", False):
+            for c in companies:
+                record(c.symbol, "KILL_SWITCH_ACTIVE", "Global kill switch is active. Blocking order execution mid-cycle.")
+            return trades
+
         lots = list(session.scalars(
             select(TaxLot).where(TaxLot.remaining_qty > 0).order_by(TaxLot.id)
         ))
@@ -238,13 +245,53 @@ class AutoTrader:
             if already_bought:
                 record(company.symbol, "WAIT_DAILY_BUY", "Already bought this symbol in this session.")
                 continue
+            if getattr(state, "kill_switch_active", False):
+                record(company.symbol, "KILL_SWITCH_ACTIVE", "Global kill switch is active. Blocking order execution.")
+                continue
+
+            # Enforce max orders per day limit across AutoTrader and Hermes
+            max_orders = getattr(state, "max_orders_per_day", 20)
+            today_orders_count = len(session.scalars(select(TradeLog.id).where(TradeLog.trade_on == state.clock_date)).all())
+            if today_orders_count >= max_orders:
+                record(company.symbol, "DAILY_ORDER_LIMIT_REACHED", f"Daily order limit reached ({today_orders_count}/{max_orders}).")
+                continue
+
+            # Enforce shared daily budget limit across AutoTrader and Hermes
+            daily_budget = getattr(state, "daily_budget_bdt", Decimal("4000.00"))
+            today_buys_spend = sum(
+                (abs(t.net_cash_change) for t in session.scalars(
+                    select(TradeLog).where(TradeLog.trade_on == state.clock_date, TradeLog.side == "BUY")
+                )),
+                ZERO,
+            )
+            daily_budget_headroom = max(ZERO, daily_budget - today_buys_spend)
+            if daily_budget_headroom <= ZERO:
+                record(company.symbol, "DAILY_BUDGET_EXHAUSTED", f"Daily buy budget exhausted (spent ৳{today_buys_spend:.2f} of ৳{daily_budget:.2f}).")
+                continue
+
             open_basis = sum(session.scalars(select(TaxLot.remaining_cost_basis).where(
                 TaxLot.symbol == company.symbol, TaxLot.remaining_qty > 0,
             )), ZERO)
             exposure_cap = money(state.initial_capital * rule.buy_allocation_pct / HUNDRED)
             headroom = max(ZERO, exposure_cap - open_basis)
+
+            # Enforce max symbol exposure cap
+            max_sym_cap = getattr(state, "max_symbol_bdt", None)
+            if max_sym_cap is not None:
+                sym_headroom = max(ZERO, max_sym_cap - open_basis)
+                if sym_headroom <= ZERO:
+                    record(company.symbol, "MAX_SYMBOL_CAP_REACHED", f"Symbol {company.symbol} exposure cap reached (৳{open_basis:.2f} >= ৳{max_sym_cap:.2f}).")
+                    continue
+                headroom = min(headroom, sym_headroom)
+
             daily_headroom = max(ZERO, active.initial_cash - active.today_buy_spend)
-            budget = min(active.available_cash, headroom, daily_headroom)
+            budget = min(active.available_cash, headroom, daily_headroom, daily_budget_headroom)
+
+            # Enforce max order gross/net cap
+            max_order_cap = getattr(state, "max_order_bdt", None)
+            if max_order_cap is not None:
+                budget = min(budget, max_order_cap)
+
             quantity = whole_shares(budget / (quote.unit_price * (1 + self.settings.buy_fee_rate)))
             while quantity > 0:
                 cost, fee = purchase_amount(quantity, quote.unit_price, self.settings.buy_fee_rate)

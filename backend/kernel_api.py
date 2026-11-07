@@ -29,6 +29,7 @@ from backend.database import (
     CompanyProfile,
     CustomRule,
     Database,
+    DecisionLog,
     KernelAuditLog,
     OrderIdempotencyKey,
     PortfolioState,
@@ -617,6 +618,35 @@ def _compute_order_reconcile_and_drift(
     }
 
 
+def _record_order_rejection(
+    session: Any,
+    state: PortfolioState,
+    symbol: str,
+    action: str,
+    reason: str,
+    trading_mode: str,
+    payload: dict[str, Any],
+) -> None:
+    """Records DecisionLog and KernelAuditLog for any rejected order."""
+    session.add(DecisionLog(
+        cycle_id=None,
+        symbol=symbol,
+        action=f"REJECT_{action}",
+        reason=reason,
+        trading_mode=trading_mode,
+    ))
+    session.add(KernelAuditLog(
+        endpoint="/k/order",
+        action=f"REJECT_{action}",
+        symbol=symbol,
+        payload=payload,
+        result={"status": "REJECTED", "reason": reason},
+        session_on=state.clock_date,
+        trading_mode=trading_mode,
+    ))
+    session.commit()
+
+
 class OrderRequest(BaseModel):
     idempotency_key: str = Field(..., min_length=1)
     symbol: str
@@ -684,11 +714,60 @@ async def post_order(
             if unit_price <= ZERO:
                 raise HTTPException(status_code=422, detail=f"Invalid unit price '{unit_price}'.")
 
+            # 3. Global Kill Switch Check (AutoTrader & Hermes shared)
+            if getattr(state, "kill_switch_active", False):
+                reason = "Order rejected: Global kill switch is active."
+                _record_order_rejection(session, state, sym, "KILL_SWITCH", reason, trading_mode, body.model_dump(mode="json"))
+                raise HTTPException(status_code=422, detail=reason)
+
+            # 4. Max Orders Per Day Check (AutoTrader & Hermes shared)
+            max_orders = getattr(state, "max_orders_per_day", 20)
+            today_orders_count = len(session.scalars(select(TradeLog.id).where(TradeLog.trade_on == state.clock_date)).all())
+            if today_orders_count >= max_orders:
+                reason = f"Order rejected: Daily order limit reached ({today_orders_count}/{max_orders} orders executed today)."
+                _record_order_rejection(session, state, sym, "DAILY_ORDER_LIMIT", reason, trading_mode, body.model_dump(mode="json"))
+                raise HTTPException(status_code=422, detail=reason)
+
+            # 5. Max Order Gross Cap Check (AutoTrader & Hermes shared)
+            max_order_bdt = getattr(state, "max_order_bdt", None)
+            order_gross = body.quantity * unit_price
+            if max_order_bdt is not None and order_gross > max_order_bdt:
+                reason = f"Order rejected: Order amount ৳{float(order_gross):.2f} exceeds max order cap of ৳{float(max_order_bdt):.2f}."
+                _record_order_rejection(session, state, sym, "MAX_ORDER_CAP", reason, trading_mode, body.model_dump(mode="json"))
+                raise HTTPException(status_code=422, detail=reason)
+
             # Pre-validate BUY
             if side == "BUY":
                 if comp.quarantined:
-                    raise HTTPException(status_code=422, detail=f"Cannot buy {sym}: Company is under Crash Quarantine.")
+                    reason = f"Cannot buy {sym}: Company is under Crash Quarantine."
+                    _record_order_rejection(session, state, sym, "QUARANTINE", reason, trading_mode, body.model_dump(mode="json"))
+                    raise HTTPException(status_code=422, detail=reason)
+
                 cost, fee = purchase_amount(body.quantity, unit_price, commission_rate)
+
+                # 6. Max Symbol Exposure Cap Check (AutoTrader & Hermes shared)
+                max_symbol_bdt = getattr(state, "max_symbol_bdt", None)
+                open_basis = sum(session.scalars(select(TaxLot.remaining_cost_basis).where(
+                    TaxLot.symbol == sym, TaxLot.remaining_qty > 0
+                )), ZERO)
+                new_symbol_exposure = open_basis + (body.quantity * unit_price)
+                if max_symbol_bdt is not None and new_symbol_exposure > max_symbol_bdt:
+                    reason = f"Order rejected: Symbol {sym} total exposure ৳{float(new_symbol_exposure):.2f} exceeds max symbol cap of ৳{float(max_symbol_bdt):.2f}."
+                    _record_order_rejection(session, state, sym, "MAX_SYMBOL_CAP", reason, trading_mode, body.model_dump(mode="json"))
+                    raise HTTPException(status_code=422, detail=reason)
+
+                # 7. Daily Buy Budget Exhaustion Check (AutoTrader & Hermes shared)
+                daily_budget_bdt = getattr(state, "daily_budget_bdt", Decimal("4000.00"))
+                today_buys_spend = sum(
+                    (abs(t.net_cash_change) for t in session.scalars(
+                        select(TradeLog).where(TradeLog.trade_on == state.clock_date, TradeLog.side == "BUY")
+                    )),
+                    ZERO,
+                )
+                if (today_buys_spend + cost) > daily_budget_bdt:
+                    reason = f"Order rejected: Daily buy spend would reach ৳{float(today_buys_spend + cost):.2f}, exceeding daily budget cap of ৳{float(daily_budget_bdt):.2f}."
+                    _record_order_rejection(session, state, sym, "DAILY_BUDGET_EXHAUSTED", reason, trading_mode, body.model_dump(mode="json"))
+                    raise HTTPException(status_code=422, detail=reason)
 
             # Pre-validate SELL (enforces T+2 maturity and strict no-loss)
             if side == "SELL":
@@ -708,17 +787,16 @@ async def post_order(
                     ))
                     if immature_lots:
                         earliest = min(lot.matures_on for lot in immature_lots)
-                        raise HTTPException(
-                            status_code=422,
-                            detail=f"Cannot sell {sym}: shares are settlement-locked until {earliest.isoformat()} (T+2 lock).",
-                        )
-                    raise HTTPException(status_code=422, detail=f"Cannot sell {sym}: no open shares held.")
+                        reason = f"Cannot sell {sym}: shares are settlement-locked until {earliest.isoformat()} (T+2 lock)."
+                    else:
+                        reason = f"Cannot sell {sym}: no open shares held."
+                    _record_order_rejection(session, state, sym, "SETTLEMENT_LOCK", reason, trading_mode, body.model_dump(mode="json"))
+                    raise HTTPException(status_code=422, detail=reason)
 
                 if body.quantity > mature_qty:
-                    raise HTTPException(
-                        status_code=422,
-                        detail=f"Cannot sell {body.quantity} shares of {sym}: only {mature_qty} mature shares available.",
-                    )
+                    reason = f"Cannot sell {body.quantity} shares of {sym}: only {mature_qty} mature shares available."
+                    _record_order_rejection(session, state, sym, "INSUFFICIENT_SHARES", reason, trading_mode, body.model_dump(mode="json"))
+                    raise HTTPException(status_code=422, detail=reason)
 
                 # Strict no-loss verification across mature lots to be sold
                 remaining = body.quantity
@@ -732,10 +810,9 @@ async def post_order(
                     cost_slice = allocated_basis(lot.remaining_cost_basis, lot.remaining_qty, sell_slice)
                     if proceeds < cost_slice:
                         net_ret = (proceeds / cost_slice - 1) * Decimal("100")
-                        raise HTTPException(
-                            status_code=422,
-                            detail=f"Cannot sell {sym} at ৳{unit_price}: net return is {float(net_ret):.2f}% (net loss). Strict No-Loss policy holds.",
-                        )
+                        reason = f"Cannot sell {sym} at ৳{unit_price}: net return is {float(net_ret):.2f}% (net loss). Strict No-Loss policy holds."
+                        _record_order_rejection(session, state, sym, "STRICT_NO_LOSS", reason, trading_mode, body.model_dump(mode="json"))
+                        raise HTTPException(status_code=422, detail=reason)
                     total_proceeds += proceeds
                     total_basis += cost_slice
                     remaining -= sell_slice
@@ -744,9 +821,11 @@ async def post_order(
             if not body.dry_run and trading_mode != "TEST_OFFHOURS":
                 market_gate = is_dse_market_open(settings=settings)
                 if not market_gate["is_open"]:
+                    reason = f"DSE market is closed ({market_gate['reason']}). Orders in LIVE_HOURS mode are strictly limited to Sun-Thu 10:00 to 14:30 Asia/Dhaka."
+                    _record_order_rejection(session, state, sym, "MARKET_CLOSED", reason, trading_mode, body.model_dump(mode="json"))
                     raise HTTPException(
                         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                        detail=f"DSE market is closed ({market_gate['reason']}). Orders in LIVE_HOURS mode are strictly limited to Sun-Thu 10:00 to 14:30 Asia/Dhaka.",
+                        detail=reason,
                     )
 
             # Handle dry_run default: generate preview token
@@ -781,9 +860,11 @@ async def post_order(
 
             # Confirmation enforcement for real execution (dry_run=False)
             if not body.operator_confirmed:
+                reason = "Order execution rejected: operator_confirmed must be true. Operator confirmation is required for real virtual order execution."
+                _record_order_rejection(session, state, sym, "UNCONFIRMED", reason, trading_mode, body.model_dump(mode="json"))
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail="Order execution rejected: operator_confirmed must be true. Operator confirmation is required for real virtual order execution.",
+                    detail=reason,
                 )
 
             if trading_mode == "LIVE_HOURS":
@@ -1301,6 +1382,132 @@ async def post_stocknow_session(
             "action": action,
             "checkpoint_id": cp.id,
             "result": res,
+        }
+
+
+class CapsUpdateRequest(BaseModel):
+    max_order_bdt: Decimal | float | None = None
+    max_symbol_bdt: Decimal | float | None = None
+    daily_budget_bdt: Decimal | float | None = None
+    max_orders_per_day: int | None = None
+    kill_switch_active: bool | None = None
+    confirm: bool = False
+
+
+@router.get("/caps")
+def get_caps(
+    db: Database = Depends(get_db),
+) -> dict[str, Any]:
+    """Fetch current risk limits, kill switch status, and today's usage."""
+    with db.read() as session:
+        state = portfolio_state(session)
+        today_buys_spend = sum(
+            (abs(t.net_cash_change) for t in session.scalars(
+                select(TradeLog).where(TradeLog.trade_on == state.clock_date, TradeLog.side == "BUY")
+            )),
+            ZERO,
+        )
+        today_orders_count = len(session.scalars(select(TradeLog.id).where(TradeLog.trade_on == state.clock_date)).all())
+        return {
+            "max_order_bdt": float(state.max_order_bdt) if getattr(state, "max_order_bdt", None) is not None else None,
+            "max_symbol_bdt": float(state.max_symbol_bdt) if getattr(state, "max_symbol_bdt", None) is not None else None,
+            "daily_budget_bdt": float(getattr(state, "daily_budget_bdt", Decimal("4000.00"))),
+            "max_orders_per_day": int(getattr(state, "max_orders_per_day", 20)),
+            "kill_switch_active": bool(getattr(state, "kill_switch_active", False)),
+            "today_buy_spend_bdt": float(today_buys_spend),
+            "today_orders_count": int(today_orders_count),
+            "trading_mode": getattr(state, "trading_mode", "LIVE_HOURS"),
+        }
+
+
+@router.post("/caps")
+def set_caps(
+    body: CapsUpdateRequest,
+    db: Database = Depends(get_db),
+) -> dict[str, Any]:
+    """Update risk limits in the kernel. May only lower limits by itself; raising a limit requires confirmation."""
+    with db.write() as session:
+        state = portfolio_state(session)
+        current_max_order = getattr(state, "max_order_bdt", None)
+        current_max_symbol = getattr(state, "max_symbol_bdt", None)
+        current_daily_budget = getattr(state, "daily_budget_bdt", Decimal("4000.00"))
+        current_max_orders = getattr(state, "max_orders_per_day", 20)
+        current_kill_switch = getattr(state, "kill_switch_active", False)
+
+        raising = False
+        if body.max_order_bdt is not None:
+            new_mo = Decimal(str(body.max_order_bdt))
+            if current_max_order is not None and new_mo > current_max_order:
+                raising = True
+        if body.max_symbol_bdt is not None:
+            new_ms = Decimal(str(body.max_symbol_bdt))
+            if current_max_symbol is not None and new_ms > current_max_symbol:
+                raising = True
+        if body.daily_budget_bdt is not None:
+            new_db = Decimal(str(body.daily_budget_bdt))
+            if new_db > current_daily_budget:
+                raising = True
+        if body.max_orders_per_day is not None:
+            if body.max_orders_per_day > current_max_orders:
+                raising = True
+        if body.kill_switch_active is not None:
+            # Relaxing kill switch from True to False requires confirmation
+            if current_kill_switch and not body.kill_switch_active:
+                raising = True
+
+        if raising and not body.confirm:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Raising risk limits requires operator confirmation in the cockpit (confirm=true).",
+            )
+
+        cp = CheckpointManager.create_checkpoint(
+            session=session,
+            state=state,
+            action="SET_CAPS",
+            description=f"Update risk caps (confirm={body.confirm})",
+            actor="Kernel API",
+        )
+
+        if body.max_order_bdt is not None:
+            state.max_order_bdt = Decimal(str(body.max_order_bdt))
+        if body.max_symbol_bdt is not None:
+            state.max_symbol_bdt = Decimal(str(body.max_symbol_bdt))
+        if body.daily_budget_bdt is not None:
+            state.daily_budget_bdt = Decimal(str(body.daily_budget_bdt))
+        if body.max_orders_per_day is not None:
+            state.max_orders_per_day = int(body.max_orders_per_day)
+        if body.kill_switch_active is not None:
+            state.kill_switch_active = bool(body.kill_switch_active)
+
+        state.rules_revision += 1
+
+        session.add(KernelAuditLog(
+            endpoint="/k/caps",
+            action="SET_CAPS",
+            symbol=None,
+            payload=body.model_dump(mode="json"),
+            result={
+                "status": "ok",
+                "max_order_bdt": str(state.max_order_bdt) if state.max_order_bdt is not None else None,
+                "max_symbol_bdt": str(state.max_symbol_bdt) if state.max_symbol_bdt is not None else None,
+                "daily_budget_bdt": str(state.daily_budget_bdt),
+                "max_orders_per_day": state.max_orders_per_day,
+                "kill_switch_active": state.kill_switch_active,
+            },
+            checkpoint_id=cp.id,
+            session_on=state.clock_date,
+            trading_mode=state.trading_mode,
+        ))
+
+        return {
+            "status": "ok",
+            "checkpoint_id": cp.id,
+            "max_order_bdt": float(state.max_order_bdt) if state.max_order_bdt is not None else None,
+            "max_symbol_bdt": float(state.max_symbol_bdt) if state.max_symbol_bdt is not None else None,
+            "daily_budget_bdt": float(state.daily_budget_bdt),
+            "max_orders_per_day": int(state.max_orders_per_day),
+            "kill_switch_active": bool(state.kill_switch_active),
         }
 
 

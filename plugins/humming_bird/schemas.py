@@ -371,3 +371,48 @@ HB_MODE_SET_SCHEMA = {
     },
 }
 
+HB_CAPS_GET_SCHEMA = {
+    "name": "hb_caps_get",
+    "description": "Get enforced kernel risk caps (max_order_bdt, max_symbol_bdt, daily_budget_bdt, max_orders_per_day, kill_switch_active) and current usage.",
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": False,
+    },
+}
+
+HB_CAPS_SET_SCHEMA = {
+    "name": "hb_caps_set",
+    "description": "Set enforced kernel risk caps. hb_caps_set may only lower limits by itself; raising a limit requires explicit operator confirmation (confirm=true).",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "max_order_bdt": {
+                "type": "number",
+                "description": "Maximum allowed gross BDT value for a single order.",
+            },
+            "max_symbol_bdt": {
+                "type": "number",
+                "description": "Maximum allowed total BDT exposure for a single symbol.",
+            },
+            "daily_budget_bdt": {
+                "type": "number",
+                "description": "Maximum daily total buy spend across AutoTrader and Hermes (default: 4000).",
+            },
+            "max_orders_per_day": {
+                "type": "integer",
+                "description": "Maximum number of executed orders per trading day.",
+            },
+            "kill_switch_active": {
+                "type": "boolean",
+                "description": "Global kill switch to immediately halt all buying and selling orders.",
+            },
+            "confirm": {
+                "type": "boolean",
+                "description": "Mandatory confirmation flag required when raising any limit or deactivating kill switch.",
+            },
+        },
+        "additionalProperties": False,
+    },
+}
+

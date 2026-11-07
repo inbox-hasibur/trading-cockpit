@@ -773,7 +773,111 @@ window.toggleHermesModelPicker = function(e) {
 };
 
 // --- System Notification Settings (Telegram Bot) ---
+let currentRiskCaps = null;
+
+async function loadRiskCapsSettings() {
+  try {
+    const data = await api("/api/caps");
+    currentRiskCaps = data;
+    const ksInput = $("caps-kill-switch");
+    const ksStatus = $("caps-kill-switch-status");
+    if (ksInput) {
+      ksInput.checked = Boolean(data.kill_switch_active);
+      if (ksStatus) {
+        ksStatus.textContent = data.kill_switch_active ? "ACTIVE (BLOCKED)" : "OFF";
+        ksStatus.style.color = data.kill_switch_active ? "#ef4444" : "#888";
+      }
+    }
+    const maxOrder = $("caps-max-order");
+    if (maxOrder && data.max_order_bdt != null) {
+      maxOrder.value = data.max_order_bdt;
+    }
+    const maxSymbol = $("caps-max-symbol");
+    if (maxSymbol && data.max_symbol_bdt != null) {
+      maxSymbol.value = data.max_symbol_bdt;
+    }
+    const dailyBudget = $("caps-daily-budget");
+    if (dailyBudget && data.daily_budget_bdt != null) {
+      dailyBudget.value = data.daily_budget_bdt;
+    }
+    const maxOrders = $("caps-max-orders");
+    if (maxOrders && data.max_orders_per_day != null) {
+      maxOrders.value = data.max_orders_per_day;
+    }
+  } catch (err) {
+    console.warn("Could not load risk caps settings:", err);
+  }
+}
+
+async function saveRiskCapsSettings(e) {
+  if (e) e.preventDefault();
+  const ksInput = $("caps-kill-switch");
+  const maxOrderInput = $("caps-max-order");
+  const maxSymbolInput = $("caps-max-symbol");
+  const dailyBudgetInput = $("caps-daily-budget");
+  const maxOrdersInput = $("caps-max-orders");
+  const statusMsg = $("caps-save-status");
+
+  const newKillSwitch = ksInput ? ksInput.checked : false;
+  const newMaxOrder = maxOrderInput && maxOrderInput.value ? parseFloat(maxOrderInput.value) : null;
+  const newMaxSymbol = maxSymbolInput && maxSymbolInput.value ? parseFloat(maxSymbolInput.value) : null;
+  const newDailyBudget = dailyBudgetInput && dailyBudgetInput.value ? parseFloat(dailyBudgetInput.value) : null;
+  const newMaxOrders = maxOrdersInput && maxOrdersInput.value ? parseInt(maxOrdersInput.value, 10) : null;
+
+  let isRaising = false;
+  if (currentRiskCaps) {
+    if (newMaxOrder != null && currentRiskCaps.max_order_bdt != null && newMaxOrder > currentRiskCaps.max_order_bdt) isRaising = true;
+    if (newMaxSymbol != null && currentRiskCaps.max_symbol_bdt != null && newMaxSymbol > currentRiskCaps.max_symbol_bdt) isRaising = true;
+    if (newDailyBudget != null && currentRiskCaps.daily_budget_bdt != null && newDailyBudget > currentRiskCaps.daily_budget_bdt) isRaising = true;
+    if (newMaxOrders != null && currentRiskCaps.max_orders_per_day != null && newMaxOrders > currentRiskCaps.max_orders_per_day) isRaising = true;
+    if (currentRiskCaps.kill_switch_active && !newKillSwitch) isRaising = true;
+  }
+
+  let confirmReq = false;
+  if (isRaising) {
+    const ok = window.confirm("Raising risk limits relaxes trading restrictions. Do you confirm this change?");
+    if (!ok) return;
+    confirmReq = true;
+  }
+
+  const payload = {
+    kill_switch_active: newKillSwitch,
+    confirm: confirmReq,
+  };
+  if (newMaxOrder != null) payload.max_order_bdt = newMaxOrder;
+  if (newMaxSymbol != null) payload.max_symbol_bdt = newMaxSymbol;
+  if (newDailyBudget != null) payload.daily_budget_bdt = newDailyBudget;
+  if (newMaxOrders != null) payload.max_orders_per_day = newMaxOrders;
+
+  try {
+    const res = await api("/api/caps", {
+      method: "POST",
+      body: payload,
+    });
+    currentRiskCaps = res;
+    if (statusMsg) {
+      statusMsg.textContent = "Saved ✓";
+      statusMsg.className = "save-status-msg success";
+    }
+    notify("Risk caps and safety limits updated successfully.");
+    await loadRiskCapsSettings();
+    setTimeout(() => {
+      if (statusMsg && statusMsg.textContent === "Saved ✓") {
+        statusMsg.textContent = "";
+        statusMsg.className = "save-status-msg";
+      }
+    }, 2000);
+  } catch (err) {
+    if (statusMsg) {
+      statusMsg.textContent = err.message || "Failed to update risk caps";
+      statusMsg.className = "save-status-msg error";
+    }
+    showError(err.message);
+  }
+}
+
 async function loadApiKeysSettings() {
+  loadRiskCapsSettings();
   try {
     const data = await api("/api/settings/keys");
     const tgToken = $("key-telegram-token");
@@ -924,6 +1028,22 @@ function initAuthAndSettings() {
     keysForm.querySelectorAll("input").forEach((inp) => {
       inp.addEventListener("input", markKeysDirty);
       inp.addEventListener("change", markKeysDirty);
+    });
+  }
+
+  // Bind Risk Caps & Kill Switch form
+  const capsForm = $("risk-caps-form");
+  if (capsForm) {
+    capsForm.addEventListener("submit", saveRiskCapsSettings);
+  }
+  const ksToggle = $("caps-kill-switch");
+  if (ksToggle) {
+    ksToggle.addEventListener("change", () => {
+      const ksStatus = $("caps-kill-switch-status");
+      if (ksStatus) {
+        ksStatus.textContent = ksToggle.checked ? "ACTIVE (BLOCKED)" : "OFF";
+        ksStatus.style.color = ksToggle.checked ? "#ef4444" : "#888";
+      }
     });
   }
 

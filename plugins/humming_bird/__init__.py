@@ -26,11 +26,15 @@ from .schemas import (
     HB_STOCKNOW_SESSION_SCHEMA,
     HB_MODE_GET_SCHEMA,
     HB_MODE_SET_SCHEMA,
+    HB_CAPS_GET_SCHEMA,
+    HB_CAPS_SET_SCHEMA,
 )
 from .tools import (
     hb_automation_get,
     hb_automation_set,
     hb_canaries,
+    hb_caps_get,
+    hb_caps_set,
     hb_inspect_curve,
     hb_lots,
     hb_market_open,
@@ -71,6 +75,8 @@ _TOOLS = (
     ("hb_stocknow_session", HB_STOCKNOW_SESSION_SCHEMA, hb_stocknow_session),
     ("hb_mode_get", HB_MODE_GET_SCHEMA, hb_mode_get),
     ("hb_mode_set", HB_MODE_SET_SCHEMA, hb_mode_set),
+    ("hb_caps_get", HB_CAPS_GET_SCHEMA, hb_caps_get),
+    ("hb_caps_set", HB_CAPS_SET_SCHEMA, hb_caps_set),
 )
 
 

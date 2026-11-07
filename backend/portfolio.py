@@ -545,9 +545,17 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
     return {
         "all_shares_count": all_shares_total,
         "trading_mode": getattr(state, "trading_mode", "LIVE_HOURS"),
+        "risk_caps": {
+            "max_order_bdt": float(state.max_order_bdt) if getattr(state, "max_order_bdt", None) is not None else None,
+            "max_symbol_bdt": float(state.max_symbol_bdt) if getattr(state, "max_symbol_bdt", None) is not None else None,
+            "daily_budget_bdt": float(getattr(state, "daily_budget_bdt", Decimal("4000.00"))),
+            "max_orders_per_day": int(getattr(state, "max_orders_per_day", 20)),
+            "kill_switch_active": bool(getattr(state, "kill_switch_active", False)),
+        },
         "app": {
             "name": state.name, "version": VERSION, "mode": "DEMO", "source": "SYNTHETIC",
             "trading_mode": getattr(state, "trading_mode", "LIVE_HOURS"),
+            "kill_switch_active": bool(getattr(state, "kill_switch_active", False)),
             "date": state.clock_date.isoformat(), "revision": state.revision,
             "rules_revision": state.rules_revision, "paused": state.paused,
             "automation_enabled": getattr(state, "automation_enabled", not state.paused),

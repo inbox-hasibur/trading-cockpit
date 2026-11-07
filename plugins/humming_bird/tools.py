@@ -434,3 +434,49 @@ def hb_mode_set(args: dict[str, Any] | None = None, **kwargs) -> str:
     payload = {"trading_mode": mode, "confirm": confirm}
     return _kernel_post("/k/mode", payload)
 
+
+def hb_caps_get(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Get active risk caps and daily limits from kernel."""
+    return _kernel_get("/k/caps")
+
+
+def hb_caps_set(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Set or lower risk limits in kernel. Raising a limit requires confirm=true."""
+    merged = dict(args or {})
+    merged.update(kwargs)
+
+    payload: dict[str, Any] = {}
+    if "max_order_bdt" in merged and merged["max_order_bdt"] is not None:
+        try:
+            payload["max_order_bdt"] = float(merged["max_order_bdt"])
+        except (ValueError, TypeError):
+            return json.dumps({"error": "max_order_bdt must be a number"})
+    if "max_symbol_bdt" in merged and merged["max_symbol_bdt"] is not None:
+        try:
+            payload["max_symbol_bdt"] = float(merged["max_symbol_bdt"])
+        except (ValueError, TypeError):
+            return json.dumps({"error": "max_symbol_bdt must be a number"})
+    if "daily_budget_bdt" in merged and merged["daily_budget_bdt"] is not None:
+        try:
+            payload["daily_budget_bdt"] = float(merged["daily_budget_bdt"])
+        except (ValueError, TypeError):
+            return json.dumps({"error": "daily_budget_bdt must be a number"})
+    if "max_orders_per_day" in merged and merged["max_orders_per_day"] is not None:
+        try:
+            payload["max_orders_per_day"] = int(merged["max_orders_per_day"])
+        except (ValueError, TypeError):
+            return json.dumps({"error": "max_orders_per_day must be an integer"})
+    if "kill_switch_active" in merged and merged["kill_switch_active"] is not None:
+        val = merged["kill_switch_active"]
+        if isinstance(val, str):
+            val = val.lower() in ("true", "1", "yes")
+        payload["kill_switch_active"] = bool(val)
+
+    confirm = merged.get("confirm", False)
+    if isinstance(confirm, str):
+        confirm = confirm.lower() in ("true", "1", "yes", "confirm")
+    payload["confirm"] = bool(confirm)
+
+    return _kernel_post("/k/caps", payload)
+
+

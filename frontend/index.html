@@ -609,6 +609,56 @@
             </div>
           </article>
 
+          <!-- Card: Risk Limits & Safety Caps -->
+          <article class="sys-ctrl-card settings-card" id="risk-caps-card">
+            <div class="ctrl-card-head">
+              <span class="sys-badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">SAFETY CAPS</span>
+              <h3>Enforced Risk Limits & Kill Switch</h3>
+            </div>
+            <p class="muted small">Hard limits enforced in the kernel across both AutoTrader and Hermes. Raising limits requires cockpit confirmation.</p>
+
+            <form id="risk-caps-form" class="settings-form" style="margin-top: 14px;">
+              <div class="settings-subgroup" style="margin-bottom: 14px; padding: 12px 14px; border-radius: 8px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <strong style="color: #ef4444; font-size: 14px;">🚨 GLOBAL KILL SWITCH</strong>
+                    <div class="muted small" style="margin-top: 2px;">Immediately halt all buying and selling orders across AutoTrader and Hermes.</div>
+                  </div>
+                  <label style="display: inline-flex; align-items: center; cursor: pointer; gap: 8px;">
+                    <input type="checkbox" id="caps-kill-switch" style="width: 18px; height: 18px; accent-color: #ef4444;">
+                    <span id="caps-kill-switch-status" style="font-weight: 700; font-size: 12px; color: #888;">OFF</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="settings-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="modern-field-group">
+                  <label for="caps-max-order" class="simple-label">Max Order Cap (৳ BDT)</label>
+                  <input type="number" id="caps-max-order" class="secret-input" placeholder="e.g. 20000" step="100">
+                </div>
+                <div class="modern-field-group">
+                  <label for="caps-max-symbol" class="simple-label">Max Symbol Exposure (৳ BDT)</label>
+                  <input type="number" id="caps-max-symbol" class="secret-input" placeholder="e.g. 50000" step="100">
+                </div>
+                <div class="modern-field-group">
+                  <label for="caps-daily-budget" class="simple-label">Daily Buy Budget (৳ BDT)</label>
+                  <input type="number" id="caps-daily-budget" class="secret-input" placeholder="4000" step="100">
+                </div>
+                <div class="modern-field-group">
+                  <label for="caps-max-orders" class="simple-label">Max Orders Per Day</label>
+                  <input type="number" id="caps-max-orders" class="secret-input" placeholder="20" step="1">
+                </div>
+              </div>
+
+              <div class="form-actions" style="margin-top: 16px; display: flex; gap: 12px; align-items: center;">
+                <button type="submit" class="button primary modern-save-btn" id="btn-save-caps">
+                  <span>🛡️</span> Save Risk Limits
+                </button>
+                <span class="save-status-msg" id="caps-save-status"></span>
+              </div>
+            </form>
+          </article>
+
           <!-- Card 3: Clearing & Fee Parameters -->
           <article class="sys-ctrl-card settings-card">
             <div class="ctrl-card-head">

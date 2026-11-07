@@ -26,5 +26,7 @@ provides_tools:
   - hb_stocknow_session
   - hb_mode_get
   - hb_mode_set
+  - hb_caps_get
+  - hb_caps_set
 provides_hooks:
   - pre_tool_call

@@ -79,11 +79,13 @@ ALL_EXPECTED_TOOLS = [
     "hb_stocknow_session",
     "hb_mode_get",
     "hb_mode_set",
+    "hb_caps_get",
+    "hb_caps_set",
 ]
 
 
 def test_plugin_yaml_manifest():
-    """Manifest declares proper metadata, 20 tools, and pre_tool_call hook."""
+    """Manifest declares proper metadata, 22 tools, and pre_tool_call hook."""
     with open("plugins/humming_bird/plugin.yaml", "r", encoding="utf-8") as f:
         manifest = yaml.safe_load(f)
 
@@ -96,11 +98,11 @@ def test_plugin_yaml_manifest():
 
 
 def test_plugin_registration():
-    """register(ctx) registers all 20 tools and the pre_tool_call hook."""
+    """register(ctx) registers all 22 tools and the pre_tool_call hook."""
     ctx = MagicMock()
     register(ctx)
 
-    assert ctx.register_tool.call_count == 20
+    assert ctx.register_tool.call_count == 22
     registered_names = [call.kwargs["name"] for call in ctx.register_tool.call_args_list]
     for name in ALL_EXPECTED_TOOLS:
         assert name in registered_names

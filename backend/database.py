@@ -53,6 +53,11 @@ class PortfolioState(Base):
     polling_interval_sec: Mapped[int] = mapped_column(Integer, default=120)
     active_model: Mapped[str] = mapped_column(String(64), default="xiaomi/mimo-v2-flash")
     trading_mode: Mapped[str] = mapped_column(String(32), default="LIVE_HOURS")
+    max_order_bdt: Mapped[Decimal | None] = mapped_column(MONEY, nullable=True, default=Decimal("20000.00"))
+    max_symbol_bdt: Mapped[Decimal | None] = mapped_column(MONEY, nullable=True, default=Decimal("50000.00"))
+    daily_budget_bdt: Mapped[Decimal] = mapped_column(MONEY, default=Decimal("4000.00"))
+    max_orders_per_day: Mapped[int] = mapped_column(Integer, default=20)
+    kill_switch_active: Mapped[bool] = mapped_column(Boolean, default=False)
     calendar_holidays: Mapped[list[str]] = mapped_column(JSON, default=list)
     bucket_anchor: Mapped[date] = mapped_column(Date)
     created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
@@ -193,7 +198,7 @@ class CycleRequestKey(Base):
 class DecisionLog(Base):
     __tablename__ = "decision_logs"
     id: Mapped[int] = mapped_column(primary_key=True)
-    cycle_id: Mapped[str] = mapped_column(ForeignKey("automation_cycles.id"), index=True)
+    cycle_id: Mapped[str | None] = mapped_column(ForeignKey("automation_cycles.id"), nullable=True, index=True, default=None)
     symbol: Mapped[str] = mapped_column(ForeignKey("company_profiles.symbol"))
     lot_id: Mapped[int | None] = mapped_column(ForeignKey("tax_lots.id"), nullable=True)
     action: Mapped[str] = mapped_column(String(40))
@@ -290,6 +295,16 @@ class Database:
                     conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN active_model VARCHAR(64) DEFAULT 'xiaomi/mimo-v2-flash'"))
                 if "trading_mode" not in ps_cols:
                     conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN trading_mode VARCHAR(32) DEFAULT 'LIVE_HOURS'"))
+                if "max_order_bdt" not in ps_cols:
+                    conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN max_order_bdt NUMERIC(18, 2) DEFAULT 20000.00"))
+                if "max_symbol_bdt" not in ps_cols:
+                    conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN max_symbol_bdt NUMERIC(18, 2) DEFAULT 50000.00"))
+                if "daily_budget_bdt" not in ps_cols:
+                    conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN daily_budget_bdt NUMERIC(18, 2) DEFAULT 4000.00"))
+                if "max_orders_per_day" not in ps_cols:
+                    conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN max_orders_per_day INTEGER DEFAULT 20"))
+                if "kill_switch_active" not in ps_cols:
+                    conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN kill_switch_active BOOLEAN DEFAULT 0"))
                 conn.commit()
 
             result = conn.execute(text("PRAGMA table_info(decision_logs)"))

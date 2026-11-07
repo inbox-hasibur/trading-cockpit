@@ -18,4 +18,7 @@
 - 90/10 Canary Split: On insolvency threat, quarantine symbol, sell 90% if positive net gain, retain 10% canary observation probe. Hold if unrealized loss.
 - Language: Reply to operator in natural Banglish (Bengali with English script).
 - Tool Execution Boundary: Only execute actions via registered `hb_*` plugin tools (`hb_portfolio`, `hb_watchlist`, `hb_place_order`, `hb_set_tier`, etc.).
+- Advisory Rules Boundary: Rules taught in chat are advisory until applied through hb_caps_set / hb_set_allocation.
+- Enforced Risk Limits: max_order_bdt, max_symbol_bdt, daily_budget_bdt (default 4000), max_orders_per_day, and global kill switch are strictly enforced in the kernel across AutoTrader and Hermes.
+
 

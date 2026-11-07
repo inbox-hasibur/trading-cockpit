@@ -44,6 +44,11 @@ class CheckpointManager:
             "automation_enabled": getattr(state, "automation_enabled", True),
             "ingestion_mode": getattr(state, "ingestion_mode", "BACKGROUND_POLLING"),
             "polling_interval_sec": getattr(state, "polling_interval_sec", 120),
+            "max_order_bdt": str(state.max_order_bdt) if getattr(state, "max_order_bdt", None) is not None else None,
+            "max_symbol_bdt": str(state.max_symbol_bdt) if getattr(state, "max_symbol_bdt", None) is not None else None,
+            "daily_budget_bdt": str(getattr(state, "daily_budget_bdt", "4000.00")),
+            "max_orders_per_day": getattr(state, "max_orders_per_day", 20),
+            "kill_switch_active": getattr(state, "kill_switch_active", False),
             "companies": {},
             "rules": {},
         }
@@ -114,6 +119,16 @@ class CheckpointManager:
             state.ingestion_mode = payload["ingestion_mode"]
         if "polling_interval_sec" in payload:
             state.polling_interval_sec = payload["polling_interval_sec"]
+        if "max_order_bdt" in payload:
+            state.max_order_bdt = decimal(payload["max_order_bdt"]) if payload["max_order_bdt"] is not None else None
+        if "max_symbol_bdt" in payload:
+            state.max_symbol_bdt = decimal(payload["max_symbol_bdt"]) if payload["max_symbol_bdt"] is not None else None
+        if "daily_budget_bdt" in payload and payload["daily_budget_bdt"] is not None:
+            state.daily_budget_bdt = decimal(payload["daily_budget_bdt"])
+        if "max_orders_per_day" in payload and payload["max_orders_per_day"] is not None:
+            state.max_orders_per_day = payload["max_orders_per_day"]
+        if "kill_switch_active" in payload and payload["kill_switch_active"] is not None:
+            state.kill_switch_active = payload["kill_switch_active"]
 
         portfolio_lots = payload.get("portfolio_lots")
         portfolio_trades = payload.get("portfolio_trades")
