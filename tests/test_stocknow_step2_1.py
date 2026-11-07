@@ -39,8 +39,8 @@ def test_onedrive_safe_profile_directory():
 
 def test_mask_phone():
     """Verify operator phone masking for zero-secret disclosure."""
-    assert mask_phone("01882082502") == "018***502"
-    assert mask_phone("+8801882082502") == "880***502"
+    assert mask_phone("01712345678") == "017***678"
+    assert mask_phone("+8801712345678") == "880***678"
     assert mask_phone("12345") == "12***"
     assert mask_phone("") == ""
 
@@ -112,12 +112,12 @@ def test_ensure_authenticated_graceful_handling():
         client.state = "ERROR"
         client.last_error = "Mock offline browser failure"
 
-        res = await client.ensure_authenticated(phone="01882082502", password="Stocknow#909109")
+        res = await client.ensure_authenticated(phone="01712345678", password="mock_test_password_xyz")
         assert res["authenticated"] is False
         assert res["state"] == "ERROR"
-        assert res["phone_masked"] == "018***502"
+        assert res["phone_masked"] == "017***678"
         # Ensure password is NOT leaked in response
-        assert "Stocknow#909109" not in str(res)
+        assert "mock_test_password_xyz" not in str(res)
 
     asyncio.run(run())
 

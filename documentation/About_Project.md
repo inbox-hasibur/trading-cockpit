@@ -228,7 +228,7 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
       - AutoTrader buy ordering prioritizes `GSC_L1` #1, `GSC_L2` #2, and skips base `GSC` observation pool (`WAIT_OBSERVATION_ONLY`).
       - Encoded operator domain knowledge into Hermes skill `SKILL_gsc_tiers.md` (v1.1.0).
     - **Step 2.8 (Live Playwright Automation for /login, /favorites, /show, /ledger, /buy & /sell):**
-      - Exact login flow: `https://www.stocknow.com.bd/login?nextUrl=/portfolios` automatically authenticating with operator mobile `01882082502`, password `Stocknow#909109`, and "Remember mobile and password" checkbox.
+      - Exact login flow: `https://www.stocknow.com.bd/login?nextUrl=/portfolios` automatically authenticating with operator credentials loaded securely from environment variables (`STOCKNOW_MOBILE`, `STOCKNOW_PASSWORD`), and "Remember mobile and password" checkbox.
       - Dynamic portfolio discovery: scrapes `/portfolios` to locate "Humming Bird", extracts summary telemetry (`Balance`, `Sell Value`, `Gain/Loss Today`, `Unrealized Gain/Loss`), and binds `bound_portfolio_id = "164580"`.
       - 3-list favorites extraction: maps dropdown options ("Giant Stable Companies" -> `GSC`, "GSC Upper Trends L1" -> `GSC_L1`, "GSC Upper Trends L2" -> `GSC_L2`) and syncs live quotes, change %, volume, and fundamentals to SQLite.
       - Holdings (`/show`) and transaction ledger (`/ledger`) scraper: parses `DD/MM/YY` dates (e.g. `02/11/26` -> `2026-11-02`) so T+2 maturity aligns with real purchase dates.

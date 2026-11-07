@@ -40,8 +40,8 @@ class Settings:
     gemini_api_key: str = ""
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""
-    operator_username: str = "01882082502"
-    operator_password: str = "Stocknow#909109"
+    operator_username: str = ""
+    operator_password: str = ""
     operator_name: str = "Hasibur Rahman"
     operator_portfolio: str = "Humming Bird (StockNow)"
     chat_daily_call_limit: int = 30
@@ -52,6 +52,14 @@ class Settings:
     @property
     def operator_phone(self) -> str:
         return self.operator_username
+
+    @property
+    def stocknow_mobile(self) -> str:
+        return self.operator_username
+
+    @property
+    def stocknow_password(self) -> str:
+        return self.operator_password
 
     def __post_init__(self) -> None:
         if self.trading_mode != "DEMO":
@@ -81,6 +89,7 @@ class Settings:
 
     @classmethod
     def from_env(cls) -> Settings:
+        load_dotenv(ROOT / ".env", override=False)
         load_dotenv(ROOT / "backend/.env", override=False)
         start = os.getenv("DEMO_START_DATE", "").strip()
         holidays = frozenset(
@@ -88,6 +97,8 @@ class Settings:
             for value in os.getenv("DSE_HOLIDAYS", "").split(",")
             if value.strip()
         )
+        mobile = os.getenv("STOCKNOW_MOBILE", "").strip() or os.getenv("OPERATOR_USERNAME", "").strip()
+        password = os.getenv("STOCKNOW_PASSWORD", "").strip() or os.getenv("OPERATOR_PASSWORD", "").strip()
         return cls(
             database_url=os.getenv("DATABASE_URL", "").strip() or DEFAULT_DATABASE_URL,
             trading_mode=os.getenv("TRADING_MODE", "DEMO").strip().upper(),
@@ -105,8 +116,8 @@ class Settings:
             gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip() or os.getenv("GOOGLE_API_KEY", "").strip(),
             telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN", "").strip(),
             telegram_chat_id=os.getenv("TELEGRAM_CHAT_ID", "").strip(),
-            operator_username=os.getenv("OPERATOR_USERNAME", "01882082502").strip(),
-            operator_password=os.getenv("OPERATOR_PASSWORD", "Stocknow#909109").strip(),
+            operator_username=mobile,
+            operator_password=password,
             operator_name=os.getenv("OPERATOR_NAME", "Hasibur Rahman").strip(),
             operator_portfolio=os.getenv("OPERATOR_PORTFOLIO", "Humming Bird (StockNow)").strip(),
             chat_daily_call_limit=int(os.getenv("CHAT_DAILY_CALL_LIMIT", "30")),

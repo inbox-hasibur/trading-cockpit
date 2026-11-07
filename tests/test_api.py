@@ -387,23 +387,23 @@ def test_hermes_models_and_switcher(client):
 
 def test_auth_operator_login_and_session(client):
     # Invalid credentials
-    bad = client.post("/api/auth/login", json={"username": "01882082502", "password": "wrong"}).status_code
+    bad = client.post("/api/auth/login", json={"username": "test_operator", "password": "wrong"}).status_code
     assert bad == 401
 
     # Valid operator credentials
-    res = client.post("/api/auth/login", json={"username": "01882082502", "password": "Stocknow#909109"})
+    res = client.post("/api/auth/login", json={"username": "test_operator", "password": "test_password_123"})
     assert res.status_code == 200
     data = res.json()
     assert data["status"] == "ok"
     assert data["user"]["name"] == "Hasibur Rahman"
-    assert data["user"]["username"] == "01882082502"
+    assert data["user"]["username"] == "test_operator"
     token = data["token"]
     assert token.startswith("hb-sess-")
 
     # Check session endpoint with token
     sess = client.get("/api/auth/session", headers={"Authorization": f"Bearer {token}"}).json()
     assert sess["authenticated"] is True
-    assert sess["user"]["username"] == "01882082502"
+    assert sess["user"]["username"] == "test_operator"
 
     # Logout
     logout = client.post("/api/auth/logout", headers={"Authorization": f"Bearer {token}"}).json()

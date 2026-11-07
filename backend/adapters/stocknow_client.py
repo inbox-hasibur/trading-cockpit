@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import re
 import sys
 import threading
@@ -309,8 +310,8 @@ class StockNowLiveClient:
                     "phone_masked": mask_phone(phone),
                 }
 
-        phone = phone or "01882082502"
-        password = password or "Stocknow#909109"
+        phone = phone or os.getenv("STOCKNOW_MOBILE", "") or os.getenv("OPERATOR_USERNAME", "")
+        password = password or os.getenv("STOCKNOW_PASSWORD", "") or os.getenv("OPERATOR_PASSWORD", "")
         masked = mask_phone(phone)
         try:
             current_url = getattr(self.page, "url", "")

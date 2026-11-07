@@ -12,6 +12,8 @@ def settings(tmp_path):
     return Settings(
         database_url=f"sqlite:///{(tmp_path / 'demo.db').as_posix()}",
         demo_start_date=date(2026, 11, 3),
+        operator_username="test_operator",
+        operator_password="test_password_123",
     )
 
 

@@ -916,7 +916,7 @@ async function checkAuthSession() {
       if (loginGate && loginGate.open) loginGate.close();
       const user = res.user || {};
       setText("op-name", user.name || res.operator_name || "Hasibur Rahman");
-      setText("op-username", user.username || res.operator_username || "01882082502");
+      setText("op-username", user.username || res.operator_username || "Operator");
       setText("op-portfolio", user.portfolio || res.linked_portfolio || "Humming Bird (StockNow)");
       return true;
     }
@@ -1048,12 +1048,17 @@ function initAuthAndSettings() {
 
   const autofillBtn = $("login-autofill-btn");
   if (autofillBtn) {
-    autofillBtn.addEventListener("click", () => {
-      const u = $("login-username");
-      const p = $("login-password");
-      if (u) u.value = "01882082502";
-      if (p) p.value = "Stocknow#909109";
-      handleOperatorLogin();
+    autofillBtn.addEventListener("click", async () => {
+      try {
+        const res = await api("/api/auth/session");
+        if (res && res.authenticated) {
+          const loginGate = $("login-gate-overlay");
+          if (loginGate && loginGate.open) loginGate.close();
+          showToast("Session already verified", "info");
+          return;
+        }
+      } catch (e) {}
+      showToast("Please enter your operator credentials", "info");
     });
   }
 

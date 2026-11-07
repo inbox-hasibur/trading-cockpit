@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException
@@ -101,8 +102,17 @@ def build_stocknow_router(
         if action == "launch":
             target_mode = body.mode or "ONSCREEN_LIVE"
             res = await stocknow_client.launch(mode=target_mode)
-            phone = getattr(settings, "operator_phone", None) or settings.operator_username or "01882082502"
-            password = settings.operator_password or "Stocknow#909109"
+            phone = (
+                getattr(settings, "operator_phone", None)
+                or settings.operator_username
+                or os.getenv("STOCKNOW_MOBILE", "")
+                or os.getenv("OPERATOR_USERNAME", "")
+            )
+            password = (
+                settings.operator_password
+                or os.getenv("STOCKNOW_PASSWORD", "")
+                or os.getenv("OPERATOR_PASSWORD", "")
+            )
             if stocknow_client.state == "READY":
                 async def _background_auth():
                     try:
@@ -118,8 +128,17 @@ def build_stocknow_router(
             if not res.get("connected") or res.get("state") == "ERROR":
                 res["reason"] = res.get("last_error") or stocknow_client.last_error or "Browser launch failed"
         elif action == "check_auth":
-            phone = getattr(settings, "operator_phone", None) or settings.operator_username or "01882082502"
-            password = settings.operator_password or "Stocknow#909109"
+            phone = (
+                getattr(settings, "operator_phone", None)
+                or settings.operator_username
+                or os.getenv("STOCKNOW_MOBILE", "")
+                or os.getenv("OPERATOR_USERNAME", "")
+            )
+            password = (
+                settings.operator_password
+                or os.getenv("STOCKNOW_PASSWORD", "")
+                or os.getenv("OPERATOR_PASSWORD", "")
+            )
             res = await stocknow_client.ensure_authenticated(phone, password)
             if not res.get("authenticated") or res.get("state") == "ERROR":
                 res["reason"] = res.get("reason") or res.get("message") or "Authentication check failed"

@@ -222,7 +222,7 @@
 
 - [x] **Step 2.8: Live Playwright Workflow for /login, /favorites (3 Lists), /show, /ledger, /buy & /sell:**
   - **Login & Auto-Discovery:**
-    - Live login automation against `https://www.stocknow.com.bd/login?nextUrl=/portfolios` filling mobile `01882082502`, password `Stocknow#909109`, toggling "Remember mobile and password", and clicking Login.
+    - Live login automation against `https://www.stocknow.com.bd/login?nextUrl=/portfolios` filling credentials from environment variables (`STOCKNOW_MOBILE`, `STOCKNOW_PASSWORD`), toggling "Remember mobile and password", and clicking Login.
     - Scrapes `/portfolios` to discover "Humming Bird", extracts balance (`91,236`), sell value (`31,637`), today gain/loss (`-200`), unrealized gain/loss (`1,422`), and binds `bound_portfolio_id = "164580"`.
   - **3-List Favorites Sync:**
     - Reads favorites list dropdown on `/favorites`: maps "Giant Stable Companies" -> `GSC`, "GSC Upper Trends L1" -> `GSC_L1`, "GSC Upper Trends L2" -> `GSC_L2`.

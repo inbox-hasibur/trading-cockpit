@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any
@@ -127,8 +128,17 @@ async def _execute_stocknow_virtual_order_impl(
 
             if "/login" in getattr(page, "url", ""):
                 if hasattr(client, "_ensure_authenticated_internal"):
-                    phone = getattr(client, "operator_phone", None) or getattr(client, "username", None) or "01882082502"
-                    pwd = getattr(client, "password", None) or "Stocknow#909109"
+                    phone = (
+                        getattr(client, "operator_phone", None)
+                        or getattr(client, "username", None)
+                        or os.getenv("STOCKNOW_MOBILE", "")
+                        or os.getenv("OPERATOR_USERNAME", "")
+                    )
+                    pwd = (
+                        getattr(client, "password", None)
+                        or os.getenv("STOCKNOW_PASSWORD", "")
+                        or os.getenv("OPERATOR_PASSWORD", "")
+                    )
                     await client._ensure_authenticated_internal(phone, pwd)
                     await page.goto(target_url, timeout=15000, wait_until="domcontentloaded")
                     await page.wait_for_timeout(2000)
