@@ -25,13 +25,20 @@ logger = logging.getLogger("hermes.bridge")
 WORKSPACE_ROOT = Path(__file__).resolve().parent.parent
 
 
-def get_hermes_dir() -> Path:
-    """Returns the Hermes home directory (hummingbird profile if available, else ~/.hermes)."""
+def get_hermes_dir(profile: str = "hummingbird") -> Path:
+    """Returns the Hermes profile directory (hummingbird profile if available, else hermes home)."""
+    target_profile = os.environ.get("HERMES_PROFILE") or profile
     if "HERMES_HOME" in os.environ:
-        return Path(os.environ["HERMES_HOME"])
+        home_path = Path(os.environ["HERMES_HOME"])
+        prof_path = home_path / "profiles" / target_profile
+        if prof_path.exists():
+            return prof_path
+        if home_path.name == target_profile:
+            return home_path
+        return home_path
     local_app = os.environ.get("LOCALAPPDATA")
     if local_app:
-        hb_profile = Path(local_app) / "hermes" / "profiles" / "hummingbird"
+        hb_profile = Path(local_app) / "hermes" / "profiles" / target_profile
         if hb_profile.exists():
             return hb_profile
         base = Path(local_app) / "hermes"
@@ -184,6 +191,14 @@ def read_hermes_state() -> dict[str, Any]:
     memory_md_path = h_dir / "memories" / "MEMORY.md"
     user_md = user_md_path.read_text(encoding="utf-8") if user_md_path.exists() else ""
     memory_md = memory_md_path.read_text(encoding="utf-8") if memory_md_path.exists() else ""
+    if not user_md and h_dir.parent.name == "profiles":
+        root_user = h_dir.parent.parent / "memories" / "USER.md"
+        if root_user.exists():
+            user_md = root_user.read_text(encoding="utf-8")
+    if not memory_md and h_dir.parent.name == "profiles":
+        root_mem = h_dir.parent.parent / "memories" / "MEMORY.md"
+        if root_mem.exists():
+            memory_md = root_mem.read_text(encoding="utf-8")
 
     # 3. Scheduled Cron Jobs
     jobs_file = h_dir / "cron" / "jobs.json"
@@ -227,12 +242,17 @@ def read_hermes_state() -> dict[str, Any]:
                     "is_auto_learned": False,
                 })
 
-    # (b) Local ~/.hermes/skills
-    local_skills_dir = h_dir / "skills"
-    if local_skills_dir.exists():
-        for sk_file in local_skills_dir.rglob("SKILL.md"):
-            # Avoid repeating plugin skills or hub bundle dirs
-            if ".hub" in sk_file.parts or "plugins" in sk_file.parts:
+    # (b) Hermes skills (profile skills + hermes home skills)
+    search_skill_dirs = [h_dir / "skills"]
+    if h_dir.parent.name == "profiles" and (h_dir.parent.parent / "skills").exists():
+        search_skill_dirs.append(h_dir.parent.parent / "skills")
+
+    for s_root in search_skill_dirs:
+        if not s_root.exists():
+            continue
+        for sk_file in s_root.rglob("SKILL.md"):
+            # Avoid repeating plugin skills, hub bundle dirs, or locks
+            if ".hub" in sk_file.parts or "plugins" in sk_file.parts or ".locks" in sk_file.parts:
                 continue
             name = sk_file.parent.name
             if any(s["name"] == name for s in skills):
@@ -244,7 +264,7 @@ def read_hermes_state() -> dict[str, Any]:
                 "description": meta.get("description", ""),
                 "version": meta.get("version", "1.0.0"),
                 "tags": meta.get("tags", []),
-                "source": "local skill",
+                "source": "profile skill" if s_root == h_dir / "skills" else "hermes skill",
                 "is_auto_learned": True,
             })
 
@@ -316,6 +336,7 @@ def build_hermes_bridge_router(database: Any = None, settings: Any = None, broad
         )
 
     @router.get("/api/hermes/bridge/state")
+    @router.get("/api/hermes/state")
     def bridge_state():
         """Returns active model, skills, memory preview, and cron jobs directly from Hermes."""
         return read_hermes_state()

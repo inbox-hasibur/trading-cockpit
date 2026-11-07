@@ -529,6 +529,24 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
     } for t in session.scalars(select(CanaryThesis).order_by(CanaryThesis.id.desc()))]
 
     active_skills: list[dict[str, Any]] = []
+    durable_facts: list[dict[str, Any]] = []
+    try:
+        from backend.hermes_bridge import read_hermes_state
+        h_state = read_hermes_state()
+        active_skills = h_state.get("skills", [])
+        if "user_md" in h_state and h_state["user_md"]:
+            for line in h_state["user_md"].splitlines():
+                l_strip = line.strip()
+                if l_strip and not l_strip.startswith("#") and l_strip != "§":
+                    durable_facts.append({"fact": l_strip, "source": "USER.md"})
+        if "memory_md" in h_state and h_state["memory_md"]:
+            for line in h_state["memory_md"].splitlines():
+                l_strip = line.strip()
+                if l_strip and not l_strip.startswith("#") and l_strip != "§":
+                    durable_facts.append({"fact": l_strip, "source": "MEMORY.md"})
+    except Exception as exc:
+        logger.debug("Failed reading hermes skills/memories into snapshot: %s", exc)
+
     recent_checkpoints = [{
         "id": cp.id,
         "action": cp.action,
@@ -537,7 +555,6 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
         "reverted": cp.reverted,
         "created_at": cp.created_at,
     } for cp in session.scalars(select(KernelStateCheckpoint).order_by(KernelStateCheckpoint.id.desc()).limit(10))]
-    durable_facts: list[dict[str, Any]] = []
 
     from backend.adapters.stocknow_market_sync import _ALL_DSE_SHARES_CACHE
     all_shares_total = len(_ALL_DSE_SHARES_CACHE) if _ALL_DSE_SHARES_CACHE else 473

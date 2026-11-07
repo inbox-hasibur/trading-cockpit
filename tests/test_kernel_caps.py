@@ -314,3 +314,33 @@ def test_plugin_tools_hb_caps(client, auth_headers, monkeypatch):
         res_set = hb_caps_set(daily_budget_bdt=3500.0)
         data_set = json.loads(res_set)
         assert data_set["status"] == "ok"
+
+
+def test_taught_rule_advisory_until_applied_through_caps_set(client, auth_headers):
+    """Confirm that rules taught in chat or stored in memory remain advisory until applied through hb_caps_set."""
+    db = client.app.state.database
+
+    # Verify baseline state from SQLite
+    with db.read() as session:
+        state = portfolio_state(session)
+        assert float(state.max_symbol_bdt) >= 10000.0
+
+        # In baseline state, GP open basis is well within the 20,000 max_symbol_bdt
+        open_basis = sum(session.scalars(select(TaxLot.remaining_cost_basis).where(
+            TaxLot.symbol == "GP", TaxLot.remaining_qty > 0,
+        )), Decimal("0.00"))
+        assert open_basis < state.max_symbol_bdt
+        assert open_basis > Decimal("1000.00")
+
+    # Now apply the taught rule through the kernel endpoint (same as hb_caps_set)
+    res_set = client.post("/k/caps", json={"max_symbol_bdt": 1000.0, "daily_budget_bdt": 4000.0}, headers=auth_headers)
+    assert res_set.status_code == 200
+    assert res_set.json()["max_symbol_bdt"] == 1000.0
+
+    # NOW AutoTrader behavior is modified: open basis (1,929.60) >= max_symbol_bdt (1,000)
+    with db.write() as session:
+        state_after = portfolio_state(session)
+        assert state_after.max_symbol_bdt == Decimal("1000.00")
+        assert open_basis >= state_after.max_symbol_bdt
+
+
