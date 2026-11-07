@@ -66,6 +66,15 @@ _EXECUTED_ORDER_KEYS: dict[str, dict[str, Any]] = {}
 # Preview tokens store for two-step confirmation (with 5-minute TTL)
 _ORDER_PREVIEW_TOKENS: dict[str, dict[str, Any]] = {}
 
+_KERNEL_BROADCASTER: Any | None = None
+
+
+def get_broadcaster(request: Request | None = None) -> Any:
+    """Resolve global or request broadcaster instance."""
+    if request and hasattr(request, "app") and hasattr(request.app.state, "broadcaster"):
+        return request.app.state.broadcaster
+    return _KERNEL_BROADCASTER
+
 
 def clear_order_idempotency_cache() -> None:
     """Clear order idempotency cache and preview tokens (for tests)."""
@@ -1000,10 +1009,17 @@ async def post_order(
                 },
             )
 
-            # Call StockNowAdapter.execute_order on live browser session
+            # Call StockNowAdapter.execute_order (delegates to StockNowExecutor transports)
             live_client = get_stocknow_client(request)
             from backend.adapters.stocknow_adapter import StockNowAdapter
-            adapter = StockNowAdapter(mode="LIVE" if live_client and getattr(live_client, "page", None) else "DEMO")
+            from backend.adapters.stocknow_executor import (
+                StockNowExecutionError,
+                notify_order_failure,
+                NoReceiptExecutionError,
+            )
+            # Paper fill only when data source is explicitly DEMO
+            is_demo_source = getattr(comp, "source", "").startswith("DEMO") or trading_mode == "DEMO"
+            adapter = StockNowAdapter(mode="DEMO" if is_demo_source else "LIVE")
 
             try:
                 receipt = await adapter.execute_order(
@@ -1012,36 +1028,70 @@ async def post_order(
                     quantity=body.quantity,
                     price=unit_price,
                     portfolio_id=target_pid,
+                    trade_date=state.clock_date,
+                    commission_pct=Decimal("0.5"),
                     idempotency_key=body.idempotency_key,
                     dry_run=False,
                     live_client=live_client,
-                    commission_pct=Decimal("0.5"),
+                    ingestion_mode=getattr(state, "ingestion_mode", "BACKGROUND_POLLING"),
+                    settings=settings,
                 )
                 if not receipt or not receipt.get("success") or receipt.get("status") not in ("ACKNOWLEDGED", "EXECUTED", "FILLED"):
-                    raise ValueError(f"StockNow virtual order rejected or unacknowledged: {receipt.get('status') if receipt else 'NONE'}")
-
-                # Verify fill by re-reading StockNow ledger
-                if live_client and getattr(live_client, "page", None) and not getattr(live_client.page, "is_closed", lambda: False)():
-                    from backend.adapters.stocknow_portfolio_sync import extract_hummingbird_portfolio_from_browser
-                    sn_portfolio = await extract_hummingbird_portfolio_from_browser(live_client)
-                    if not sn_portfolio:
-                        raise ValueError("Failed to re-read StockNow ledger after execution.")
+                    raise NoReceiptExecutionError(f"StockNow virtual order rejected or unacknowledged: {receipt.get('status') if receipt else 'NONE'}")
 
                 # Update local ledger ONLY after receipt matches and is verified
                 if side == "BUY":
-                    order_res = execute_agentic_buy(session, state, settings, sym, requested_qty=body.quantity, portfolio_id=target_pid)
+                    order_res = execute_agentic_buy(session, state, settings, sym, requested_qty=body.quantity, portfolio_id=target_pid, trade_date=state.clock_date)
                 else:
-                    order_res = execute_agentic_sell(session, state, settings, sym, requested_qty=body.quantity, portfolio_id=target_pid)
+                    order_res = execute_agentic_sell(session, state, settings, sym, requested_qty=body.quantity, portfolio_id=target_pid, trade_date=state.clock_date)
 
+            except StockNowExecutionError as exc:
+                logger.error("StockNow execution failure [%s] for %s %s: %s. Rolling back checkpoint %s.", exc.error_code, side, sym, exc.message, cp.id)
+                try:
+                    CheckpointManager.rollback_last(session, state)
+                except Exception as rb_exc:
+                    logger.warning("Checkpoint rollback error: %s", rb_exc)
+                await notify_order_failure(
+                    session=session,
+                    state=state,
+                    settings=settings,
+                    broadcaster=_KERNEL_BROADCASTER,
+                    symbol=sym,
+                    side=side,
+                    quantity=body.quantity,
+                    error_code=exc.error_code,
+                    detail=exc.message,
+                    endpoint="/k/order",
+                )
+                session.commit()
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={"error": exc.error_code, "detail": exc.message},
+                )
+            except HTTPException:
+                raise
             except Exception as exc:
                 logger.error("Order path failure for %s %s: %s. Rolling back checkpoint %s.", side, sym, exc, cp.id)
                 try:
                     CheckpointManager.rollback_last(session, state)
                 except Exception as rb_exc:
                     logger.warning("Checkpoint rollback error: %s", rb_exc)
+                await notify_order_failure(
+                    session=session,
+                    state=state,
+                    settings=settings,
+                    broadcaster=_KERNEL_BROADCASTER,
+                    symbol=sym,
+                    side=side,
+                    quantity=body.quantity,
+                    error_code="NO_RECEIPT",
+                    detail=str(exc),
+                    endpoint="/k/order",
+                )
+                session.commit()
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Order execution failed: {exc}",
+                    detail={"error": "NO_RECEIPT", "detail": str(exc)},
                 )
 
             # Portfolio reconciliation & drift report
@@ -1388,18 +1438,19 @@ def post_run_cycle(
 
 
 class StockNowSessionActionRequest(BaseModel):
-    action: str = Field(..., pattern="^(launch|status|login)$")
+    action: str = Field(..., pattern="^(launch|status|login|logout)$")
     mode: str | None = None
 
 
 @router.post("/stocknow/session")
 async def post_stocknow_session(
     body: StockNowSessionActionRequest,
+    request: Request,
     db: Database = Depends(get_db),
     settings: Settings = Depends(get_settings),
     stocknow_client: Any | None = Depends(get_stocknow_client),
 ) -> dict[str, Any]:
-    """Controls live StockNow browser session (launch, status, login)."""
+    """Controls live StockNow session (launch, status, login, logout)."""
     action = body.action.strip().lower()
 
     if action == "status":
@@ -1419,7 +1470,17 @@ async def post_stocknow_session(
         )
 
         res: dict[str, Any]
-        if not stocknow_client:
+        if action == "logout":
+            browser_res = {"status": "LOGGED_OUT", "transport": "BROWSER"}
+            if stocknow_client and hasattr(stocknow_client, "logout"):
+                browser_res = await stocknow_client.logout()
+
+            api_res = {"status": "LOGGED_OUT", "transport": "API"}
+            api_client = getattr(request.app.state, "stocknow_api", None)
+            if api_client and hasattr(api_client, "logout"):
+                await api_client.logout()
+            res = {"status": "LOGGED_OUT", "browser": browser_res, "api": api_res}
+        elif not stocknow_client:
             res = {"status": "MOCK", "action": action, "connected": True, "message": "Simulated StockNow session"}
         elif action == "launch":
             target_mode = body.mode or "ONSCREEN_LIVE"
@@ -1455,6 +1516,8 @@ async def post_stocknow_session(
             "action": action,
             "checkpoint_id": cp.id,
             "result": res,
+            "browser": res.get("browser"),
+            "api": res.get("api"),
         }
 
 
@@ -1604,8 +1667,12 @@ def build_kernel_router(
     database: Database,
     settings: Settings,
     stocknow_client: Any | None = None,
+    broadcaster: Any | None = None,
 ) -> APIRouter:
     """Builds the configured kernel router for inclusion in main app."""
+    global _KERNEL_BROADCASTER
+    if broadcaster is not None:
+        _KERNEL_BROADCASTER = broadcaster
     return router
 
 

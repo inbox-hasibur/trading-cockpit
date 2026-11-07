@@ -243,10 +243,13 @@ async def _execute_stocknow_virtual_order_impl(
                 except Exception:
                     pass
 
+            if not executed_on_dom:
+                raise RuntimeError("Live DOM execution failed to interact with Save button.")
+
             receipt = {
                 "success": True,
                 "status": "ACKNOWLEDGED",
-                "execution_mode": "STOCKNOW_LIVE_DOM" if executed_on_dom else "PAPER_VERIFIED",
+                "execution_mode": "STOCKNOW_LIVE_DOM",
                 "order_id": order_id,
                 "symbol": sym,
                 "side": order_side,
@@ -263,25 +266,29 @@ async def _execute_stocknow_virtual_order_impl(
                 _EXECUTED_IDEMPOTENCY_KEYS[idempotency_key] = receipt
             return receipt
         except Exception as exc:
-            logger.warning("Live DOM execution encountered exception: %s. Falling back to paper verified.", exc)
+            logger.warning("Live DOM execution encountered exception: %s. No fallback to paper.", exc)
+            raise
 
-    # 3. Paper / Verified Fallback Path
-    receipt = {
-        "success": True,
-        "status": "ACKNOWLEDGED",
-        "execution_mode": "PAPER_VERIFIED",
-        "order_id": order_id,
-        "symbol": sym,
-        "side": order_side,
-        "quantity": qty,
-        "price": unit_price,
-        "commission_pct": float(comm_pct),
-        "commission_rate": float(comm_pct / 100),
-        "portfolio_id": p_id,
-        "portfolio_name": get_portfolio_name(p_id),
-        "idempotency_key": idempotency_key,
-        "timestamp": now_iso,
-    }
-    if idempotency_key:
-        _EXECUTED_IDEMPOTENCY_KEYS[idempotency_key] = receipt
-    return receipt
+    # 3. Explicit DEMO / Dry Run Path Only (Never return PAPER_VERIFIED with success True)
+    if dry_run or client is None:
+        receipt = {
+            "success": True,
+            "status": "ACKNOWLEDGED",
+            "execution_mode": "DEMO_PAPER",
+            "order_id": order_id,
+            "symbol": sym,
+            "side": order_side,
+            "quantity": qty,
+            "price": unit_price,
+            "commission_pct": float(comm_pct),
+            "commission_rate": float(comm_pct / 100),
+            "portfolio_id": p_id,
+            "portfolio_name": get_portfolio_name(p_id),
+            "idempotency_key": idempotency_key,
+            "timestamp": now_iso,
+        }
+        if idempotency_key:
+            _EXECUTED_IDEMPOTENCY_KEYS[idempotency_key] = receipt
+        return receipt
+
+    raise RuntimeError("Order execution failed: Live DOM execution failed and paper fallback is prohibited.")

@@ -152,7 +152,7 @@ async def _extract_hummingbird_portfolio_from_browser_impl(client: Any) -> dict[
 
     show_data = await page.evaluate(r"""() => {
         const fullText = document.body ? document.body.innerText : "";
-        let cash = 107596.0;
+        let cash = 0.0;
         const cashM = fullText.match(/Cash[\s\S]{0,25}?([0-9,]{4,})/i);
         if (cashM) cash = parseFloat(cashM[1].replace(/,/g, ''));
 
@@ -255,7 +255,7 @@ async def _extract_hummingbird_portfolio_from_browser_impl(client: Any) -> dict[
     return {
         "portfolio_id": p_id,
         "portfolio_name": get_portfolio_name(p_id),
-        "cash_balance": decimal(str(show_data.get("cash", 107596.0))),
+        "cash_balance": decimal(str(show_data.get("cash", 0.0))),
         "holdings": holdings,
         "source": "STOCKNOW_LIVE_DOM",
     }

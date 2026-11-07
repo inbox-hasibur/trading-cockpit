@@ -207,6 +207,7 @@ def execute_agentic_buy(
     symbol: str,
     requested_qty: int | None = None,
     portfolio_id: str | None = None,
+    trade_date: date | None = None,
 ) -> dict:
     from backend.config import get_active_target_portfolio
     if portfolio_id is None:
@@ -240,11 +241,12 @@ def execute_agentic_buy(
     if quantity <= 0:
         raise ValueError("Budget too small to buy a whole share.")
 
+    eff_date = trade_date or state.clock_date
     lot = TaxLot(
         symbol=company.symbol,
         bucket=active_name,
-        acquired_on=state.clock_date,
-        matures_on=calendar.add_sessions(state.clock_date, company.settlement_days),
+        acquired_on=eff_date,
+        matures_on=calendar.add_sessions(eff_date, company.settlement_days),
         original_qty=quantity,
         remaining_qty=quantity,
         buy_price=unit_price,
@@ -271,7 +273,7 @@ def execute_agentic_buy(
         net_cash_change=-cost,
         realized_pnl=ZERO,
         bucket=active_name,
-        trade_on=state.clock_date,
+        trade_on=eff_date,
         settles_on=lot.matures_on,
         reason=f"Hermes Agentic buy execution requested by user/assistant.",
         source="HERMES_AGENTIC",
@@ -299,6 +301,7 @@ def execute_agentic_sell(
     symbol: str,
     requested_qty: int,
     portfolio_id: str | None = None,
+    trade_date: date | None = None,
 ) -> dict:
     if requested_qty <= 0:
         raise ValueError(f"Requested sell quantity must be positive, got {requested_qty}.")
@@ -367,6 +370,7 @@ def execute_agentic_sell(
         total_proceeds += proceeds
         total_pnl += lot_pnl
 
+        eff_date = trade_date or state.clock_date
         trade = TradeLog(
             trade_key=f"AGENT_SELL:{cycle_key(state)}:{lot.id}:{uuid4().hex[:6]}",
             cycle_id=None,
@@ -380,8 +384,8 @@ def execute_agentic_sell(
             net_cash_change=proceeds,
             realized_pnl=lot_pnl,
             bucket=lot.bucket,
-            trade_on=state.clock_date,
-            settles_on=calendar.add_sessions(state.clock_date, company.settlement_days),
+            trade_on=eff_date,
+            settles_on=calendar.add_sessions(eff_date, company.settlement_days),
             reason=f"Hermes Agentic sell execution requested by user/assistant.",
             source="HERMES_AGENTIC",
             portfolio_id=portfolio_id,

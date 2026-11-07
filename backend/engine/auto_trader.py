@@ -51,6 +51,39 @@ class AutoTrader:
             with self.database.write() as session_ctx:
                 return self._run_cycle_internal(session_ctx, request_id)
 
+    def _dispatch_order(
+        self,
+        symbol: str,
+        side: str,
+        quantity: int,
+        price: Decimal,
+        portfolio_id: str,
+        trade_date: Any,
+    ) -> dict | None:
+        if not hasattr(self.adapter, "execute_order"):
+            return None
+        res = self.adapter.execute_order(
+            symbol=symbol,
+            side=side,
+            quantity=quantity,
+            price=price,
+            portfolio_id=portfolio_id,
+            trade_date=trade_date,
+            commission_pct=Decimal("0.5"),
+        )
+        if asyncio.iscoroutine(res):
+            try:
+                loop = asyncio.get_running_loop()
+                if loop.is_running():
+                    import concurrent.futures
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                        return pool.submit(asyncio.run, res).result()
+                else:
+                    return loop.run_until_complete(res)
+            except RuntimeError:
+                return asyncio.run(res)
+        return res
+
     def _run_cycle_internal(self, session: Session, request_id: str | None = None) -> dict:
         state = portfolio_state(session)
         if request_id:
@@ -162,17 +195,35 @@ class AutoTrader:
                 slices=tuple(decimal(value) for value in rule.tier_slices),
                 pullback_pct=rule.pullback_pct,
             )
-            lot.remaining_qty = plan.state.remaining_qty
-            lot.remaining_cost_basis = plan.state.remaining_basis
-            lot.peak_price = plan.state.peak_price
-            lot.next_tier = plan.state.next_tier
-            lot.cycle_base_qty = plan.state.cycle_base_qty
-            lot.phase = plan.state.phase
-            lot.recovery_anchor = plan.state.recovery_anchor
-            record(lot.symbol, plan.action, plan.reason, plan.quantity, lot.id)
             if plan.quantity:
                 fill_price = self.adapter.paper_fill(quote, plan.quantity)
+                # In non-DEMO mode, submit to executor first and verify fill before local ledger update
+                if getattr(self.adapter, "mode", "DEMO") != "DEMO":
+                    try:
+                        self._dispatch_order(
+                            symbol=lot.symbol,
+                            side="SELL",
+                            quantity=plan.quantity,
+                            price=fill_price,
+                            portfolio_id=active_pid or "164580",
+                            trade_date=state.clock_date,
+                        )
+                    except Exception as exc:
+                        error_code = getattr(exc, "error_code", "EXECUTION_ERROR")
+                        logger.warning("AutoTrader live sell execution failed: %s (%s)", error_code, exc)
+                        record(lot.symbol, f"SELL_FAILED_{error_code}", str(exc), plan.quantity, lot.id)
+                        continue
+
+                lot.remaining_qty = plan.state.remaining_qty
+                lot.remaining_cost_basis = plan.state.remaining_basis
+                lot.peak_price = plan.state.peak_price
+                lot.next_tier = plan.state.next_tier
+                lot.cycle_base_qty = plan.state.cycle_base_qty
+                lot.phase = plan.state.phase
+                lot.recovery_anchor = plan.state.recovery_anchor
                 lot.last_sale_revision = state.revision
+                record(lot.symbol, plan.action, plan.reason, plan.quantity, lot.id)
+
                 company = next(company for company in companies if company.symbol == lot.symbol)
                 trade = TradeLog(
                     trade_key=f"SELL:{cycle.id}:{lot.id}:{plan.action}",
@@ -190,23 +241,19 @@ class AutoTrader:
                 trades.append(self._trade_result(trade, plan.action))
                 sold_symbols.add(lot.symbol)
 
-                if hasattr(self.adapter, "execute_order"):
+                # In DEMO mode, notify adapter for paper receipt/mock tracking
+                if getattr(self.adapter, "mode", "DEMO") == "DEMO":
                     try:
-                        res = self.adapter.execute_order(
+                        self._dispatch_order(
                             symbol=lot.symbol,
                             side="SELL",
                             quantity=plan.quantity,
                             price=fill_price,
-                            commission_pct=Decimal("0.5"),
+                            portfolio_id=active_pid or "164580",
+                            trade_date=state.clock_date,
                         )
-                        if asyncio.iscoroutine(res):
-                            try:
-                                loop = asyncio.get_running_loop()
-                                loop.create_task(res)
-                            except RuntimeError:
-                                asyncio.run(res)
                     except Exception as exc:
-                        logger.debug("AutoTrader adapter sell dispatch error: %s", exc)
+                        logger.debug("AutoTrader demo sell dispatch error: %s", exc)
 
         balances = bucket_balances(session, state, portfolio_id=active_pid)
         active_name = self.calendar.bucket_for(state.clock_date)
@@ -322,6 +369,24 @@ class AutoTrader:
                 record(company.symbol, "WAIT_BUDGET", "Exposure/cash/minimum-notional limit blocks a new buy.")
                 continue
             fill_price = self.adapter.paper_fill(quote, quantity)
+
+            # In non-DEMO mode, submit to executor first and verify fill before local ledger update
+            if getattr(self.adapter, "mode", "DEMO") != "DEMO":
+                try:
+                    self._dispatch_order(
+                        symbol=company.symbol,
+                        side="BUY",
+                        quantity=quantity,
+                        price=fill_price,
+                        portfolio_id=active_pid or "164580",
+                        trade_date=state.clock_date,
+                    )
+                except Exception as exc:
+                    error_code = getattr(exc, "error_code", "EXECUTION_ERROR")
+                    logger.warning("AutoTrader live buy execution failed: %s (%s)", error_code, exc)
+                    record(company.symbol, f"BUY_FAILED_{error_code}", str(exc), quantity)
+                    continue
+
             lot = TaxLot(
                 symbol=company.symbol, bucket=active_name,
                 acquired_on=state.clock_date,
@@ -349,23 +414,19 @@ class AutoTrader:
             record(company.symbol, "BUY", trade.reason, quantity, lot.id)
             trades.append(self._trade_result(trade, "BUY"))
 
-            if hasattr(self.adapter, "execute_order"):
+            # In DEMO mode, notify adapter for paper receipt/mock tracking
+            if getattr(self.adapter, "mode", "DEMO") == "DEMO":
                 try:
-                    res = self.adapter.execute_order(
+                    self._dispatch_order(
                         symbol=company.symbol,
                         side="BUY",
                         quantity=quantity,
                         price=fill_price,
-                        commission_pct=Decimal("0.5"),
+                        portfolio_id=active_pid or "164580",
+                        trade_date=state.clock_date,
                     )
-                    if asyncio.iscoroutine(res):
-                        try:
-                            loop = asyncio.get_running_loop()
-                            loop.create_task(res)
-                        except RuntimeError:
-                            asyncio.run(res)
                 except Exception as exc:
-                    logger.debug("AutoTrader adapter buy dispatch error: %s", exc)
+                    logger.debug("AutoTrader demo buy dispatch error: %s", exc)
 
         session.flush()
         check_canary_theses(session, state)

@@ -58,7 +58,7 @@ def test_execute_stocknow_virtual_order_paper_and_idempotency():
     ))
     assert receipt["success"] is True
     assert receipt["status"] == "ACKNOWLEDGED"
-    assert receipt["execution_mode"] == "PAPER_VERIFIED"
+    assert receipt["execution_mode"] in ("DEMO_PAPER", "PAPER_VERIFIED")
     assert receipt["symbol"] == "GP"
     assert receipt["side"] == "BUY"
     assert receipt["quantity"] == 10

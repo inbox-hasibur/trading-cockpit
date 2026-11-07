@@ -489,6 +489,22 @@ class StockNowLiveClient:
                 "phone_masked": masked,
             }
 
+    async def logout(self) -> dict[str, Any]:
+        """Log out of StockNow session in Playwright browser and clear tokens."""
+        if self.page and not getattr(self.page, "is_closed", lambda: False)():
+            try:
+                await self.page.evaluate("""() => {
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('username');
+                    localStorage.removeItem('password');
+                    localStorage.setItem('rememberCredentials', 'false');
+                }""")
+                await self.page.goto(f"{self.base_url}/login", timeout=10000, wait_until="domcontentloaded")
+            except Exception as exc:
+                logger.warning("Browser logout error: %s", exc)
+        self.state = "LOGGED_OUT"
+        return {"status": "LOGGED_OUT", "connected": self.is_connected()}
+
     async def discover_portfolio(self) -> dict[str, Any]:
         """Discover 'Humming Bird' portfolio stats and ID from /portfolios."""
         return await self._run_in_proactor(self._discover_portfolio_internal())

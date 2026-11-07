@@ -172,7 +172,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             500: "INTERNAL_SERVER_ERROR",
         }
         err_code = error_names.get(exc.status_code, "HTTP_ERROR")
-        detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
+        if isinstance(exc.detail, dict):
+            err_code = exc.detail.get("error", err_code)
+            detail = str(exc.detail.get("detail", exc.detail.get("message", exc.detail)))
+        else:
+            detail = str(exc.detail)
         return JSONResponse(
             status_code=exc.status_code,
             content={"error": err_code, "detail": detail},
@@ -529,7 +533,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(build_auth_settings_router(database, settings, broadcaster))
     app.include_router(build_stocknow_router(database, settings, broadcaster, stocknow_client, scheduler=scheduler))
     from backend.kernel_api import build_kernel_router
-    app.include_router(build_kernel_router(database, settings, stocknow_client))
+    app.state.broadcaster = broadcaster
+    app.include_router(build_kernel_router(database, settings, stocknow_client, broadcaster))
 
     @app.get("/api/stream")
     async def event_stream(request: Request):

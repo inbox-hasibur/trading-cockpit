@@ -71,19 +71,53 @@ class StockNowAdapter:
         dry_run: bool = False,
         live_client: Any | None = None,
         commission_pct: Decimal | float = Decimal("0.5"),
+        trade_date: date | str | None = None,
+        ingestion_mode: str | None = None,
+        api_client: Any | None = None,
+        settings: Any | None = None,
     ) -> dict:
-        from backend.adapters.stocknow_order_executor import execute_stocknow_virtual_order
+        from datetime import datetime, timezone
+        from uuid import uuid4
+        from backend.adapters.stocknow_executor import get_stocknow_executor
 
-        receipt = await execute_stocknow_virtual_order(
-            client=live_client,
+        # Paper fill only when data source/mode is explicitly DEMO
+        if self.mode == "DEMO":
+            t_date_str = trade_date.isoformat() if hasattr(trade_date, "isoformat") else str(trade_date or date.today())
+            receipt = {
+                "success": True,
+                "status": "ACKNOWLEDGED",
+                "execution_mode": "DEMO_PAPER",
+                "order_id": f"demo_{uuid4().hex[:8]}",
+                "symbol": symbol.strip().upper(),
+                "side": side.strip().upper(),
+                "quantity": quantity,
+                "price": float(price),
+                "commission_pct": float(commission_pct),
+                "portfolio_id": str(portfolio_id or "164580"),
+                "trade_date": t_date_str,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+            self.last_order_receipt = receipt
+            return receipt
+
+        # Live/test execution picks transport by run mode; no fallback to paper
+        exec_mode = ingestion_mode or ("ONSCREEN_LIVE" if live_client and getattr(live_client, "page", None) else "BACKGROUND_POLLING")
+        executor = get_stocknow_executor(
+            mode=exec_mode,
+            stocknow_client=live_client,
+            api_client=api_client,
+            settings=settings,
+        )
+
+        receipt = await executor.execute_order(
             symbol=symbol,
             side=side,
             quantity=quantity,
             price=price,
-            portfolio_id=portfolio_id,
-            idempotency_key=idempotency_key,
-            dry_run=dry_run,
+            portfolio_id=portfolio_id or "164580",
+            trade_date=trade_date or date.today(),
             commission_pct=commission_pct,
+            idempotency_key=idempotency_key,
         )
         self.last_order_receipt = receipt
         return receipt
