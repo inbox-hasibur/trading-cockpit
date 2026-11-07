@@ -5,16 +5,19 @@ Starts:
 2. FastAPI Cockpit server via Uvicorn on 127.0.0.1:8000.
 
 Features:
+- Auto-detects workspace virtualenv (.venv) and re-execs when called by system Python (e.g. 'npm run dev').
 - Sets HERMES_HOME explicitly to resolve the Windows default bug.
 - Verifies Gateway /health before starting Uvicorn.
+- Cleans stale zombie processes holding ports 8642 or 8000.
 - Supervises Gateway: restarts up to 3 times on unexpected crash.
-- Clean shutdown on Ctrl+C (SIGINT/SIGTERM) killing both child processes.
+- Clean shutdown on Ctrl+C (SIGINT/SIGTERM) killing process trees.
 """
 
 from __future__ import annotations
 
 import os
 import signal
+import socket
 import subprocess
 import sys
 import time
@@ -23,6 +26,96 @@ from pathlib import Path
 from typing import Optional
 
 WORKSPACE_ROOT = Path(__file__).resolve().parent
+
+
+def get_venv_python() -> Optional[Path]:
+    """Finds the virtual environment Python executable if it exists."""
+    candidates = [
+        WORKSPACE_ROOT / ".venv" / "Scripts" / "python.exe",
+        WORKSPACE_ROOT / ".venv" / "bin" / "python",
+    ]
+    for c in candidates:
+        if c.exists():
+            return c.resolve()
+    return None
+
+
+def ensure_venv() -> None:
+    """Ensures this script executes inside the workspace virtual environment.
+
+    When invoked from global Python (e.g. via 'npm run dev' without active venv),
+    this transparently re-executes using the workspace .venv interpreter.
+    """
+    venv_py = get_venv_python()
+    if not venv_py:
+        return
+
+    try:
+        if Path(sys.executable).resolve() == venv_py:
+            return
+    except Exception:
+        pass
+
+    env = os.environ.copy()
+    venv_dir = str(venv_py.parent.parent)
+    scripts_dir = str(venv_py.parent)
+    env["VIRTUAL_ENV"] = venv_dir
+
+    current_path = env.get("PATH", "")
+    env["PATH"] = f"{scripts_dir}{os.pathsep}{current_path}"
+
+    current_pythonpath = env.get("PYTHONPATH", "")
+    paths = [str(WORKSPACE_ROOT)]
+    if current_pythonpath:
+        paths.append(current_pythonpath)
+    env["PYTHONPATH"] = os.pathsep.join(paths)
+    env["PYTHONUNBUFFERED"] = "1"
+
+    cmd = [str(venv_py), str(WORKSPACE_ROOT / "run.py")] + sys.argv[1:]
+    try:
+        ret = subprocess.call(cmd, env=env)
+        sys.exit(ret)
+    except KeyboardInterrupt:
+        sys.exit(0)
+    except Exception as exc:
+        print(f"[Error] Failed to switch to virtual environment: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+
+def is_port_in_use(port: int, host: str = "127.0.0.1") -> bool:
+    """Fast check whether a TCP port is in use."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.2)
+        return s.connect_ex((host, port)) == 0
+
+
+def free_port(port: int) -> None:
+    """Frees a port if occupied by a stale zombie process on Windows."""
+    if os.name != "nt" or not is_port_in_use(port):
+        return
+    try:
+        cmd = f"Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess"
+        res = subprocess.run(["powershell", "-NoProfile", "-Command", cmd], capture_output=True, text=True)
+        pids = {p.strip() for p in res.stdout.splitlines() if p.strip().isdigit() and int(p.strip()) > 0}
+        for pid in pids:
+            if int(pid) != os.getpid():
+                print(f"[Info] Port {port} is occupied by PID {pid}. Cleaning up stale process...")
+                subprocess.run(["taskkill", "/F", "/T", "/PID", pid], capture_output=True)
+    except Exception:
+        pass
+
+
+def kill_proc_tree(pid: int) -> None:
+    """Kills a process and all its children."""
+    if not pid:
+        return
+    try:
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], capture_output=True)
+        else:
+            os.killpg(os.getpgid(pid), signal.SIGKILL)
+    except Exception:
+        pass
 
 
 def load_env_file(filepath: Path) -> None:
@@ -41,43 +134,6 @@ def load_env_file(filepath: Path) -> None:
                 os.environ[k] = v
     except Exception as exc:
         print(f"[Warning] Failed reading {filepath}: {exc}", file=sys.stderr)
-
-
-def get_python_bin() -> str:
-    """Locates the project virtualenv Python binary, falling back to sys.executable."""
-    venv_python = WORKSPACE_ROOT / ".venv" / "Scripts" / ("python.exe" if os.name == "nt" else "python")
-    if venv_python.exists():
-        return str(venv_python)
-    return sys.executable
-
-
-def ensure_venv_python() -> None:
-    """Ensures run.py executes under the project .venv Python interpreter."""
-    venv_python = WORKSPACE_ROOT / ".venv" / "Scripts" / ("python.exe" if os.name == "nt" else "python")
-    if not venv_python.exists():
-        return
-
-    try:
-        is_same = Path(sys.executable).resolve().samefile(venv_python.resolve())
-    except Exception:
-        is_same = Path(sys.executable).resolve() == venv_python.resolve()
-
-    if not is_same:
-        env = os.environ.copy()
-        scripts_dir = str(venv_python.parent)
-        env["PATH"] = scripts_dir + os.pathsep + env.get("PATH", "")
-        env["VIRTUAL_ENV"] = str(WORKSPACE_ROOT / ".venv")
-        try:
-            proc = subprocess.Popen([str(venv_python), str(Path(__file__).resolve()), *sys.argv[1:]], env=env)
-            while proc.poll() is None:
-                try:
-                    time.sleep(0.5)
-                except KeyboardInterrupt:
-                    pass
-            sys.exit(proc.returncode if proc.returncode is not None else 0)
-        except Exception as exc:
-            print(f"[Error] Failed to delegate to virtualenv Python: {exc}", file=sys.stderr)
-            sys.exit(1)
 
 
 def get_hermes_bin() -> str:
@@ -123,26 +179,29 @@ def wait_for_gateway(proc: subprocess.Popen, timeout_sec: int = 30) -> bool:
 
 
 def main() -> int:
-    ensure_venv_python()
+    # 1. Transparently ensure running under .venv
+    ensure_venv()
 
-    # 1. Resolve HERMES_HOME explicitly (known Windows default bug)
+    # Handle 'test' argument
+    if len(sys.argv) > 1 and sys.argv[1].lower() == "test":
+        venv_py = get_venv_python()
+        py_bin = str(venv_py) if venv_py else sys.executable
+        return subprocess.call([py_bin, "-m", "pytest", "-q"] + sys.argv[2:])
+
+    # Handle 'live' argument
+    if len(sys.argv) > 1 and sys.argv[1].lower() == "live":
+        os.environ["TRADING_MODE"] = "LIVE_HOURS"
+
+    # 2. Resolve HERMES_HOME explicitly (known Windows default bug)
     local_app = os.environ.get("LOCALAPPDATA")
     if "HERMES_HOME" not in os.environ and local_app:
         os.environ["HERMES_HOME"] = str(Path(local_app) / "hermes")
 
-    # Prepend .venv/Scripts to PATH and set VIRTUAL_ENV
-    venv_dir = WORKSPACE_ROOT / ".venv"
-    if venv_dir.exists():
-        scripts_dir = str(venv_dir / ("Scripts" if os.name == "nt" else "bin"))
-        if scripts_dir not in os.environ.get("PATH", ""):
-            os.environ["PATH"] = scripts_dir + os.pathsep + os.environ.get("PATH", "")
-        os.environ["VIRTUAL_ENV"] = str(venv_dir)
-
-    # 2. Load environment variables
+    # 3. Load environment variables
     load_env_file(WORKSPACE_ROOT / ".env")
     load_env_file(WORKSPACE_ROOT / "backend" / ".env")
 
-    # Defaults for API server and Kernel
+    # Critical defaults for API server and Kernel
     os.environ.setdefault("API_SERVER_ENABLED", "true")
     os.environ.setdefault("API_SERVER_KEY", "hb-hermes-local-key-2026")
     os.environ.setdefault("API_SERVER_PORT", "8642")
@@ -150,23 +209,39 @@ def main() -> int:
     os.environ.setdefault("KERNEL_TOKEN", "hb-kernel-local-token-2026")
     os.environ.setdefault("HERMES_GATEWAY_URL", "http://127.0.0.1:8642")
 
+    venv_py = get_venv_python()
+    python_bin = str(venv_py) if venv_py else sys.executable
     hermes_bin = get_hermes_bin()
-    python_bin = get_python_bin()
+
+    # Build child process environment with venv and PYTHONPATH
+    child_env = os.environ.copy()
+    if venv_py:
+        child_env["VIRTUAL_ENV"] = str(venv_py.parent.parent)
+        scripts_dir = str(venv_py.parent)
+        current_path = child_env.get("PATH", "")
+        if not current_path.startswith(scripts_dir):
+            child_env["PATH"] = f"{scripts_dir}{os.pathsep}{current_path}"
+        current_pythonpath = child_env.get("PYTHONPATH", "")
+        paths = [str(WORKSPACE_ROOT)]
+        if current_pythonpath:
+            paths.append(current_pythonpath)
+        child_env["PYTHONPATH"] = os.pathsep.join(paths)
+    child_env["PYTHONUNBUFFERED"] = "1"
+
+    # 4. Clean up any stale zombie processes on ports 8642 or 8000
+    free_port(8642)
+    free_port(8000)
 
     print("==========================================================")
     print("   Humming Bird Cockpit & Hermes Gateway Unified Runner   ")
     print("==========================================================")
     print(f"HERMES_HOME : {os.environ.get('HERMES_HOME')}")
     print(f"Hermes Bin  : {hermes_bin}")
+    print(f"Python Bin  : {python_bin}")
     print("Profile     : hummingbird")
     print("Gateway URL : http://127.0.0.1:8642")
     print("Cockpit URL : http://127.0.0.1:8000")
     print("==========================================================")
-
-    if "--check" in sys.argv:
-        print(f"[OK] Python virtualenv : {python_bin}")
-        print(f"[OK] Hermes binary     : {hermes_bin}")
-        return 0
 
     gateway_proc: Optional[subprocess.Popen] = None
     backend_proc: Optional[subprocess.Popen] = None
@@ -179,18 +254,18 @@ def main() -> int:
         shutdown_requested = True
         print("\n[Shutdown] Stopping Humming Bird Cockpit and Hermes Gateway...")
         if backend_proc and backend_proc.poll() is None:
-            backend_proc.terminate()
+            kill_proc_tree(backend_proc.pid)
             try:
-                backend_proc.wait(timeout=3)
-            except subprocess.TimeoutExpired:
-                backend_proc.kill()
+                backend_proc.wait(timeout=2)
+            except Exception:
+                pass
             print(f"[Shutdown] Stopped backend server (PID {backend_proc.pid})")
         if gateway_proc and gateway_proc.poll() is None:
-            gateway_proc.terminate()
+            kill_proc_tree(gateway_proc.pid)
             try:
-                gateway_proc.wait(timeout=3)
-            except subprocess.TimeoutExpired:
-                gateway_proc.kill()
+                gateway_proc.wait(timeout=2)
+            except Exception:
+                pass
             print(f"[Shutdown] Stopped Hermes Gateway (PID {gateway_proc.pid})")
 
     signal.signal(signal.SIGINT, shutdown)
@@ -198,11 +273,11 @@ def main() -> int:
 
     def spawn_gateway() -> subprocess.Popen:
         cmd = [hermes_bin, "-p", "hummingbird", "gateway", "run", "--force"]
-        return subprocess.Popen(cmd, env=os.environ.copy())
+        return subprocess.Popen(cmd, env=child_env)
 
     def spawn_backend() -> subprocess.Popen:
         cmd = [python_bin, "-m", "uvicorn", "backend.main:app", "--host", "127.0.0.1", "--port", "8000"]
-        return subprocess.Popen(cmd, env=os.environ.copy())
+        return subprocess.Popen(cmd, env=child_env)
 
     max_restarts = 3
     restart_count = 0

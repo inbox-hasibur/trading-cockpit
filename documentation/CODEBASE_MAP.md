@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-07 13:43:23 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-07 14:18:13 UTC**.
 
 ---
 
@@ -8,10 +8,10 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 10819 | 2,664,187 | Python Core Kernel, Engine & Hermes Agent |
+| `.py` | 10819 | 2,664,314 | Python Core Kernel, Engine & Hermes Agent |
 | `.ts` | 3911 | 775,975 | Configuration / Asset |
 | `.png` | 136 | 616,169 | Configuration / Asset |
-| `.md` | 1557 | 452,219 | Architecture & Strategy Documentation |
+| `.md` | 1557 | 452,400 | Architecture & Strategy Documentation |
 | `.tsx` | 1548 | 384,054 | Configuration / Asset |
 | `.json` | 220 | 153,095 | Configuration / Asset |
 | `.jpg` | 6 | 136,243 | Configuration / Asset |
@@ -26,7 +26,7 @@
 | `.h` | 3 | 14,533 | Configuration / Asset |
 | `.sh` | 79 | 13,746 | Configuration / Asset |
 | `.js` | 28 | 12,710 | Vanilla ES6+ Reactive Terminal Controller |
-| `.ps1` | 40 | 11,312 | Configuration / Asset |
+| `.ps1` | 40 | 11,325 | Configuration / Asset |
 | `.lock` | 3 | 7,975 | Configuration / Asset |
 | `.rs` | 12 | 7,810 | Configuration / Asset |
 | `.bst` | 5 | 7,756 | Configuration / Asset |
@@ -206,7 +206,7 @@
 | `dashboard` | 1 | 0 | Configuration / Asset |
 | `main-hermes` | 1 | 0 | Configuration / Asset |
 | `profile-gateways` | 1 | 0 | Configuration / Asset |
-| **TOTAL** | **22525** | **5,644,939** | *Entire Humming Bird Repository* |
+| **TOTAL** | **22525** | **5,645,260** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -1458,4 +1458,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/restore_db.py` | `restore_database` | 88 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 36 Python modules inspected, 31 FastAPI endpoints registered, 5,644,939 total LOC indexed.
+> **Audit Summary:** 36 Python modules inspected, 31 FastAPI endpoints registered, 5,645,260 total LOC indexed.

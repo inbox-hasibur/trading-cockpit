@@ -32,7 +32,20 @@ if (Test-Path $VenvHermes) {
     }
 }
 
-# Locate python virtualenv
+# Locate python virtualenv and configure environment
+$VenvDir = Join-Path $ScriptDir ".venv"
+if (Test-Path $VenvDir) {
+    $env:VIRTUAL_ENV = $VenvDir
+    $VenvScripts = Join-Path $VenvDir "Scripts"
+    if ($env:PATH -notlike "*$VenvScripts*") {
+        $env:PATH = "$VenvScripts;$env:PATH"
+    }
+    if ($env:PYTHONPATH) {
+        $env:PYTHONPATH = "$ScriptDir;$env:PYTHONPATH"
+    } else {
+        $env:PYTHONPATH = "$ScriptDir"
+    }
+}
 $PythonBin = Join-Path $ScriptDir ".venv\Scripts\python.exe"
 if (-not (Test-Path $PythonBin)) {
     $PythonBin = "python"
