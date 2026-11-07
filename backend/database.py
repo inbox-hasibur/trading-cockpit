@@ -228,6 +228,17 @@ class KernelAuditLog(Base):
     created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
 
 
+class OrderIdempotencyKey(Base):
+    __tablename__ = "order_idempotency_keys"
+    idempotency_key: Mapped[str] = mapped_column(String(128), primary_key=True)
+    symbol: Mapped[str] = mapped_column(String(32))
+    side: Mapped[str] = mapped_column(String(10))
+    quantity: Mapped[int] = mapped_column(Integer)
+    price: Mapped[Decimal] = mapped_column(PRICE)
+    response_payload: Mapped[dict[str, Any]] = mapped_column(JSON)
+    created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
+
+
 class ChatBudget(Base):
     __tablename__ = "chat_budget"
     day: Mapped[date] = mapped_column(Date, primary_key=True)

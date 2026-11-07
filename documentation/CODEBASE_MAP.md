@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-07 12:03:35 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-07 12:22:52 UTC**.
 
 ---
 
@@ -8,11 +8,11 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 72 | 13,771 | Python Core Kernel, Engine & Hermes Agent |
+| `.py` | 73 | 14,326 | Python Core Kernel, Engine & Hermes Agent |
 | `.png` | 3 | 11,100 | Configuration / Asset |
 | `.css` | 2 | 8,429 | Custom Dark / Light / Terminal Design System |
 | `.js` | 3 | 4,156 | Vanilla ES6+ Reactive Terminal Controller |
-| `.md` | 13 | 3,146 | Architecture & Strategy Documentation |
+| `.md` | 13 | 3,151 | Architecture & Strategy Documentation |
 | `.html` | 1 | 996 | Single Page Application DOM Structure |
 | `.ps1` | 2 | 295 | Configuration / Asset |
 | `.yaml` | 1 | 30 | Configuration / Asset |
@@ -26,7 +26,7 @@
 | `.bat` | 1 | 8 | Configuration / Asset |
 | `.svg` | 1 | 1 | Configuration / Asset |
 | `.db` | 1 | 0 | Configuration / Asset |
-| **TOTAL** | **108** | **42,010** | *Entire Humming Bird Repository* |
+| **TOTAL** | **109** | **42,570** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -55,7 +55,7 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | [`backend/engine/t2_ledger.py`](/backend/engine/t2_ledger.py) | `backend.database.PortfolioState`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.engine.money.CENT`, `backend.engine.money.ZERO`, `backend.engine.money.money` |
 | [`backend/engine/trading_lock.py`](/backend/engine/trading_lock.py) | *Independent Core Module* |
 | [`backend/hermes_bridge.py`](/backend/hermes_bridge.py) | *Independent Core Module* |
-| [`backend/kernel_api.py`](/backend/kernel_api.py) | `backend.adapters.stocknow_market_sync.extract_quotes_from_stocknow`, `backend.adapters.stocknow_market_sync.get_or_fetch_all_dse_shares`, `backend.adapters.stocknow_market_sync.sync_live_market_to_db`, `backend.adapters.stocknow_portfolio_sync.reconcile_portfolio_to_db`, `backend.config.Settings`, `backend.database.CanaryThesis`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.KernelAuditLog`, `backend.database.PortfolioState`, `backend.database.RuleAudit`, `backend.database.TaxLot`, `backend.database.portfolio_state`, `backend.engine.agent_actions.check_canary_theses`, `backend.engine.agent_actions.emergency_quarantine_and_canary`, `backend.engine.agent_actions.execute_agentic_buy`, `backend.engine.agent_actions.execute_agentic_sell`, `backend.engine.agent_actions.restore_quarantine`, `backend.engine.auto_trader.AutoTrader`, `backend.engine.checkpoint.CheckpointManager`, `backend.engine.curve_analyzer.analyze_curve`, `backend.engine.money.ZERO`, `backend.engine.money.allocated_basis`, `backend.engine.money.purchase_amount`, `backend.engine.money.sale_amount`, `backend.engine.scheduler.get_active_scheduler`, `backend.engine.scheduler.is_dse_market_open`, `backend.engine.trading_lock.acquire_trading_lock`, `backend.portfolio.snapshot_from_session`, `backend.seed.seed_demo` |
+| [`backend/kernel_api.py`](/backend/kernel_api.py) | `backend.adapters.stocknow_adapter.StockNowAdapter`, `backend.adapters.stocknow_market_sync.extract_quotes_from_stocknow`, `backend.adapters.stocknow_market_sync.get_or_fetch_all_dse_shares`, `backend.adapters.stocknow_market_sync.sync_live_market_to_db`, `backend.adapters.stocknow_portfolio_sync.extract_hummingbird_portfolio_from_browser`, `backend.adapters.stocknow_portfolio_sync.reconcile_portfolio_to_db`, `backend.config.Settings`, `backend.database.CanaryThesis`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.KernelAuditLog`, `backend.database.OrderIdempotencyKey`, `backend.database.PortfolioState`, `backend.database.RuleAudit`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.database.portfolio_state`, `backend.engine.agent_actions.check_canary_theses`, `backend.engine.agent_actions.emergency_quarantine_and_canary`, `backend.engine.agent_actions.execute_agentic_buy`, `backend.engine.agent_actions.execute_agentic_sell`, `backend.engine.agent_actions.restore_quarantine`, `backend.engine.auto_trader.AutoTrader`, `backend.engine.checkpoint.CheckpointManager`, `backend.engine.curve_analyzer.analyze_curve`, `backend.engine.money.ZERO`, `backend.engine.money.allocated_basis`, `backend.engine.money.purchase_amount`, `backend.engine.money.sale_amount`, `backend.engine.scheduler.get_active_scheduler`, `backend.engine.scheduler.is_dse_market_open`, `backend.engine.t2_ledger.assert_ledger`, `backend.engine.t2_ledger.bucket_balances`, `backend.engine.trading_lock.acquire_trading_lock`, `backend.portfolio.snapshot_from_session`, `backend.seed.seed_demo` |
 | [`backend/main.py`](/backend/main.py) | `backend.adapters.stocknow_adapter.StockNowAdapter`, `backend.adapters.stocknow_client.StockNowLiveClient`, `backend.adapters.stocknow_market_sync.extract_quotes_from_stocknow`, `backend.adapters.stocknow_market_sync.sync_live_market_to_db`, `backend.config.ROOT`, `backend.config.Settings`, `backend.config.VERSION`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.RuleAudit`, `backend.database.portfolio_state`, `backend.engine.auto_trader.AutoTrader`, `backend.engine.auto_trader.AutomationPaused`, `backend.engine.money.ZERO`, `backend.engine.scheduler.DSEMarketScheduler`, `backend.hermes_bridge.build_hermes_bridge_router`, `backend.kernel_api.build_kernel_router`, `backend.market_map.build_market_map_payload`, `backend.portfolio.build_snapshot`, `backend.portfolio.rule_view`, `backend.routes_auth_settings.KeysSettingsRequest`, `backend.routes_auth_settings.LoginRequest`, `backend.routes_auth_settings.build_auth_settings_router`, `backend.routes_hermes.CreateThreadRequest`, `backend.routes_hermes.build_hermes_router`, `backend.routes_stocknow.build_stocknow_router`, `backend.seed.migrate_real_stocknow_market`, `backend.seed.seed_demo` |
 | [`backend/market_map.py`](/backend/market_map.py) | *Independent Core Module* |
 | [`backend/portfolio.py`](/backend/portfolio.py) | `backend.adapters.stocknow_adapter.StockNowAdapter`, `backend.adapters.stocknow_market_sync._ALL_DSE_SHARES_CACHE`, `backend.config.DHAKA`, `backend.config.Settings`, `backend.config.VERSION`, `backend.database.AutomationCycle`, `backend.database.CanaryThesis`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.DecisionLog`, `backend.database.KernelStateCheckpoint`, `backend.database.RuleAudit`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.database.portfolio_state`, `backend.engine.money.HUNDRED`, `backend.engine.money.ZERO`, `backend.engine.money.decimal`, `backend.engine.money.money`, `backend.engine.money.sale_amount`, `backend.engine.signals.assess_company`, `backend.engine.t2_ledger.TradingCalendar`, `backend.engine.t2_ledger.bucket_balances`, `backend.market_map.build_market_map_payload` |
@@ -255,26 +255,27 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | `DecisionLog` | `L193–L203` | `Base` | — | 0 |
 | `RuleAudit` | `L206–L214` | `Base` | — | 0 |
 | `KernelAuditLog` | `L217–L228` | `Base` | — | 0 |
-| `ChatBudget` | `L231–L234` | `Base` | — | 0 |
-| `Database` | `L237–L328` | `object` | — | 5 |
+| `OrderIdempotencyKey` | `L231–L239` | `Base` | — | 0 |
+| `ChatBudget` | `L242–L245` | `Base` | — | 0 |
+| `Database` | `L248–L339` | `object` | — | 5 |
 
 
 **Methods in `Database`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__init__` | `L238–L258` | `(self, url: str...)` | — | — | `Path`, `RLock`, `ValueError`, `create_engine` |
-| `configure_sqlite` | `L251–L256` | `(connection: Any, _record: Any...)` | `None` | — | `close`, `cursor`, `execute`, `listens_for` |
-| `create_schema` | `L260–L307` | `(self...)` | `None` | — | `commit`, `connect`, `create_all`, `execute` |
-| `read` | `L310–L317` | `(self...)` | — | — | `execute`, `rollback`, `sessions`, `text` |
-| `write` | `L320–L328` | `(self...)` | — | — | `commit`, `execute`, `rollback`, `sessions` |
+| `__init__` | `L249–L269` | `(self, url: str...)` | — | — | `Path`, `RLock`, `ValueError`, `create_engine` |
+| `configure_sqlite` | `L262–L267` | `(connection: Any, _record: Any...)` | `None` | — | `close`, `cursor`, `execute`, `listens_for` |
+| `create_schema` | `L271–L318` | `(self...)` | `None` | — | `commit`, `connect`, `create_all`, `execute` |
+| `read` | `L321–L328` | `(self...)` | — | — | `execute`, `rollback`, `sessions`, `text` |
+| `write` | `L331–L339` | `(self...)` | — | — | `commit`, `execute`, `rollback`, `sessions` |
 
 
 #### Standalone Functions
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `portfolio_state` | `L331–L335` | `(session: Session...)` | `PortfolioState` | — | `RuntimeError`, `get` |
+| `portfolio_state` | `L342–L346` | `(session: Session...)` | `PortfolioState` | — | `RuntimeError`, `get` |
 
 
 ---
@@ -525,50 +526,58 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `SetTierRequest` | `L259–L261` | `BaseModel` | — | 0 |
-| `SetAllocationRequest` | `L319–L322` | `BaseModel` | — | 0 |
-| `QuarantineRequest` | `L388–L391` | `BaseModel` | — | 0 |
-| `SyncRequest` | `L486–L488` | `BaseModel` | — | 0 |
-| `OrderRequest` | `L548–L555` | `BaseModel` | — | 0 |
-| `SetTradingModeRequest` | `L755–L757` | `BaseModel` | — | 0 |
-| `SetAutomationConfigRequest` | `L819–L823` | `BaseModel` | — | 0 |
-| `SchedulerActionRequest` | `L904–L905` | `BaseModel` | — | 0 |
-| `RunCycleRequest` | `L977–L979` | `BaseModel` | — | 0 |
-| `StockNowSessionActionRequest` | `L1025–L1027` | `BaseModel` | — | 0 |
+| `SetTierRequest` | `L272–L274` | `BaseModel` | — | 0 |
+| `SetAllocationRequest` | `L332–L335` | `BaseModel` | — | 0 |
+| `QuarantineRequest` | `L401–L404` | `BaseModel` | — | 0 |
+| `SyncRequest` | `L499–L501` | `BaseModel` | — | 0 |
+| `OrderRequest` | `L620–L637` | `BaseModel` | — | 1 |
+| `SetTradingModeRequest` | `L966–L968` | `BaseModel` | — | 0 |
+| `SetAutomationConfigRequest` | `L1030–L1034` | `BaseModel` | — | 0 |
+| `SchedulerActionRequest` | `L1115–L1116` | `BaseModel` | — | 0 |
+| `RunCycleRequest` | `L1188–L1190` | `BaseModel` | — | 0 |
+| `StockNowSessionActionRequest` | `L1236–L1238` | `BaseModel` | — | 0 |
+
+
+**Methods in `OrderRequest`:**
+
+| Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `handle_confirm_alias` | `L633–L637` | `(cls, data: Any...)` | `Any` | — | `isinstance`, `model_validator` |
 
 
 #### Standalone Functions
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `clear_order_idempotency_cache` | `L57–L59` | `(...)` | `None` | Clear order idempotency cache (for tests). | `clear` |
-| `verify_kernel_auth` | `L62–L86` | `(request: Request, x_kernel_token: s...)` | `None` | Enforces 127.0.0.1 localhost binding and X-Kernel-Token authentication. | `HTTPException`, `Header`, `getenv` |
-| `get_db` | `L89–L94` | `(request: Request...)` | `Database` | Extract database from app state or fallback to default. | `Database`, `get_settings`, `hasattr` |
-| `get_settings` | `L97–L101` | `(request: Request...)` | `Settings` | Extract settings from app state or fallback to default. | `Settings`, `hasattr` |
-| `get_stocknow_client` | `L104–L106` | `(request: Request...)` | `Any | None` | Extract live StockNow Playwright client if attached. | `getattr` |
-| `get_portfolio` | `L118–L125` | `(request: Request, db: Database=Depe...)` | `dict[str, Any]` | Returns full portfolio snapshot with holdings, cash, and rolling buckets. | `Depends`, `get`, `read`, `snapshot_from_session` |
-| `get_watchlist` | `L129–L155` | `(tier: str | None=Query(None, descri...)` | `list[dict[str, Any]]` | Returns watchlist companies, optionally filtered by tier. | `Depends`, `Query`, `append`, `float` |
-| `get_curve` | `L159–L191` | `(symbol: str, db: Database=Depends(g...)` | `dict[str, Any]` | Returns price curve analysis, support floor, resistance ceiling, and sparkline points. | `Depends`, `HTTPException`, `analyze_curve`, `float` |
-| `get_market_open` | `L195–L197` | `(settings: Settings=Depends(get_sett...)` | `dict[str, Any]` | Returns real DSE trading hours and session status in Asia/Dhaka time. | `Depends`, `get`, `is_dse_market_open` |
-| `get_canaries` | `L201–L219` | `(db: Database=Depends(get_db)...)` | `list[dict[str, Any]]` | Returns active and past 10% canary probe theses. | `Depends`, `desc`, `float`, `get` |
-| `get_lots` | `L223–L251` | `(symbol: str | None=Query(None, desc...)` | `list[dict[str, Any]]` | Returns T+2 rolling tax lots with maturity status. | `Depends`, `Query`, `float`, `get` |
-| `post_tier` | `L265–L316` | `(body: SetTierRequest, db: Database=...)` | `dict[str, Any]` | Updates a company's watchlist tier (GSC, GSC_L1, GSC_L2). | `Depends`, `HTTPException`, `KernelAuditLog`, `RuleAudit` |
-| `post_allocation` | `L326–L385` | `(body: SetAllocationRequest, db: Dat...)` | `dict[str, Any]` | Updates buying allocation percentage for a company rule. | `Depends`, `HTTPException`, `KernelAuditLog`, `RuleAudit` |
-| `post_quarantine` | `L395–L445` | `(body: QuarantineRequest, db: Databa...)` | `dict[str, Any]` | Places stock in 90% profit-lock + 10% canary quarantine, or restores it. | `Depends`, `HTTPException`, `KernelAuditLog`, `add` |
-| `post_canary_evaluate` | `L449–L483` | `(db: Database=Depends(get_db)...)` | `dict[str, Any]` | Evaluates observing canary probe theses against recent price movements. | `Depends`, `KernelAuditLog`, `add`, `check_canary_theses` |
-| `post_sync` | `L492–L545` | `(body: SyncRequest, db: Database=Dep...)` | `dict[str, Any]` | Syncs market prices, all-shares board, or virtual portfolio holdings. | `Depends`, `KernelAuditLog`, `add`, `create_checkpoint` |
-| `post_order` | `L559–L718` | `(body: OrderRequest, db: Database=De...)` | `dict[str, Any]` | Submits a virtual BUY or SELL order enforcing T+2 maturity, strict no-loss, and 0.5% fees. | `Decimal`, `Depends`, `HTTPException`, `KernelAuditLog` |
-| `post_rollback` | `L722–L747` | `(db: Database=Depends(get_db)...)` | `dict[str, Any]` | Rolls back the last state checkpoint atomically. | `Depends`, `HTTPException`, `KernelAuditLog`, `add` |
-| `get_trading_mode` | `L761–L769` | `(db: Database=Depends(get_db)...)` | `dict[str, Any]` | Returns current trading mode (TEST_OFFHOURS or LIVE_HOURS). | `Depends`, `get`, `getattr`, `portfolio_state` |
-| `post_trading_mode` | `L773–L816` | `(body: SetTradingModeRequest, db: Da...)` | `dict[str, Any]` | Sets trading mode to TEST_OFFHOURS or LIVE_HOURS with snapshot and audit log. | `Depends`, `HTTPException`, `KernelAuditLog`, `add` |
-| `get_automation_config` | `L827–L836` | `(db: Database=Depends(get_db)...)` | `dict[str, Any]` | Returns master buy/sell automation switch, paused state, ingestion mode, and polling interval. | `Depends`, `bool`, `get`, `getattr` |
-| `post_automation_config` | `L840–L901` | `(body: SetAutomationConfigRequest, d...)` | `dict[str, Any]` | Updates master automation switch, paused state, ingestion mode, or polling interval with snapshot & audit. | `Depends`, `HTTPException`, `KernelAuditLog`, `add` |
-| `get_scheduler_status` | `L909–L920` | `(settings: Settings=Depends(get_sett...)` | `dict[str, Any]` | Returns current scheduler operational status and telemetry. | `Depends`, `get`, `get_active_scheduler`, `get_status` |
-| `post_scheduler_control` | `L924–L974` | `(body: SchedulerActionRequest, db: D...)` | `dict[str, Any]` | Controls background market scheduler (start, stop, status). | `Depends`, `KernelAuditLog`, `add`, `create_checkpoint` |
-| `post_run_cycle` | `L983–L1022` | `(body: RunCycleRequest, db: Database...)` | `dict[str, Any]` | Executes an automation trading cycle via AutoTrader under the single-writer trading lock. | `AutoTrader`, `Depends`, `KernelAuditLog`, `acquire_trading_lock` |
-| `post_stocknow_session` | `L1031–L1093` | `(body: StockNowSessionActionRequest,...)` | `dict[str, Any]` | Controls live StockNow browser session (launch, status, login). | `Depends`, `KernelAuditLog`, `add`, `create_checkpoint` |
-| `build_kernel_router` | `L1101–L1107` | `(database: Database, settings: Setti...)` | `APIRouter` | Builds the configured kernel router for inclusion in main app. | — |
-| `create_kernel_app` | `L1110–L1133` | `(database: Database | None=None, set...)` | `FastAPI` | Creates a standalone FastAPI service for the trading kernel binding 127.0.0.1. | `Database`, `FastAPI`, `Settings`, `create_schema` |
+| `clear_order_idempotency_cache` | `L64–L67` | `(...)` | `None` | Clear order idempotency cache and preview tokens (for tests). | `clear` |
+| `verify_kernel_auth` | `L70–L94` | `(request: Request, x_kernel_token: s...)` | `None` | Enforces 127.0.0.1 localhost binding and X-Kernel-Token authentication. | `HTTPException`, `Header`, `getenv` |
+| `get_db` | `L97–L102` | `(request: Request...)` | `Database` | Extract database from app state or fallback to default. | `Database`, `get_settings`, `hasattr` |
+| `get_settings` | `L105–L109` | `(request: Request...)` | `Settings` | Extract settings from app state or fallback to default. | `Settings`, `hasattr` |
+| `get_stocknow_client` | `L112–L119` | `(request: Request...)` | `Any | None` | Extract live StockNow Playwright client if attached. | `get_active_scheduler`, `getattr`, `hasattr` |
+| `get_portfolio` | `L131–L138` | `(request: Request, db: Database=Depe...)` | `dict[str, Any]` | Returns full portfolio snapshot with holdings, cash, and rolling buckets. | `Depends`, `get`, `read`, `snapshot_from_session` |
+| `get_watchlist` | `L142–L168` | `(tier: str | None=Query(None, descri...)` | `list[dict[str, Any]]` | Returns watchlist companies, optionally filtered by tier. | `Depends`, `Query`, `append`, `float` |
+| `get_curve` | `L172–L204` | `(symbol: str, db: Database=Depends(g...)` | `dict[str, Any]` | Returns price curve analysis, support floor, resistance ceiling, and sparkline points. | `Depends`, `HTTPException`, `analyze_curve`, `float` |
+| `get_market_open` | `L208–L210` | `(settings: Settings=Depends(get_sett...)` | `dict[str, Any]` | Returns real DSE trading hours and session status in Asia/Dhaka time. | `Depends`, `get`, `is_dse_market_open` |
+| `get_canaries` | `L214–L232` | `(db: Database=Depends(get_db)...)` | `list[dict[str, Any]]` | Returns active and past 10% canary probe theses. | `Depends`, `desc`, `float`, `get` |
+| `get_lots` | `L236–L264` | `(symbol: str | None=Query(None, desc...)` | `list[dict[str, Any]]` | Returns T+2 rolling tax lots with maturity status. | `Depends`, `Query`, `float`, `get` |
+| `post_tier` | `L278–L329` | `(body: SetTierRequest, db: Database=...)` | `dict[str, Any]` | Updates a company's watchlist tier (GSC, GSC_L1, GSC_L2). | `Depends`, `HTTPException`, `KernelAuditLog`, `RuleAudit` |
+| `post_allocation` | `L339–L398` | `(body: SetAllocationRequest, db: Dat...)` | `dict[str, Any]` | Updates buying allocation percentage for a company rule. | `Depends`, `HTTPException`, `KernelAuditLog`, `RuleAudit` |
+| `post_quarantine` | `L408–L458` | `(body: QuarantineRequest, db: Databa...)` | `dict[str, Any]` | Places stock in 90% profit-lock + 10% canary quarantine, or restores it. | `Depends`, `HTTPException`, `KernelAuditLog`, `add` |
+| `post_canary_evaluate` | `L462–L496` | `(db: Database=Depends(get_db)...)` | `dict[str, Any]` | Evaluates observing canary probe theses against recent price movements. | `Depends`, `KernelAuditLog`, `add`, `check_canary_theses` |
+| `post_sync` | `L505–L558` | `(body: SyncRequest, db: Database=Dep...)` | `dict[str, Any]` | Syncs market prices, all-shares board, or virtual portfolio holdings. | `Depends`, `KernelAuditLog`, `add`, `create_checkpoint` |
+| `_compute_order_reconcile_and_drift` | `L561–L617` | `(session: Any, state: PortfolioState...)` | `dict[str, Any]` | Verifies local ledger integrity and compares holdings with StockNow to detect drift. | `abs`, `assert_ledger`, `bool`, `bucket_balances` |
+| `post_order` | `L641–L929` | `(body: OrderRequest, request: Reques...)` | `dict[str, Any]` | Submits a virtual BUY or SELL order enforcing T+2 maturity, strict no-loss, and 0.5% fees. | `Decimal`, `Depends`, `HTTPException`, `KernelAuditLog` |
+| `post_rollback` | `L933–L958` | `(db: Database=Depends(get_db)...)` | `dict[str, Any]` | Rolls back the last state checkpoint atomically. | `Depends`, `HTTPException`, `KernelAuditLog`, `add` |
+| `get_trading_mode` | `L972–L980` | `(db: Database=Depends(get_db)...)` | `dict[str, Any]` | Returns current trading mode (TEST_OFFHOURS or LIVE_HOURS). | `Depends`, `get`, `getattr`, `portfolio_state` |
+| `post_trading_mode` | `L984–L1027` | `(body: SetTradingModeRequest, db: Da...)` | `dict[str, Any]` | Sets trading mode to TEST_OFFHOURS or LIVE_HOURS with snapshot and audit log. | `Depends`, `HTTPException`, `KernelAuditLog`, `add` |
+| `get_automation_config` | `L1038–L1047` | `(db: Database=Depends(get_db)...)` | `dict[str, Any]` | Returns master buy/sell automation switch, paused state, ingestion mode, and polling interval. | `Depends`, `bool`, `get`, `getattr` |
+| `post_automation_config` | `L1051–L1112` | `(body: SetAutomationConfigRequest, d...)` | `dict[str, Any]` | Updates master automation switch, paused state, ingestion mode, or polling interval with snapshot & audit. | `Depends`, `HTTPException`, `KernelAuditLog`, `add` |
+| `get_scheduler_status` | `L1120–L1131` | `(settings: Settings=Depends(get_sett...)` | `dict[str, Any]` | Returns current scheduler operational status and telemetry. | `Depends`, `get`, `get_active_scheduler`, `get_status` |
+| `post_scheduler_control` | `L1135–L1185` | `(body: SchedulerActionRequest, db: D...)` | `dict[str, Any]` | Controls background market scheduler (start, stop, status). | `Depends`, `KernelAuditLog`, `add`, `create_checkpoint` |
+| `post_run_cycle` | `L1194–L1233` | `(body: RunCycleRequest, db: Database...)` | `dict[str, Any]` | Executes an automation trading cycle via AutoTrader under the single-writer trading lock. | `AutoTrader`, `Depends`, `KernelAuditLog`, `acquire_trading_lock` |
+| `post_stocknow_session` | `L1242–L1304` | `(body: StockNowSessionActionRequest,...)` | `dict[str, Any]` | Controls live StockNow browser session (launch, status, login). | `Depends`, `KernelAuditLog`, `add`, `create_checkpoint` |
+| `build_kernel_router` | `L1312–L1318` | `(database: Database, settings: Setti...)` | `APIRouter` | Builds the configured kernel router for inclusion in main app. | — |
+| `create_kernel_app` | `L1321–L1344` | `(database: Database | None=None, set...)` | `FastAPI` | Creates a standalone FastAPI service for the trading kernel binding 127.0.0.1. | `Database`, `FastAPI`, `Settings`, `create_schema` |
 
 
 ---
@@ -857,7 +866,8 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 | `DecisionLog` | `L193–L203` | `Base` | Durable transactional entity |
 | `RuleAudit` | `L206–L214` | `Base` | Durable transactional entity |
 | `KernelAuditLog` | `L217–L228` | `Base` | Durable transactional entity |
-| `ChatBudget` | `L231–L234` | `Base` | Durable transactional entity |
+| `OrderIdempotencyKey` | `L231–L239` | `Base` | Durable transactional entity |
+| `ChatBudget` | `L242–L245` | `Base` | Durable transactional entity |
 
 ---
 
@@ -1152,7 +1162,8 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/hermes_bridge.py` | `_extract_skill_meta` | 18 | 5 | Acceptable; well-scoped logic |
 | `backend/kernel_api.py` | `post_quarantine` | 51 | 4 | Acceptable; well-scoped logic |
 | `backend/kernel_api.py` | `post_sync` | 54 | 5 | Acceptable; well-scoped logic |
-| `backend/kernel_api.py` | `post_order` | 160 | 6 | Decompose into sub-functions |
+| `backend/kernel_api.py` | `_compute_order_reconcile_and_drift` | 57 | 4 | Acceptable; well-scoped logic |
+| `backend/kernel_api.py` | `post_order` | 289 | 6 | Decompose into sub-functions |
 | `backend/kernel_api.py` | `post_automation_config` | 62 | 4 | Acceptable; well-scoped logic |
 | `backend/kernel_api.py` | `post_scheduler_control` | 51 | 5 | Acceptable; well-scoped logic |
 | `backend/kernel_api.py` | `post_stocknow_session` | 63 | 5 | Acceptable; well-scoped logic |
@@ -1187,4 +1198,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 33 Python modules inspected, 29 FastAPI endpoints registered, 42,010 total LOC indexed.
+> **Audit Summary:** 33 Python modules inspected, 29 FastAPI endpoints registered, 42,570 total LOC indexed.

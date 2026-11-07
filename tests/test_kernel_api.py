@@ -165,6 +165,7 @@ def test_order_strict_no_loss_rejection(client, auth_headers):
         "side": "BUY",
         "quantity": 5,
         "dry_run": False,
+        "operator_confirmed": True,
     }, headers=auth_headers)
     assert buy_res.status_code == 200, f"Buy error: {buy_res.json()}"
     assert buy_res.json()["dry_run"] is False
@@ -267,6 +268,7 @@ def test_order_idempotency_cache(client, auth_headers):
         "side": "BUY",
         "quantity": 2,
         "dry_run": False,
+        "operator_confirmed": True,
     }
     first_res = client.post("/k/order", json=req, headers=auth_headers)
     assert first_res.status_code == 200

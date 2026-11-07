@@ -183,7 +183,7 @@ HB_SYNC_SCHEMA = {
 
 HB_PLACE_ORDER_SCHEMA = {
     "name": "hb_place_order",
-    "description": "Submit a virtual BUY or SELL order. dry_run=true by default for safe pre-trade simulation. Real execution requires dry_run=false AND confirm=true.",
+    "description": "Submit a virtual BUY or SELL order. dry_run=true by default for safe pre-trade simulation. Real execution requires dry_run=false AND operator_confirmed=true.",
     "parameters": {
         "type": "object",
         "properties": {
@@ -208,9 +208,17 @@ HB_PLACE_ORDER_SCHEMA = {
                 "type": "boolean",
                 "description": "Safe simulation mode (default: true). Must explicitly pass false for real execution.",
             },
+            "operator_confirmed": {
+                "type": "boolean",
+                "description": "Explicit operator confirmation flag required when dry_run=false. Must only be true if operator explicitly commanded this order.",
+            },
             "confirm": {
                 "type": "boolean",
-                "description": "Explicit confirmation flag required when dry_run=false for real live submission.",
+                "description": "Alias for operator_confirmed.",
+            },
+            "preview_token": {
+                "type": "string",
+                "description": "Preview token from prior dry_run preview. Required for two-step confirmation in LIVE_HOURS mode.",
             },
             "portfolio_id": {
                 "type": "string",

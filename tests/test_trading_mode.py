@@ -142,6 +142,7 @@ def test_saturday_order_blocked_in_live_hours_passes_in_test_offhours(client, au
         "quantity": 5,
         "price": 250.0,
         "dry_run": False,
+        "operator_confirmed": True,
         "idempotency_key": "sat-order-live-hours-1",
     }
 
@@ -235,6 +236,7 @@ def test_strict_no_loss_still_rejects_in_test_offhours(client, auth_headers):
         "side": "BUY",
         "quantity": 5,
         "dry_run": False,
+        "operator_confirmed": True,
     }, headers=auth_headers)
     assert buy_res.status_code == 200, f"Buy error: {buy_res.json()}"
 
@@ -247,6 +249,7 @@ def test_strict_no_loss_still_rejects_in_test_offhours(client, auth_headers):
         "quantity": 5,
         "price": 50.0,
         "dry_run": False,
+        "operator_confirmed": True,
     }, headers=auth_headers)
 
     # Must be rejected due to Strict No-Loss policy

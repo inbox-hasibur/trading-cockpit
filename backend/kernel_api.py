@@ -8,11 +8,13 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 from decimal import Decimal
 from typing import Any, Literal
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, Query, Request, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import func, select
 
 from backend.adapters.stocknow_market_sync import (
@@ -28,9 +30,11 @@ from backend.database import (
     CustomRule,
     Database,
     KernelAuditLog,
+    OrderIdempotencyKey,
     PortfolioState,
     RuleAudit,
     TaxLot,
+    TradeLog,
     portfolio_state,
 )
 from backend.engine.agent_actions import (
@@ -50,13 +54,17 @@ from backend.portfolio import snapshot_from_session
 
 logger = logging.getLogger(__name__)
 
-# Global cache for idempotency keys
+# Global cache for idempotency keys (in-memory fast-path; SQLite is source of truth)
 _EXECUTED_ORDER_KEYS: dict[str, dict[str, Any]] = {}
+
+# Preview tokens store for two-step confirmation (with 5-minute TTL)
+_ORDER_PREVIEW_TOKENS: dict[str, dict[str, Any]] = {}
 
 
 def clear_order_idempotency_cache() -> None:
-    """Clear order idempotency cache (for tests)."""
+    """Clear order idempotency cache and preview tokens (for tests)."""
     _EXECUTED_ORDER_KEYS.clear()
+    _ORDER_PREVIEW_TOKENS.clear()
 
 
 def verify_kernel_auth(
@@ -103,7 +111,12 @@ def get_settings(request: Request) -> Settings:
 
 def get_stocknow_client(request: Request) -> Any | None:
     """Extract live StockNow Playwright client if attached."""
-    return getattr(request.app.state, "stocknow_client", None)
+    client = getattr(request.app.state, "stocknow_client", None)
+    if not client:
+        sched = get_active_scheduler()
+        if sched and hasattr(sched, "client"):
+            client = sched.client
+    return client
 
 
 router = APIRouter(prefix="/k", dependencies=[Depends(verify_kernel_auth)])
@@ -545,6 +558,65 @@ async def post_sync(
         }
 
 
+def _compute_order_reconcile_and_drift(
+    session: Any,
+    state: PortfolioState,
+    live_client: Any | None,
+    symbol: str,
+) -> dict[str, Any]:
+    """Verifies local ledger integrity and compares holdings with StockNow to detect drift."""
+    from backend.engine.t2_ledger import assert_ledger, bucket_balances
+    book_reconciled = True
+    try:
+        assert_ledger(session, state)
+    except Exception as exc:
+        logger.warning("Local ledger assert warning: %s", exc)
+        book_reconciled = False
+
+    balances = bucket_balances(session, state)
+    local_cash = sum((b.available_cash for b in balances.values()), ZERO)
+
+    local_lots = list(session.scalars(select(TaxLot).where(TaxLot.remaining_qty > 0)))
+    local_holdings: dict[str, int] = {}
+    for lot in local_lots:
+        local_holdings[lot.symbol] = local_holdings.get(lot.symbol, 0) + lot.remaining_qty
+
+    stocknow_holdings: dict[str, int] = {}
+    stocknow_cash: float | None = None
+
+    if hasattr(live_client, "mock_holdings"):
+        stocknow_holdings = dict(live_client.mock_holdings)
+        stocknow_cash = getattr(live_client, "mock_cash", float(local_cash))
+    elif live_client and getattr(live_client, "last_reconciled_portfolio", None):
+        sn_p = live_client.last_reconciled_portfolio
+        for h in sn_p.get("holdings", []):
+            stocknow_holdings[h["symbol"]] = stocknow_holdings.get(h["symbol"], 0) + h["quantity"]
+        stocknow_cash = float(sn_p.get("cash_balance", 0))
+
+    holdings_drift: dict[str, dict[str, int]] = {}
+    if stocknow_holdings:
+        all_syms = set(local_holdings.keys()) | set(stocknow_holdings.keys())
+        for s in all_syms:
+            loc_q = local_holdings.get(s, 0)
+            sn_q = stocknow_holdings.get(s, 0)
+            if loc_q != sn_q:
+                holdings_drift[s] = {"local_qty": loc_q, "stocknow_qty": sn_q, "diff": loc_q - sn_q}
+
+    cash_drift = None
+    if stocknow_cash is not None:
+        cash_drift = round(float(local_cash) - stocknow_cash, 2)
+
+    has_drift = bool(holdings_drift) or (cash_drift is not None and abs(cash_drift) > 1.0)
+
+    return {
+        "book_reconciled": book_reconciled,
+        "has_drift": has_drift,
+        "holdings_drift": holdings_drift,
+        "cash_drift": cash_drift,
+        "local_symbol_shares": local_holdings.get(symbol, 0),
+    }
+
+
 class OrderRequest(BaseModel):
     idempotency_key: str = Field(..., min_length=1)
     symbol: str
@@ -553,11 +625,22 @@ class OrderRequest(BaseModel):
     price: Decimal | None = None
     portfolio_id: str = "164580"
     dry_run: bool = True  # dry_run defaults true
+    operator_confirmed: bool = False
+    preview_token: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def handle_confirm_alias(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "confirm" in data and "operator_confirmed" not in data:
+                data["operator_confirmed"] = data["confirm"]
+        return data
 
 
 @router.post("/order")
-def post_order(
+async def post_order(
     body: OrderRequest,
+    request: Request,
     db: Database = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> dict[str, Any]:
@@ -569,13 +652,6 @@ def post_order(
             detail="Portfolio must be 164580.",
         )
 
-    # 2. Idempotency deduplication check
-    if body.idempotency_key in _EXECUTED_ORDER_KEYS:
-        cached = dict(_EXECUTED_ORDER_KEYS[body.idempotency_key])
-        cached["duplicate"] = True
-        cached["status"] = "ALREADY_EXECUTED"
-        return cached
-
     sym = body.symbol.strip().upper()
     side = body.side.strip().upper()
     commission_rate = Decimal("0.005")  # 0.5% commission strictly enforced
@@ -584,6 +660,22 @@ def post_order(
     with acquire_trading_lock():
         with db.write() as session:
             state = portfolio_state(session)
+            trading_mode = getattr(state, "trading_mode", "LIVE_HOURS")
+
+            # 2. SQLite Idempotency Deduplication Check (persists across server restarts)
+            existing_key = session.get(OrderIdempotencyKey, body.idempotency_key)
+            if existing_key:
+                cached = dict(existing_key.response_payload)
+                cached["duplicate"] = True
+                cached["status"] = "ALREADY_EXECUTED"
+                return cached
+
+            if body.idempotency_key in _EXECUTED_ORDER_KEYS:
+                cached = dict(_EXECUTED_ORDER_KEYS[body.idempotency_key])
+                cached["duplicate"] = True
+                cached["status"] = "ALREADY_EXECUTED"
+                return cached
+
             comp = session.get(CompanyProfile, sym)
             if not comp:
                 raise HTTPException(status_code=404, detail=f"Company '{sym}' not found in database.")
@@ -648,13 +740,32 @@ def post_order(
                     total_basis += cost_slice
                     remaining -= sell_slice
 
-            # Handle dry_run default
+            # Market hours gate (bypassed only when trading_mode == 'TEST_OFFHOURS')
+            if not body.dry_run and trading_mode != "TEST_OFFHOURS":
+                market_gate = is_dse_market_open(settings=settings)
+                if not market_gate["is_open"]:
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail=f"DSE market is closed ({market_gate['reason']}). Orders in LIVE_HOURS mode are strictly limited to Sun-Thu 10:00 to 14:30 Asia/Dhaka.",
+                    )
+
+            # Handle dry_run default: generate preview token
             if body.dry_run:
                 fee_est = float(fee) if side == "BUY" else float(body.quantity * unit_price * commission_rate)
                 net_est = float(cost) if side == "BUY" else float(total_proceeds)
+                token = f"prev_{uuid4().hex[:12]}"
+                _ORDER_PREVIEW_TOKENS[token] = {
+                    "symbol": sym,
+                    "side": side,
+                    "quantity": body.quantity,
+                    "price": float(unit_price),
+                    "created_at": time.time(),
+                    "expires_at": time.time() + 300,
+                }
                 return {
                     "dry_run": True,
                     "status": "VALIDATED",
+                    "preview_token": token,
                     "idempotency_key": body.idempotency_key,
                     "portfolio_id": "164580",
                     "symbol": sym,
@@ -664,20 +775,64 @@ def post_order(
                     "commission_pct": 0.5,
                     "estimated_fee": fee_est,
                     "estimated_net": net_est,
-                    "note": "Dry run execution validated all constraints (T+2 maturity, strict no-loss, 0.5% fee). No state mutated.",
+                    "trading_mode": trading_mode,
+                    "note": "Dry run execution validated all constraints (T+2 maturity, strict no-loss, 0.5% fee). Preview token generated for operator confirmation.",
                 }
 
-            # Market hours gate (bypassed only when trading_mode == 'TEST_OFFHOURS')
-            trading_mode = getattr(state, "trading_mode", "LIVE_HOURS")
-            if not body.dry_run and trading_mode != "TEST_OFFHOURS":
-                market_gate = is_dse_market_open(settings=settings)
-                if not market_gate["is_open"]:
+            # Confirmation enforcement for real execution (dry_run=False)
+            if not body.operator_confirmed:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Order execution rejected: operator_confirmed must be true. Operator confirmation is required for real virtual order execution.",
+                )
+
+            if trading_mode == "LIVE_HOURS":
+                # In LIVE_HOURS, a valid two-step preview token is strictly required
+                if not body.preview_token:
                     raise HTTPException(
                         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                        detail=f"DSE market is closed ({market_gate['reason']}). Orders in LIVE_HOURS mode are strictly limited to Sun-Thu 10:00 to 14:30 Asia/Dhaka.",
+                        detail="In LIVE_HOURS mode, real execution requires a two-step preview token from a prior dry_run preview.",
                     )
+                token_data = _ORDER_PREVIEW_TOKENS.get(body.preview_token)
+                if not token_data or token_data.get("expires_at", 0) < time.time():
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail="Invalid or expired preview token. Please re-run order preview to obtain a fresh token.",
+                    )
+                if (
+                    token_data["symbol"] != sym
+                    or token_data["side"] != side
+                    or token_data["quantity"] != body.quantity
+                ):
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail="Preview token mismatch: order parameters do not match the preview token.",
+                    )
+                _ORDER_PREVIEW_TOKENS.pop(body.preview_token, None)
+            else:
+                # In TEST_OFFHOURS, clear imperative command with operator_confirmed=True may execute in one step
+                if body.preview_token and body.preview_token in _ORDER_PREVIEW_TOKENS:
+                    _ORDER_PREVIEW_TOKENS.pop(body.preview_token, None)
 
-            # dry_run is False -> Snapshot first, then mutate state
+            # Checkpoint BEFORE any external dispatch or local ledger mutation
+            existing_lots = session.scalars(select(TaxLot)).all()
+            existing_trades = session.scalars(select(TradeLog)).all()
+            lots_snap = [{
+                "id": l.id, "symbol": l.symbol, "bucket": l.bucket, "acquired_on": l.acquired_on.isoformat(),
+                "matures_on": l.matures_on.isoformat(), "original_qty": l.original_qty, "remaining_qty": l.remaining_qty,
+                "buy_price": str(l.buy_price), "buy_fee": str(l.buy_fee), "original_cost_basis": str(l.original_cost_basis),
+                "remaining_cost_basis": str(l.remaining_cost_basis), "cycle_base_qty": l.cycle_base_qty,
+                "next_tier": l.next_tier, "last_sale_revision": l.last_sale_revision, "peak_price": str(l.peak_price),
+                "phase": l.phase, "recovery_anchor": str(l.recovery_anchor) if l.recovery_anchor else None,
+            } for l in existing_lots]
+            trades_snap = [{
+                "id": t.id, "trade_key": t.trade_key, "cycle_id": t.cycle_id, "lot_id": t.lot_id, "symbol": t.symbol,
+                "side": t.side, "quantity": t.quantity, "price": str(t.price), "gross_amount": str(t.gross_amount),
+                "fee": str(t.fee), "net_cash_change": str(t.net_cash_change), "realized_pnl": str(t.realized_pnl),
+                "bucket": t.bucket, "trade_on": t.trade_on.isoformat(), "settles_on": t.settles_on.isoformat(),
+                "reason": t.reason, "source": t.source,
+            } for t in existing_trades]
+
             cp = CheckpointManager.create_checkpoint(
                 session=session,
                 state=state,
@@ -685,37 +840,93 @@ def post_order(
                 description=f"Execute {side} {body.quantity} {sym} @ {unit_price}",
                 symbol=sym,
                 actor="Kernel API",
+                extra_snapshot={
+                    "portfolio_lots": lots_snap,
+                    "portfolio_trades": trades_snap,
+                    "initial_capital": str(state.initial_capital),
+                },
             )
 
+            # Call StockNowAdapter.execute_order on live browser session
+            live_client = get_stocknow_client(request)
+            from backend.adapters.stocknow_adapter import StockNowAdapter
+            adapter = StockNowAdapter(mode="LIVE" if live_client and getattr(live_client, "page", None) else "DEMO")
+
             try:
+                receipt = await adapter.execute_order(
+                    symbol=sym,
+                    side=side,
+                    quantity=body.quantity,
+                    price=unit_price,
+                    portfolio_id=body.portfolio_id,
+                    idempotency_key=body.idempotency_key,
+                    dry_run=False,
+                    live_client=live_client,
+                    commission_pct=Decimal("0.5"),
+                )
+                if not receipt or not receipt.get("success") or receipt.get("status") not in ("ACKNOWLEDGED", "EXECUTED", "FILLED"):
+                    raise ValueError(f"StockNow virtual order rejected or unacknowledged: {receipt.get('status') if receipt else 'NONE'}")
+
+                # Verify fill by re-reading StockNow ledger
+                if live_client and getattr(live_client, "page", None) and not getattr(live_client.page, "is_closed", lambda: False)():
+                    from backend.adapters.stocknow_portfolio_sync import extract_hummingbird_portfolio_from_browser
+                    sn_portfolio = await extract_hummingbird_portfolio_from_browser(live_client)
+                    if not sn_portfolio:
+                        raise ValueError("Failed to re-read StockNow ledger after execution.")
+
+                # Update local ledger ONLY after receipt matches and is verified
                 if side == "BUY":
                     order_res = execute_agentic_buy(session, state, settings, sym, requested_qty=body.quantity)
                 else:
                     order_res = execute_agentic_sell(session, state, settings, sym, requested_qty=body.quantity)
+
             except Exception as exc:
-                raise HTTPException(status_code=422, detail=str(exc))
+                logger.error("Order path failure for %s %s: %s. Rolling back checkpoint %s.", side, sym, exc, cp.id)
+                try:
+                    CheckpointManager.rollback_last(session, state)
+                except Exception as rb_exc:
+                    logger.warning("Checkpoint rollback error: %s", rb_exc)
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Order execution failed: {exc}",
+                )
 
-            # Record idempotency
-            _EXECUTED_ORDER_KEYS[body.idempotency_key] = order_res
+            # Portfolio reconciliation & drift report
+            reconcile_report = _compute_order_reconcile_and_drift(session, state, live_client, sym)
 
-            # Write audit row
-            session.add(KernelAuditLog(
-                endpoint="/k/order",
-                action=f"ORDER_{side}",
-                symbol=sym,
-                payload=body.model_dump(mode="json"),
-                result=order_res,
-                checkpoint_id=cp.id,
-                session_on=state.clock_date,
-            ))
-
-            return {
+            final_res = {
                 **order_res,
                 "dry_run": False,
                 "checkpoint_id": cp.id,
                 "idempotency_key": body.idempotency_key,
                 "portfolio_id": "164580",
+                "stocknow_receipt": receipt,
+                "reconcile": reconcile_report,
+                "trading_mode": trading_mode,
             }
+
+            session.add(OrderIdempotencyKey(
+                idempotency_key=body.idempotency_key,
+                symbol=sym,
+                side=side,
+                quantity=body.quantity,
+                price=unit_price,
+                response_payload=final_res,
+            ))
+            _EXECUTED_ORDER_KEYS[body.idempotency_key] = final_res
+
+            session.add(KernelAuditLog(
+                endpoint="/k/order",
+                action=f"ORDER_{side}",
+                symbol=sym,
+                payload=body.model_dump(mode="json"),
+                result=final_res,
+                checkpoint_id=cp.id,
+                session_on=state.clock_date,
+                trading_mode=trading_mode,
+            ))
+
+            return final_res
 
 
 @router.post("/rollback")

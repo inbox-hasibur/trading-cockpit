@@ -281,14 +281,20 @@ def hb_place_order(args: dict[str, Any] | None = None, **kwargs) -> str:
     if isinstance(dry_run, str):
         dry_run = dry_run.lower() in ("true", "1", "yes")
 
-    confirm = merged.get("confirm", False)
-    if isinstance(confirm, str):
-        confirm = confirm.lower() in ("true", "1", "yes", "confirm")
+    op_confirmed = merged.get("operator_confirmed")
+    if op_confirmed is None:
+        op_confirmed = merged.get("confirm", False)
+    if isinstance(op_confirmed, str):
+        op_confirmed = op_confirmed.lower() in ("true", "1", "yes", "confirm")
+    else:
+        op_confirmed = bool(op_confirmed)
 
-    # Real submit safety check: needs dry_run=false AND explicit user confirmation
-    if not dry_run and not confirm:
+    preview_token = merged.get("preview_token")
+
+    # Real submit safety check: needs dry_run=false AND explicit operator confirmation
+    if not dry_run and not op_confirmed:
         return json.dumps({
-            "error": "Real order submission requires explicit user confirmation. Set confirm=true (or confirm in chat) to proceed.",
+            "error": "Real order submission requires explicit operator confirmation (operator_confirmed=true).",
             "requires_confirmation": True,
             "order_preview": {
                 "symbol": sym,
@@ -304,7 +310,7 @@ def hb_place_order(args: dict[str, Any] | None = None, **kwargs) -> str:
     if not idempotency_key:
         idempotency_key = f"order-{sym}-{side}-{quantity}-{int(time.time() * 1000)}"
 
-    payload = {
+    payload: dict[str, Any] = {
         "idempotency_key": str(idempotency_key),
         "symbol": sym,
         "side": side,
@@ -312,7 +318,10 @@ def hb_place_order(args: dict[str, Any] | None = None, **kwargs) -> str:
         "price": float(price) if price is not None else None,
         "portfolio_id": "164580",
         "dry_run": dry_run,
+        "operator_confirmed": op_confirmed,
     }
+    if preview_token:
+        payload["preview_token"] = str(preview_token).strip()
     return _kernel_post("/k/order", payload)
 
 
