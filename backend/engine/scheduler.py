@@ -243,9 +243,12 @@ class DSEMarketScheduler:
         }
 
     def start(self) -> dict[str, Any]:
-        """Starts background periodic polling loop."""
-        if self.running:
+        """Starts background periodic polling loop idempotently."""
+        if self.running and self._task and not self._task.done():
             return {"status": "ALREADY_RUNNING", **self.get_status()}
+        if self._task and not self._task.done():
+            self._task.cancel()
+            self._task = None
         self.running = True
         try:
             loop = asyncio.get_running_loop()
@@ -256,12 +259,12 @@ class DSEMarketScheduler:
 
     def stop_sync(self) -> dict[str, Any]:
         """Stops background periodic polling loop gracefully (sync)."""
-        if not self.running and not self._task:
+        if not self.running and (not self._task or self._task.done()):
             return {"status": "NOT_RUNNING", **self.get_status()}
         self.running = False
         if self._task and not self._task.done():
             self._task.cancel()
-            self._task = None
+        self._task = None
         return {"status": "STOPPED", **self.get_status()}
 
     async def stop(self) -> dict[str, Any]:

@@ -133,9 +133,17 @@ async function api(path, { method = "GET", body, headers = {}, timeout = 35000 }
     let data;
     try { data = await response.json(); } catch { throw new Error(`Server returned HTTP ${response.status} without JSON.`); }
     if (!response.ok) {
-      const detail = Array.isArray(data.detail) ? data.detail.map((issue) => issue.msg).join("; ") : data.detail;
+      let detail = data.detail;
+      if (Array.isArray(detail)) {
+        detail = detail.map((issue) => {
+          const loc = (issue.loc || []).filter((x) => x !== "body").join(".");
+          return loc ? `${loc}: ${issue.msg}` : issue.msg;
+        }).join("; ");
+      } else if (typeof detail === "object" && detail !== null) {
+        detail = JSON.stringify(detail);
+      }
       const tokenHelp = response.status === 401 ? " Use the API token control in the header." : "";
-      throw new Error(`${detail || `Request failed (HTTP ${response.status})`}${tokenHelp}`);
+      throw new Error(`${detail || data.error || `Request failed (HTTP ${response.status})`}${tokenHelp}`);
     }
     return data;
   } catch (error) {
@@ -1244,10 +1252,18 @@ function renderAutomationControlBar() {
 
 async function setAutomationConfig(newConfig) {
   if (state.busy) return;
+  const currentApp = (state.snapshot && state.snapshot.app) || {};
+  const mergedConfig = {
+    automation_enabled: currentApp.automation_enabled !== undefined ? Boolean(currentApp.automation_enabled) : !currentApp.paused,
+    ingestion_mode: currentApp.ingestion_mode || "BACKGROUND_POLLING",
+    polling_interval_sec: Number(currentApp.polling_interval_sec || 120),
+    trading_mode: (state.snapshot && state.snapshot.trading_mode) || currentApp.trading_mode || "LIVE_HOURS",
+    ...newConfig,
+  };
   await mutate(async () => {
     const res = await api("/api/automation/config", {
       method: "POST",
-      body: newConfig,
+      body: mergedConfig,
     });
     if (state.snapshot) {
       if (res.trading_mode) {

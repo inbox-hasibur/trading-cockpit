@@ -335,12 +335,12 @@ def period_totals(trades: list[TradeLog], start: date, end: date) -> dict:
     }
 
 
-def build_snapshot(database: Database, settings: Settings) -> dict:
+def build_snapshot(database: Database, settings: Settings, live_client: Any = None) -> dict:
     with database.read() as session:
-        return snapshot_from_session(session, settings)
+        return snapshot_from_session(session, settings, live_client=live_client)
 
 
-def snapshot_from_session(session: Session, settings: Settings) -> dict:
+def snapshot_from_session(session: Session, settings: Settings, live_client: Any = None) -> dict:
     state = portfolio_state(session)
     calendar = TradingCalendar(settings.holidays, settings.bucket_anchor)
     adapter = StockNowAdapter()
@@ -653,6 +653,7 @@ def snapshot_from_session(session: Session, settings: Settings) -> dict:
         "adapter": adapter.get_adapter_status(
             getattr(state, "ingestion_mode", "BACKGROUND_POLLING"),
             getattr(state, "polling_interval_sec", 120),
+            live_client=live_client,
         ),
         "notice": "All prices/scenarios/trades are synthetic. No live orders. No guaranteed recovery or returns.",
     }

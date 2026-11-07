@@ -23,10 +23,12 @@ from typing import Annotated, Literal
 from uuid import UUID, uuid4
 
 from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, StrictBool
 from sqlalchemy import select
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from backend.adapters.stocknow_adapter import StockNowAdapter
@@ -35,7 +37,7 @@ from backend.adapters.stocknow_market_sync import extract_quotes_from_stocknow, 
 from backend.config import ROOT, VERSION, Settings
 from backend.database import CustomRule, Database, KernelAuditLog, RuleAudit, TradeLog, portfolio_state
 from backend.engine.auto_trader import AutomationPaused, AutoTrader
-from backend.engine.scheduler import DSEMarketScheduler
+from backend.engine.scheduler import DSEMarketScheduler, get_active_scheduler
 from backend.engine.money import ZERO
 from backend.market_map import build_market_map_payload
 from backend.portfolio import build_snapshot, rule_view
@@ -60,9 +62,10 @@ class PauseRequest(BaseModel):
 
 class AutomationConfigRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    automation_enabled: StrictBool
-    ingestion_mode: Literal["BACKGROUND_POLLING", "ONSCREEN_LIVE", "SIDE_BY_SIDE_LIVE"]
-    polling_interval_sec: int = Field(default=120, ge=30, le=300)
+    automation_enabled: bool | None = None
+    paused: bool | None = None
+    ingestion_mode: Literal["BACKGROUND_POLLING", "ONSCREEN_LIVE", "SIDE_BY_SIDE_LIVE"] | None = None
+    polling_interval_sec: int | None = Field(default=None, ge=30, le=300)
     trading_mode: Literal["TEST_OFFHOURS", "LIVE_HOURS"] | None = None
 
 
@@ -136,6 +139,47 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.scheduler = scheduler
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(settings.trusted_hosts))
 
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(_req: Request, exc: RequestValidationError):
+        errors = []
+        for err in exc.errors():
+            loc = [str(x) for x in err.get("loc", []) if str(x) not in ("body",)]
+            field_name = ".".join(loc) if loc else "body"
+            msg = err.get("msg", "Invalid value")
+            errors.append(f"{field_name}: {msg}" if field_name else msg)
+        detail_msg = "; ".join(errors) if errors else "Validation error"
+        return JSONResponse(
+            status_code=422,
+            content={"error": "VALIDATION_ERROR", "detail": detail_msg},
+        )
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_exception_handler(_req: Request, exc: StarletteHTTPException):
+        error_names = {
+            400: "BAD_REQUEST",
+            401: "UNAUTHORIZED",
+            403: "FORBIDDEN",
+            404: "NOT_FOUND",
+            409: "CONFLICT",
+            422: "UNPROCESSABLE_ENTITY",
+            500: "INTERNAL_SERVER_ERROR",
+        }
+        err_code = error_names.get(exc.status_code, "HTTP_ERROR")
+        detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"error": err_code, "detail": detail},
+            headers=getattr(exc, "headers", None),
+        )
+
+    @app.exception_handler(Exception)
+    async def unhandled_exception_handler(_req: Request, exc: Exception):
+        logger.exception("Unhandled error on %s: %s", _req.url.path, exc)
+        return JSONResponse(
+            status_code=500,
+            content={"error": "INTERNAL_SERVER_ERROR", "detail": str(exc) or "Internal server error"},
+        )
+
     @app.middleware("http")
     async def local_security(request: Request, call_next):
         is_api = request.url.path.startswith("/api/")
@@ -145,13 +189,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             if (
                 origin and origin.lower().rstrip("/") != expected_origin.lower()
             ) or request.headers.get("sec-fetch-site") == "cross-site":
-                return JSONResponse({"detail": "Cross-origin API access is not allowed."}, status_code=403)
+                return JSONResponse({"error": "FORBIDDEN", "detail": "Cross-origin API access is not allowed."}, status_code=403)
             if settings.cockpit_api_token:
                 supplied = request.headers.get("authorization", "")
                 expected = f"Bearer {settings.cockpit_api_token}"
                 if not hmac.compare_digest(supplied.encode(), expected.encode()):
                     return JSONResponse(
-                        {"detail": "A valid cockpit API token is required."}, status_code=401,
+                        {"error": "UNAUTHORIZED", "detail": "A valid cockpit API token is required."}, status_code=401,
                         headers={"WWW-Authenticate": "Bearer"},
                     )
         response = await call_next(request)
@@ -214,7 +258,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/api/portfolio")
     def portfolio():
-        return build_snapshot(database, settings)
+        return build_snapshot(database, settings, live_client=stocknow_client)
 
     @app.post("/api/automation/cycle")
     async def cycle(idempotency_key: Annotated[UUID | None, Header(alias="Idempotency-Key")] = None):
@@ -247,26 +291,51 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def automation_config(body: AutomationConfigRequest):
         with database.write() as session:
             state = portfolio_state(session)
-            state.automation_enabled = body.automation_enabled
-            state.paused = not body.automation_enabled
-            state.ingestion_mode = body.ingestion_mode
-            state.polling_interval_sec = body.polling_interval_sec
-            if body.trading_mode:
+            if body.automation_enabled is not None:
+                state.automation_enabled = body.automation_enabled
+                state.paused = not body.automation_enabled
+            elif body.paused is not None:
+                state.paused = body.paused
+                state.automation_enabled = not body.paused
+            if body.ingestion_mode is not None:
+                state.ingestion_mode = body.ingestion_mode
+            if body.polling_interval_sec is not None:
+                state.polling_interval_sec = body.polling_interval_sec
+            if body.trading_mode is not None:
                 state.trading_mode = body.trading_mode
+            target_mode = state.ingestion_mode
+            target_enabled = state.automation_enabled
+            target_paused = state.paused
 
-        # When operator switches to ONSCREEN_LIVE, launch headed Chromium and sync live market
-        if body.ingestion_mode == "ONSCREEN_LIVE":
-            try:
-                await stocknow_client.launch(mode="ONSCREEN_LIVE")
-                phone = getattr(settings, "operator_phone", settings.operator_username)
-                password = settings.operator_password
-                if phone and password and stocknow_client.state == "READY":
-                    await stocknow_client.ensure_authenticated(phone, password)
-                quotes = await extract_quotes_from_stocknow(stocknow_client)
-                if quotes:
-                    sync_live_market_to_db(database, quotes)
-            except Exception as exc:
-                logger.warning("Onscreen live mode auto-launch failed: %s", exc)
+        # Idempotent background scheduler synchronization
+        sched = getattr(app.state, "scheduler", None) or get_active_scheduler()
+        if sched:
+            if not target_enabled or target_paused:
+                sched.stop_sync()
+            elif target_mode == "BACKGROUND_POLLING":
+                sched.start()
+
+        # Ingestion mode switch handling (non-blocking, safe with or without browser attached)
+        if target_mode == "ONSCREEN_LIVE":
+            if stocknow_client:
+                async def _bg_onscreen_attach():
+                    try:
+                        if stocknow_client.state != "READY":
+                            await stocknow_client.launch(mode="ONSCREEN_LIVE")
+                        phone = getattr(settings, "operator_phone", settings.operator_username)
+                        password = settings.operator_password
+                        if phone and password and stocknow_client.state == "READY":
+                            await stocknow_client.ensure_authenticated(phone, password)
+                        quotes = await extract_quotes_from_stocknow(stocknow_client)
+                        if quotes:
+                            sync_live_market_to_db(database, quotes)
+                    except Exception as exc:
+                        logger.warning("Onscreen live mode background attach noticed: %s", exc)
+
+                asyncio.create_task(_bg_onscreen_attach())
+        elif target_mode == "BACKGROUND_POLLING":
+            if stocknow_client:
+                stocknow_client.ingestion_mode = "BACKGROUND_POLLING"
 
         with database.read() as session:
             state = portfolio_state(session)
