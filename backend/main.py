@@ -6,7 +6,10 @@ import asyncio
 import hmac
 import json
 import logging
+import os
 import sys
+
+import httpx
 
 if sys.platform == "win32":
     try:
@@ -173,8 +176,39 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return response
 
     @app.get("/api/health")
-    def health():
-        return {"status": "ok", "version": VERSION, "mode": "DEMO", "data_source": "SYNTHETIC"}
+    async def health():
+        gateway_url = os.environ.get("HERMES_GATEWAY_URL", "http://127.0.0.1:8642")
+        gateway_online = False
+        try:
+            async with httpx.AsyncClient(timeout=0.6) as client:
+                res = await client.get(f"{gateway_url}/health")
+                gateway_online = (res.status_code == 200)
+        except Exception:
+            gateway_online = False
+
+        kernel_token = getattr(settings, "kernel_token", None) or os.getenv("KERNEL_TOKEN", "")
+        sn_status = stocknow_client.get_status() if stocknow_client else {}
+
+        return {
+            "status": "ok",
+            "version": VERSION,
+            "mode": getattr(settings, "trading_mode", "DEMO"),
+            "data_source": "SYNTHETIC",
+            "gateway": {
+                "status": "online" if gateway_online else "offline",
+                "url": gateway_url,
+            },
+            "kernel": {
+                "status": "online",
+                "token_configured": bool(kernel_token),
+            },
+            "stocknow": {
+                "state": sn_status.get("state", "BROWSER_NOT_STARTED"),
+                "connected": sn_status.get("connected", False),
+                "mode": sn_status.get("mode", "UNKNOWN"),
+                "bound_portfolio_id": sn_status.get("bound_portfolio_id"),
+            },
+        }
 
     @app.get("/api/portfolio")
     def portfolio():

@@ -59,7 +59,7 @@ class BridgeChatRequest(BaseModel):
 async def stream_hermes_chat(message: str, session_id: Optional[str] = None) -> AsyncGenerator[str, None]:
     """Streams SSE events from running Hermes gateway API server."""
     gateway_url = os.environ.get("HERMES_GATEWAY_URL", "http://127.0.0.1:8642")
-    api_key = os.environ.get("API_SERVER_KEY", "")
+    api_key = os.environ.get("API_SERVER_KEY") or "hb-hermes-local-key-2026"
 
     # Check Hermes Gateway API Server (/v1/chat/completions)
     gateway_connected = False
@@ -72,10 +72,7 @@ async def stream_hermes_chat(message: str, session_id: Optional[str] = None) -> 
         gateway_connected = False
 
     if not gateway_connected:
-        error_msg = (
-            "Hermes Gateway API is offline (http://127.0.0.1:8642). "
-            "Please start Hermes Gateway ('hermes -p hummingbird gateway') to enable chat."
-        )
+        error_msg = "Hermes is starting or stopped (Gateway offline at http://127.0.0.1:8642)."
         yield f"data: {json.dumps({'type': 'error', 'error': error_msg})}\n\n"
         return
 
@@ -114,7 +111,7 @@ async def stream_hermes_chat(message: str, session_id: Optional[str] = None) -> 
                 yield f"data: {json.dumps({'type': 'done', 'text': ''.join(full_reply)})}\n\n"
     except Exception as exc:
         logger.error("Hermes gateway stream failed: %s", exc)
-        yield f"data: {json.dumps({'type': 'error', 'error': f'Gateway stream error: {exc}'})}\n\n"
+        yield f"data: {json.dumps({'type': 'error', 'error': f'Hermes is starting or stopped ({exc})'})}\n\n"
 
 
 def read_hermes_state() -> dict[str, Any]:

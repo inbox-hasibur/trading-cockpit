@@ -284,6 +284,20 @@ def test_onscreen_live_mode_config(client):
     assert "Method B: Onscreen Live Mode" in res["adapter"]["description"]
 
 
+def test_api_health_telemetry(client):
+    res = client.get("/api/health")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "ok"
+    assert "gateway" in data
+    assert "kernel" in data
+    assert "stocknow" in data
+    assert data["kernel"]["status"] == "online"
+    assert "status" in data["gateway"]
+    assert "state" in data["stocknow"]
+
+
+
 
 
 

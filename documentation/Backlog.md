@@ -58,7 +58,7 @@
   - Write tools: `hb_set_tier`, `hb_set_allocation`, `hb_quarantine_canary`, `hb_restore_quarantine`, `hb_sync`, `hb_place_order` (dry_run default, confirmation required, market hours hook), `hb_rollback_last`.
   - Official procedural skills in `plugins/humming_bird/skills/`: `canary_90_10`, `gsc_tiers`, `sequential_no_regret`, `stocknow_dse_quirks`.
 - [x] **Real Hermes SSE Streaming Bridge (`backend/hermes_bridge.py`):**
-  - Proxies chat requests to Hermes Gateway API server (`/v1/chat/completions`) with transparent fallback to `hermes chat --format stream-json --yolo`.
+  - Proxies chat requests directly to Hermes Gateway API server (`/v1/chat/completions`) with zero CLI subprocess fallback.
   - Real-time tool-call cards rendered in chat with tool names, input arguments, running/done status badges, and collapsible execution output.
 - [x] **Real Hermes Native Cron & Memory:**
   - Scheduled autonomous tasks run via Hermes' native cron engine (`~/.hermes/cron/jobs.json`) with timezone `Asia/Dhaka` and DSE market hours check.

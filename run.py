@@ -1,155 +1,199 @@
-"""
-Humming Bird Trading Cockpit - Universal Live Runner
----------------------------------------------------
-Single command launcher mimicking `npm run dev` from Next.js.
-Supports:
-  - npm run dev / npm run live
-  - python run.py [live]
-  - ./run.sh
-  - run.bat (or just `run` in CMD/PowerShell)
+"""Unified supervisor and launcher for Humming Bird Trading Cockpit and Hermes Agent.
 
-Automatically activates `.venv` if present, validates dependencies,
-and starts the FastAPI live reload server with colored terminal feedback.
+Starts:
+1. Hermes Gateway on 127.0.0.1:8642 with profile 'hummingbird' and API server enabled.
+2. FastAPI Cockpit server via Uvicorn on 127.0.0.1:8000.
+
+Features:
+- Sets HERMES_HOME explicitly to resolve the Windows default bug.
+- Verifies Gateway /health before starting Uvicorn.
+- Supervises Gateway: restarts up to 3 times on unexpected crash.
+- Clean shutdown on Ctrl+C (SIGINT/SIGTERM) killing both child processes.
 """
 
 from __future__ import annotations
 
-import argparse
 import os
+import signal
 import subprocess
 import sys
+import time
+import urllib.request
 from pathlib import Path
+from typing import Optional
 
-ROOT = Path(__file__).resolve().parent
-
-# Ensure the root directory is in sys.path
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+WORKSPACE_ROOT = Path(__file__).resolve().parent
 
 
-def ensure_venv() -> None:
-    """If running under system Python, re-exec under .venv Python if available."""
-    venv_py_win = ROOT / ".venv" / "Scripts" / "python.exe"
-    venv_py_nix = ROOT / ".venv" / "bin" / "python"
-    venv_py = venv_py_win if sys.platform == "win32" else venv_py_nix
-
-    if venv_py.exists():
-        try:
-            if sys.prefix == sys.base_prefix:
-                args = [str(venv_py), str(Path(__file__).resolve())] + sys.argv[1:]
-                sys.exit(subprocess.call(args))
-        except Exception:
-            pass
-
-
-def print_banner(host: str, port: int, reload: bool) -> None:
-    mode_str = "Live Reload (Hot Reload)" if reload else "Production Mode"
-    print("\n\033[1;36m  ▲ Humming Bird Trading Cockpit\033[0m")
-    print(f"\033[90m  - Local Terminal:  \033[0m\033[1;32mhttp://{host}:{port}\033[0m")
-    print(f"\033[90m  - API Documentation:\033[0m\033[1;34m http://{host}:{port}/docs\033[0m")
-    print(f"\033[90m  - Telemetry Stream: \033[0m\033[1;35m http://{host}:{port}/api/stream\033[0m")
-    print(f"\033[90m  - Engine Status:    \033[0m\033[1;33m{mode_str}\033[0m")
-    print("\033[90m  Press Ctrl+C to stop.\033[0m\n")
+def load_env_file(filepath: Path) -> None:
+    """Loads key-value pairs from a .env file into os.environ if not already set."""
+    if not filepath.exists():
+        return
+    try:
+        for line in filepath.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            k = k.strip()
+            v = v.strip().strip("'\"")
+            if k and k not in os.environ:
+                os.environ[k] = v
+    except Exception as exc:
+        print(f"[Warning] Failed reading {filepath}: {exc}", file=sys.stderr)
 
 
-def check_port_in_use(host: str, port: int) -> bool:
-    import socket
+def get_hermes_bin() -> str:
+    """Locates the official hermes CLI binary."""
+    local_app = os.environ.get("LOCALAPPDATA")
+    if local_app:
+        hermes_exe = Path(local_app) / "hermes" / "bin" / ("hermes.exe" if os.name == "nt" else "hermes")
+        if hermes_exe.exists():
+            return str(hermes_exe)
+    return "hermes"
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.settimeout(0.5)
-        try:
-            s.connect((host, port))
-            return True
-        except (socket.timeout, OSError):
+
+def check_gateway_health(url: str = "http://127.0.0.1:8642/health", timeout: float = 1.0) -> bool:
+    """Checks if Hermes Gateway returns HTTP 200 on /health."""
+    try:
+        req = urllib.request.Request(url, method="GET")
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.status == 200
+    except Exception:
+        return False
+
+
+def wait_for_gateway(proc: subprocess.Popen, timeout_sec: int = 30) -> bool:
+    """Polls gateway health until ready or timeout."""
+    sys.stdout.write("Waiting for Hermes Gateway on 127.0.0.1:8642...")
+    sys.stdout.flush()
+    start_time = time.time()
+    while time.time() - start_time < timeout_sec:
+        if proc.poll() is not None:
+            sys.stdout.write(f" FAILED (Gateway process exited with code {proc.returncode})\n")
             return False
+        if check_gateway_health():
+            sys.stdout.write(" HEALTHY\n")
+            return True
+        sys.stdout.write(".")
+        sys.stdout.flush()
+        time.sleep(0.5)
+    sys.stdout.write(" TIMEOUT\n")
+    return False
 
 
-def main() -> None:
-    ensure_venv()
+def main() -> int:
+    # 1. Resolve HERMES_HOME explicitly (known Windows default bug)
+    local_app = os.environ.get("LOCALAPPDATA")
+    if "HERMES_HOME" not in os.environ and local_app:
+        os.environ["HERMES_HOME"] = str(Path(local_app) / "hermes")
 
-    parser = argparse.ArgumentParser(
-        description="Humming Bird Trading Cockpit Universal Runner",
-        add_help=True,
-    )
-    # Allow positional subcommand like "live", "dev", "test" (e.g. `python run.py live`)
-    parser.add_argument(
-        "subcommand",
-        nargs="?",
-        default="live",
-        help="Command to run: 'live', 'dev', 'start', or 'test'",
-    )
-    parser.add_argument("--host", default="127.0.0.1", help="Host address (default: 127.0.0.1)")
-    parser.add_argument("--port", "-p", type=int, default=8000, help="Port (default: 8000)")
-    parser.add_argument("--no-reload", action="store_true", help="Disable auto-reload")
-    parser.add_argument("--open", "-o", action="store_true", help="Open cockpit in default browser")
-    parser.add_argument("--test", action="store_true", help="Run pytest suite instead of server")
+    # 2. Load environment variables
+    load_env_file(WORKSPACE_ROOT / ".env")
+    load_env_file(WORKSPACE_ROOT / "backend" / ".env")
 
-    args, unknown = parser.parse_known_args()
+    # Defaults for API server and Kernel
+    os.environ.setdefault("API_SERVER_ENABLED", "true")
+    os.environ.setdefault("API_SERVER_KEY", "hb-hermes-local-key-2026")
+    os.environ.setdefault("API_SERVER_PORT", "8642")
+    os.environ.setdefault("API_SERVER_HOST", "127.0.0.1")
+    os.environ.setdefault("KERNEL_TOKEN", "hb-kernel-local-token-2026")
+    os.environ.setdefault("HERMES_GATEWAY_URL", "http://127.0.0.1:8642")
 
-    # Handle test mode
-    if args.test or args.subcommand in ("test", "tests"):
-        print("\033[1;34mRunning Humming Bird test suite...\033[0m\n")
-        cmd = [sys.executable, "-m", "pytest", "-q"] + unknown
-        sys.exit(subprocess.call(cmd))
+    hermes_bin = get_hermes_bin()
+    python_bin = sys.executable
 
-    # Check dependencies
+    print("==========================================================")
+    print("   Humming Bird Cockpit & Hermes Gateway Unified Runner   ")
+    print("==========================================================")
+    print(f"HERMES_HOME : {os.environ.get('HERMES_HOME')}")
+    print(f"Hermes Bin  : {hermes_bin}")
+    print("Profile     : hummingbird")
+    print("Gateway URL : http://127.0.0.1:8642")
+    print("Cockpit URL : http://127.0.0.1:8000")
+    print("==========================================================")
+
+    gateway_proc: Optional[subprocess.Popen] = None
+    backend_proc: Optional[subprocess.Popen] = None
+    shutdown_requested = False
+
+    def shutdown(*args):
+        nonlocal shutdown_requested
+        if shutdown_requested:
+            return
+        shutdown_requested = True
+        print("\n[Shutdown] Stopping Humming Bird Cockpit and Hermes Gateway...")
+        if backend_proc and backend_proc.poll() is None:
+            backend_proc.terminate()
+            try:
+                backend_proc.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                backend_proc.kill()
+            print(f"[Shutdown] Stopped backend server (PID {backend_proc.pid})")
+        if gateway_proc and gateway_proc.poll() is None:
+            gateway_proc.terminate()
+            try:
+                gateway_proc.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                gateway_proc.kill()
+            print(f"[Shutdown] Stopped Hermes Gateway (PID {gateway_proc.pid})")
+
+    signal.signal(signal.SIGINT, shutdown)
+    signal.signal(signal.SIGTERM, shutdown)
+
+    def spawn_gateway() -> subprocess.Popen:
+        cmd = [hermes_bin, "-p", "hummingbird", "gateway", "run", "--force"]
+        return subprocess.Popen(cmd, env=os.environ.copy())
+
+    def spawn_backend() -> subprocess.Popen:
+        cmd = [python_bin, "-m", "uvicorn", "backend.main:app", "--host", "127.0.0.1", "--port", "8000"]
+        return subprocess.Popen(cmd, env=os.environ.copy())
+
+    max_restarts = 3
+    restart_count = 0
+
     try:
-        import uvicorn  # noqa: F401
-        import fastapi  # noqa: F401
-    except ImportError:
-        print("\033[1;31mError: Required dependencies (uvicorn, fastapi) are missing.\033[0m")
-        print("\nPlease run:")
-        print("  py -3.12 -m venv .venv")
-        print("  .venv\\Scripts\\pip install -r backend/requirements.txt\n")
-        sys.exit(1)
+        # Start gateway
+        print("Starting Hermes Gateway (profile: hummingbird)...")
+        gateway_proc = spawn_gateway()
+        if not wait_for_gateway(gateway_proc, timeout_sec=30):
+            print("[Error] Hermes Gateway failed to start.", file=sys.stderr)
+            shutdown()
+            return 1
 
-    host = args.host
-    port = args.port
-    reload = not args.no_reload and args.subcommand != "start"
+        # Start backend
+        print("Starting Cockpit backend on 127.0.0.1:8000...")
+        backend_proc = spawn_backend()
 
-    if check_port_in_use(host, port):
-        print(f"\033[1;33mWarning: Port {port} is already in use.\033[0m")
-        print(f"If another Humming Bird instance is running, open http://{host}:{port} or use --port {port+1}\n")
+        print("\nAll services active!")
+        print("Cockpit UI: http://127.0.0.1:8000")
+        print("Press Ctrl+C to terminate all services.\n")
 
-    print_banner(host, port, reload)
+        # Supervisor loop
+        while not shutdown_requested:
+            time.sleep(1.0)
+            if backend_proc.poll() is not None:
+                print(f"[Alert] Backend server exited with code {backend_proc.returncode}.")
+                break
 
-    if args.open:
-        import threading
-        import time
-        import webbrowser
+            if gateway_proc.poll() is not None and not shutdown_requested:
+                restart_count += 1
+                print(f"\n[ALERT] Hermes Gateway process exited unexpectedly (code {gateway_proc.returncode}).")
+                if restart_count <= max_restarts:
+                    print(f"[SUPERVISOR] Restarting Hermes Gateway (Attempt {restart_count} of {max_restarts})...")
+                    gateway_proc = spawn_gateway()
+                    if wait_for_gateway(gateway_proc, timeout_sec=20):
+                        print("[SUPERVISOR] Gateway successfully recovered and healthy!")
+                    else:
+                        print("[SUPERVISOR] Gateway recovery failed.")
+                else:
+                    print(f"[ERROR] Hermes Gateway has crashed repeatedly (exceeded {max_restarts} restarts).", file=sys.stderr)
+                    break
+    finally:
+        shutdown()
 
-        def _open():
-            time.sleep(1.2)
-            webbrowser.open(f"http://{host}:{port}")
-
-        threading.Thread(target=_open, daemon=True).start()
-
-    venv_py_win = ROOT / ".venv" / "Scripts" / "python.exe"
-    venv_py_nix = ROOT / ".venv" / "bin" / "python"
-    venv_py = venv_py_win if sys.platform == "win32" else venv_py_nix
-    python_bin = str(venv_py) if venv_py.exists() else sys.executable
-
-    cmd = [
-        python_bin,
-        "-m",
-        "uvicorn",
-        "backend.main:app",
-        "--host",
-        host,
-        "--port",
-        str(port),
-    ]
-    if reload:
-        cmd.append("--reload")
-
-    try:
-        # Run uvicorn process directly
-        return_code = subprocess.call(cmd)
-        sys.exit(return_code)
-    except KeyboardInterrupt:
-        print("\n\033[90mHumming Bird stopped.\033[0m")
-        sys.exit(0)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

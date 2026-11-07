@@ -238,7 +238,7 @@ Following Sprint 2.8, the system was decoupled from the custom imitation agent s
    - 4 procedural skills in official `agentskills` format: `canary_90_10`, `gsc_tiers`, `sequential_no_regret`, `stocknow_dse_quirks`.
 
 4. **Real Hermes Streaming Bridge (`backend/hermes_bridge.py`):**
-   - Direct SSE streaming turn bridge connecting to Hermes Gateway API server (`/v1/chat/completions`) or transparent CLI fallback (`hermes chat --format stream-json --yolo`).
+   - Direct SSE streaming turn bridge connecting to Hermes Gateway API server (`/v1/chat/completions`) with zero CLI subprocess fallback.
    - Granular events (`tool_use`, `tool_result`, `text`, `done`, `error`) rendered as live tool cards in chat.
    - Active model state read dynamically from Hermes config and surfaced in the sidebar.
 
