@@ -43,6 +43,43 @@ def load_env_file(filepath: Path) -> None:
         print(f"[Warning] Failed reading {filepath}: {exc}", file=sys.stderr)
 
 
+def get_python_bin() -> str:
+    """Locates the project virtualenv Python binary, falling back to sys.executable."""
+    venv_python = WORKSPACE_ROOT / ".venv" / "Scripts" / ("python.exe" if os.name == "nt" else "python")
+    if venv_python.exists():
+        return str(venv_python)
+    return sys.executable
+
+
+def ensure_venv_python() -> None:
+    """Ensures run.py executes under the project .venv Python interpreter."""
+    venv_python = WORKSPACE_ROOT / ".venv" / "Scripts" / ("python.exe" if os.name == "nt" else "python")
+    if not venv_python.exists():
+        return
+
+    try:
+        is_same = Path(sys.executable).resolve().samefile(venv_python.resolve())
+    except Exception:
+        is_same = Path(sys.executable).resolve() == venv_python.resolve()
+
+    if not is_same:
+        env = os.environ.copy()
+        scripts_dir = str(venv_python.parent)
+        env["PATH"] = scripts_dir + os.pathsep + env.get("PATH", "")
+        env["VIRTUAL_ENV"] = str(WORKSPACE_ROOT / ".venv")
+        try:
+            proc = subprocess.Popen([str(venv_python), str(Path(__file__).resolve()), *sys.argv[1:]], env=env)
+            while proc.poll() is None:
+                try:
+                    time.sleep(0.5)
+                except KeyboardInterrupt:
+                    pass
+            sys.exit(proc.returncode if proc.returncode is not None else 0)
+        except Exception as exc:
+            print(f"[Error] Failed to delegate to virtualenv Python: {exc}", file=sys.stderr)
+            sys.exit(1)
+
+
 def get_hermes_bin() -> str:
     """Locates the hermes CLI binary, preferring the vendor/hermes-agent editable in .venv."""
     venv_exe = WORKSPACE_ROOT / ".venv" / "Scripts" / ("hermes.exe" if os.name == "nt" else "hermes")
@@ -86,10 +123,20 @@ def wait_for_gateway(proc: subprocess.Popen, timeout_sec: int = 30) -> bool:
 
 
 def main() -> int:
+    ensure_venv_python()
+
     # 1. Resolve HERMES_HOME explicitly (known Windows default bug)
     local_app = os.environ.get("LOCALAPPDATA")
     if "HERMES_HOME" not in os.environ and local_app:
         os.environ["HERMES_HOME"] = str(Path(local_app) / "hermes")
+
+    # Prepend .venv/Scripts to PATH and set VIRTUAL_ENV
+    venv_dir = WORKSPACE_ROOT / ".venv"
+    if venv_dir.exists():
+        scripts_dir = str(venv_dir / ("Scripts" if os.name == "nt" else "bin"))
+        if scripts_dir not in os.environ.get("PATH", ""):
+            os.environ["PATH"] = scripts_dir + os.pathsep + os.environ.get("PATH", "")
+        os.environ["VIRTUAL_ENV"] = str(venv_dir)
 
     # 2. Load environment variables
     load_env_file(WORKSPACE_ROOT / ".env")
@@ -104,7 +151,7 @@ def main() -> int:
     os.environ.setdefault("HERMES_GATEWAY_URL", "http://127.0.0.1:8642")
 
     hermes_bin = get_hermes_bin()
-    python_bin = sys.executable
+    python_bin = get_python_bin()
 
     print("==========================================================")
     print("   Humming Bird Cockpit & Hermes Gateway Unified Runner   ")
@@ -115,6 +162,11 @@ def main() -> int:
     print("Gateway URL : http://127.0.0.1:8642")
     print("Cockpit URL : http://127.0.0.1:8000")
     print("==========================================================")
+
+    if "--check" in sys.argv:
+        print(f"[OK] Python virtualenv : {python_bin}")
+        print(f"[OK] Hermes binary     : {hermes_bin}")
+        return 0
 
     gateway_proc: Optional[subprocess.Popen] = None
     backend_proc: Optional[subprocess.Popen] = None
