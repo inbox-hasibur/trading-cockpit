@@ -1,0 +1,693 @@
+{
+  "auth": {
+    "localStorage_keys": [
+      "access_token",
+      "cached_favorites_202083",
+      "cached_instruments",
+      "cached_sectors",
+      "cached_user_info",
+      "darkMode",
+      "fundamentals",
+      "fundamentals-hash",
+      "password",
+      "rememberCredentials",
+      "stocknow.vipWelcomeVideo.state.202083",
+      "stocknowAdvancedChartSettings",
+      "stocknow_banner_first_place_v1",
+      "stocknow_last_feature_intent",
+      "stocknow_usage_session_id",
+      "tvlocalstorage.available",
+      "username"
+    ],
+    "has_remember_credentials": "true",
+    "stores_plain_password_key": "[REDACTED]",
+    "jwt_lifetime_sec": 31536000,
+    "jwt_payload_keys": [
+      "aud",
+      "jti",
+      "iat",
+      "nbf",
+      "exp",
+      "sub",
+      "scopes"
+    ]
+  },
+  "home": {
+    "path": "/",
+    "resolved_url": "https://www.stocknow.com.bd/",
+    "title": "Dhaka Stock Exchange (DSE) Analysis Tools, Share Bazar News, Live Market Price Update and Advance Chart in Bangladesh (BD)",
+    "dom": {
+      "title": "Dhaka Stock Exchange (DSE) Analysis Tools, Share Bazar News, Live Market Price Update and Advance Chart in Bangladesh (BD)",
+      "headers": [
+        "+0.20",
+        "+0.10",
+        "+0.40",
+        "08",
+        "RENATA  | Renata Limited"
+      ],
+      "sample_buttons": [
+        "VIP",
+        "English",
+        "\u09ac\u09be\u0982\u09b2\u09be",
+        "StockNow",
+        "Closed + 71.41",
+        "Home",
+        "Chart",
+        "Favorites",
+        "Top",
+        "Data Matrix"
+      ],
+      "inputs": [
+        {
+          "name": "Operator",
+          "type": "hidden"
+        },
+        {
+          "name": "Operator",
+          "type": "search"
+        },
+        {
+          "name": "Operator",
+          "type": "date"
+        },
+        {
+          "name": "Operator",
+          "type": "checkbox"
+        },
+        {
+          "name": "Operator",
+          "type": "checkbox"
+        },
+        {
+          "name": "Operator",
+          "type": "checkbox"
+        },
+        {
+          "name": "Operator",
+          "type": "checkbox"
+        },
+        {
+          "name": "Operator",
+          "type": "checkbox"
+        }
+      ],
+      "list_switchers": [
+        "Upper Limit",
+        "Lower Limit",
+        "All",
+        "AGM",
+        "Board Meeting"
+      ],
+      "has_tables": true,
+      "logged_in_signal": "UNKNOWN"
+    },
+    "xhr_calls": [
+      "https://stocknow.com.bd/api/v1/user/lists",
+      "https://stocknow.com.bd/api/v1/news/block-transactions",
+      "https://stocknow.com.bd/api/v1/instruments/DSEX/history?resolution=1&date=2026-11-05",
+      "https://stocknow.com.bd/api/v1/config/featured-videos?l=PLcik0xfNuzEPFcZrJ60CuG2qj0Xo4wGbO",
+      "https://stocknow.com.bd/api/v1/instruments?before=2026-11-05",
+      "https://stocknow.com.bd/api/v1/instruments",
+      "https://stocknow.com.bd/api/v1/user?_user_refresh=+8801XXXXXXXXX576",
+      "https://stocknow.com.bd/api/v1/trades",
+      "https://stocknow.com.bd/api/v1/news/events",
+      "https://stocknow.com.bd/api/v1/config",
+      "https://stocknow.com.bd/api/v1/fundamentals-hash",
+      "https://stocknow.com.bd/api/v1/sectors"
+    ]
+  },
+  "portfolios": {
+    "path": "/portfolios",
+    "resolved_url": "https://www.stocknow.com.bd/portfolios",
+    "title": "Bangladesh DSE Share Price Today \u2014 Live Market Data & Stock Analysis | StockNow",
+    "dom": {
+      "title": "Bangladesh DSE Share Price Today \u2014 Live Market Data & Stock Analysis | StockNow",
+      "headers": [
+        "Balance",
+        "129,200",
+        "Sell Value",
+        "7,194",
+        "Gain/Loss (Today)"
+      ],
+      "sample_buttons": [
+        "VIP",
+        "English",
+        "\u09ac\u09be\u0982\u09b2\u09be",
+        "StockNow",
+        "Closed + 71.41",
+        "Home",
+        "Chart",
+        "Favorites",
+        "Top",
+        "Data Matrix"
+      ],
+      "inputs": [
+        {
+          "name": "Operator",
+          "type": "hidden"
+        },
+        {
+          "name": "Operator",
+          "type": "search"
+        }
+      ],
+      "list_switchers": [],
+      "has_tables": true,
+      "logged_in_signal": "UNKNOWN"
+    },
+    "xhr_calls": [
+      "https://stocknow.com.bd/api/v1/user?_user_refresh=+8801XXXXXXXXX723",
+      "https://stocknow.com.bd/api/v1/user/lists",
+      "https://stocknow.com.bd/api/v1/instruments",
+      "https://stocknow.com.bd/api/v1/config",
+      "https://stocknow.com.bd/api/v1/user/portfolios?withScrips=true",
+      "https://stocknow.com.bd/api/v1/fundamentals-hash",
+      "https://stocknow.com.bd/api/v1/sectors"
+    ]
+  },
+  "portfolio_show": {
+    "path": "/portfolios/164580/show",
+    "resolved_url": "https://www.stocknow.com.bd/portfolios/164580/show",
+    "title": "Bangladesh DSE Share Price Today \u2014 Live Market Data & Stock Analysis | StockNow",
+    "dom": {
+      "title": "Bangladesh DSE Share Price Today \u2014 Live Market Data & Stock Analysis | StockNow",
+      "headers": [],
+      "sample_buttons": [
+        "VIP",
+        "English",
+        "\u09ac\u09be\u0982\u09b2\u09be",
+        "StockNow",
+        "Closed + 71.41",
+        "Home",
+        "Chart",
+        "Favorites",
+        "Top",
+        "Data Matrix"
+      ],
+      "inputs": [
+        {
+          "name": "Operator",
+          "type": "hidden"
+        },
+        {
+          "name": "Operator",
+          "type": "search"
+        },
+        {
+          "name": "Operator",
+          "type": "hidden"
+        }
+      ],
+      "list_switchers": [],
+      "has_tables": true,
+      "logged_in_signal": "UNKNOWN"
+    },
+    "xhr_calls": [
+      "https://stocknow.com.bd/api/v1/user/lists",
+      "https://stocknow.com.bd/api/v1/user?_user_refresh=+8801XXXXXXXXX784",
+      "https://stocknow.com.bd/api/v1/instruments",
+      "https://stocknow.com.bd/api/v1/user/portfolios/164580",
+      "https://stocknow.com.bd/api/v1/config",
+      "https://stocknow.com.bd/api/v1/fundamentals-hash",
+      "https://stocknow.com.bd/api/v1/sectors"
+    ]
+  },
+  "portfolio_ledger": {
+    "path": "/portfolios/164580/ledger",
+    "resolved_url": "https://www.stocknow.com.bd/portfolios/164580/ledger",
+    "title": "Bangladesh DSE Share Price Today \u2014 Live Market Data & Stock Analysis | StockNow",
+    "dom": {
+      "title": "Bangladesh DSE Share Price Today \u2014 Live Market Data & Stock Analysis | StockNow",
+      "headers": [],
+      "sample_buttons": [
+        "VIP",
+        "English",
+        "\u09ac\u09be\u0982\u09b2\u09be",
+        "StockNow",
+        "Closed + 71.41",
+        "Home",
+        "Chart",
+        "Favorites",
+        "Top",
+        "Data Matrix"
+      ],
+      "inputs": [
+        {
+          "name": "Operator",
+          "type": "hidden"
+        },
+        {
+          "name": "Operator",
+          "type": "search"
+        }
+      ],
+      "list_switchers": [],
+      "has_tables": true,
+      "logged_in_signal": "UNKNOWN"
+    },
+    "xhr_calls": [
+      "https://stocknow.com.bd/api/v1/user/lists",
+      "https://stocknow.com.bd/api/v1/user?_user_refresh=+8801XXXXXXXXX886",
+      "https://stocknow.com.bd/api/v1/instruments",
+      "https://stocknow.com.bd/api/v1/config",
+      "https://stocknow.com.bd/api/v1/user/portfolios/164580/ledger",
+      "https://stocknow.com.bd/api/v1/fundamentals-hash",
+      "https://stocknow.com.bd/api/v1/sectors"
+    ]
+  },
+  "portfolio_buy_form": {
+    "path": "/portfolios/164580/buy",
+    "resolved_url": "https://www.stocknow.com.bd/portfolios/164580/buy",
+    "title": "Bangladesh DSE Share Price Today \u2014 Live Market Data & Stock Analysis | StockNow",
+    "dom": {
+      "title": "Bangladesh DSE Share Price Today \u2014 Live Market Data & Stock Analysis | StockNow",
+      "headers": [],
+      "sample_buttons": [
+        "VIP",
+        "English",
+        "\u09ac\u09be\u0982\u09b2\u09be",
+        "StockNow",
+        "Closed + 71.41",
+        "Home",
+        "Chart",
+        "Favorites",
+        "Top",
+        "Data Matrix"
+      ],
+      "inputs": [
+        {
+          "name": "Operator",
+          "type": "hidden"
+        },
+        {
+          "name": "Operator",
+          "type": "search"
+        },
+        {
+          "name": "Operator",
+          "type": "hidden"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-SELECT"
+        },
+        {
+          "name": "Operator",
+          "type": "hidden"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-INPUT"
+        },
+        {
+          "name": "Operator",
+          "type": "number"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-INPUT"
+        },
+        {
+          "name": "Operator",
+          "type": "number"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-INPUT"
+        },
+        {
+          "name": "Operator",
+          "type": "number"
+        },
+        {
+          "name": "Operator",
+          "type": "hidden"
+        }
+      ],
+      "list_switchers": [
+        "1JANATAMF1STPRIMFMFAAMRANETAAMRATECHABB1STMFABBANKABBLPBONDACFLACHIASFACIACIFORMULAACMELABACMEPLACTIVEFINEADNTELADVENTAFCAGROAFTABAUTOAGNISYSLAGRANINSAIBL1STIMFAIBLPBONDAILAL-HAJTEXALARABANKALIFALLTEXAMANFEEDAMBEEPHAAMCL(PRAN)AMPLANLIMAYARNANWARGALVAOLAOPLCAPEXFOODSAPEXFOOTAPEXSPINNAPEXTANRYAPEXWEAVAPOLOISPATAPSCLBONDARAMITARAMITCEMARGONDENIMASIAINSASIAPACINSASIATICLABATCSLGFATLASBANGAZIZPIPESBANGASBankBANKASI1PBBANKASIABARKAPOWERBATASHOEBATBCBAYLEASINGBBSBBSCABLESBDAUTOCABDCOMBDFINANCEBDLAMPSBDPAINTSBDSERVICEBDTHAIBDTHAIFOODBDWELDINGBEACHHATCHBEACONPHARBENGALBISCBENGALWTLBERGERPBLBESTHLDNGBEXGSUKUKBEXIMCOBGICBIFCBNIPLCBPMLBPPLBRACBANKBSCBSCPLCBSRMLTDBSRMSTEELBXPHARMABXSYNTHCAPITECGBFCAPMBDBLMFCAPMIBBLMFCBLPBONDCementCENTRALINSCENTRALPHLCeramics SectorCITYBANKCITYGENINSCLICLCNATEXCONFIDCEMCONTININSCOPPERTECHCorporate BondCRAFTSMANCROWNCEMNTCRYSTALINSCVOPRLDACCADYEDAFODILCOMDBHDBH1STMFDBLPBONDDEBARACEMDEBBDLUGGDEBBDWELDDEBBDZIPPDEBBXDENIMDEBBXFISHDEBBXKNIDEBBXTEXDebentureDELTALIFEDELTASPINNDESCODESHBANDHUDGICDHAKABANKDHAKAINSDOMINAGEDOREENPWRDS30DSESDSEXDSHGARMEDSSLDULAMIACOTDUTCHBANGLEASTERNINSEASTLANDEASTRNLUBEBLEBL1STMFEBLNRBMFECABLESEGENEHLEILEMERALDOILEngineeringENVOYTEXEPGLESQUIRENITETLEXIM1STMFEXIMBANKFAMILYTEXFARCHEMFAREASTFINFAREASTLIFFASFINFBFIFFEDERALINSFEKDILFinancial InstitutionsFINEFOODSFIRSTFINFIRSTSBANKFood & AlliedFORTUNEFuel & PowerFUWANGCERFUWANGFOODGBBPOWERGEMINISEAGENEXILGENNEXTGHAILGHCLGIBGLAXOSMITHGLDNJMFGLOBALINSGOLDENSONGPGPHISPATGQBALLPENGRAMEENS2GREENDELMFGREENDELTGSPFINANCEHAKKANIPULHAMIHEIDELBCEMHFLHIMADRIHRTEXHWAWELLTEXIBBL2PBONDIBBLPBONDIBNSINAIBPICBICB2NDNRBICB3RDNRBICBAGRANI1ICBAMCL2NDICBEPMF1S1ICBIBANKICBSONALI1ICICLIDLCIFADAUTOSIFICIFIC1STMFIFILISLMF1ILFSLINDEXAGROInsuranceINTECHINTRACOIPDCISLAMIBANKISLAMICFINISLAMIINSISNLTDIT SectorITCJAMUNABANKJAMUNAOILJANATAINSJHRMLJMISMDLJuteJUTESPINNKARNAPHULIKAY&QUEKBPPWBILKBSEEDKDSALTDKEYACOSMETKFLKOHINOORKPCLKPPLKTLLANKABAFINLEGACYFOOTLHBLIBRAINFULife InsuranceLINDEBDLOVELLOLRBDLLRGLOBMF1MAGURAPLEXMAKSONSPINMALEKSPINMAMUNAGROMARICOMASTERAGROMATINSPINNMBL1STMFMBPLCPBONDMEGCONMILKMEGHNACEMMEGHNAINSMEGHNALIFEMEGHNAPETMERCANBANKMERCINSMETROSPINMHSMLMIDASFINMIDLANDBNKMIRACLEINDMIRAKHTERMiscellaneousMITHUNKNITMJLBDMKFOOTWEARMLDYEINGMONNOAGMLMONNOCERAMONNOFABRMONNOSTAFMONOSPOOLMOSTFAMETLMPETROLEUMMTBMTBPBONDMutual FundsNAHEEACPNATLIFEINSNAVANACNGNAVANAPHARNBLNCCBANKNCCBLMF1NEWLINENFMLNHFILNIALCONITOLINSNLI1STMFNORTHERNNORTHRNINSNPOLYMERNRBBANKNRBCBANKNTCNTLTUBESNURANIOALOIMEXOLYMPICONEBANKPLCORIONINFUORIONPHARMORYZAAGROPADMALIFEPADMAOILPaper & PrintingPARAMOUNTPBLPBONDPDLPENINSULAPEOPLESINSPF1STMFPharmaceuticals & ChemicalsPHARMAIDPHENIXINSPHOENIXFINPHPMF1PIONEERINSPLFSLPOPULAR1MFPOPULARLIFPOWERGRIDPRAGATIINSPRAGATILIFPREBPBONDPREMIERBANPREMIERCEMPREMIERLEAPRIME1ICBAPRIMEBANKPRIMEFINPRIMEINSURPRIMELIFEPRIMETEXPROGRESLIFPROVATIINSPTLPUBALIBANKPURABIGENQUASEMINDQUEENSOUTHRAHIMAFOODRAHIMTEXTRAKCERAMICRANFOUNDRYRDFOODRECKITTBENREGENTTEXRELIANCE1RELIANCINSRENATARENWICKJAREPUBLICRINGSHINEROBIRSRMSTEELRUNNERAUTORUPALIBANKRUPALIINSRUPALILIFESADHESIVESAFKOSPINNSAIFPOWERSAIHAMCOTSAIHAMTEXSALAMCRSTSALVOSAMATALETHSAMORITASANDHANINSSAPORTLSAVAREFRSBACBANKSEAPEARLSEB1PBONDSEBL1STMFSEMLFBSLGFSEMLIBBLSFSEMLLECMFServices & Real EstateSHAHJABANKSHARPINDSHASHADNIMSHEPHERDSHURWIDSHYAMPSUGSIBLSICLSILCOPHLSILVAPHLSIMTEXSINGERBDSINOBANGLASIPLCSJIBLPBONDSKTRIMSSONALIANSHSONALILIFESONALIPAPRSONARBAINSSONARGAONSOUTHEASTBSPCERAMICSSPCLSQUARETEXTSQURPHARMASSSTEELSTANCERAMSTANDARINSSTANDBANKLSTYLECRAFTSUMITPOWERSUNLIFEINST10Y0126TAKAFULINSTALLUSPINTAMIJTEXTannery IndustriesTECHNODRUGTelecommunicationTextileTILILTITASGASTOSRIFATravel & LeisureTRUSTB1MFTRUSTBANKTUNGHAIUCBUCB2PBONDUNILEVERCLUNIONBANKUNIONCAPUNIONINSUNIQUEHRLUNITEDFINUNITEDINSUPGDCLUSMANIAGLUTTARABANKUTTARAFINVAMLBDMF1VAMLRBBFVFSTDLWALTONHILWATACHEMWEBCOATSWMSHIPYARDWONDERTOYSYPLYUSUFLOURZAHEENSPINZAHINTEXZEALBANGLA"
+      ],
+      "has_tables": true,
+      "logged_in_signal": "UNKNOWN"
+    },
+    "xhr_calls": [
+      "https://stocknow.com.bd/api/v1/user/lists",
+      "https://stocknow.com.bd/api/v1/instruments",
+      "https://stocknow.com.bd/api/v1/user/portfolios/164580",
+      "https://stocknow.com.bd/api/v1/config",
+      "https://stocknow.com.bd/api/v1/fundamentals-hash",
+      "https://stocknow.com.bd/api/v1/user?_user_refresh=+8801XXXXXXXXX951",
+      "https://stocknow.com.bd/api/v1/sectors"
+    ]
+  },
+  "portfolio_sell_form": {
+    "path": "/portfolios/164580/sell",
+    "resolved_url": "https://www.stocknow.com.bd/portfolios/164580/sell",
+    "title": "Bangladesh DSE Share Price Today \u2014 Live Market Data & Stock Analysis | StockNow",
+    "dom": {
+      "title": "Bangladesh DSE Share Price Today \u2014 Live Market Data & Stock Analysis | StockNow",
+      "headers": [],
+      "sample_buttons": [
+        "VIP",
+        "English",
+        "\u09ac\u09be\u0982\u09b2\u09be",
+        "StockNow",
+        "Closed + 71.41",
+        "Home",
+        "Chart",
+        "Favorites",
+        "Top",
+        "Data Matrix"
+      ],
+      "inputs": [
+        {
+          "name": "Operator",
+          "type": "hidden"
+        },
+        {
+          "name": "Operator",
+          "type": "search"
+        },
+        {
+          "name": "Operator",
+          "type": "hidden"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-SELECT"
+        },
+        {
+          "name": "Operator",
+          "type": "hidden"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-INPUT"
+        },
+        {
+          "name": "Operator",
+          "type": "number"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-INPUT"
+        },
+        {
+          "name": "Operator",
+          "type": "number"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-INPUT"
+        },
+        {
+          "name": "Operator",
+          "type": "number"
+        },
+        {
+          "name": "Operator",
+          "type": "hidden"
+        }
+      ],
+      "list_switchers": [
+        "BANKASIAIBNSINA"
+      ],
+      "has_tables": true,
+      "logged_in_signal": "UNKNOWN"
+    },
+    "xhr_calls": [
+      "https://stocknow.com.bd/api/v1/user/lists",
+      "https://stocknow.com.bd/api/v1/instruments",
+      "https://stocknow.com.bd/api/v1/user/portfolios/164580",
+      "https://stocknow.com.bd/api/v1/config",
+      "https://stocknow.com.bd/api/v1/fundamentals-hash",
+      "https://stocknow.com.bd/api/v1/user?_user_refresh=+8801XXXXXXXXX002",
+      "https://stocknow.com.bd/api/v1/sectors"
+    ]
+  },
+  "favorites": {
+    "path": "/favorites",
+    "resolved_url": "https://www.stocknow.com.bd/favorites",
+    "title": "DSEX - Dse Broad Index - Stock Analysis - Financials, Charts, News | StockNow",
+    "dom": {
+      "title": "DSEX - Dse Broad Index - Stock Analysis - Financials, Charts, News | StockNow",
+      "headers": [
+        "News in brief",
+        "-1.90",
+        "+0.50",
+        "+0.10",
+        "+0.10"
+      ],
+      "sample_buttons": [
+        "VIP",
+        "English",
+        "\u09ac\u09be\u0982\u09b2\u09be",
+        "StockNow",
+        "Closed + 71.41",
+        "Home",
+        "Chart",
+        "Favorites",
+        "Top",
+        "Data Matrix"
+      ],
+      "inputs": [
+        {
+          "name": "Operator",
+          "type": "hidden"
+        },
+        {
+          "name": "Operator",
+          "type": "search"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-SELECT"
+        },
+        {
+          "name": "Operator",
+          "type": "hidden"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-SELECT"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-SELECT"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-SELECT"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-SELECT"
+        }
+      ],
+      "list_switchers": [
+        "Market Depth",
+        "Price Table",
+        "Seasonality",
+        "News",
+        "Block Tr"
+      ],
+      "has_tables": true,
+      "logged_in_signal": "UNKNOWN"
+    },
+    "xhr_calls": [
+      "https://stocknow.com.bd/api/v1/user/lists",
+      "https://stocknow.com.bd/api/v1/static/instruments/ACI/trending-similar",
+      "https://stocknow.com.bd/api/v1/instruments/ACI/news?type=All&page=1",
+      "https://stocknow.com.bd/api/v1/portfolios-for-favorite",
+      "https://stocknow.com.bd/api/v1/instruments",
+      "https://stocknow.com.bd/api/v1/instruments/ACI/history?data2=true&resolution=1D&skip=0",
+      "https://stocknow.com.bd/api/v1/user?_user_refresh=+8801XXXXXXXXX058",
+      "https://stocknow.com.bd/api/v1/config",
+      "https://stocknow.com.bd/api/v1/instruments/ACI/history?data2=true&resolution=null&skip=0",
+      "https://stocknow.com.bd/api/v1/fundamentals-hash",
+      "https://stocknow.com.bd/api/v1/fundamentals/ACI/growth?hash=55ba8e4620bed2c11f05940fafd4a025",
+      "https://stocknow.com.bd/api/v1/sectors"
+    ]
+  },
+  "top_shares": {
+    "path": "/top-shares",
+    "resolved_url": "https://www.stocknow.com.bd/top-shares",
+    "title": "DSEX - Dse Broad Index - Stock Analysis - Financials, Charts, News | StockNow",
+    "dom": {
+      "title": "DSEX - Dse Broad Index - Stock Analysis - Financials, Charts, News | StockNow",
+      "headers": [
+        "+0.40",
+        "+1.00",
+        "+18.90",
+        "+0.20",
+        "+7.00"
+      ],
+      "sample_buttons": [
+        "VIP",
+        "English",
+        "\u09ac\u09be\u0982\u09b2\u09be",
+        "StockNow",
+        "Closed + 71.41",
+        "Home",
+        "Chart",
+        "Favorites",
+        "Top",
+        "Data Matrix"
+      ],
+      "inputs": [
+        {
+          "name": "Operator",
+          "type": "hidden"
+        },
+        {
+          "name": "Operator",
+          "type": "search"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-SELECT"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-SELECT"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-SELECT"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-SELECT"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-SELECT"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-SELECT"
+        }
+      ],
+      "list_switchers": [
+        "Top SharesGainerLoserValueVolumeTradeUnchanged",
+        "MoreIntraday5 min10 min15 min30 min1 hour2 hours3 hoursWeekly15 DayMonthly3 Month6 Month9 MonthYearly",
+        "SectorAllBankCementCeramics SectorCorporate BondDebentureEngineeringFinancial InstitutionsFood & AlliedFuel & PowerInsuranceIT SectorJuteMiscellaneousMutual FundsPaper & PrintingPharmaceuticals & ChemicalsServices & Real EstateTannery IndustriesTelecommunicationTextileTravel & LeisureTreasury BondLife Insurance",
+        "List TypeDefaultSmallClassic",
+        "SortA-ZChange(%)ValueVolumeTradePricePaidupNAV vs PriceP/E (Audited)Closest to Floor Price"
+      ],
+      "has_tables": true,
+      "logged_in_signal": "UNKNOWN"
+    },
+    "xhr_calls": [
+      "https://stocknow.com.bd/api/v1/user/lists",
+      "https://stocknow.com.bd/api/v1/instruments",
+      "https://stocknow.com.bd/api/v1/config",
+      "https://stocknow.com.bd/api/v1/fundamentals-hash",
+      "https://stocknow.com.bd/api/v1/user?_user_refresh=+8801XXXXXXXXX172",
+      "https://stocknow.com.bd/api/v1/sectors"
+    ]
+  },
+  "news": {
+    "path": "/news",
+    "resolved_url": "https://www.stocknow.com.bd/news",
+    "title": "DSEX - Dse Broad Index - Stock Analysis - Financials, Charts, News | StockNow",
+    "dom": {
+      "title": "DSEX - Dse Broad Index - Stock Analysis - Financials, Charts, News | StockNow",
+      "headers": [
+        "News in brief",
+        "News in brief"
+      ],
+      "sample_buttons": [
+        "VIP",
+        "English",
+        "\u09ac\u09be\u0982\u09b2\u09be",
+        "StockNow",
+        "Closed + 71.41",
+        "Home",
+        "Chart",
+        "Favorites",
+        "Top",
+        "Data Matrix"
+      ],
+      "inputs": [
+        {
+          "name": "Operator",
+          "type": "hidden"
+        },
+        {
+          "name": "Operator",
+          "type": "search"
+        },
+        {
+          "name": "Operator",
+          "type": "ION-SELECT"
+        }
+      ],
+      "list_switchers": [
+        "Market Depth",
+        "Price Table",
+        "Seasonality",
+        "News",
+        "Block Tr"
+      ],
+      "has_tables": true,
+      "logged_in_signal": "UNKNOWN"
+    },
+    "xhr_calls": [
+      "https://stocknow.com.bd/api/v1/instruments/DSEX/history?data2=true&resolution=1D&skip=0",
+      "https://stocknow.com.bd/api/v1/user/lists",
+      "https://stocknow.com.bd/api/v1/static/instruments/DSEX/trending-similar",
+      "https://stocknow.com.bd/api/v1/instruments/DSEX/history?data2=true&resolution=null&skip=0",
+      "https://stocknow.com.bd/api/v1/instruments",
+      "https://stocknow.com.bd/api/v1/news?type=All&page=1",
+      "https://stocknow.com.bd/api/v1/fundamentals/DSEX/growth?hash=55ba8e4620bed2c11f05940fafd4a025",
+      "https://stocknow.com.bd/api/v1/config",
+      "https://stocknow.com.bd/api/v1/user?_user_refresh=+8801XXXXXXXXX239",
+      "https://stocknow.com.bd/api/v1/instruments/DSEX/news?type=All&page=1",
+      "https://stocknow.com.bd/api/v1/fundamentals-hash",
+      "https://stocknow.com.bd/api/v1/sectors"
+    ]
+  },
+  "user": {
+    "path": "/user",
+    "resolved_url": "https://www.stocknow.com.bd/user",
+    "title": "Bangladesh DSE Share Price Today \u2014 Live Market Data & Stock Analysis | StockNow",
+    "dom": {
+      "title": "Bangladesh DSE Share Price Today \u2014 Live Market Data & Stock Analysis | StockNow",
+      "headers": [],
+      "sample_buttons": [
+        "VIP",
+        "English",
+        "\u09ac\u09be\u0982\u09b2\u09be",
+        "StockNow",
+        "Closed + 71.41",
+        "Home",
+        "Chart",
+        "Favorites",
+        "Top",
+        "Data Matrix"
+      ],
+      "inputs": [
+        {
+          "name": "Operator",
+          "type": "hidden"
+        },
+        {
+          "name": "Operator",
+          "type": "search"
+        }
+      ],
+      "list_switchers": [],
+      "has_tables": true,
+      "logged_in_signal": "LOGGED_IN"
+    },
+    "xhr_calls": [
+      "https://stocknow.com.bd/api/v1/user/lists",
+      "https://stocknow.com.bd/api/v1/instruments",
+      "https://stocknow.com.bd/api/v1/user?_user_refresh=+8801XXXXXXXXX328",
+      "https://stocknow.com.bd/api/v1/config",
+      "https://stocknow.com.bd/api/v1/fundamentals-hash",
+      "https://stocknow.com.bd/api/v1/sectors"
+    ]
+  }
+}

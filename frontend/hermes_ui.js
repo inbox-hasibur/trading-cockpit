@@ -59,18 +59,16 @@ async function loadHermesOSState() {
     // 1. Active Model Display
     if (data.model) {
       setText("hermes-active-model-name", data.model);
-      const rawProv = (data.provider || "gemini").toLowerCase();
+      const rawProv = (data.provider || "").toLowerCase();
+      const modelLower = (data.model || "").toLowerCase();
       let prefixLabel = "GOOGLE ·";
       let provDesc = "Direct Google Gemini API";
-      if (rawProv === "openrouter") {
+      if (rawProv === "openrouter" || modelLower.includes("/") || (!modelLower.includes("gemini") && rawProv !== "gemini" && rawProv !== "google")) {
         prefixLabel = "OPENROUTER ·";
         provDesc = "OpenRouter Gateway API";
-      } else if (rawProv === "gemini" || rawProv === "google") {
+      } else {
         prefixLabel = "GOOGLE ·";
         provDesc = "Direct Google Gemini API";
-      } else {
-        prefixLabel = `${rawProv.toUpperCase()} ·`;
-        provDesc = `${rawProv.toUpperCase()} API`;
       }
       setText("provider-prefix-label", prefixLabel);
       const modelTrigger = $("hermes-model-trigger") || $("hermes-model-display");

@@ -1496,7 +1496,9 @@ function switchView(viewName) {
     }
     const workspace = document.querySelector(".workspace");
     if (workspace) workspace.scrollTo({ top: 0, behavior: "smooth" });
-    loadApiKeysSettings();
+    if (typeof loadApiKeysSettings === "function") {
+      try { loadApiKeysSettings(); } catch (err) { console.warn("Failed to load settings:", err); }
+    }
   } else {
     if (viewSettings) {
       viewSettings.classList.remove("active");

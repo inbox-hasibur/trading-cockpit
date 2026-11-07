@@ -1,0 +1,128 @@
+[
+  {
+    "id": 573287,
+    "name": "Giant Stable Companies",
+    "user_id": 202083,
+    "order": null,
+    "created_at": "2026-11-03 00:03:28",
+    "updated_at": "2026-11-03 00:03:28",
+    "items": [
+      {
+        "id": 21130146,
+        "user_id": 202083,
+        "watchlist_id": 573287,
+        "code": "ACI",
+        "created_at": "2026-11-03 00:05:19",
+        "updated_at": "2026-11-03 00:05:19"
+      },
+      {
+        "id": 21130149,
+        "user_id": 202083,
+        "watchlist_id": 573287,
+        "code": "BANKASIA",
+        "created_at": "2026-11-03 00:05:43",
+        "updated_at": "2026-11-03 00:05:43"
+      },
+      {
+        "id": 21130151,
+        "user_id": 202083,
+        "watchlist_id": 573287,
+        "code": "DHAKABANK",
+        "created_at": "2026-11-03 00:05:58",
+        "updated_at": "2026-11-03 00:05:58"
+      },
+      {
+        "id": 21130220,
+        "user_id": 202083,
+        "watchlist_id": 573287,
+        "code": "FUWANGCER",
+        "created_at": "2026-11-03 00:19:59",
+        "updated_at": "2026-11-03 00:19:59"
+      },
+      {
+        "id": 21130158,
+        "user_id": 202083,
+        "watchlist_id": 573287,
+        "code": "IFIC",
+        "created_at": "2026-11-03 00:07:41",
+        "updated_at": "2026-11-03 00:07:41"
+      },
+      {
+        "id": 21130241,
+        "user_id": 202083,
+        "watchlist_id": 573287,
+        "code": "NPOLYMER",
+        "created_at": "2026-11-03 00:23:52",
+        "updated_at": "2026-11-03 00:23:52"
+      },
+      {
+        "id": 21130164,
+        "user_id": 202083,
+        "watchlist_id": 573287,
+        "code": "PRIMEBANK",
+        "created_at": "2026-11-03 00:08:25",
+        "updated_at": "2026-11-03 00:08:25"
+      },
+      {
+        "id": 21130171,
+        "user_id": 202083,
+        "watchlist_id": 573287,
+        "code": "PUBALIBANK",
+        "created_at": "2026-11-03 00:09:17",
+        "updated_at": "2026-11-03 00:09:17"
+      },
+      {
+        "id": 21130223,
+        "user_id": 202083,
+        "watchlist_id": 573287,
+        "code": "SPCERAMICS",
+        "created_at": "2026-11-03 00:21:20",
+        "updated_at": "2026-11-03 00:21:20"
+      }
+    ]
+  },
+  {
+    "id": 573288,
+    "name": "GSC Upper Trends L1",
+    "user_id": 202083,
+    "order": null,
+    "created_at": "2026-11-02 18:29:41",
+    "updated_at": "2026-11-03 00:29:41",
+    "items": [
+      {
+        "id": 21130262,
+        "user_id": 202083,
+        "watchlist_id": 573288,
+        "code": "BANKASIA",
+        "created_at": "2026-11-03 00:27:49",
+        "updated_at": "2026-11-03 00:27:49"
+      },
+      {
+        "id": 21135798,
+        "user_id": 202083,
+        "watchlist_id": 573288,
+        "code": "MATINSPINN",
+        "created_at": "2026-11-03 13:30:57",
+        "updated_at": "2026-11-03 13:30:57"
+      }
+    ]
+  },
+  {
+    "id": 573289,
+    "name": "GSC Upper Trends L2",
+    "user_id": 202083,
+    "order": null,
+    "created_at": "2026-11-03 00:30:25",
+    "updated_at": "2026-11-03 00:30:25",
+    "items": [
+      {
+        "id": 21130280,
+        "user_id": 202083,
+        "watchlist_id": 573289,
+        "code": "DHAKABANK",
+        "created_at": "2026-11-03 00:30:34",
+        "updated_at": "2026-11-03 00:30:34"
+      }
+    ]
+  }
+]
