@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-06 22:05:48 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-07 04:31:35 UTC**.
 
 ---
 
@@ -8,7 +8,7 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 76 | 16,282 | Python Core Kernel, Engine & Hermes Agent |
+| `.py` | 76 | 16,284 | Python Core Kernel, Engine & Hermes Agent |
 | `.png` | 3 | 11,100 | Configuration / Asset |
 | `.css` | 2 | 8,195 | Custom Dark / Light / Terminal Design System |
 | `.js` | 3 | 4,176 | Vanilla ES6+ Reactive Terminal Controller |
@@ -24,7 +24,7 @@
 | `.bat` | 1 | 8 | Configuration / Asset |
 | `.svg` | 1 | 1 | Configuration / Asset |
 | `.db` | 1 | 0 | Configuration / Asset |
-| **TOTAL** | **107** | **43,692** | *Entire Humming Bird Repository* |
+| **TOTAL** | **107** | **43,694** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -716,19 +716,19 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `CronManager` | `L179–L344` | `object` | Persistent SQLite-backed cron manager with execution dispatch. | 6 |
+| `CronManager` | `L179–L345` | `object` | Persistent SQLite-backed cron manager with execution dispatch. | 6 |
 
 
 **Methods in `CronManager`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `schedule_task` | `L183–L222` | `(session: Session, name: str | None=...)` | `HermesCronJob` | Schedules a new recurring autonomous cron job. | `HermesCronJob`, `add`, `flush`, `get` |
-| `list_jobs` | `L225–L243` | `(session: Session...)` | `list[dict[str, Any]]` | Returns all scheduled cron jobs as dictionaries. | `desc`, `list`, `order_by`, `scalars` |
-| `delete_job` | `L246–L254` | `(session: Session, job_id: str...)` | `bool` | Deletes a cron job by id. | `delete`, `flush`, `get`, `info` |
-| `toggle_job` | `L257–L269` | `(session: Session, job_id: str, enab...)` | `dict[str, Any] | None` | Toggles or sets the enabled state of a cron job. | `bool`, `flush`, `get`, `info` |
-| `execute_job` | `L272–L318` | `(job: HermesCronJob, session: Sessio...)` | `dict[str, Any]` | Executes the specific action defined by the cron job. | `ToolContext`, `execute`, `flush`, `get` |
-| `check_and_execute_due_jobs` | `L321–L344` | `(cls, session: Session, settings: Se...)` | `list[dict[str, Any]]` | Finds all active cron jobs due at now_dt (Asia/Dhaka) and executes them. | `append`, `execute_job`, `info`, `is_cron_due` |
+| `schedule_task` | `L183–L223` | `(session: Session, name: str | None=...)` | `HermesCronJob` | Schedules a new recurring autonomous cron job. | `HermesCronJob`, `add`, `flush`, `get` |
+| `list_jobs` | `L226–L244` | `(session: Session...)` | `list[dict[str, Any]]` | Returns all scheduled cron jobs as dictionaries. | `desc`, `list`, `order_by`, `scalars` |
+| `delete_job` | `L247–L255` | `(session: Session, job_id: str...)` | `bool` | Deletes a cron job by id. | `delete`, `flush`, `get`, `info` |
+| `toggle_job` | `L258–L270` | `(session: Session, job_id: str, enab...)` | `dict[str, Any] | None` | Toggles or sets the enabled state of a cron job. | `bool`, `flush`, `get`, `info` |
+| `execute_job` | `L273–L319` | `(job: HermesCronJob, session: Sessio...)` | `dict[str, Any]` | Executes the specific action defined by the cron job. | `ToolContext`, `execute`, `flush`, `get` |
+| `check_and_execute_due_jobs` | `L322–L345` | `(cls, session: Session, settings: Se...)` | `list[dict[str, Any]]` | Finds all active cron jobs due at now_dt (Asia/Dhaka) and executes them. | `append`, `execute_job`, `info`, `is_cron_due` |
 
 
 #### Standalone Functions
@@ -1493,4 +1493,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 41 Python modules inspected, 38 FastAPI endpoints registered, 43,692 total LOC indexed.
+> **Audit Summary:** 41 Python modules inspected, 38 FastAPI endpoints registered, 43,694 total LOC indexed.

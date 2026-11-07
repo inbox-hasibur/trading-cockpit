@@ -190,19 +190,20 @@ class CronManager:
         instruction: str | None = None,
     ) -> HermesCronJob:
         """Schedules a new recurring autonomous cron job."""
-        raw_instruction = natural_instruction or instruction
-        if raw_instruction and (not schedule_expr or not action_type):
-            parsed = parse_natural_schedule(raw_instruction)
+        effective_instruction = natural_instruction or instruction
+        if effective_instruction and (not schedule_expr or not action_type):
+            parsed = parse_natural_schedule(effective_instruction)
             name = name or parsed["name"]
             schedule_expr = schedule_expr or parsed["schedule_expr"]
             action_type = action_type or parsed["action_type"]
             params = params if params is not None else parsed.get("params", {})
-            natural_instruction = raw_instruction
+            natural_instruction = effective_instruction
         else:
             name = name or "Autonomous Hermes Task"
             schedule_expr = schedule_expr or "0 10 * * 0-4"
             action_type = (action_type or "SYNC_MARKET").upper()
             params = params or {}
+            natural_instruction = effective_instruction or ""
 
         job_id = f"cron_{uuid4().hex[:10]}"
         job = HermesCronJob(
@@ -342,3 +343,4 @@ class CronManager:
                 results.append({"job_id": job.id, "name": job.name, "result": exec_res})
 
         return results
+
