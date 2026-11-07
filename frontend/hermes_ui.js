@@ -54,42 +54,55 @@ function renderHermesSkills() {
 
 async function loadHermesOSState() {
   try {
-    const data = await api("/api/hermes/state");
+    const data = await api("/api/hermes/bridge/state");
 
-    // 1. Procedural Skills
+    // 1. Active Model Display
+    if (data.model) {
+      setText("hermes-active-model-name", data.model);
+      setText("provider-prefix-label", `${(data.provider || "HERMES").toUpperCase()} ·`);
+      const modelDisplay = $("hermes-model-display");
+      if (modelDisplay) {
+        modelDisplay.title = `Active Hermes Model: ${data.model} (${data.provider}) — configured in ~/.hermes/config.yaml`;
+      }
+    }
+
+    // 2. Procedural Skills
     const skillsList = $("skills-list");
     const skillsBadge = $("skills-badge");
     const skills = data.skills || [];
     if (skillsBadge) skillsBadge.textContent = skills.length;
 
-    if (skillsList && skills.length) {
-      skillsList.innerHTML = skills.map((s) => `
-        <div class="skill-card">
-          <div class="skill-card-top">
-            <strong>${escapeHtml(s.name)}</strong>
-            <span class="skill-rev">v${escapeHtml(s.version || "1.0.0")}</span>
-            ${s.is_auto_learned ? '<span class="skill-badge-autolearned">AUTO-LEARNED</span>' : ""}
+    if (skillsList) {
+      if (skills.length) {
+        skillsList.innerHTML = skills.map((s) => `
+          <div class="skill-card">
+            <div class="skill-card-top">
+              <strong>${escapeHtml(s.title || s.name)}</strong>
+              <span class="skill-rev">v${escapeHtml(s.version || "1.0.0")}</span>
+              ${s.is_auto_learned ? '<span class="skill-badge-autolearned">LEARNED</span>' : `<span class="skill-tag">${escapeHtml(s.source || "plugin")}</span>`}
+            </div>
+            <div class="muted small">${escapeHtml(s.description || "")}</div>
+            <div class="skill-tags">
+              ${(s.tags || []).map((t) => `<span class="skill-tag">#${escapeHtml(t)}</span>`).join("")}
+            </div>
           </div>
-          <div class="muted small">${escapeHtml(s.description || "")}</div>
-          <div class="skill-tags">
-            ${(s.triggers || []).map((t) => `<span class="skill-tag">⚡ ${escapeHtml(t)}</span>`).join("")}
-            ${(s.tags || []).map((t) => `<span class="skill-tag">#${escapeHtml(t)}</span>`).join("")}
-          </div>
-        </div>
-      `).join("");
+        `).join("");
+      } else {
+        skillsList.innerHTML = '<div class="muted small">No procedural skills loaded.</div>';
+      }
     }
 
-    // 2. Memory & Profile Previews
+    // 3. Memory & Profile Previews
     const userPreview = $("user-md-preview");
     if (userPreview) {
-      userPreview.textContent = data.user_md || "No operator preferences curated yet in USER.md.";
+      userPreview.textContent = data.user_md || "No operator directives in USER.md.";
     }
     const memPreview = $("memory-md-preview");
     if (memPreview) {
-      memPreview.textContent = data.memory_md || "No working market memory curated yet in MEMORY.md.";
+      memPreview.textContent = data.memory_md || "No working market memory in MEMORY.md.";
     }
 
-    // 3. Autonomous Cron Jobs
+    // 4. Autonomous Cron Jobs
     renderHermesCronJobs(data.crons || []);
   } catch (err) {
     console.debug("Hermes OS state notice:", err);
@@ -100,66 +113,69 @@ function renderHermesCronJobs(crons) {
   const cronsList = $("crons-list");
   if (!cronsList) return;
   if (!crons || !crons.length) {
-    cronsList.innerHTML = '<div class="cron-empty-hint">No cron jobs scheduled yet. Type natural instructions in chat or click + Schedule Cron.</div>';
+    cronsList.innerHTML = '<div class="cron-empty-hint">No cron jobs scheduled in Hermes.</div>';
     return;
   }
   cronsList.innerHTML = crons.map((j) => {
-    const isEnabled = j.enabled !== false;
+    const isPaused = j.state === "paused" || j.enabled === false;
     return `
-      <div class="cron-card ${isEnabled ? "" : "disabled"}" data-cron-id="${escapeHtml(j.id)}">
-        <div class="cron-head">
-          <span class="cron-name">${escapeHtml(j.name)}</span>
-          <span class="cron-status-badge ${isEnabled ? "active" : "paused"}">${isEnabled ? "ACTIVE" : "PAUSED"}</span>
+      <div class="cron-card ${isPaused ? "cron-paused" : ""}" data-cron-id="${escapeHtml(j.id)}">
+        <div class="cron-card-header">
+          <span class="cron-name"><strong>${escapeHtml(j.name || j.id)}</strong> <span class="muted small">(${escapeHtml(j.id)})</span></span>
+          <span class="cron-state-badge ${isPaused ? "paused" : "scheduled"}">${isPaused ? "PAUSED" : "ACTIVE"}</span>
         </div>
-        <div class="cron-details">
-          <span class="cron-expr">${escapeHtml(j.schedule_expr)}</span>
-          <span class="muted">${escapeHtml(j.action_type || "")}</span>
-        </div>
-        ${j.natural_instruction ? `<div class="muted small">"${escapeHtml(j.natural_instruction)}"</div>` : ""}
+        <div class="cron-schedule">⏰ ${escapeHtml(j.schedule_expr || "")} (${escapeHtml(j.timezone || "Asia/Dhaka")})</div>
+        ${j.next_run ? `<div class="muted small">Next: ${escapeHtml(j.next_run)}</div>` : ""}
+        ${j.last_run ? `<div class="muted small">Last: ${escapeHtml(j.last_run)} [${escapeHtml(j.last_status || "ok")}]</div>` : ""}
         <div class="cron-actions">
-          <button type="button" class="cron-action-btn" onclick="window.toggleCron('${escapeHtml(j.id)}')">${isEnabled ? "Pause" : "Resume"}</button>
-          <button type="button" class="cron-action-btn del" onclick="window.deleteCron('${escapeHtml(j.id)}')">🗑 Delete</button>
+          ${isPaused
+            ? `<button type="button" class="cron-btn resume" onclick="window.resumeHermesCron('${escapeHtml(j.id)}')">▶ Resume</button>`
+            : `<button type="button" class="cron-btn pause" onclick="window.pauseHermesCron('${escapeHtml(j.id)}')">⏸ Pause</button>`
+          }
+          <button type="button" class="cron-btn delete" onclick="window.deleteHermesCron('${escapeHtml(j.id)}')">🗑 Delete</button>
         </div>
       </div>
     `;
   }).join("");
 }
 
-window.promptAddCron = async function() {
-  const promptText = prompt("Enter natural scheduling instruction in Bangla, Banglish, or English:\n(e.g., 'Protidin sokal 10 tay StockNow sync kore L1 list check koro')", "Protidin sokal 10 tay StockNow sync kore L1 list check koro");
-  if (!promptText || !promptText.trim()) return;
-  try {
-    const res = await api("/api/hermes/crons", {
-      method: "POST",
-      body: { natural_instruction: promptText.trim() },
-    });
-    notify(`✓ Scheduled cron: ${res.cron?.name || "Autonomous Task"}`);
-    await loadHermesOSState();
-  } catch (err) {
-    notify(`Failed to schedule cron: ${err.message}`, true);
-  }
-};
-
-window.toggleCron = async function(jobId) {
+window.pauseHermesCron = async function(jobId) {
   if (!jobId) return;
   try {
-    await api(`/api/hermes/crons/${encodeURIComponent(jobId)}/toggle`, { method: "POST", body: {} });
+    await api(`/api/hermes/bridge/cron/${encodeURIComponent(jobId)}/pause`, { method: "POST" });
+    notify(`Cron job ${jobId} paused in Hermes.`);
     await loadHermesOSState();
   } catch (err) {
-    notify(`Failed to toggle cron: ${err.message}`, true);
+    notify(`Failed to pause cron: ${err.message}`, true);
   }
 };
 
-window.deleteCron = async function(jobId) {
-  if (!jobId || !confirm("Delete this scheduled cron job?")) return;
+window.resumeHermesCron = async function(jobId) {
+  if (!jobId) return;
   try {
-    await api(`/api/hermes/crons/${encodeURIComponent(jobId)}`, { method: "DELETE" });
-    notify("✓ Cron job removed.");
+    await api(`/api/hermes/bridge/cron/${encodeURIComponent(jobId)}/resume`, { method: "POST" });
+    notify(`Cron job ${jobId} resumed in Hermes.`);
+    await loadHermesOSState();
+  } catch (err) {
+    notify(`Failed to resume cron: ${err.message}`, true);
+  }
+};
+
+window.deleteHermesCron = async function(jobId) {
+  if (!jobId || !confirm(`Delete cron job ${jobId} from Hermes?`)) return;
+  try {
+    await api(`/api/hermes/bridge/cron/${encodeURIComponent(jobId)}`, { method: "DELETE" });
+    notify(`Cron job ${jobId} deleted from Hermes.`);
     await loadHermesOSState();
   } catch (err) {
     notify(`Failed to delete cron: ${err.message}`, true);
   }
 };
+
+window.toggleCron = function(jobId) {
+  return window.pauseHermesCron(jobId);
+};
+window.deleteCron = window.deleteHermesCron;
 
 function formatChatMarkdown(text) {
   if (!text) return "";
@@ -244,94 +260,171 @@ function addMessage(role, content, provider = null, servedBy = null) {
 
 async function sendChat(message) {
   message = message.trim();
-  if (!message || message.length > 2000 || state.chatBusy || !state.snapshot) return;
+  if (!message || message.length > 4000 || state.chatBusy || !state.snapshot) return;
 
-  if (message.toLowerCase() === "/model" || message.toLowerCase() === "/models") {
-    const inp = $("chat-input");
-    if (inp) inp.value = "";
-    const quickSelect = $("hermes-quick-model-select");
-    if (quickSelect) {
-      quickSelect.focus();
-      if (typeof quickSelect.showPicker === "function") {
-        try { quickSelect.showPicker(); } catch {}
-      }
-    }
-    const modelDrop = $("model-dropup-menu") || $("model-picker-dropdown");
-    if (modelDrop) {
-      modelDrop.hidden = false;
-      loadHermesModels();
-    }
-    return;
-  }
-  const history = state.history.slice(-8).map((turn) => ({ ...turn, content: turn.content.slice(0, 2000) }));
   addMessage("user", message);
   state.history.push({ role: "user", content: message });
   $("chat-input").value = "";
-  state.chatBusy = true; updateControls();
-  const thinking = addMessage("assistant", "Reading the current paper portfolio…");
-  thinking.querySelector(".message-body").classList.add("thinking");
+  state.chatBusy = true;
+  updateControls();
+
+  // Create streaming assistant message article
+  const article = element("article", "chat-message assistant");
+  const author = element("div", "message-author");
+  author.append(element("span", "assistant-avatar", "✦"));
+  author.append(document.createTextNode("HERMES"));
+  const modelName = $("hermes-active-model-name")?.textContent || "gemini-3.1-flash-lite";
+  author.append(element("span", "muted", ` · ${modelName}`));
+
+  const body = element("div", "message-body");
+  const toolsContainer = element("div", "tool-cards-container");
+  const textContent = element("div", "message-text-content");
+  const thinking = element("span", "thinking", "Hermes is thinking…");
+
+  body.append(toolsContainer, textContent, thinking);
+  article.append(author, body);
+  $("chat-messages").append(article);
+  $("chat-messages").scrollTop = $("chat-messages").scrollHeight;
+  syncQuickPromptsPlacement();
+
+  let streamedText = "";
+  let toolsUsedCount = 0;
+  const activeToolCards = {};
+
   try {
-    const payload = {
-      message,
-      history,
-      conversation_id: state.activeConversationId || undefined,
-    };
-    const response = await api("/api/chat", { method: "POST", body: payload, timeout: 35000 });
-    thinking.remove();
-    const servedBy = response.served_by || {
-      tier: response.provider === "local" ? 3 : (response.provider === "gemini" ? 2 : 1),
-      provider: (response.provider || "local").toUpperCase(),
-      model: response.model || "hermes-local-quant",
-      fallback_reason: null,
-    };
-    const article = addMessage("assistant", response.reply, null, servedBy);
+    const resp = await fetch("/api/hermes/bridge/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message,
+        session_id: state.activeConversationId || undefined,
+      }),
+    });
 
-    if (response.warning || servedBy.fallback_reason) {
-      let warnText = response.warning || "Served via offline fallback";
-      if (servedBy.fallback_reason && !warnText.toLowerCase().includes(servedBy.fallback_reason.toLowerCase())) {
-        warnText += ` (Trigger: ${servedBy.fallback_reason})`;
+    if (!resp.ok) {
+      throw new Error(`Hermes bridge returned HTTP ${resp.status}`);
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      const blocks = buffer.split("\n\n");
+      buffer = blocks.pop() || "";
+
+      for (const block of blocks) {
+        for (const rawLine of block.split("\n")) {
+          const line = rawLine.trim();
+          if (!line.startsWith("data: ")) continue;
+          const jsonStr = line.slice(6).trim();
+          if (!jsonStr) continue;
+
+          try {
+            const evt = JSON.parse(jsonStr);
+
+            if (evt.type === "tool_use") {
+              if (thinking.parentElement) thinking.remove();
+              toolsUsedCount++;
+              const toolId = evt.id || `tool_${Date.now()}_${toolsUsedCount}`;
+              const card = document.createElement("div");
+              card.className = "tool-call-card running";
+              card.id = `tool-card-${toolId}`;
+
+              const argsStr = typeof evt.input === "object" ? JSON.stringify(evt.input || {}, null, 2) : String(evt.input || "{}");
+              card.innerHTML = `
+                <div class="tool-card-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                  <span class="tool-card-title">⚡ Tool: <strong>${escapeHtml(evt.name)}</strong></span>
+                  <span class="tool-status running">Running…</span>
+                </div>
+                <div class="tool-card-body">
+                  <div class="tool-section-label">INPUT ARGUMENTS</div>
+                  <pre class="tool-pre tool-args">${escapeHtml(argsStr)}</pre>
+                  <div class="tool-result-section" style="display:none;">
+                    <div class="tool-section-label">OUTPUT RESULT</div>
+                    <pre class="tool-pre tool-output"></pre>
+                  </div>
+                </div>
+              `;
+              toolsContainer.appendChild(card);
+              activeToolCards[toolId] = card;
+              $("chat-messages").scrollTop = $("chat-messages").scrollHeight;
+
+            } else if (evt.type === "tool_result") {
+              const toolId = evt.id;
+              const card = activeToolCards[toolId] || toolsContainer.querySelector(".tool-call-card.running");
+              if (card) {
+                card.classList.remove("running");
+                card.classList.add(evt.is_error ? "error" : "completed");
+                const statusSpan = card.querySelector(".tool-status");
+                if (statusSpan) {
+                  statusSpan.className = `tool-status ${evt.is_error ? "error" : "completed"}`;
+                  statusSpan.textContent = evt.is_error ? "Failed" : "Done";
+                }
+                const resSec = card.querySelector(".tool-result-section");
+                const resPre = card.querySelector(".tool-output");
+                if (resSec && resPre) {
+                  resSec.style.display = "block";
+                  let outText = String(evt.output || "");
+                  try {
+                    const parsed = JSON.parse(outText);
+                    outText = JSON.stringify(parsed, null, 2);
+                  } catch {}
+                  resPre.textContent = outText;
+                }
+              }
+              $("chat-messages").scrollTop = $("chat-messages").scrollHeight;
+
+            } else if (evt.type === "text") {
+              if (thinking.parentElement) thinking.remove();
+              streamedText += evt.text;
+              textContent.innerHTML = formatChatMarkdown(streamedText);
+              $("chat-messages").scrollTop = $("chat-messages").scrollHeight;
+
+            } else if (evt.type === "done") {
+              if (thinking.parentElement) thinking.remove();
+              if (evt.text && !streamedText) {
+                streamedText = evt.text;
+                textContent.innerHTML = formatChatMarkdown(streamedText);
+              }
+              if (evt.session_id) {
+                state.activeConversationId = evt.session_id;
+                localStorage.setItem("humming-bird-active-conv-id", evt.session_id);
+              }
+
+            } else if (evt.type === "error") {
+              if (thinking.parentElement) thinking.remove();
+              textContent.innerHTML += `<div class="response-warning">Hermes Error: ${escapeHtml(evt.error || "Unknown error")}</div>`;
+            }
+          } catch (err) {
+            console.debug("SSE JSON parse notice:", err);
+          }
+        }
       }
-      article.append(element("p", "response-warning", warnText));
     }
 
-    state.lastChatProvider = response.provider;
-    const cleanModel = String(servedBy.model || "").replace(/^google\//, "");
-    if (servedBy.provider === "LOCAL") {
-      setText("chat-provider", "LOCAL SUMMARY · NO API COST FOR THIS REPLY");
-      setText("chat-footer-note", "Read-only local summary. No trade or rule changes made.");
-    } else {
-      setText("chat-provider", `${servedBy.provider} · ${cleanModel}`);
-      setText("chat-footer-note", "External AI used demo portfolio context. No execution tools.");
-    }
-
-    // Keep bottom composer footer (#hermes-model-trigger) showing the selected primary model,
-    // and set its title tooltip to "Last reply served by: <provider> (<model>)"
-    const modelTrigger = $("hermes-model-trigger");
-    if (modelTrigger) {
-      modelTrigger.title = `Last reply served by: ${servedBy.provider} (${cleanModel})`;
-    }
-
-    // Refresh settings & quota counters so both spots update immediately
-    loadApiKeysSettings();
-
-    state.history.push({ role: "assistant", content: response.reply.slice(0, 2000) });
+    if (thinking.parentElement) thinking.remove();
+    state.history.push({ role: "assistant", content: streamedText.slice(0, 2000) });
     state.history = state.history.slice(-8);
 
-    if (response.conversation_id && !state.activeConversationId) {
-      state.activeConversationId = response.conversation_id;
-      localStorage.setItem("humming-bird-active-conv-id", response.conversation_id);
-    }
-
-    if (response.agentic_action) {
+    // If tools executed state mutations, refresh portfolio & skills drawer
+    if (toolsUsedCount > 0) {
       await refresh(true);
-      notify(`Hermes action: ${response.agentic_action.replaceAll("_", " ")} executed.`);
-      loadSystemChanges();
+      loadHermesOSState();
     }
-    $("chat-messages").scrollTop = $("chat-messages").scrollHeight;
-  } catch (error) {
-    thinking.remove();
-    addMessage("assistant", `Unable to get a response: ${error.message}\nNo trade or settings change was made.`, "request error");
-  } finally { state.chatBusy = false; updateControls(); $("chat-input").focus(); }
+  } catch (err) {
+    if (thinking.parentElement) thinking.remove();
+    textContent.innerHTML = `<div class="response-warning">Unable to get response from Hermes bridge: ${escapeHtml(err.message)}</div>`;
+  } finally {
+    state.chatBusy = false;
+    updateControls();
+    $("chat-input").focus();
+  }
+}
 }
 
 // --- Hermes IDE Resizable Sidebar, Tabs & Antigravity History ---

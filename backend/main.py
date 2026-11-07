@@ -42,6 +42,7 @@ from backend.routes_auth_settings import (
     LoginRequest,
     build_auth_settings_router,
 )
+from backend.hermes_bridge import build_hermes_bridge_router
 from backend.routes_hermes import CreateThreadRequest, build_hermes_router
 from backend.routes_stocknow import build_stocknow_router
 from backend.seed import migrate_real_stocknow_market, seed_demo
@@ -292,6 +293,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return res
 
     app.include_router(build_hermes_router(database, settings, chat, broadcaster))
+    app.include_router(build_hermes_bridge_router(database, settings, broadcaster))
     app.include_router(build_auth_settings_router(database, settings, broadcaster))
     app.include_router(build_stocknow_router(database, settings, broadcaster, stocknow_client, scheduler=scheduler))
     from backend.kernel_api import build_kernel_router

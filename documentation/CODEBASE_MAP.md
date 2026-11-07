@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-07 07:12:32 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-07 07:29:45 UTC**.
 
 ---
 
@@ -8,12 +8,12 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 84 | 18,644 | Python Core Kernel, Engine & Hermes Agent |
+| `.py` | 85 | 18,984 | Python Core Kernel, Engine & Hermes Agent |
 | `.png` | 3 | 11,100 | Configuration / Asset |
-| `.css` | 2 | 8,195 | Custom Dark / Light / Terminal Design System |
-| `.js` | 3 | 4,181 | Vanilla ES6+ Reactive Terminal Controller |
-| `.md` | 17 | 3,557 | Architecture & Strategy Documentation |
-| `.html` | 1 | 1,036 | Single Page Application DOM Structure |
+| `.css` | 2 | 8,393 | Custom Dark / Light / Terminal Design System |
+| `.js` | 3 | 4,207 | Vanilla ES6+ Reactive Terminal Controller |
+| `.md` | 17 | 3,593 | Architecture & Strategy Documentation |
+| `.html` | 1 | 981 | Single Page Application DOM Structure |
 | `.ps1` | 1 | 41 | Configuration / Asset |
 | `.yaml` | 1 | 23 | Configuration / Asset |
 | `.agentignore` | 1 | 12 | Configuration / Asset |
@@ -26,7 +26,7 @@
 | `.bat` | 1 | 8 | Configuration / Asset |
 | `.svg` | 1 | 1 | Configuration / Asset |
 | `.db` | 1 | 0 | Configuration / Asset |
-| **TOTAL** | **123** | **46,864** | *Entire Humming Bird Repository* |
+| **TOTAL** | **124** | **47,409** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -60,6 +60,7 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | [`backend/hermes/secret_guard.py`](/backend/hermes/secret_guard.py) | *Independent Core Module* |
 | [`backend/hermes/skills_manager.py`](/backend/hermes/skills_manager.py) | `backend.database.HermesSkillRevision`, `backend.hermes.secret_guard.SecretGuard` |
 | [`backend/hermes/tools_dispatcher.py`](/backend/hermes/tools_dispatcher.py) | `backend.adapters.stocknow_client.StockNowLiveClient`, `backend.adapters.stocknow_market_sync.extract_quotes_from_payload`, `backend.adapters.stocknow_market_sync.extract_quotes_from_stocknow`, `backend.adapters.stocknow_market_sync.sync_live_market_to_db`, `backend.adapters.stocknow_order_executor.execute_stocknow_virtual_order`, `backend.adapters.stocknow_portfolio_sync.extract_hummingbird_portfolio`, `backend.adapters.stocknow_portfolio_sync.reconcile_portfolio_to_db`, `backend.config.Settings`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.PortfolioState`, `backend.database.RuleAudit`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.engine.agent_actions.check_canary_theses`, `backend.engine.agent_actions.emergency_quarantine_and_canary`, `backend.engine.agent_actions.execute_agentic_buy`, `backend.engine.agent_actions.execute_agentic_sell`, `backend.engine.agent_actions.restore_quarantine`, `backend.engine.money.decimal`, `backend.engine.scheduler.get_active_scheduler`, `backend.hermes.memory.HermesMemory`, `backend.hermes.skills_manager.SkillsManager`, `backend.hermes_os.cron_manager.CronManager` |
+| [`backend/hermes_bridge.py`](/backend/hermes_bridge.py) | *Independent Core Module* |
 | [`backend/hermes_os/__init__.py`](/backend/hermes_os/__init__.py) | `backend.hermes_os.agent_loop.HermesOSAgentLoop`, `backend.hermes_os.config.HermesConfig`, `backend.hermes_os.config.ensure_hermes_state_dir`, `backend.hermes_os.config.get_hermes_home`, `backend.hermes_os.config.load_hermes_config`, `backend.hermes_os.memory_curator.MemoryCurator`, `backend.hermes_os.skill_learner.SkillLearner`, `backend.hermes_os.skill_learner.bump_version`, `backend.hermes_os.skill_loader.Skill`, `backend.hermes_os.skill_loader.SkillLoader`, `backend.hermes_os.toolsets.HermesToolRegistry`, `backend.hermes_os.toolsets.ToolContext`, `backend.hermes_os.toolsets.ToolDefinition`, `backend.hermes_os.toolsets.default_registry` |
 | [`backend/hermes_os/agent_loop.py`](/backend/hermes_os/agent_loop.py) | `backend.hermes.secret_guard.SecretGuard`, `backend.hermes.secret_guard.redact_secrets`, `backend.hermes_os.config.HermesConfig`, `backend.hermes_os.config.ensure_hermes_state_dir`, `backend.hermes_os.config.load_hermes_config`, `backend.hermes_os.memory_curator.MemoryCurator`, `backend.hermes_os.skill_learner.SkillLearner`, `backend.hermes_os.skill_loader.SkillLoader`, `backend.hermes_os.toolsets.HermesToolRegistry`, `backend.hermes_os.toolsets.ToolContext`, `backend.hermes_os.toolsets.default_registry` |
 | [`backend/hermes_os/config.py`](/backend/hermes_os/config.py) | `backend.hermes.secret_guard.SecretGuard` |
@@ -69,7 +70,7 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | [`backend/hermes_os/skill_loader.py`](/backend/hermes_os/skill_loader.py) | `backend.hermes.secret_guard.SecretGuard`, `backend.hermes.secret_guard.redact_secrets`, `backend.hermes_os.config.ensure_hermes_state_dir` |
 | [`backend/hermes_os/toolsets.py`](/backend/hermes_os/toolsets.py) | `backend.adapters.stocknow_client.StockNowLiveClient`, `backend.adapters.stocknow_market_sync.extract_quotes_from_payload`, `backend.adapters.stocknow_market_sync.extract_quotes_from_stocknow`, `backend.adapters.stocknow_market_sync.get_or_fetch_all_dse_shares`, `backend.adapters.stocknow_market_sync.sync_live_market_to_db`, `backend.adapters.stocknow_order_executor.execute_stocknow_virtual_order`, `backend.adapters.stocknow_portfolio_sync.extract_hummingbird_portfolio`, `backend.adapters.stocknow_portfolio_sync.reconcile_portfolio_to_db`, `backend.config.Settings`, `backend.database.CanaryThesis`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.PortfolioState`, `backend.database.RuleAudit`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.engine.agent_actions.check_canary_theses`, `backend.engine.agent_actions.emergency_quarantine_and_canary`, `backend.engine.agent_actions.execute_agentic_buy`, `backend.engine.agent_actions.execute_agentic_sell`, `backend.engine.agent_actions.restore_quarantine`, `backend.engine.money.decimal`, `backend.engine.money.money`, `backend.engine.money.price`, `backend.hermes.agent_loop.CheckpointManager`, `backend.hermes.memory.HermesMemory`, `backend.hermes.secret_guard.redact_secrets`, `backend.hermes_os.cron_manager.CronManager`, `backend.hermes_os.memory_curator.MemoryCurator`, `backend.hermes_os.skill_learner.SkillLearner` |
 | [`backend/kernel_api.py`](/backend/kernel_api.py) | `backend.adapters.stocknow_market_sync.extract_quotes_from_stocknow`, `backend.adapters.stocknow_market_sync.get_or_fetch_all_dse_shares`, `backend.adapters.stocknow_market_sync.sync_live_market_to_db`, `backend.adapters.stocknow_portfolio_sync.reconcile_portfolio_to_db`, `backend.config.Settings`, `backend.database.CanaryThesis`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.KernelAuditLog`, `backend.database.PortfolioState`, `backend.database.RuleAudit`, `backend.database.TaxLot`, `backend.database.portfolio_state`, `backend.engine.agent_actions.check_canary_theses`, `backend.engine.agent_actions.emergency_quarantine_and_canary`, `backend.engine.agent_actions.execute_agentic_buy`, `backend.engine.agent_actions.execute_agentic_sell`, `backend.engine.agent_actions.restore_quarantine`, `backend.engine.checkpoint.CheckpointManager`, `backend.engine.curve_analyzer.analyze_curve`, `backend.engine.money.ZERO`, `backend.engine.money.allocated_basis`, `backend.engine.money.purchase_amount`, `backend.engine.money.sale_amount`, `backend.engine.scheduler.is_dse_market_open`, `backend.portfolio.snapshot_from_session`, `backend.seed.seed_demo` |
-| [`backend/main.py`](/backend/main.py) | `backend.adapters.stocknow_adapter.StockNowAdapter`, `backend.adapters.stocknow_client.StockNowLiveClient`, `backend.adapters.stocknow_market_sync.extract_quotes_from_stocknow`, `backend.adapters.stocknow_market_sync.sync_live_market_to_db`, `backend.chat.ChatRequest`, `backend.chat.ChatService`, `backend.config.ROOT`, `backend.config.Settings`, `backend.config.VERSION`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.RuleAudit`, `backend.database.portfolio_state`, `backend.engine.auto_trader.AutoTrader`, `backend.engine.auto_trader.AutomationPaused`, `backend.engine.money.ZERO`, `backend.engine.scheduler.DSEMarketScheduler`, `backend.kernel_api.build_kernel_router`, `backend.market_map.build_market_map_payload`, `backend.portfolio.build_snapshot`, `backend.portfolio.rule_view`, `backend.routes_auth_settings.KeysSettingsRequest`, `backend.routes_auth_settings.LoginRequest`, `backend.routes_auth_settings.build_auth_settings_router`, `backend.routes_hermes.CreateThreadRequest`, `backend.routes_hermes.build_hermes_router`, `backend.routes_stocknow.build_stocknow_router`, `backend.seed.migrate_real_stocknow_market`, `backend.seed.seed_demo` |
+| [`backend/main.py`](/backend/main.py) | `backend.adapters.stocknow_adapter.StockNowAdapter`, `backend.adapters.stocknow_client.StockNowLiveClient`, `backend.adapters.stocknow_market_sync.extract_quotes_from_stocknow`, `backend.adapters.stocknow_market_sync.sync_live_market_to_db`, `backend.chat.ChatRequest`, `backend.chat.ChatService`, `backend.config.ROOT`, `backend.config.Settings`, `backend.config.VERSION`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.RuleAudit`, `backend.database.portfolio_state`, `backend.engine.auto_trader.AutoTrader`, `backend.engine.auto_trader.AutomationPaused`, `backend.engine.money.ZERO`, `backend.engine.scheduler.DSEMarketScheduler`, `backend.hermes_bridge.build_hermes_bridge_router`, `backend.kernel_api.build_kernel_router`, `backend.market_map.build_market_map_payload`, `backend.portfolio.build_snapshot`, `backend.portfolio.rule_view`, `backend.routes_auth_settings.KeysSettingsRequest`, `backend.routes_auth_settings.LoginRequest`, `backend.routes_auth_settings.build_auth_settings_router`, `backend.routes_hermes.CreateThreadRequest`, `backend.routes_hermes.build_hermes_router`, `backend.routes_stocknow.build_stocknow_router`, `backend.seed.migrate_real_stocknow_market`, `backend.seed.seed_demo` |
 | [`backend/market_map.py`](/backend/market_map.py) | *Independent Core Module* |
 | [`backend/portfolio.py`](/backend/portfolio.py) | `backend.adapters.stocknow_adapter.StockNowAdapter`, `backend.adapters.stocknow_market_sync._ALL_DSE_SHARES_CACHE`, `backend.config.DHAKA`, `backend.config.Settings`, `backend.config.VERSION`, `backend.database.AutomationCycle`, `backend.database.CanaryThesis`, `backend.database.ChatBudget`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.DecisionLog`, `backend.database.HermesDurableFact`, `backend.database.HermesSkillRevision`, `backend.database.HermesStateCheckpoint`, `backend.database.HermesUserProfile`, `backend.database.RuleAudit`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.database.portfolio_state`, `backend.engine.money.HUNDRED`, `backend.engine.money.ZERO`, `backend.engine.money.decimal`, `backend.engine.money.money`, `backend.engine.money.sale_amount`, `backend.engine.signals.assess_company`, `backend.engine.t2_ledger.TradingCalendar`, `backend.engine.t2_ledger.bucket_balances`, `backend.hermes.skills_manager.SkillsManager`, `backend.market_map.build_market_map_payload` |
 | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py) | `backend.config.DHAKA`, `backend.config.Settings`, `backend.database.ChatBudget`, `backend.database.Database`, `backend.database.HermesSessionMemory`, `backend.database.portfolio_state`, `backend.hermes.agent_loop.CheckpointManager` |
@@ -678,6 +679,35 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 ---
 
+### 📄 [`backend/hermes_bridge.py`](/backend/hermes_bridge.py)
+
+#### Classes & Methods
+
+| Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
+| :--- | :--- | :--- | :--- | :--- |
+| `BridgeChatRequest` | `L47–L50` | `BaseModel` | — | 0 |
+
+
+#### Standalone Functions
+
+| Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `get_hermes_dir` | `L28–L35` | `(...)` | `Path` | Returns the Hermes home directory (AppData/Local/hermes on Windows, ~/.hermes on Linux/Mac). | `Path`, `exists`, `get`, `home` |
+| `get_hermes_bin` | `L38–L44` | `(...)` | `str` | Returns path to the hermes executable. | `exists`, `get_hermes_dir`, `str` |
+| `stream_hermes_chat` | `L53–L157` | `(message: str, session_id: Optional[...)` | `AsyncGenerator[str, None]` | Streams SSE events from running Hermes (gateway API server or direct CLI fallback). | `AsyncClient`, `aiter_lines`, `append`, `create_subprocess_exec` |
+| `read_hermes_state` | `L160–L254` | `(...)` | `dict[str, Any]` | Reads skills, memory (USER.md / MEMORY.md), active model, and cron jobs from Hermes. | `_extract_skill_meta`, `any`, `append`, `bool` |
+| `_extract_skill_meta` | `L257–L274` | `(path: Path...)` | `dict[str, Any]` | Extracts frontmatter metadata from a SKILL.md file. | `get`, `isinstance`, `len`, `read_text` |
+| `run_hermes_cron_cmd` | `L277–L289` | `(*args: str...)` | `dict[str, Any]` | Runs a hermes cron sub-command synchronously. | `get_hermes_bin`, `run`, `str`, `strip` |
+| `build_hermes_bridge_router` | `L292–L338` | `(database: Any=None, settings: Any=N...)` | `APIRouter` | Builds and returns the Hermes bridge router. | `APIRouter` |
+| `bridge_chat` | `L297–L307` | `(body: BridgeChatRequest...)` | — | Streaming chat endpoint proxying to running Hermes. | `StreamingResponse`, `post`, `stream_hermes_chat` |
+| `bridge_state` | `L310–L312` | `(...)` | — | Returns active model, skills, memory preview, and cron jobs directly from Hermes. | `get`, `read_hermes_state` |
+| `bridge_cron_pause` | `L315–L320` | `(job_id: str...)` | — | Pauses a scheduled Hermes cron job. | `HTTPException`, `get`, `post`, `run_hermes_cron_cmd` |
+| `bridge_cron_resume` | `L323–L328` | `(job_id: str...)` | — | Resumes a paused Hermes cron job. | `HTTPException`, `get`, `post`, `run_hermes_cron_cmd` |
+| `bridge_cron_delete` | `L331–L336` | `(job_id: str...)` | — | Deletes a scheduled Hermes cron job. | `HTTPException`, `delete`, `get`, `run_hermes_cron_cmd` |
+
+
+---
+
 ### 📄 [`backend/hermes_os/__init__.py`](/backend/hermes_os/__init__.py)
 
 ---
@@ -958,49 +988,49 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `PauseRequest` | `L52–L54` | `BaseModel` | — | 0 |
-| `AutomationConfigRequest` | `L57–L61` | `BaseModel` | — | 0 |
-| `AdvanceRequest` | `L64–L66` | `BaseModel` | — | 0 |
-| `AllocationRequest` | `L69–L72` | `BaseModel` | — | 0 |
-| `EventBroadcaster` | `L75–L92` | `object` | — | 4 |
-| `DevStaticFiles` | `L328–L334` | `StaticFiles` | — | 1 |
+| `PauseRequest` | `L53–L55` | `BaseModel` | — | 0 |
+| `AutomationConfigRequest` | `L58–L62` | `BaseModel` | — | 0 |
+| `AdvanceRequest` | `L65–L67` | `BaseModel` | — | 0 |
+| `AllocationRequest` | `L70–L73` | `BaseModel` | — | 0 |
+| `EventBroadcaster` | `L76–L93` | `object` | — | 4 |
+| `DevStaticFiles` | `L330–L336` | `StaticFiles` | — | 1 |
 
 
 **Methods in `EventBroadcaster`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__init__` | `L76–L77` | `(self...)` | — | — | `set` |
-| `subscribe` | `L79–L82` | `(self...)` | `asyncio.Queue` | — | `Queue`, `add` |
-| `unsubscribe` | `L84–L85` | `(self, queue: asyncio.Queue...)` | — | — | `discard` |
-| `publish` | `L87–L92` | `(self, event_type: str, data: dict...)` | — | — | `list`, `put_nowait` |
+| `__init__` | `L77–L78` | `(self...)` | — | — | `set` |
+| `subscribe` | `L80–L83` | `(self...)` | `asyncio.Queue` | — | `Queue`, `add` |
+| `unsubscribe` | `L85–L86` | `(self, queue: asyncio.Queue...)` | — | — | `discard` |
+| `publish` | `L88–L93` | `(self, event_type: str, data: dict...)` | — | — | `list`, `put_nowait` |
 
 
 **Methods in `DevStaticFiles`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `get_response` | `L329–L334` | `(self, path: str, scope...)` | — | — | `get_response`, `super` |
+| `get_response` | `L331–L336` | `(self, path: str, scope...)` | — | — | `get_response`, `super` |
 
 
 #### Standalone Functions
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `create_app` | `L95–L348` | `(settings: Settings | None=None...)` | `FastAPI` | — | `AutoTrader`, `ChatService`, `DSEMarketScheduler`, `Database` |
-| `lifespan` | `L105–L121` | `(_app: FastAPI...)` | — | — | `close`, `create_schema`, `dispose`, `migrate_real_stocknow_market` |
-| `local_security` | `L137–L175` | `(request: Request, call_next...)` | — | — | `JSONResponse`, `call_next`, `compare_digest`, `encode` |
-| `health` | `L178–L179` | `(...)` | — | — | `get` |
-| `portfolio` | `L182–L183` | `(...)` | — | — | `build_snapshot`, `get` |
-| `cycle` | `L186–L200` | `(idempotency_key: Annotated[UUID | N...)` | — | — | `HTTPException`, `Header`, `extract_quotes_from_stocknow`, `post` |
-| `pause` | `L203–L210` | `(body: PauseRequest...)` | — | — | `portfolio_state`, `post`, `publish`, `write` |
-| `automation_config` | `L213–L248` | `(body: AutomationConfigRequest...)` | — | — | `StockNowAdapter`, `ensure_authenticated`, `extract_quotes_from_stocknow`, `get_adapter_status` |
-| `advance` | `L251–L262` | `(body: AdvanceRequest...)` | — | — | `Decimal`, `advance_demo`, `build_market_map_payload`, `get` |
-| `market_map_endpoint` | `L265–L266` | `(...)` | — | — | `build_market_map_payload`, `get` |
-| `allocation` | `L269–L292` | `(symbol: str, body: AllocationReques...)` | — | — | `HTTPException`, `RuleAudit`, `add`, `get` |
-| `event_stream` | `L301–L326` | `(request: Request...)` | — | — | `StreamingResponse`, `generator`, `get`, `subscribe` |
-| `generator` | `L304–L316` | `(...)` | — | — | `dumps`, `get`, `is_disconnected`, `unsubscribe` |
-| `cockpit` | `L337–L345` | `(...)` | — | — | `FileResponse`, `get` |
+| `create_app` | `L96–L350` | `(settings: Settings | None=None...)` | `FastAPI` | — | `AutoTrader`, `ChatService`, `DSEMarketScheduler`, `Database` |
+| `lifespan` | `L106–L122` | `(_app: FastAPI...)` | — | — | `close`, `create_schema`, `dispose`, `migrate_real_stocknow_market` |
+| `local_security` | `L138–L176` | `(request: Request, call_next...)` | — | — | `JSONResponse`, `call_next`, `compare_digest`, `encode` |
+| `health` | `L179–L180` | `(...)` | — | — | `get` |
+| `portfolio` | `L183–L184` | `(...)` | — | — | `build_snapshot`, `get` |
+| `cycle` | `L187–L201` | `(idempotency_key: Annotated[UUID | N...)` | — | — | `HTTPException`, `Header`, `extract_quotes_from_stocknow`, `post` |
+| `pause` | `L204–L211` | `(body: PauseRequest...)` | — | — | `portfolio_state`, `post`, `publish`, `write` |
+| `automation_config` | `L214–L249` | `(body: AutomationConfigRequest...)` | — | — | `StockNowAdapter`, `ensure_authenticated`, `extract_quotes_from_stocknow`, `get_adapter_status` |
+| `advance` | `L252–L263` | `(body: AdvanceRequest...)` | — | — | `Decimal`, `advance_demo`, `build_market_map_payload`, `get` |
+| `market_map_endpoint` | `L266–L267` | `(...)` | — | — | `build_market_map_payload`, `get` |
+| `allocation` | `L270–L293` | `(symbol: str, body: AllocationReques...)` | — | — | `HTTPException`, `RuleAudit`, `add`, `get` |
+| `event_stream` | `L303–L328` | `(request: Request...)` | — | — | `StreamingResponse`, `generator`, `get`, `subscribe` |
+| `generator` | `L306–L318` | `(...)` | — | — | `dumps`, `get`, `is_disconnected`, `unsubscribe` |
+| `cockpit` | `L339–L347` | `(...)` | — | — | `FileResponse`, `get` |
 
 
 ---
@@ -1208,16 +1238,16 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 
 | Method | Route Path | Module File | Line | Handler Function | Description |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/api/health` | [`backend/main.py`](/backend/main.py#L178) | `L178` | `health()` | Route endpoint |
-| `GET` | `/api/portfolio` | [`backend/main.py`](/backend/main.py#L182) | `L182` | `portfolio()` | Route endpoint |
-| `POST` | `/api/automation/cycle` | [`backend/main.py`](/backend/main.py#L186) | `L186` | `cycle()` | Route endpoint |
-| `POST` | `/api/automation/pause` | [`backend/main.py`](/backend/main.py#L203) | `L203` | `pause()` | Route endpoint |
-| `POST` | `/api/automation/config` | [`backend/main.py`](/backend/main.py#L213) | `L213` | `automation_config()` | Route endpoint |
-| `POST` | `/api/demo/advance` | [`backend/main.py`](/backend/main.py#L251) | `L251` | `advance()` | Route endpoint |
-| `GET` | `/api/market/map` | [`backend/main.py`](/backend/main.py#L265) | `L265` | `market_map_endpoint()` | Route endpoint |
-| `PATCH` | `/api/companies/{symbol}/allocation` | [`backend/main.py`](/backend/main.py#L269) | `L269` | `allocation()` | Route endpoint |
-| `GET` | `/api/stream` | [`backend/main.py`](/backend/main.py#L301) | `L301` | `event_stream()` | Route endpoint |
-| `GET` | `/` | [`backend/main.py`](/backend/main.py#L337) | `L337` | `cockpit()` | Route endpoint |
+| `GET` | `/api/health` | [`backend/main.py`](/backend/main.py#L179) | `L179` | `health()` | Route endpoint |
+| `GET` | `/api/portfolio` | [`backend/main.py`](/backend/main.py#L183) | `L183` | `portfolio()` | Route endpoint |
+| `POST` | `/api/automation/cycle` | [`backend/main.py`](/backend/main.py#L187) | `L187` | `cycle()` | Route endpoint |
+| `POST` | `/api/automation/pause` | [`backend/main.py`](/backend/main.py#L204) | `L204` | `pause()` | Route endpoint |
+| `POST` | `/api/automation/config` | [`backend/main.py`](/backend/main.py#L214) | `L214` | `automation_config()` | Route endpoint |
+| `POST` | `/api/demo/advance` | [`backend/main.py`](/backend/main.py#L252) | `L252` | `advance()` | Route endpoint |
+| `GET` | `/api/market/map` | [`backend/main.py`](/backend/main.py#L266) | `L266` | `market_map_endpoint()` | Route endpoint |
+| `PATCH` | `/api/companies/{symbol}/allocation` | [`backend/main.py`](/backend/main.py#L270) | `L270` | `allocation()` | Route endpoint |
+| `GET` | `/api/stream` | [`backend/main.py`](/backend/main.py#L303) | `L303` | `event_stream()` | Route endpoint |
+| `GET` | `/` | [`backend/main.py`](/backend/main.py#L339) | `L339` | `cockpit()` | Route endpoint |
 | `POST` | `/api/chat` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L30) | `L30` | `chat_route()` | Route endpoint |
 | `GET` | `/api/hermes/conversations` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L37) | `L37` | `list_conversations()` | Route endpoint |
 | `POST` | `/api/hermes/conversations` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L44) | `L44` | `create_conversation()` | Route endpoint |
@@ -1334,7 +1364,7 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 
 ### Key DOM Identifiers (`frontend/index.html`)
 
-Identified **269** distinct element IDs in the UI shell. Key controller anchors:
+Identified **267** distinct element IDs in the UI shell. Key controller anchors:
 
 `#overview`, `#watchlist`, `#market-map`, `#master-automation-toggle`, `#mode-btn-polling`, `#mode-btn-live`, `#polling-interval-pills`, `#main-chart`, `#bucket-stack`, `#what-if-slider`, `#theme-toggle-btn`, `#topbar-clock-widget`
 
@@ -1343,7 +1373,7 @@ Identified **269** distinct element IDs in the UI shell. Key controller anchors:
 
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
-| `styles.css` | 5353 | Core design tokens, layout & widgets |
+| `styles.css` | 5551 | Core design tokens, layout & widgets |
 | `theme_light_hermes.css` | 2842 | Daylight overrides & Hermes IDE sidebar |
 
 
@@ -1357,14 +1387,11 @@ Identified **269** distinct element IDs in the UI shell. Key controller anchors:
 | `/api/automation/config` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
 | `/api/automation/cycle` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
 | `/api/automation/pause` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
-| `/api/chat` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
 | `/api/demo/advance` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
+| `/api/hermes/bridge/state` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
 | `/api/hermes/conversations` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
-| `/api/hermes/crons` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
 | `/api/hermes/model` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
-| `/api/hermes/models` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
 | `/api/hermes/rollback` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
-| `/api/hermes/state` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
 | `/api/portfolio` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
 | `/api/settings/keys` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
 | `/api/stocknow/all-shares` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
@@ -1439,31 +1466,31 @@ Identified **269** distinct element IDs in the UI shell. Key controller anchors:
 | `initCharts()` | `charts.js` | `L1308` | Reactive DOM rendering / event controller |
 | `renderHermesSkills()` | `hermes_ui.js` | `L8` | Reactive DOM rendering / event controller |
 | `loadHermesOSState()` | `hermes_ui.js` | `L55` | Reactive DOM rendering / event controller |
-| `renderHermesCronJobs()` | `hermes_ui.js` | `L99` | Reactive DOM rendering / event controller |
-| `formatChatMarkdown()` | `hermes_ui.js` | `L164` | Reactive DOM rendering / event controller |
-| `syncQuickPromptsPlacement()` | `hermes_ui.js` | `L205` | Reactive DOM rendering / event controller |
-| `addMessage()` | `hermes_ui.js` | `L225` | Reactive DOM rendering / event controller |
-| `sendChat()` | `hermes_ui.js` | `L245` | Reactive DOM rendering / event controller |
-| `initHermesSidebar()` | `hermes_ui.js` | `L338` | Reactive DOM rendering / event controller |
-| `loadConversations()` | `hermes_ui.js` | `L483` | Reactive DOM rendering / event controller |
-| `switchConversation()` | `hermes_ui.js` | `L517` | Reactive DOM rendering / event controller |
-| `createNewConversation()` | `hermes_ui.js` | `L546` | Reactive DOM rendering / event controller |
-| `formatRelativeTime()` | `hermes_ui.js` | `L573` | Reactive DOM rendering / event controller |
-| `escapeHtml()` | `hermes_ui.js` | `L587` | Reactive DOM rendering / event controller |
-| `executeRollback()` | `hermes_ui.js` | `L597` | Reactive DOM rendering / event controller |
-| `loadHermesModels()` | `hermes_ui.js` | `L620` | Reactive DOM rendering / event controller |
-| `switchHermesModel()` | `hermes_ui.js` | `L732` | Reactive DOM rendering / event controller |
-| `loadApiKeysSettings()` | `hermes_ui.js` | `L793` | Reactive DOM rendering / event controller |
-| `saveApiKeysSettings()` | `hermes_ui.js` | `L859` | Reactive DOM rendering / event controller |
-| `checkAuthSession()` | `hermes_ui.js` | `L911` | Reactive DOM rendering / event controller |
-| `openOperatorProfile()` | `hermes_ui.js` | `L929` | Reactive DOM rendering / event controller |
-| `closeOperatorProfile()` | `hermes_ui.js` | `L934` | Reactive DOM rendering / event controller |
-| `handleOperatorLogin()` | `hermes_ui.js` | `L939` | Reactive DOM rendering / event controller |
-| `handleOperatorLogout()` | `hermes_ui.js` | `L968` | Reactive DOM rendering / event controller |
-| `markKeysDirty()` | `hermes_ui.js` | `L978` | Reactive DOM rendering / event controller |
-| `initAuthAndSettings()` | `hermes_ui.js` | `L988` | Reactive DOM rendering / event controller |
-| `loadSystemChanges()` | `hermes_ui.js` | `L1070` | Reactive DOM rendering / event controller |
-| `initHermesChatListeners()` | `hermes_ui.js` | `L1158` | Reactive DOM rendering / event controller |
+| `renderHermesCronJobs()` | `hermes_ui.js` | `L112` | Reactive DOM rendering / event controller |
+| `formatChatMarkdown()` | `hermes_ui.js` | `L180` | Reactive DOM rendering / event controller |
+| `syncQuickPromptsPlacement()` | `hermes_ui.js` | `L221` | Reactive DOM rendering / event controller |
+| `addMessage()` | `hermes_ui.js` | `L241` | Reactive DOM rendering / event controller |
+| `sendChat()` | `hermes_ui.js` | `L261` | Reactive DOM rendering / event controller |
+| `initHermesSidebar()` | `hermes_ui.js` | `L431` | Reactive DOM rendering / event controller |
+| `loadConversations()` | `hermes_ui.js` | `L576` | Reactive DOM rendering / event controller |
+| `switchConversation()` | `hermes_ui.js` | `L610` | Reactive DOM rendering / event controller |
+| `createNewConversation()` | `hermes_ui.js` | `L639` | Reactive DOM rendering / event controller |
+| `formatRelativeTime()` | `hermes_ui.js` | `L666` | Reactive DOM rendering / event controller |
+| `escapeHtml()` | `hermes_ui.js` | `L680` | Reactive DOM rendering / event controller |
+| `executeRollback()` | `hermes_ui.js` | `L690` | Reactive DOM rendering / event controller |
+| `loadHermesModels()` | `hermes_ui.js` | `L713` | Reactive DOM rendering / event controller |
+| `switchHermesModel()` | `hermes_ui.js` | `L758` | Reactive DOM rendering / event controller |
+| `loadApiKeysSettings()` | `hermes_ui.js` | `L819` | Reactive DOM rendering / event controller |
+| `saveApiKeysSettings()` | `hermes_ui.js` | `L885` | Reactive DOM rendering / event controller |
+| `checkAuthSession()` | `hermes_ui.js` | `L937` | Reactive DOM rendering / event controller |
+| `openOperatorProfile()` | `hermes_ui.js` | `L955` | Reactive DOM rendering / event controller |
+| `closeOperatorProfile()` | `hermes_ui.js` | `L960` | Reactive DOM rendering / event controller |
+| `handleOperatorLogin()` | `hermes_ui.js` | `L965` | Reactive DOM rendering / event controller |
+| `handleOperatorLogout()` | `hermes_ui.js` | `L994` | Reactive DOM rendering / event controller |
+| `markKeysDirty()` | `hermes_ui.js` | `L1004` | Reactive DOM rendering / event controller |
+| `initAuthAndSettings()` | `hermes_ui.js` | `L1014` | Reactive DOM rendering / event controller |
+| `loadSystemChanges()` | `hermes_ui.js` | `L1096` | Reactive DOM rendering / event controller |
+| `initHermesChatListeners()` | `hermes_ui.js` | `L1184` | Reactive DOM rendering / event controller |
 
 ---
 
@@ -1521,6 +1548,9 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/hermes/tools_dispatcher.py` | `dispatch_tool` | 71 | 16 | Acceptable; well-scoped logic |
 | `backend/hermes/tools_dispatcher.py` | `format_tool_response` | 180 | 9 | Decompose into sub-functions |
 | `backend/hermes/tools_dispatcher.py` | `detect_intent_and_tool` | 254 | 5 | Decompose into sub-functions |
+| `backend/hermes_bridge.py` | `stream_hermes_chat` | 105 | 8 | Decompose into sub-functions |
+| `backend/hermes_bridge.py` | `read_hermes_state` | 95 | 4 | Acceptable; well-scoped logic |
+| `backend/hermes_bridge.py` | `_extract_skill_meta` | 18 | 5 | Acceptable; well-scoped logic |
 | `backend/hermes_os/agent_loop.py` | `prepare_turn_messages` | 55 | 4 | Acceptable; well-scoped logic |
 | `backend/hermes_os/config.py` | `ensure_hermes_state_dir` | 29 | 4 | Acceptable; well-scoped logic |
 | `backend/hermes_os/cron_manager.py` | `parse_natural_schedule` | 93 | 6 | Acceptable; well-scoped logic |
@@ -1536,7 +1566,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/kernel_api.py` | `post_quarantine` | 51 | 4 | Acceptable; well-scoped logic |
 | `backend/kernel_api.py` | `post_sync` | 54 | 5 | Acceptable; well-scoped logic |
 | `backend/kernel_api.py` | `post_order` | 149 | 5 | Decompose into sub-functions |
-| `backend/main.py` | `create_app` | 254 | 4 | Decompose into sub-functions |
+| `backend/main.py` | `create_app` | 255 | 4 | Decompose into sub-functions |
 | `backend/main.py` | `local_security` | 39 | 4 | Acceptable; well-scoped logic |
 | `backend/main.py` | `cycle` | 15 | 4 | Acceptable; well-scoped logic |
 | `backend/main.py` | `automation_config` | 36 | 4 | Acceptable; well-scoped logic |
@@ -1565,4 +1595,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 43 Python modules inspected, 38 FastAPI endpoints registered, 46,864 total LOC indexed.
+> **Audit Summary:** 44 Python modules inspected, 38 FastAPI endpoints registered, 47,409 total LOC indexed.
