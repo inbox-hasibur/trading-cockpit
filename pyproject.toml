@@ -1,6 +1,9 @@
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+    "live: opt-in live smoke test against StockNow",
+]
 
 [tool.ruff]
 target-version = "py312"
