@@ -19,8 +19,15 @@ from .schemas import (
     HB_SET_TIER_SCHEMA,
     HB_SYNC_SCHEMA,
     HB_WATCHLIST_SCHEMA,
+    HB_AUTOMATION_GET_SCHEMA,
+    HB_AUTOMATION_SET_SCHEMA,
+    HB_SCHEDULER_SCHEMA,
+    HB_RUN_CYCLE_SCHEMA,
+    HB_STOCKNOW_SESSION_SCHEMA,
 )
 from .tools import (
+    hb_automation_get,
+    hb_automation_set,
     hb_canaries,
     hb_inspect_curve,
     hb_lots,
@@ -30,8 +37,11 @@ from .tools import (
     hb_quarantine_canary,
     hb_restore_quarantine,
     hb_rollback_last,
+    hb_run_cycle,
+    hb_scheduler,
     hb_set_allocation,
     hb_set_tier,
+    hb_stocknow_session,
     hb_sync,
     hb_watchlist,
 )
@@ -50,6 +60,11 @@ _TOOLS = (
     ("hb_sync", HB_SYNC_SCHEMA, hb_sync),
     ("hb_place_order", HB_PLACE_ORDER_SCHEMA, hb_place_order),
     ("hb_rollback_last", HB_ROLLBACK_LAST_SCHEMA, hb_rollback_last),
+    ("hb_automation_get", HB_AUTOMATION_GET_SCHEMA, hb_automation_get),
+    ("hb_automation_set", HB_AUTOMATION_SET_SCHEMA, hb_automation_set),
+    ("hb_scheduler", HB_SCHEDULER_SCHEMA, hb_scheduler),
+    ("hb_run_cycle", HB_RUN_CYCLE_SCHEMA, hb_run_cycle),
+    ("hb_stocknow_session", HB_STOCKNOW_SESSION_SCHEMA, hb_stocknow_session),
 )
 
 

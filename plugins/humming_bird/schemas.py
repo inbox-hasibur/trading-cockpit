@@ -235,3 +235,99 @@ HB_ROLLBACK_LAST_SCHEMA = {
         "additionalProperties": False,
     },
 }
+
+HB_AUTOMATION_GET_SCHEMA = {
+    "name": "hb_automation_get",
+    "description": "Fetch master buy/sell automation switch status, engine paused state, ingestion mode, and polling cadence.",
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": False,
+    },
+}
+
+HB_AUTOMATION_SET_SCHEMA = {
+    "name": "hb_automation_set",
+    "description": "Configure trading automation settings: toggle master buy/sell automation on/off, pause/resume engine, set ingestion mode ('BACKGROUND_POLLING' or 'ONSCREEN_LIVE'), or adjust polling interval (seconds).",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "automation_enabled": {
+                "type": "boolean",
+                "description": "Enable (true) or disable (false) master automated trading.",
+            },
+            "paused": {
+                "type": "boolean",
+                "description": "Pause (true) or unpause (false) the trading execution engine.",
+            },
+            "ingestion_mode": {
+                "type": "string",
+                "enum": ["BACKGROUND_POLLING", "ONSCREEN_LIVE"],
+                "description": "Market data ingestion mode: 'BACKGROUND_POLLING' or 'ONSCREEN_LIVE'.",
+            },
+            "polling_interval_sec": {
+                "type": "integer",
+                "description": "Polling frequency in seconds (e.g. 60, 120, 300).",
+            },
+        },
+        "additionalProperties": False,
+    },
+}
+
+HB_SCHEDULER_SCHEMA = {
+    "name": "hb_scheduler",
+    "description": "Control or inspect the background market scheduler loop. Action must be 'start', 'stop', or 'status'.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "action": {
+                "type": "string",
+                "enum": ["start", "stop", "status"],
+                "description": "Scheduler action to execute: 'start', 'stop', or 'status'.",
+            },
+        },
+        "required": ["action"],
+        "additionalProperties": False,
+    },
+}
+
+HB_RUN_CYCLE_SCHEMA = {
+    "name": "hb_run_cycle",
+    "description": "Execute an immediate evaluation cycle through AutoTrader. dry_run=true by default for safe evaluation.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "dry_run": {
+                "type": "boolean",
+                "description": "Safe simulation mode (default: true). Set false for live execution.",
+            },
+            "idempotency_key": {
+                "type": "string",
+                "description": "Optional idempotency deduplication key.",
+            },
+        },
+        "additionalProperties": False,
+    },
+}
+
+HB_STOCKNOW_SESSION_SCHEMA = {
+    "name": "hb_stocknow_session",
+    "description": "Manage live Playwright browser session for StockNow integration. Action must be 'launch', 'status', or 'login'.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "action": {
+                "type": "string",
+                "enum": ["launch", "status", "login"],
+                "description": "Session action: 'launch', 'status', or 'login'.",
+            },
+            "mode": {
+                "type": "string",
+                "enum": ["ONSCREEN_LIVE", "BACKGROUND_POLLING"],
+                "description": "Optional browser display mode when launching: 'ONSCREEN_LIVE' or 'BACKGROUND_POLLING'.",
+            },
+        },
+        "required": ["action"],
+        "additionalProperties": False,
+    },
+}

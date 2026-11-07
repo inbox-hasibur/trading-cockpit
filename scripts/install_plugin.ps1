@@ -37,5 +37,24 @@ try {
     Write-Host "Copied plugin files to $targetDir"
 }
 
+# Also install into hummingbird profile plugins if profile exists
+$hbProfilePlugins = Join-Path $HermesHome "profiles\hummingbird\plugins"
+if (Test-Path (Join-Path $HermesHome "profiles\hummingbird")) {
+    if (-not (Test-Path $hbProfilePlugins)) {
+        New-Item -ItemType Directory -Path $hbProfilePlugins -Force | Out-Null
+    }
+    $hbTargetDir = Join-Path $hbProfilePlugins "humming_bird"
+    if (Test-Path $hbTargetDir) {
+        Remove-Item -Recurse -Force $hbTargetDir
+    }
+    try {
+        New-Item -ItemType Junction -Path $hbTargetDir -Target $sourceDir -Force -ErrorAction Stop | Out-Null
+        Write-Host "Linked to hummingbird profile via directory junction"
+    } catch {
+        Copy-Item -Path $sourceDir -Destination $hbTargetDir -Recurse -Force
+        Write-Host "Copied plugin files to hummingbird profile: $hbTargetDir"
+    }
+}
+
 Write-Host "Humming Bird plugin installed successfully."
 

@@ -12,6 +12,8 @@ import yaml
 from plugins.humming_bird import _TOOLS, register
 from plugins.humming_bird.hooks import check_dse_trading_hours, on_pre_tool_call
 from plugins.humming_bird.schemas import (
+    HB_AUTOMATION_GET_SCHEMA,
+    HB_AUTOMATION_SET_SCHEMA,
     HB_CANARIES_SCHEMA,
     HB_INSPECT_CURVE_SCHEMA,
     HB_LOTS_SCHEMA,
@@ -21,14 +23,19 @@ from plugins.humming_bird.schemas import (
     HB_QUARANTINE_CANARY_SCHEMA,
     HB_RESTORE_QUARANTINE_SCHEMA,
     HB_ROLLBACK_LAST_SCHEMA,
+    HB_RUN_CYCLE_SCHEMA,
+    HB_SCHEDULER_SCHEMA,
     HB_SET_ALLOCATION_SCHEMA,
     HB_SET_TIER_SCHEMA,
+    HB_STOCKNOW_SESSION_SCHEMA,
     HB_SYNC_SCHEMA,
     HB_WATCHLIST_SCHEMA,
 )
 from plugins.humming_bird.tools import (
     _kernel_get,
     _kernel_post,
+    hb_automation_get,
+    hb_automation_set,
     hb_canaries,
     hb_inspect_curve,
     hb_lots,
@@ -38,8 +45,11 @@ from plugins.humming_bird.tools import (
     hb_quarantine_canary,
     hb_restore_quarantine,
     hb_rollback_last,
+    hb_run_cycle,
+    hb_scheduler,
     hb_set_allocation,
     hb_set_tier,
+    hb_stocknow_session,
     hb_sync,
     hb_watchlist,
 )
@@ -58,11 +68,16 @@ ALL_EXPECTED_TOOLS = [
     "hb_sync",
     "hb_place_order",
     "hb_rollback_last",
+    "hb_automation_get",
+    "hb_automation_set",
+    "hb_scheduler",
+    "hb_run_cycle",
+    "hb_stocknow_session",
 ]
 
 
 def test_plugin_yaml_manifest():
-    """Manifest declares proper metadata, 13 tools, and pre_tool_call hook."""
+    """Manifest declares proper metadata, 18 tools, and pre_tool_call hook."""
     with open("plugins/humming_bird/plugin.yaml", "r", encoding="utf-8") as f:
         manifest = yaml.safe_load(f)
 
@@ -75,11 +90,11 @@ def test_plugin_yaml_manifest():
 
 
 def test_plugin_registration():
-    """register(ctx) registers all 13 tools and the pre_tool_call hook."""
+    """register(ctx) registers all 18 tools and the pre_tool_call hook."""
     ctx = MagicMock()
     register(ctx)
 
-    assert ctx.register_tool.call_count == 13
+    assert ctx.register_tool.call_count == 18
     registered_names = [call.kwargs["name"] for call in ctx.register_tool.call_args_list]
     for name in ALL_EXPECTED_TOOLS:
         assert name in registered_names
@@ -94,7 +109,7 @@ def test_plugin_registration():
 
 
 def test_schemas_structure():
-    """All 13 schemas conform to JSON Schema parameter specifications."""
+    """All 18 schemas conform to JSON Schema parameter specifications."""
     schemas = [
         HB_PORTFOLIO_SCHEMA,
         HB_WATCHLIST_SCHEMA,
@@ -109,8 +124,13 @@ def test_schemas_structure():
         HB_SYNC_SCHEMA,
         HB_PLACE_ORDER_SCHEMA,
         HB_ROLLBACK_LAST_SCHEMA,
+        HB_AUTOMATION_GET_SCHEMA,
+        HB_AUTOMATION_SET_SCHEMA,
+        HB_SCHEDULER_SCHEMA,
+        HB_RUN_CYCLE_SCHEMA,
+        HB_STOCKNOW_SESSION_SCHEMA,
     ]
-    assert len(schemas) == 13
+    assert len(schemas) == 18
     for s in schemas:
         assert "name" in s
         assert "description" in s
@@ -308,3 +328,80 @@ def test_pre_tool_call_hook():
         assert res_approved is not None
         assert res_approved["action"] == "approve"
         assert "dse_live_order:BANKASIA" in res_approved["rule_key"]
+
+
+@patch("urllib.request.urlopen")
+def test_hb_automation_tools(mock_urlopen):
+    """hb_automation_get and hb_automation_set interface with kernel."""
+    fake_response = MagicMock()
+    fake_payload = {
+        "status": "ok",
+        "automation_enabled": True,
+        "paused": False,
+        "ingestion_mode": "mock",
+        "poll_interval_seconds": 15,
+    }
+    fake_response.read.return_value = json.dumps(fake_payload).encode("utf-8")
+    fake_response.__enter__.return_value = fake_response
+    mock_urlopen.return_value = fake_response
+
+    # Test GET
+    get_res = hb_automation_get()
+    get_data = json.loads(get_res)
+    assert get_data["status"] == "ok"
+    assert get_data["automation_enabled"] is True
+
+    # Test SET
+    fake_payload["automation_enabled"] = False
+    fake_response.read.return_value = json.dumps(fake_payload).encode("utf-8")
+    set_res = hb_automation_set({"automation_enabled": False, "reason": "Operator request"})
+    set_data = json.loads(set_res)
+    assert set_data["status"] == "ok"
+    assert set_data["automation_enabled"] is False
+
+
+@patch("urllib.request.urlopen")
+def test_hb_scheduler_tool(mock_urlopen):
+    """hb_scheduler validates action and invokes kernel."""
+    fake_response = MagicMock()
+    fake_payload = {"status": "ok", "action": "status", "scheduler_running": True}
+    fake_response.read.return_value = json.dumps(fake_payload).encode("utf-8")
+    fake_response.__enter__.return_value = fake_response
+    mock_urlopen.return_value = fake_response
+
+    res = hb_scheduler({"action": "status"})
+    assert json.loads(res)["status"] == "ok"
+
+    # Validation error for invalid action
+    err_res = hb_scheduler({"action": "restart"})
+    assert "error" in json.loads(err_res)
+
+
+@patch("urllib.request.urlopen")
+def test_hb_run_cycle_tool(mock_urlopen):
+    """hb_run_cycle enforces dry_run default and accepts explicit mode."""
+    fake_response = MagicMock()
+    fake_payload = {"status": "ok", "dry_run": True, "executed": True}
+    fake_response.read.return_value = json.dumps(fake_payload).encode("utf-8")
+    fake_response.__enter__.return_value = fake_response
+    mock_urlopen.return_value = fake_response
+
+    res = hb_run_cycle()
+    assert json.loads(res)["dry_run"] is True
+
+
+@patch("urllib.request.urlopen")
+def test_hb_stocknow_session_tool(mock_urlopen):
+    """hb_stocknow_session invokes browser session actions."""
+    fake_response = MagicMock()
+    fake_payload = {"status": "ok", "action": "status", "session": "idle"}
+    fake_response.read.return_value = json.dumps(fake_payload).encode("utf-8")
+    fake_response.__enter__.return_value = fake_response
+    mock_urlopen.return_value = fake_response
+
+    res = hb_stocknow_session({"action": "status"})
+    assert json.loads(res)["action"] == "status"
+
+    err_res = hb_stocknow_session({"action": "destroy"})
+    assert "error" in json.loads(err_res)
+

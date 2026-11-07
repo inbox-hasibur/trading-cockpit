@@ -319,3 +319,84 @@ def hb_place_order(args: dict[str, Any] | None = None, **kwargs) -> str:
 def hb_rollback_last(args: dict[str, Any] | None = None, **kwargs) -> str:
     """Roll back the last state checkpoint atomically."""
     return _kernel_post("/k/rollback", {})
+
+
+def hb_automation_get(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Fetch current automation settings from the trading kernel."""
+    return _kernel_get("/k/automation")
+
+
+def hb_automation_set(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Configure trading automation switches, ingestion mode, or polling cadence."""
+    merged = dict(args or {})
+    merged.update(kwargs)
+
+    payload: dict[str, Any] = {}
+    if "automation_enabled" in merged:
+        val = merged["automation_enabled"]
+        payload["automation_enabled"] = val if isinstance(val, bool) else str(val).lower() in ("true", "1", "yes")
+    elif "master_enabled" in merged:
+        val = merged["master_enabled"]
+        payload["automation_enabled"] = val if isinstance(val, bool) else str(val).lower() in ("true", "1", "yes")
+
+    if "paused" in merged:
+        val = merged["paused"]
+        payload["paused"] = val if isinstance(val, bool) else str(val).lower() in ("true", "1", "yes")
+
+    if "ingestion_mode" in merged and merged["ingestion_mode"]:
+        payload["ingestion_mode"] = str(merged["ingestion_mode"]).strip().upper()
+
+    if "polling_interval_sec" in merged and merged["polling_interval_sec"] is not None:
+        try:
+            payload["polling_interval_sec"] = int(merged["polling_interval_sec"])
+        except (ValueError, TypeError):
+            return json.dumps({"error": "polling_interval_sec must be an integer"})
+
+    if not payload:
+        return json.dumps({"error": "At least one automation field must be specified to update."})
+
+    return _kernel_post("/k/automation", payload)
+
+
+def hb_scheduler(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Control or inspect the market scheduler background loop."""
+    merged = dict(args or {})
+    merged.update(kwargs)
+
+    action = str(merged.get("action") or "").strip().lower()
+    if action not in ("start", "stop", "status"):
+        return json.dumps({"error": "action must be 'start', 'stop', or 'status'"})
+
+    return _kernel_post("/k/scheduler", {"action": action})
+
+
+def hb_run_cycle(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Trigger an immediate AutoTrader cycle."""
+    merged = dict(args or {})
+    merged.update(kwargs)
+
+    dry_run = merged.get("dry_run", True)
+    if isinstance(dry_run, str):
+        dry_run = dry_run.lower() in ("true", "1", "yes")
+
+    payload: dict[str, Any] = {"dry_run": dry_run}
+    if "idempotency_key" in merged and merged["idempotency_key"]:
+        payload["idempotency_key"] = str(merged["idempotency_key"])
+
+    return _kernel_post("/k/cycle", payload)
+
+
+def hb_stocknow_session(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Manage live Playwright session for StockNow integration."""
+    merged = dict(args or {})
+    merged.update(kwargs)
+
+    action = str(merged.get("action") or "").strip().lower()
+    if action not in ("launch", "status", "login"):
+        return json.dumps({"error": "action must be 'launch', 'status', or 'login'"})
+
+    payload: dict[str, Any] = {"action": action}
+    if "mode" in merged and merged["mode"]:
+        payload["mode"] = str(merged["mode"]).strip().upper()
+
+    return _kernel_post("/k/stocknow/session", payload)

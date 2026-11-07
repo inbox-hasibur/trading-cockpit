@@ -298,3 +298,100 @@ def test_kernel_api_has_no_hermes_imports():
         elif isinstance(node, ast.ImportFrom):
             mod = node.module or ""
             assert "hermes" not in mod, f"Forbidden from-import: {mod}"
+
+
+def test_automation_endpoints_and_audits(client, auth_headers):
+    """Verify GET /k/automation and POST /k/automation snapshot and audit creation."""
+    # 1. GET /k/automation
+    res = client.get("/k/automation", headers=auth_headers)
+    assert res.status_code == 200
+    data = res.json()
+    assert "automation_enabled" in data
+    assert "paused" in data
+
+    # 2. POST /k/automation
+    update_res = client.post("/k/automation", json={
+        "automation_enabled": False,
+        "paused": True,
+        "polling_interval_sec": 60,
+    }, headers=auth_headers)
+    assert update_res.status_code == 200
+    res_data = update_res.json()
+    assert res_data["automation_enabled"] is False
+    assert res_data["paused"] is True
+    assert res_data["polling_interval_sec"] == 60
+    assert "checkpoint_id" in res_data
+
+    # Verify audit in DB
+    app = client.app
+    db = app.state.database
+    with db.read() as session:
+        audit = session.scalar(
+            select(KernelAuditLog)
+            .where(KernelAuditLog.endpoint == "/k/automation")
+            .order_by(KernelAuditLog.created_at.desc())
+            .limit(1)
+        )
+        assert audit is not None
+        assert audit.action == "SET_AUTOMATION"
+
+
+def test_scheduler_control_endpoints(client, auth_headers):
+    """Verify /k/scheduler status and control actions."""
+    status_res = client.get("/k/scheduler", headers=auth_headers)
+    assert status_res.status_code == 200
+
+    post_status = client.post("/k/scheduler", json={"action": "status"}, headers=auth_headers)
+    assert post_status.status_code == 200
+
+    stop_res = client.post("/k/scheduler", json={"action": "stop"}, headers=auth_headers)
+    assert stop_res.status_code == 200
+    assert "checkpoint_id" in stop_res.json()
+
+
+def test_run_cycle_dry_run_default(client, auth_headers):
+    """Verify /k/cycle defaults dry_run=True and takes snapshot first."""
+    res = client.post("/k/cycle", json={}, headers=auth_headers)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["dry_run"] is True
+    assert "checkpoint_id" in data
+    assert "cycle" in data
+
+
+def test_stocknow_session_endpoints(client, auth_headers):
+    """Verify /k/stocknow/session endpoint."""
+    status_res = client.post("/k/stocknow/session", json={"action": "status"}, headers=auth_headers)
+    assert status_res.status_code == 200
+
+    launch_res = client.post("/k/stocknow/session", json={"action": "launch", "mode": "BACKGROUND_POLLING"}, headers=auth_headers)
+    assert launch_res.status_code == 200
+    assert "checkpoint_id" in launch_res.json()
+
+
+def test_single_writer_trading_lock_concurrency():
+    """Verify that the trading lock serializes concurrent execution across threads."""
+    import threading
+    import time
+    from backend.engine.trading_lock import acquire_trading_lock
+
+    execution_order = []
+
+    def task(task_id: int):
+        with acquire_trading_lock(timeout=5.0):
+            execution_order.append(f"start-{task_id}")
+            time.sleep(0.05)
+            execution_order.append(f"end-{task_id}")
+
+    t1 = threading.Thread(target=task, args=(1,))
+    t2 = threading.Thread(target=task, args=(2,))
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
+
+    # Must be perfectly serialized: start-1, end-1, start-2, end-2 (or start-2, end-2, start-1, end-1)
+    assert (
+        execution_order == ["start-1", "end-1", "start-2", "end-2"]
+        or execution_order == ["start-2", "end-2", "start-1", "end-1"]
+    )

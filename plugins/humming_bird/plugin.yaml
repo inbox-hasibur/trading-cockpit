@@ -19,5 +19,10 @@ provides_tools:
   - hb_sync
   - hb_place_order
   - hb_rollback_last
+  - hb_automation_get
+  - hb_automation_set
+  - hb_scheduler
+  - hb_run_cycle
+  - hb_stocknow_session
 provides_hooks:
   - pre_tool_call

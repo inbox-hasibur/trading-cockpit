@@ -43,7 +43,9 @@ from backend.engine.agent_actions import (
 from backend.engine.checkpoint import CheckpointManager
 from backend.engine.curve_analyzer import analyze_curve
 from backend.engine.money import ZERO, allocated_basis, purchase_amount, sale_amount
-from backend.engine.scheduler import is_dse_market_open
+from backend.engine.auto_trader import AutoTrader
+from backend.engine.scheduler import get_active_scheduler, is_dse_market_open
+from backend.engine.trading_lock import acquire_trading_lock
 from backend.portfolio import snapshot_from_session
 
 logger = logging.getLogger(__name__)
@@ -578,131 +580,132 @@ def post_order(
     side = body.side.strip().upper()
     commission_rate = Decimal("0.005")  # 0.5% commission strictly enforced
 
-    # Pre-validation & execution
-    with db.write() as session:
-        state = portfolio_state(session)
-        comp = session.get(CompanyProfile, sym)
-        if not comp:
-            raise HTTPException(status_code=404, detail=f"Company '{sym}' not found in database.")
+    # Pre-validation & execution under single-writer trading lock
+    with acquire_trading_lock():
+        with db.write() as session:
+            state = portfolio_state(session)
+            comp = session.get(CompanyProfile, sym)
+            if not comp:
+                raise HTTPException(status_code=404, detail=f"Company '{sym}' not found in database.")
 
-        unit_price = body.price if body.price is not None and body.price > ZERO else comp.last_price
-        if unit_price <= ZERO:
-            raise HTTPException(status_code=422, detail=f"Invalid unit price '{unit_price}'.")
+            unit_price = body.price if body.price is not None and body.price > ZERO else comp.last_price
+            if unit_price <= ZERO:
+                raise HTTPException(status_code=422, detail=f"Invalid unit price '{unit_price}'.")
 
-        # Pre-validate BUY
-        if side == "BUY":
-            if comp.quarantined:
-                raise HTTPException(status_code=422, detail=f"Cannot buy {sym}: Company is under Crash Quarantine.")
-            cost, fee = purchase_amount(body.quantity, unit_price, commission_rate)
+            # Pre-validate BUY
+            if side == "BUY":
+                if comp.quarantined:
+                    raise HTTPException(status_code=422, detail=f"Cannot buy {sym}: Company is under Crash Quarantine.")
+                cost, fee = purchase_amount(body.quantity, unit_price, commission_rate)
 
-        # Pre-validate SELL (enforces T+2 maturity and strict no-loss)
-        if side == "SELL":
-            mature_lots = list(session.scalars(
-                select(TaxLot)
-                .where(
-                    TaxLot.symbol == sym,
-                    TaxLot.remaining_qty > 0,
-                    TaxLot.matures_on <= state.clock_date,
-                )
-                .order_by(TaxLot.id)
-            ))
-            mature_qty = sum(lot.remaining_qty for lot in mature_lots)
-            if mature_qty <= 0:
-                immature_lots = list(session.scalars(
-                    select(TaxLot).where(TaxLot.symbol == sym, TaxLot.remaining_qty > 0)
+            # Pre-validate SELL (enforces T+2 maturity and strict no-loss)
+            if side == "SELL":
+                mature_lots = list(session.scalars(
+                    select(TaxLot)
+                    .where(
+                        TaxLot.symbol == sym,
+                        TaxLot.remaining_qty > 0,
+                        TaxLot.matures_on <= state.clock_date,
+                    )
+                    .order_by(TaxLot.id)
                 ))
-                if immature_lots:
-                    earliest = min(lot.matures_on for lot in immature_lots)
+                mature_qty = sum(lot.remaining_qty for lot in mature_lots)
+                if mature_qty <= 0:
+                    immature_lots = list(session.scalars(
+                        select(TaxLot).where(TaxLot.symbol == sym, TaxLot.remaining_qty > 0)
+                    ))
+                    if immature_lots:
+                        earliest = min(lot.matures_on for lot in immature_lots)
+                        raise HTTPException(
+                            status_code=422,
+                            detail=f"Cannot sell {sym}: shares are settlement-locked until {earliest.isoformat()} (T+2 lock).",
+                        )
+                    raise HTTPException(status_code=422, detail=f"Cannot sell {sym}: no open shares held.")
+
+                if body.quantity > mature_qty:
                     raise HTTPException(
                         status_code=422,
-                        detail=f"Cannot sell {sym}: shares are settlement-locked until {earliest.isoformat()} (T+2 lock).",
+                        detail=f"Cannot sell {body.quantity} shares of {sym}: only {mature_qty} mature shares available.",
                     )
-                raise HTTPException(status_code=422, detail=f"Cannot sell {sym}: no open shares held.")
 
-            if body.quantity > mature_qty:
-                raise HTTPException(
-                    status_code=422,
-                    detail=f"Cannot sell {body.quantity} shares of {sym}: only {mature_qty} mature shares available.",
-                )
+                # Strict no-loss verification across mature lots to be sold
+                remaining = body.quantity
+                total_proceeds = ZERO
+                total_basis = ZERO
+                for lot in mature_lots:
+                    if remaining <= 0:
+                        break
+                    sell_slice = min(lot.remaining_qty, remaining)
+                    proceeds, _fee = sale_amount(sell_slice, unit_price, commission_rate)
+                    cost_slice = allocated_basis(lot.remaining_cost_basis, lot.remaining_qty, sell_slice)
+                    if proceeds < cost_slice:
+                        net_ret = (proceeds / cost_slice - 1) * Decimal("100")
+                        raise HTTPException(
+                            status_code=422,
+                            detail=f"Cannot sell {sym} at ৳{unit_price}: net return is {float(net_ret):.2f}% (net loss). Strict No-Loss policy holds.",
+                        )
+                    total_proceeds += proceeds
+                    total_basis += cost_slice
+                    remaining -= sell_slice
 
-            # Strict no-loss verification across mature lots to be sold
-            remaining = body.quantity
-            total_proceeds = ZERO
-            total_basis = ZERO
-            for lot in mature_lots:
-                if remaining <= 0:
-                    break
-                sell_slice = min(lot.remaining_qty, remaining)
-                proceeds, _fee = sale_amount(sell_slice, unit_price, commission_rate)
-                cost_slice = allocated_basis(lot.remaining_cost_basis, lot.remaining_qty, sell_slice)
-                if proceeds < cost_slice:
-                    net_ret = (proceeds / cost_slice - 1) * Decimal("100")
-                    raise HTTPException(
-                        status_code=422,
-                        detail=f"Cannot sell {sym} at ৳{unit_price}: net return is {float(net_ret):.2f}% (net loss). Strict No-Loss policy holds.",
-                    )
-                total_proceeds += proceeds
-                total_basis += cost_slice
-                remaining -= sell_slice
+            # Handle dry_run default
+            if body.dry_run:
+                fee_est = float(fee) if side == "BUY" else float(body.quantity * unit_price * commission_rate)
+                net_est = float(cost) if side == "BUY" else float(total_proceeds)
+                return {
+                    "dry_run": True,
+                    "status": "VALIDATED",
+                    "idempotency_key": body.idempotency_key,
+                    "portfolio_id": "164580",
+                    "symbol": sym,
+                    "side": side,
+                    "quantity": body.quantity,
+                    "price": float(unit_price),
+                    "commission_pct": 0.5,
+                    "estimated_fee": fee_est,
+                    "estimated_net": net_est,
+                    "note": "Dry run execution validated all constraints (T+2 maturity, strict no-loss, 0.5% fee). No state mutated.",
+                }
 
-        # Handle dry_run default
-        if body.dry_run:
-            fee_est = float(fee) if side == "BUY" else float(body.quantity * unit_price * commission_rate)
-            net_est = float(cost) if side == "BUY" else float(total_proceeds)
+            # dry_run is False -> Snapshot first, then mutate state
+            cp = CheckpointManager.create_checkpoint(
+                session=session,
+                state=state,
+                action=f"ORDER_{side}",
+                description=f"Execute {side} {body.quantity} {sym} @ {unit_price}",
+                symbol=sym,
+                actor="Kernel API",
+            )
+
+            try:
+                if side == "BUY":
+                    order_res = execute_agentic_buy(session, state, settings, sym, requested_qty=body.quantity)
+                else:
+                    order_res = execute_agentic_sell(session, state, settings, sym, requested_qty=body.quantity)
+            except Exception as exc:
+                raise HTTPException(status_code=422, detail=str(exc))
+
+            # Record idempotency
+            _EXECUTED_ORDER_KEYS[body.idempotency_key] = order_res
+
+            # Write audit row
+            session.add(KernelAuditLog(
+                endpoint="/k/order",
+                action=f"ORDER_{side}",
+                symbol=sym,
+                payload=body.model_dump(mode="json"),
+                result=order_res,
+                checkpoint_id=cp.id,
+                session_on=state.clock_date,
+            ))
+
             return {
-                "dry_run": True,
-                "status": "VALIDATED",
+                **order_res,
+                "dry_run": False,
+                "checkpoint_id": cp.id,
                 "idempotency_key": body.idempotency_key,
                 "portfolio_id": "164580",
-                "symbol": sym,
-                "side": side,
-                "quantity": body.quantity,
-                "price": float(unit_price),
-                "commission_pct": 0.5,
-                "estimated_fee": fee_est,
-                "estimated_net": net_est,
-                "note": "Dry run execution validated all constraints (T+2 maturity, strict no-loss, 0.5% fee). No state mutated.",
             }
-
-        # dry_run is False -> Snapshot first, then mutate state
-        cp = CheckpointManager.create_checkpoint(
-            session=session,
-            state=state,
-            action=f"ORDER_{side}",
-            description=f"Execute {side} {body.quantity} {sym} @ {unit_price}",
-            symbol=sym,
-            actor="Kernel API",
-        )
-
-        try:
-            if side == "BUY":
-                order_res = execute_agentic_buy(session, state, settings, sym, requested_qty=body.quantity)
-            else:
-                order_res = execute_agentic_sell(session, state, settings, sym, requested_qty=body.quantity)
-        except Exception as exc:
-            raise HTTPException(status_code=422, detail=str(exc))
-
-        # Record idempotency
-        _EXECUTED_ORDER_KEYS[body.idempotency_key] = order_res
-
-        # Write audit row
-        session.add(KernelAuditLog(
-            endpoint="/k/order",
-            action=f"ORDER_{side}",
-            symbol=sym,
-            payload=body.model_dump(mode="json"),
-            result=order_res,
-            checkpoint_id=cp.id,
-            session_on=state.clock_date,
-        ))
-
-        return {
-            **order_res,
-            "dry_run": False,
-            "checkpoint_id": cp.id,
-            "idempotency_key": body.idempotency_key,
-            "portfolio_id": "164580",
-        }
 
 
 @router.post("/rollback")
@@ -731,6 +734,288 @@ def post_rollback(
         return {
             "status": "ok",
             "rollback": rollback_res,
+        }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AUTOMATION CONTROL & SCHEDULER ENDPOINTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class SetAutomationConfigRequest(BaseModel):
+    automation_enabled: bool | None = None
+    paused: bool | None = None
+    ingestion_mode: str | None = None  # "BACKGROUND_POLLING" or "ONSCREEN_LIVE"
+    polling_interval_sec: int | None = Field(None, ge=5, le=3600)
+
+
+@router.get("/automation")
+def get_automation_config(db: Database = Depends(get_db)) -> dict[str, Any]:
+    """Returns master buy/sell automation switch, paused state, ingestion mode, and polling interval."""
+    with db.read() as session:
+        state = portfolio_state(session)
+        return {
+            "automation_enabled": bool(getattr(state, "automation_enabled", True)),
+            "paused": bool(getattr(state, "paused", False)),
+            "ingestion_mode": getattr(state, "ingestion_mode", "BACKGROUND_POLLING"),
+            "polling_interval_sec": int(getattr(state, "polling_interval_sec", 120)),
+        }
+
+
+@router.post("/automation")
+def post_automation_config(
+    body: SetAutomationConfigRequest,
+    db: Database = Depends(get_db),
+) -> dict[str, Any]:
+    """Updates master automation switch, paused state, ingestion mode, or polling interval with snapshot & audit."""
+    with db.write() as session:
+        state = portfolio_state(session)
+
+        # 1. Snapshot state first
+        cp = CheckpointManager.create_checkpoint(
+            session=session,
+            state=state,
+            action="SET_AUTOMATION",
+            description="Update automation config",
+            actor="Kernel API",
+        )
+
+        before = {
+            "automation_enabled": getattr(state, "automation_enabled", True),
+            "paused": getattr(state, "paused", False),
+            "ingestion_mode": getattr(state, "ingestion_mode", "BACKGROUND_POLLING"),
+            "polling_interval_sec": getattr(state, "polling_interval_sec", 120),
+        }
+
+        # 2. Mutate state
+        if body.automation_enabled is not None:
+            state.automation_enabled = body.automation_enabled
+        if body.paused is not None:
+            state.paused = body.paused
+        if body.ingestion_mode is not None:
+            mode = body.ingestion_mode.strip().upper()
+            if mode not in ("BACKGROUND_POLLING", "ONSCREEN_LIVE"):
+                raise HTTPException(status_code=422, detail=f"Invalid ingestion mode '{body.ingestion_mode}'.")
+            state.ingestion_mode = mode
+        if body.polling_interval_sec is not None:
+            state.polling_interval_sec = body.polling_interval_sec
+
+        state.rules_revision += 1
+
+        after = {
+            "automation_enabled": bool(state.automation_enabled),
+            "paused": bool(state.paused),
+            "ingestion_mode": state.ingestion_mode,
+            "polling_interval_sec": state.polling_interval_sec,
+        }
+
+        # 3. Write audit log
+        session.add(KernelAuditLog(
+            endpoint="/k/automation",
+            action="SET_AUTOMATION",
+            symbol=None,
+            payload=body.model_dump(),
+            result=after,
+            checkpoint_id=cp.id,
+            session_on=state.clock_date,
+        ))
+
+        return {
+            "status": "ok",
+            "checkpoint_id": cp.id,
+            **after,
+        }
+
+
+class SchedulerActionRequest(BaseModel):
+    action: str = Field(..., pattern="^(start|stop|status)$")
+
+
+@router.get("/scheduler")
+def get_scheduler_status(
+    settings: Settings = Depends(get_settings),
+) -> dict[str, Any]:
+    """Returns current scheduler operational status and telemetry."""
+    sched = get_active_scheduler()
+    if not sched:
+        return {
+            "running": False,
+            "status": "UNAVAILABLE",
+            "market": is_dse_market_open(settings=settings),
+        }
+    return sched.get_status()
+
+
+@router.post("/scheduler")
+def post_scheduler_control(
+    body: SchedulerActionRequest,
+    db: Database = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+) -> dict[str, Any]:
+    """Controls background market scheduler (start, stop, status)."""
+    action = body.action.strip().lower()
+    sched = get_active_scheduler()
+
+    if action == "status":
+        if not sched:
+            return {"status": "UNAVAILABLE", "running": False, "market": is_dse_market_open(settings=settings)}
+        return sched.get_status()
+
+    # Writes snapshot and audit before start/stop
+    with db.write() as session:
+        state = portfolio_state(session)
+        cp = CheckpointManager.create_checkpoint(
+            session=session,
+            state=state,
+            action=f"SCHEDULER_{action.upper()}",
+            description=f"Scheduler control: {action}",
+            actor="Kernel API",
+        )
+
+        result: dict[str, Any]
+        if not sched:
+            result = {"status": "UNAVAILABLE", "message": "No active scheduler registered"}
+        elif action == "start":
+            result = sched.start()
+        elif action == "stop":
+            result = sched.stop_sync()
+        else:
+            result = {"status": "UNKNOWN_ACTION"}
+
+        session.add(KernelAuditLog(
+            endpoint="/k/scheduler",
+            action=f"SCHEDULER_{action.upper()}",
+            symbol=None,
+            payload=body.model_dump(),
+            result=result,
+            checkpoint_id=cp.id,
+            session_on=state.clock_date,
+        ))
+
+        return {
+            "status": "ok",
+            "action": action,
+            "checkpoint_id": cp.id,
+            "scheduler": result,
+        }
+
+
+class RunCycleRequest(BaseModel):
+    dry_run: bool = True
+    idempotency_key: str | None = None
+
+
+@router.post("/cycle")
+def post_run_cycle(
+    body: RunCycleRequest,
+    db: Database = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+) -> dict[str, Any]:
+    """Executes an automation trading cycle via AutoTrader under the single-writer trading lock."""
+    with acquire_trading_lock():
+        with db.write() as session:
+            state = portfolio_state(session)
+
+            # 1. Snapshot state first
+            cp = CheckpointManager.create_checkpoint(
+                session=session,
+                state=state,
+                action="RUN_CYCLE",
+                description=f"Run cycle (dry_run={body.dry_run})",
+                actor="Kernel API",
+            )
+
+            # 2. Run AutoTrader cycle
+            trader = AutoTrader(db, settings)
+            cycle_result = trader.run_cycle(request_id=body.idempotency_key, session=session)
+
+            # 3. Write audit row
+            session.add(KernelAuditLog(
+                endpoint="/k/cycle",
+                action="RUN_CYCLE",
+                symbol=None,
+                payload=body.model_dump(),
+                result={"cycle_id": cycle_result.get("id"), "trades_count": len(cycle_result.get("trades", []))},
+                checkpoint_id=cp.id,
+                session_on=state.clock_date,
+            ))
+
+            return {
+                "status": "ok",
+                "checkpoint_id": cp.id,
+                "dry_run": body.dry_run,
+                "cycle": cycle_result,
+            }
+
+
+class StockNowSessionActionRequest(BaseModel):
+    action: str = Field(..., pattern="^(launch|status|login)$")
+    mode: str | None = None
+
+
+@router.post("/stocknow/session")
+async def post_stocknow_session(
+    body: StockNowSessionActionRequest,
+    db: Database = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+    stocknow_client: Any | None = Depends(get_stocknow_client),
+) -> dict[str, Any]:
+    """Controls live StockNow browser session (launch, status, login)."""
+    action = body.action.strip().lower()
+
+    if action == "status":
+        if not stocknow_client:
+            return {"status": "UNAVAILABLE", "connected": False}
+        return stocknow_client.get_status()
+
+    # Write snapshot and audit
+    with db.write() as session:
+        state = portfolio_state(session)
+        cp = CheckpointManager.create_checkpoint(
+            session=session,
+            state=state,
+            action=f"STOCKNOW_{action.upper()}",
+            description=f"StockNow session {action}",
+            actor="Kernel API",
+        )
+
+        res: dict[str, Any]
+        if not stocknow_client:
+            res = {"status": "MOCK", "action": action, "connected": True, "message": "Simulated StockNow session"}
+        elif action == "launch":
+            target_mode = body.mode or "ONSCREEN_LIVE"
+            res = await stocknow_client.launch(mode=target_mode)
+        elif action == "login":
+            phone = (
+                getattr(settings, "operator_phone", None)
+                or settings.operator_username
+                or os.getenv("STOCKNOW_MOBILE", "")
+                or os.getenv("OPERATOR_USERNAME", "")
+            )
+            password = (
+                settings.operator_password
+                or os.getenv("STOCKNOW_PASSWORD", "")
+                or os.getenv("OPERATOR_PASSWORD", "")
+            )
+            res = await stocknow_client.ensure_authenticated(phone, password)
+        else:
+            res = {"status": "UNKNOWN_ACTION"}
+
+        session.add(KernelAuditLog(
+            endpoint="/k/stocknow/session",
+            action=f"STOCKNOW_{action.upper()}",
+            symbol=None,
+            payload=body.model_dump(),
+            result=res,
+            checkpoint_id=cp.id,
+            session_on=state.clock_date,
+        ))
+
+        return {
+            "status": "ok",
+            "action": action,
+            "checkpoint_id": cp.id,
+            "result": res,
         }
 
 

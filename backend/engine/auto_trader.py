@@ -28,6 +28,7 @@ from backend.engine.money import HUNDRED, ZERO, decimal, money, price, purchase_
 from backend.engine.sequential_seller import SellState, plan_sale
 from backend.engine.signals import BLOCK_ALL_TRADING, assess_company
 from backend.engine.t2_ledger import TradingCalendar, assert_ledger, bucket_balances
+from backend.engine.trading_lock import acquire_trading_lock
 
 logger = logging.getLogger("hummingbird.auto_trader")
 
@@ -44,10 +45,11 @@ class AutoTrader:
         self.calendar = TradingCalendar(settings.holidays, settings.bucket_anchor)
 
     def run_cycle(self, request_id: str | None = None, session: Session | None = None) -> dict:
-        if session is not None:
-            return self._run_cycle_internal(session, request_id)
-        with self.database.write() as session_ctx:
-            return self._run_cycle_internal(session_ctx, request_id)
+        with acquire_trading_lock():
+            if session is not None:
+                return self._run_cycle_internal(session, request_id)
+            with self.database.write() as session_ctx:
+                return self._run_cycle_internal(session_ctx, request_id)
 
     def _run_cycle_internal(self, session: Session, request_id: str | None = None) -> dict:
         state = portfolio_state(session)
