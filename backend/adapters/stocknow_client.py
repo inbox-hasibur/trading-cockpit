@@ -24,7 +24,7 @@ if sys.platform == "win32":
     except Exception:
         pass
 
-from backend.hermes.secret_guard import SecretGuard, redact_secrets
+from backend.secret_guard import SecretGuard, redact_secrets
 
 logger = logging.getLogger("hummingbird.stocknow")
 
