@@ -42,9 +42,10 @@
   - Instant server-sent events pushed to frontend on every trade, cycle, scenario advance, or chat intervention without page reloads.
 
 #### 3. Cockpit Dashboard & Official Hermes Agentic Architecture
-- [x] **Zero-Secret-Read & `.env` Isolation Guardrails (`backend/secret_guard.py`):**
-  - Enforces runtime security boundary: Hermes cannot read `.env`, `.env.*`, `auth.json`, `cookies*`, `browser_profile/`, or `.db` files.
-  - Automatically scrubs `sk-or-v1-*`, `sk-*`, `Bearer *`, and token patterns before logs or external API calls.
+- [x] **Zero-Secret Isolation & Hardened Profile Boundary (`backend/secret_guard.py` & Hermes Profile):**
+  - Architectural boundary: the dedicated `hummingbird` Hermes profile explicitly disables `terminal`, `file`, `code_execution`, and `browser` toolsets (`agent.disabled_toolsets`). The agent physically lacks `read_file` and `terminal` tools and cannot read `.env`, database, or filesystem artifacts.
+  - Set `approvals.mode: manual` for fail-closed command execution.
+  - In-kernel regex utility (`backend/secret_guard.py`) scrubs credentials from adapter logs and telemetry.
   - Added `.opencodeignore`, `.cursorignore`, and `.agentignore` to protect credentials from coding assistant indexing.
 - [x] **Standalone Trading Kernel Service (`backend/kernel_api.py`):**
   - Standalone FastAPI router bound strictly to `127.0.0.1` and protected by `X-Kernel-Token`.

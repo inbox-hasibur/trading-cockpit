@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-07 08:02:57 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-07 08:31:46 UTC**.
 
 ---
 
@@ -8,11 +8,11 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 69 | 12,390 | Python Core Kernel, Engine & Hermes Agent |
+| `.py` | 69 | 12,350 | Python Core Kernel, Engine & Hermes Agent |
 | `.png` | 3 | 11,100 | Configuration / Asset |
 | `.css` | 2 | 8,393 | Custom Dark / Light / Terminal Design System |
 | `.js` | 3 | 4,274 | Vanilla ES6+ Reactive Terminal Controller |
-| `.md` | 12 | 3,013 | Architecture & Strategy Documentation |
+| `.md` | 12 | 2,983 | Architecture & Strategy Documentation |
 | `.html` | 1 | 981 | Single Page Application DOM Structure |
 | `.ps1` | 1 | 41 | Configuration / Asset |
 | `.yaml` | 1 | 23 | Configuration / Asset |
@@ -26,7 +26,7 @@
 | `.bat` | 1 | 8 | Configuration / Asset |
 | `.svg` | 1 | 1 | Configuration / Asset |
 | `.db` | 1 | 0 | Configuration / Asset |
-| **TOTAL** | **103** | **40,302** | *Entire Humming Bird Repository* |
+| **TOTAL** | **103** | **40,232** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -483,25 +483,25 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `BridgeChatRequest` | `L47–L50` | `BaseModel` | — | 0 |
+| `BridgeChatRequest` | `L53–L56` | `BaseModel` | — | 0 |
 
 
 #### Standalone Functions
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `get_hermes_dir` | `L28–L35` | `(...)` | `Path` | Returns the Hermes home directory (AppData/Local/hermes on Windows, ~/.hermes on Linux/Mac). | `Path`, `exists`, `get`, `home` |
-| `get_hermes_bin` | `L38–L44` | `(...)` | `str` | Returns path to the hermes executable. | `exists`, `get_hermes_dir`, `str` |
-| `stream_hermes_chat` | `L53–L157` | `(message: str, session_id: Optional[...)` | `AsyncGenerator[str, None]` | Streams SSE events from running Hermes (gateway API server or direct CLI fallback). | `AsyncClient`, `aiter_lines`, `append`, `create_subprocess_exec` |
-| `read_hermes_state` | `L160–L254` | `(...)` | `dict[str, Any]` | Reads skills, memory (USER.md / MEMORY.md), active model, and cron jobs from Hermes. | `_extract_skill_meta`, `any`, `append`, `bool` |
-| `_extract_skill_meta` | `L257–L274` | `(path: Path...)` | `dict[str, Any]` | Extracts frontmatter metadata from a SKILL.md file. | `get`, `isinstance`, `len`, `read_text` |
-| `run_hermes_cron_cmd` | `L277–L289` | `(*args: str...)` | `dict[str, Any]` | Runs a hermes cron sub-command synchronously. | `get_hermes_bin`, `run`, `str`, `strip` |
-| `build_hermes_bridge_router` | `L292–L338` | `(database: Any=None, settings: Any=N...)` | `APIRouter` | Builds and returns the Hermes bridge router. | `APIRouter` |
-| `bridge_chat` | `L297–L307` | `(body: BridgeChatRequest...)` | — | Streaming chat endpoint proxying to running Hermes. | `StreamingResponse`, `post`, `stream_hermes_chat` |
-| `bridge_state` | `L310–L312` | `(...)` | — | Returns active model, skills, memory preview, and cron jobs directly from Hermes. | `get`, `read_hermes_state` |
-| `bridge_cron_pause` | `L315–L320` | `(job_id: str...)` | — | Pauses a scheduled Hermes cron job. | `HTTPException`, `get`, `post`, `run_hermes_cron_cmd` |
-| `bridge_cron_resume` | `L323–L328` | `(job_id: str...)` | — | Resumes a paused Hermes cron job. | `HTTPException`, `get`, `post`, `run_hermes_cron_cmd` |
-| `bridge_cron_delete` | `L331–L336` | `(job_id: str...)` | — | Deletes a scheduled Hermes cron job. | `HTTPException`, `delete`, `get`, `run_hermes_cron_cmd` |
+| `get_hermes_dir` | `L28–L40` | `(...)` | `Path` | Returns the Hermes home directory (hummingbird profile if available, else ~/.hermes). | `Path`, `exists`, `get`, `home` |
+| `get_hermes_bin` | `L43–L50` | `(...)` | `str` | Returns path to the hermes executable. | `Path`, `exists`, `get`, `str` |
+| `stream_hermes_chat` | `L59–L117` | `(message: str, session_id: Optional[...)` | `AsyncGenerator[str, None]` | Streams SSE events from running Hermes gateway API server. | `AsyncClient`, `aiter_lines`, `append`, `aread` |
+| `read_hermes_state` | `L120–L214` | `(...)` | `dict[str, Any]` | Reads skills, memory (USER.md / MEMORY.md), active model, and cron jobs from Hermes. | `_extract_skill_meta`, `any`, `append`, `bool` |
+| `_extract_skill_meta` | `L217–L234` | `(path: Path...)` | `dict[str, Any]` | Extracts frontmatter metadata from a SKILL.md file. | `get`, `isinstance`, `len`, `read_text` |
+| `run_hermes_cron_cmd` | `L237–L249` | `(*args: str...)` | `dict[str, Any]` | Runs a hermes cron sub-command synchronously on the hummingbird profile. | `get_hermes_bin`, `run`, `str`, `strip` |
+| `build_hermes_bridge_router` | `L252–L298` | `(database: Any=None, settings: Any=N...)` | `APIRouter` | Builds and returns the Hermes bridge router. | `APIRouter` |
+| `bridge_chat` | `L257–L267` | `(body: BridgeChatRequest...)` | — | Streaming chat endpoint proxying to running Hermes. | `StreamingResponse`, `post`, `stream_hermes_chat` |
+| `bridge_state` | `L270–L272` | `(...)` | — | Returns active model, skills, memory preview, and cron jobs directly from Hermes. | `get`, `read_hermes_state` |
+| `bridge_cron_pause` | `L275–L280` | `(job_id: str...)` | — | Pauses a scheduled Hermes cron job. | `HTTPException`, `get`, `post`, `run_hermes_cron_cmd` |
+| `bridge_cron_resume` | `L283–L288` | `(job_id: str...)` | — | Resumes a paused Hermes cron job. | `HTTPException`, `get`, `post`, `run_hermes_cron_cmd` |
+| `bridge_cron_delete` | `L291–L296` | `(job_id: str...)` | — | Deletes a scheduled Hermes cron job. | `HTTPException`, `delete`, `get`, `run_hermes_cron_cmd` |
 
 
 ---
@@ -1109,7 +1109,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/engine/scheduler.py` | `_loop` | 21 | 4 | Acceptable; well-scoped logic |
 | `backend/engine/sequential_seller.py` | `plan_sale` | 105 | 3 | Decompose into sub-functions |
 | `backend/engine/t2_ledger.py` | `bucket_balances` | 31 | 4 | Acceptable; well-scoped logic |
-| `backend/hermes_bridge.py` | `stream_hermes_chat` | 105 | 8 | Decompose into sub-functions |
+| `backend/hermes_bridge.py` | `stream_hermes_chat` | 59 | 4 | Acceptable; well-scoped logic |
 | `backend/hermes_bridge.py` | `read_hermes_state` | 95 | 4 | Acceptable; well-scoped logic |
 | `backend/hermes_bridge.py` | `_extract_skill_meta` | 18 | 5 | Acceptable; well-scoped logic |
 | `backend/kernel_api.py` | `post_quarantine` | 51 | 4 | Acceptable; well-scoped logic |
@@ -1145,4 +1145,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 31 Python modules inspected, 29 FastAPI endpoints registered, 40,302 total LOC indexed.
+> **Audit Summary:** 31 Python modules inspected, 29 FastAPI endpoints registered, 40,232 total LOC indexed.

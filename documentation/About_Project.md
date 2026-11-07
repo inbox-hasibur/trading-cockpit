@@ -120,9 +120,10 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
        4. **Proactive Follow-up & Feedback Loop:** Over future market sessions and months, Hermes continuously tracks the stock. If it crashes, Hermes reports back and auto-updates procedural skills! If resilient, Hermes reports safety to restore.
    - **Permissioned Control & Direct Orders:** Command Hermes in natural Bangla, Banglish, or English to change allocations (*"GP-er buy % 25% kore dao"*), move tiers (`set_watchlist_tier`), execute buys/sells, or pause/resume automation.
 
-4. **Zero-Secret-Read & `.env` Isolation Security Architecture (`backend/hermes/secret_guard.py`):**
-   - **Strict File Isolation:** Hermes prompt builders, skill managers, and tools are blocked by runtime security assertions from reading `.env`, `.env.*`, `auth.json`, `cookies*`, `browser_profile/`, or `.db` files.
-   - **Token Scrubbing (`redact_secrets`):** Automatically scrubs any patterns matching `sk-or-v1-*`, `sk-*`, `Bearer *`, or passwords before any text is stored in memory, logged, or sent to OpenRouter.
+4. **Zero-Secret Isolation & Hardened Profile Boundary (`backend/secret_guard.py` & Hermes Profile):**
+   - **Profile Toolset Hardening:** The dedicated `hummingbird` profile explicitly disables `terminal`, `file`, `code_execution`, and `browser` toolsets (`agent.disabled_toolsets` and `platform_toolsets`). Hermes physically lacks `read_file`, `write_file`, and `terminal` tools, enforcing a hard architectural boundary where the agent cannot inspect workspace `.env`, database files, or shell commands.
+   - **Manual Approvals:** Configured with `approvals.mode: manual` to fail closed against any unapproved actions.
+   - **Token Scrubbing (`backend/secret_guard.py`):** In-kernel regex utility that automatically scrubs patterns matching `sk-or-v1-*`, `sk-*`, `Bearer *`, or passwords before text is logged or stored.
    - **Agent Ignore Rules:** `.opencodeignore`, `.cursorignore`, and `.agentignore` in repository root prevent AI coding agents from indexing credentials.
 
 5. **Real-Time Reactive UI (Server-Sent Events / SSE):**

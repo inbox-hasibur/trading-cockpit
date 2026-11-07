@@ -26,21 +26,27 @@ WORKSPACE_ROOT = Path(__file__).resolve().parent.parent
 
 
 def get_hermes_dir() -> Path:
-    """Returns the Hermes home directory (AppData/Local/hermes on Windows, ~/.hermes on Linux/Mac)."""
+    """Returns the Hermes home directory (hummingbird profile if available, else ~/.hermes)."""
     if "HERMES_HOME" in os.environ:
         return Path(os.environ["HERMES_HOME"])
     local_app = os.environ.get("LOCALAPPDATA")
-    if local_app and (Path(local_app) / "hermes").exists():
-        return Path(local_app) / "hermes"
+    if local_app:
+        hb_profile = Path(local_app) / "hermes" / "profiles" / "hummingbird"
+        if hb_profile.exists():
+            return hb_profile
+        base = Path(local_app) / "hermes"
+        if base.exists():
+            return base
     return Path.home() / ".hermes"
 
 
 def get_hermes_bin() -> str:
     """Returns path to the hermes executable."""
-    h_dir = get_hermes_dir()
-    bin_exe = h_dir / "bin" / ("hermes.exe" if os.name == "nt" else "hermes")
-    if bin_exe.exists():
-        return str(bin_exe)
+    local_app = os.environ.get("LOCALAPPDATA")
+    if local_app:
+        bin_exe = Path(local_app) / "hermes" / "bin" / ("hermes.exe" if os.name == "nt" else "hermes")
+        if bin_exe.exists():
+            return str(bin_exe)
     return "hermes"
 
 
@@ -51,11 +57,11 @@ class BridgeChatRequest(BaseModel):
 
 
 async def stream_hermes_chat(message: str, session_id: Optional[str] = None) -> AsyncGenerator[str, None]:
-    """Streams SSE events from running Hermes (gateway API server or direct CLI fallback)."""
+    """Streams SSE events from running Hermes gateway API server."""
     gateway_url = os.environ.get("HERMES_GATEWAY_URL", "http://127.0.0.1:8642")
     api_key = os.environ.get("API_SERVER_KEY", "")
 
-    # Try 1: Hermes Gateway API Server (/v1/chat/completions) if active
+    # Check Hermes Gateway API Server (/v1/chat/completions)
     gateway_connected = False
     try:
         async with httpx.AsyncClient(timeout=1.5) as client:
@@ -65,96 +71,50 @@ async def stream_hermes_chat(message: str, session_id: Optional[str] = None) -> 
     except Exception:
         gateway_connected = False
 
-    if gateway_connected:
-        try:
-            headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
-            payload = {
-                "model": "hermes",
-                "messages": [{"role": "user", "content": message}],
-                "stream": True,
-            }
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                async with client.stream("POST", f"{gateway_url}/v1/chat/completions", json=payload, headers=headers) as resp:
-                    full_reply = []
-                    async for line in resp.aiter_lines():
-                        if not line or not line.startswith("data: "):
-                            continue
-                        chunk_str = line[6:].strip()
-                        if chunk_str == "[DONE]":
-                            break
-                        try:
-                            parsed = json.loads(chunk_str)
-                            delta = parsed.get("choices", [{}])[0].get("delta", {})
-                            content = delta.get("content", "")
-                            if content:
-                                full_reply.append(content)
-                                yield f"data: {json.dumps({'type': 'text', 'text': content})}\n\n"
-                        except Exception:
-                            continue
-                    yield f"data: {json.dumps({'type': 'done', 'text': ''.join(full_reply)})}\n\n"
-                    return
-        except Exception as exc:
-            logger.warning("Gateway chat stream notice: %s. Falling back to CLI runner.", exc)
-
-    # Try 2: Direct Hermes CLI runner with stream-json format
-    bin_exe = get_hermes_bin()
-    cmd = [
-        bin_exe,
-        "chat",
-        "--format", "stream-json",
-        "--yolo",
-        "--in", str(WORKSPACE_ROOT),
-        "-q", message,
-    ]
-    if session_id:
-        cmd.extend(["--resume", session_id])
-
-    try:
-        proc = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            cwd=str(WORKSPACE_ROOT),
+    if not gateway_connected:
+        error_msg = (
+            "Hermes Gateway API is offline (http://127.0.0.1:8642). "
+            "Please start Hermes Gateway ('hermes -p hummingbird gateway') to enable chat."
         )
+        yield f"data: {json.dumps({'type': 'error', 'error': error_msg})}\n\n"
+        return
 
-        full_text = []
-        last_session_id = session_id or ""
+    # Stream turns through Gateway API
+    try:
+        headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+        payload = {
+            "model": "hermes",
+            "messages": [{"role": "user", "content": message}],
+            "stream": True,
+        }
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            async with client.stream("POST", f"{gateway_url}/v1/chat/completions", json=payload, headers=headers) as resp:
+                if resp.status_code != 200:
+                    err_body = await resp.aread()
+                    err_msg = err_body.decode("utf-8", errors="replace")
+                    yield f"data: {json.dumps({'type': 'error', 'error': f'Gateway error ({resp.status_code}): {err_msg}'})}\n\n"
+                    return
 
-        while True:
-            line_bytes = await proc.stdout.readline()
-            if not line_bytes:
-                break
-            line_str = line_bytes.decode("utf-8", errors="replace").strip()
-            if not line_str.startswith("{"):
-                continue
-            try:
-                event = json.loads(line_str)
-                evt_type = event.get("type")
-
-                if evt_type == "text":
-                    chunk = event.get("text", "")
-                    full_text.append(chunk)
-                    yield f"data: {json.dumps({'type': 'text', 'text': chunk})}\n\n"
-
-                elif evt_type == "tool_use":
-                    yield f"data: {json.dumps({'type': 'tool_use', 'name': event.get('name'), 'input': event.get('input', {}), 'id': event.get('tool_call_id', '')})}\n\n"
-
-                elif evt_type == "tool_result":
-                    yield f"data: {json.dumps({'type': 'tool_result', 'name': event.get('name'), 'output': event.get('output', ''), 'id': event.get('tool_call_id', ''), 'is_error': event.get('is_error', False)})}\n\n"
-
-                elif evt_type == "result":
-                    last_session_id = event.get("session_id", last_session_id)
-                    result_text = event.get("text", "".join(full_text))
-                    yield f"data: {json.dumps({'type': 'done', 'text': result_text, 'session_id': last_session_id})}\n\n"
-
-            except Exception:
-                continue
-
-        await proc.wait()
-
+                full_reply = []
+                async for line in resp.aiter_lines():
+                    if not line or not line.startswith("data: "):
+                        continue
+                    chunk_str = line[6:].strip()
+                    if chunk_str == "[DONE]":
+                        break
+                    try:
+                        parsed = json.loads(chunk_str)
+                        delta = parsed.get("choices", [{}])[0].get("delta", {})
+                        content = delta.get("content", "")
+                        if content:
+                            full_reply.append(content)
+                            yield f"data: {json.dumps({'type': 'text', 'text': content})}\n\n"
+                    except Exception:
+                        continue
+                yield f"data: {json.dumps({'type': 'done', 'text': ''.join(full_reply)})}\n\n"
     except Exception as exc:
-        logger.error("Hermes stream failed: %s", exc)
-        yield f"data: {json.dumps({'type': 'error', 'error': str(exc)})}\n\n"
+        logger.error("Hermes gateway stream failed: %s", exc)
+        yield f"data: {json.dumps({'type': 'error', 'error': f'Gateway stream error: {exc}'})}\n\n"
 
 
 def read_hermes_state() -> dict[str, Any]:
@@ -275,9 +235,9 @@ def _extract_skill_meta(path: Path) -> dict[str, Any]:
 
 
 def run_hermes_cron_cmd(*args: str) -> dict[str, Any]:
-    """Runs a hermes cron sub-command synchronously."""
+    """Runs a hermes cron sub-command synchronously on the hummingbird profile."""
     bin_exe = get_hermes_bin()
-    cmd = [bin_exe, "cron", *args]
+    cmd = [bin_exe, "-p", "hummingbird", "cron", *args]
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
         return {

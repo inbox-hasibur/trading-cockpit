@@ -193,7 +193,7 @@ flowchart TD
 - **Objective:** Install and configure official Hermes Agent runtime as a separate process outside our repo.
 - **Actions:**
   1. Install Hermes Agent globally or in dedicated environment (`pip install hermes-agent` or official installation script).
-  2. Configure `~/.hermes/config.yaml` with `timezone: Asia/Dhaka`, fallback provider chain (OpenRouter primary, Gemini fallback), and `approvals.mode: smart`.
+  2. Configure `~/.hermes/profiles/hummingbird/config.yaml` with `timezone: Asia/Dhaka`, `approvals.mode: manual`, and toolsets restricted strictly to `humming_bird`, `memory`, `skills`, and `cronjob` (disabling `terminal`, `file`, `code_execution`, and `browser`).
   3. Enable API server in `~/.hermes/.env` (`API_SERVER_ENABLED=true`, `API_SERVER_KEY=<local_dev_token>`).
   4. Launch `hermes gateway` on port `8642`.
 - **Verification / Test:**
