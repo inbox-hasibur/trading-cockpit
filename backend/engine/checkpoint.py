@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from backend.database import (
     CompanyProfile,
     CustomRule,
-    HermesStateCheckpoint,
+    KernelStateCheckpoint,
     PortfolioState,
     TaxLot,
     TradeLog,
@@ -35,7 +35,7 @@ class CheckpointManager:
         diff_payload: dict[str, Any] | None = None,
         actor: str = "Kernel API",
         extra_snapshot: dict[str, Any] | None = None,
-    ) -> HermesStateCheckpoint:
+    ) -> KernelStateCheckpoint:
         payload: dict[str, Any] = {
             "action": action,
             "description": description,
@@ -66,7 +66,7 @@ class CheckpointManager:
                     "enabled": rule.enabled,
                 }
 
-        cp = HermesStateCheckpoint(
+        cp = KernelStateCheckpoint(
             id=f"{time.time_ns():020d}_{uuid4().hex[:8]}",
             action=action,
             description=description,
@@ -83,9 +83,9 @@ class CheckpointManager:
     @staticmethod
     def rollback_last(session: Session, state: PortfolioState) -> dict[str, Any]:
         cp = session.scalar(
-            select(HermesStateCheckpoint)
-            .where(HermesStateCheckpoint.reverted == False)
-            .order_by(HermesStateCheckpoint.id.desc())
+            select(KernelStateCheckpoint)
+            .where(KernelStateCheckpoint.reverted == False)
+            .order_by(KernelStateCheckpoint.id.desc())
             .limit(1)
         )
         if not cp:

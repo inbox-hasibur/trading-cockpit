@@ -170,88 +170,16 @@ class CanaryThesis(Base):
     created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
 
 
-class HermesSkillRevision(Base):
-    __tablename__ = "hermes_skill_revisions"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    skill_name: Mapped[str] = mapped_column(String(64), index=True)
-    version: Mapped[int] = mapped_column(Integer, default=1)
-    reason: Mapped[str] = mapped_column(String(500))
-    patch_diff: Mapped[str] = mapped_column(String(2000), default="")
-    session_on: Mapped[date] = mapped_column(Date)
-    created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
-
-
-class HermesUserProfile(Base):
-    __tablename__ = "hermes_user_profile"
-    id: Mapped[int] = mapped_column(primary_key=True, default=1)
-    operator_name: Mapped[str] = mapped_column(String(64), default="Hasibur")
-    language_preference: Mapped[str] = mapped_column(String(32), default="Bangla/Banglish")
-    risk_posture: Mapped[str] = mapped_column(String(64), default="Strict No-Loss / Capital Preservation")
-    custom_directives: Mapped[list[str]] = mapped_column(JSON, default=lambda: [
-        "Never panic sell at a loss",
-        "Lock 90% profit on severe bad news, keep 10% canary probe",
-        "Respect T+2 working day calendar",
-    ])
-    updated_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
-
-
-class HermesConversationThread(Base):
-    __tablename__ = "hermes_conversation_threads"
-    id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    title: Mapped[str] = mapped_column(String(120), default="New Conversation")
-    created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
-    updated_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
-
-
-class HermesSessionMemory(Base):
-    __tablename__ = "hermes_session_memory"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    conversation_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
-    session_date: Mapped[date] = mapped_column(Date, index=True)
-    role: Mapped[str] = mapped_column(String(16))
-    content: Mapped[str] = mapped_column(String(4000))
-    symbol_mentioned: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
-    action_taken: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
-
-
-class HermesDurableFact(Base):
-    __tablename__ = "hermes_durable_facts"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    symbol: Mapped[str] = mapped_column(ForeignKey("company_profiles.symbol"), index=True)
-    category: Mapped[str] = mapped_column(String(32), default="FUNDAMENTAL")
-    fact: Mapped[str] = mapped_column(String(1000))
-    confidence: Mapped[str] = mapped_column(String(16), default="HIGH")
-    active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
-
-
-class HermesStateCheckpoint(Base):
-    __tablename__ = "hermes_state_checkpoints"
+class KernelStateCheckpoint(Base):
+    __tablename__ = "kernel_state_checkpoints"
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     action: Mapped[str] = mapped_column(String(64))
     description: Mapped[str] = mapped_column(String(500))
     snapshot_payload: Mapped[dict[str, Any]] = mapped_column(JSON)
     diff_payload: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
-    actor: Mapped[str] = mapped_column(String(32), default="Hermes Agent")
+    actor: Mapped[str] = mapped_column(String(32), default="Kernel API")
     session_on: Mapped[date] = mapped_column(Date)
     reverted: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
-
-
-class HermesCronJob(Base):
-    __tablename__ = "hermes_cron_jobs"
-    id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    name: Mapped[str] = mapped_column(String(120))
-    schedule_expr: Mapped[str] = mapped_column(String(64))
-    natural_instruction: Mapped[str] = mapped_column(String(500), default="")
-    action_type: Mapped[str] = mapped_column(String(64))
-    params: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
-    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
-    last_run_at: Mapped[str | None] = mapped_column(String(40), nullable=True)
-    last_status: Mapped[str] = mapped_column(String(32), default="PENDING")
-    last_result: Mapped[str | None] = mapped_column(String(1000), nullable=True)
-    next_run_at: Mapped[str | None] = mapped_column(String(40), nullable=True)
     created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
 
 
@@ -347,19 +275,11 @@ class Database:
                     conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN active_model VARCHAR(64) DEFAULT 'xiaomi/mimo-v2-flash'"))
                 conn.commit()
 
-            result = conn.execute(text("PRAGMA table_info(hermes_session_memory)"))
-            hsm_cols = [row[1] for row in result.fetchall()]
-            if hsm_cols and "conversation_id" not in hsm_cols:
-                conn.execute(text("ALTER TABLE hermes_session_memory ADD COLUMN conversation_id VARCHAR(36)"))
-                conn.commit()
-
-            result = conn.execute(text("PRAGMA table_info(hermes_state_checkpoints)"))
-            cp_cols = [row[1] for row in result.fetchall()]
-            if cp_cols:
-                if "diff_payload" not in cp_cols:
-                    conn.execute(text("ALTER TABLE hermes_state_checkpoints ADD COLUMN diff_payload JSON"))
-                if "actor" not in cp_cols:
-                    conn.execute(text("ALTER TABLE hermes_state_checkpoints ADD COLUMN actor VARCHAR(32) DEFAULT 'Hermes Agent'"))
+            # Drop any legacy hermes_* tables
+            legacy_tables = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'hermes_%'")).fetchall()
+            for row in legacy_tables:
+                conn.execute(text(f"DROP TABLE IF EXISTS {row[0]}"))
+            if legacy_tables:
                 conn.commit()
 
     @contextmanager
