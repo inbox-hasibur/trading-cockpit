@@ -113,6 +113,14 @@ class AutoTrader:
             record(company.symbol, analysis.signal, analysis.reason)
 
         sold_symbols: set[str] = set()
+        from backend.config import get_active_target_portfolio, get_allowed_portfolios
+        active_pid = get_active_target_portfolio(getattr(state, "trading_mode", "LIVE_HOURS"), self.settings)
+
+        # In Test Mode, if no test portfolio is configured, block execution with clear message
+        if getattr(state, "trading_mode", "LIVE_HOURS") == "TEST_OFFHOURS" and not active_pid:
+            for c in companies:
+                record(c.symbol, "BLOCKED_NO_TEST_PORTFOLIO", "Order execution blocked in Test Mode: STOCKNOW_TEST_PORTFOLIO_ID is not configured.")
+            return trades
 
         # Enforce global kill switch: blocks all order execution mid-cycle
         if getattr(state, "kill_switch_active", False):
@@ -120,9 +128,10 @@ class AutoTrader:
                 record(c.symbol, "KILL_SWITCH_ACTIVE", "Global kill switch is active. Blocking order execution mid-cycle.")
             return trades
 
-        lots = list(session.scalars(
-            select(TaxLot).where(TaxLot.remaining_qty > 0).order_by(TaxLot.id)
-        ))
+        lots_q = select(TaxLot).where(TaxLot.remaining_qty > 0)
+        if active_pid:
+            lots_q = lots_q.where(TaxLot.portfolio_id == active_pid)
+        lots = list(session.scalars(lots_q.order_by(TaxLot.id)))
         for lot in lots:
             rule = rules[lot.symbol]
             analysis, quote = assessments[lot.symbol]
@@ -174,6 +183,7 @@ class AutoTrader:
                     bucket=lot.bucket, trade_on=state.clock_date,
                     settles_on=self.calendar.add_sessions(state.clock_date, company.settlement_days),
                     reason=plan.reason,
+                    portfolio_id=active_pid or "164580",
                 )
                 session.add(trade)
                 session.flush()
@@ -198,7 +208,7 @@ class AutoTrader:
                     except Exception as exc:
                         logger.debug("AutoTrader adapter sell dispatch error: %s", exc)
 
-        balances = bucket_balances(session, state)
+        balances = bucket_balances(session, state, portfolio_id=active_pid)
         active_name = self.calendar.bucket_for(state.clock_date)
         active = balances[active_name]
 
@@ -221,7 +231,7 @@ class AutoTrader:
             rule = rules[company.symbol]
             analysis, quote = assessments[company.symbol]
             cat = getattr(company, "watchlist_category", "GSC")
-            is_stocknow = getattr(company, "source", "") == "STOCKNOW_FAVORITES" or "164580" in getattr(state, "name", "")
+            is_stocknow = getattr(company, "source", "") == "STOCKNOW_FAVORITES" or any(pid in getattr(state, "name", "") for pid in get_allowed_portfolios(self.settings))
             if is_stocknow and has_active_tiers and cat not in {"GSC_L1", "GSC_L2"}:
                 record(company.symbol, "WAIT_OBSERVATION_ONLY", "Observation pool only (not in GSC_L1 or GSC_L2).")
                 continue
@@ -237,11 +247,14 @@ class AutoTrader:
                 record(company.symbol, "WAIT_NO_CHURN", "Do not rebuy a symbol sold in this cycle.")
                 continue
             buy_key = f"BUY:{company.symbol}:{state.clock_date}"
-            already_bought = session.scalar(select(TradeLog.id).where(
+            already_bought_q = select(TradeLog.id).where(
                 TradeLog.symbol == company.symbol,
                 TradeLog.side == "BUY",
                 TradeLog.trade_on == state.clock_date,
-            ))
+            )
+            if active_pid:
+                already_bought_q = already_bought_q.where(TradeLog.portfolio_id == active_pid)
+            already_bought = session.scalar(already_bought_q)
             if already_bought:
                 record(company.symbol, "WAIT_DAILY_BUY", "Already bought this symbol in this session.")
                 continue
@@ -251,17 +264,21 @@ class AutoTrader:
 
             # Enforce max orders per day limit across AutoTrader and Hermes
             max_orders = getattr(state, "max_orders_per_day", 20)
-            today_orders_count = len(session.scalars(select(TradeLog.id).where(TradeLog.trade_on == state.clock_date)).all())
+            today_orders_q = select(TradeLog.id).where(TradeLog.trade_on == state.clock_date)
+            if active_pid:
+                today_orders_q = today_orders_q.where(TradeLog.portfolio_id == active_pid)
+            today_orders_count = len(session.scalars(today_orders_q).all())
             if today_orders_count >= max_orders:
                 record(company.symbol, "DAILY_ORDER_LIMIT_REACHED", f"Daily order limit reached ({today_orders_count}/{max_orders}).")
                 continue
 
             # Enforce shared daily budget limit across AutoTrader and Hermes
             daily_budget = getattr(state, "daily_budget_bdt", Decimal("4000.00"))
+            today_buys_q = select(TradeLog).where(TradeLog.trade_on == state.clock_date, TradeLog.side == "BUY")
+            if active_pid:
+                today_buys_q = today_buys_q.where(TradeLog.portfolio_id == active_pid)
             today_buys_spend = sum(
-                (abs(t.net_cash_change) for t in session.scalars(
-                    select(TradeLog).where(TradeLog.trade_on == state.clock_date, TradeLog.side == "BUY")
-                )),
+                (abs(t.net_cash_change) for t in session.scalars(today_buys_q)),
                 ZERO,
             )
             daily_budget_headroom = max(ZERO, daily_budget - today_buys_spend)
@@ -269,9 +286,12 @@ class AutoTrader:
                 record(company.symbol, "DAILY_BUDGET_EXHAUSTED", f"Daily buy budget exhausted (spent ৳{today_buys_spend:.2f} of ৳{daily_budget:.2f}).")
                 continue
 
-            open_basis = sum(session.scalars(select(TaxLot.remaining_cost_basis).where(
+            open_basis_q = select(TaxLot.remaining_cost_basis).where(
                 TaxLot.symbol == company.symbol, TaxLot.remaining_qty > 0,
-            )), ZERO)
+            )
+            if active_pid:
+                open_basis_q = open_basis_q.where(TaxLot.portfolio_id == active_pid)
+            open_basis = sum(session.scalars(open_basis_q), ZERO)
             exposure_cap = money(state.initial_capital * rule.buy_allocation_pct / HUNDRED)
             headroom = max(ZERO, exposure_cap - open_basis)
 
@@ -309,6 +329,7 @@ class AutoTrader:
                 original_qty=quantity, remaining_qty=quantity, buy_price=fill_price,
                 buy_fee=fee, original_cost_basis=cost, remaining_cost_basis=cost,
                 cycle_base_qty=quantity, peak_price=fill_price,
+                portfolio_id=active_pid or "164580",
             )
             session.add(lot)
             session.flush()
@@ -319,6 +340,7 @@ class AutoTrader:
                 net_cash_change=-cost, realized_pnl=ZERO, bucket=active_name,
                 trade_on=state.clock_date, settles_on=lot.matures_on,
                 reason=f"{analysis.reason} Within company exposure and bucket cash limits.",
+                portfolio_id=active_pid or "164580",
             )
             session.add(trade)
             session.flush()
@@ -347,7 +369,7 @@ class AutoTrader:
 
         session.flush()
         check_canary_theses(session, state)
-        assert_ledger(session, state)
+        assert_ledger(session, state, portfolio_id=active_pid)
         cycle.result = {
             "id": cycle.id, "date": state.clock_date.isoformat(),
             "revision": state.revision, "rules_revision": state.rules_revision,

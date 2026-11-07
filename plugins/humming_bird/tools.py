@@ -248,17 +248,27 @@ def hb_sync(args: dict[str, Any] | None = None, **kwargs) -> str:
     return _kernel_post("/k/sync", payload)
 
 
+def _get_allowed_portfolios() -> tuple[str, ...]:
+    live = (os.getenv("STOCKNOW_LIVE_PORTFOLIO_ID") or "164580").strip()
+    test = (os.getenv("STOCKNOW_TEST_PORTFOLIO_ID") or "").strip()
+    return (live, test) if test else (live,)
+
+
 def hb_place_order(args: dict[str, Any] | None = None, **kwargs) -> str:
     """Submit virtual BUY or SELL order enforcing constraints and authorization."""
     merged = dict(args or {})
     merged.update(kwargs)
 
-    # 1. Hard-fail if target portfolio is not 164580
-    portfolio_id = str(merged.get("portfolio_id") or "164580").strip()
-    if portfolio_id != "164580":
-        return json.dumps({
-            "error": f"Hard fail: Unauthorized portfolio '{portfolio_id}'. Only target portfolio '164580' is authorized."
-        })
+    # 1. Enforce allowlist if portfolio_id is supplied
+    allowed = _get_allowed_portfolios()
+    raw_pid = merged.get("portfolio_id")
+    target_pid: str | None = None
+    if raw_pid is not None and str(raw_pid).strip():
+        target_pid = str(raw_pid).strip()
+        if target_pid not in allowed:
+            return json.dumps({
+                "error": f"Hard fail: Unauthorized portfolio '{target_pid}'. Authorized target portfolios: {list(allowed)}."
+            })
 
     symbol = merged.get("symbol")
     if not symbol:
@@ -301,7 +311,7 @@ def hb_place_order(args: dict[str, Any] | None = None, **kwargs) -> str:
                 "side": side,
                 "quantity": quantity,
                 "price": price,
-                "portfolio_id": "164580",
+                "portfolio_id": target_pid or allowed[0],
                 "dry_run": False,
             },
         })
@@ -316,10 +326,11 @@ def hb_place_order(args: dict[str, Any] | None = None, **kwargs) -> str:
         "side": side,
         "quantity": quantity,
         "price": float(price) if price is not None else None,
-        "portfolio_id": "164580",
         "dry_run": dry_run,
         "operator_confirmed": op_confirmed,
     }
+    if target_pid:
+        payload["portfolio_id"] = target_pid
     if preview_token:
         payload["preview_token"] = str(preview_token).strip()
     return _kernel_post("/k/order", payload)

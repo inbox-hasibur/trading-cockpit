@@ -222,7 +222,7 @@ HB_PLACE_ORDER_SCHEMA = {
             },
             "portfolio_id": {
                 "type": "string",
-                "description": "Target portfolio ID (must be '164580').",
+                "description": "Target portfolio ID (optional, defaults to active mode target; must be in allowlist).",
             },
             "idempotency_key": {
                 "type": "string",

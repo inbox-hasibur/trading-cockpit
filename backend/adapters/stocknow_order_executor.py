@@ -9,6 +9,8 @@ from decimal import Decimal
 from typing import Any
 from uuid import uuid4
 
+from backend.config import get_portfolio_name
+
 logger = logging.getLogger(__name__)
 
 # Global in-memory cache for idempotency deduplication
@@ -102,7 +104,7 @@ async def _execute_stocknow_virtual_order_impl(
 
     now_iso = datetime.now(timezone.utc).isoformat(timespec="seconds")
     order_id = f"HB_ORD_{uuid4().hex[:10].upper()}"
-    p_id = portfolio_id or (getattr(client, "bound_portfolio_id", None) if client else None) or "164580"
+    p_id = portfolio_id or (getattr(client, "bound_portfolio_id", None) if client else None) or os.getenv("STOCKNOW_LIVE_PORTFOLIO_ID", "164580")
 
     # 2. Live Browser / DOM Execution Path
     has_page = (
@@ -253,6 +255,7 @@ async def _execute_stocknow_virtual_order_impl(
                 "commission_pct": float(comm_pct),
                 "commission_rate": float(comm_pct / 100),
                 "portfolio_id": p_id,
+                "portfolio_name": get_portfolio_name(p_id),
                 "idempotency_key": idempotency_key,
                 "timestamp": now_iso,
             }
@@ -275,6 +278,7 @@ async def _execute_stocknow_virtual_order_impl(
         "commission_pct": float(comm_pct),
         "commission_rate": float(comm_pct / 100),
         "portfolio_id": p_id,
+        "portfolio_name": get_portfolio_name(p_id),
         "idempotency_key": idempotency_key,
         "timestamp": now_iso,
     }

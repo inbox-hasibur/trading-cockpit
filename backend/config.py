@@ -44,6 +44,8 @@ class Settings:
     operator_password: str = ""
     operator_name: str = "Hasibur Rahman"
     operator_portfolio: str = "Humming Bird (StockNow)"
+    stocknow_live_portfolio_id: str = "164580"
+    stocknow_test_portfolio_id: str = ""
     chat_daily_call_limit: int = 30
     chat_max_output_tokens: int = 500
     cockpit_api_token: str = ""
@@ -120,6 +122,8 @@ class Settings:
             operator_password=password,
             operator_name=os.getenv("OPERATOR_NAME", "Hasibur Rahman").strip(),
             operator_portfolio=os.getenv("OPERATOR_PORTFOLIO", "Humming Bird (StockNow)").strip(),
+            stocknow_live_portfolio_id=os.getenv("STOCKNOW_LIVE_PORTFOLIO_ID", "164580").strip(),
+            stocknow_test_portfolio_id=os.getenv("STOCKNOW_TEST_PORTFOLIO_ID", "").strip(),
             chat_daily_call_limit=int(os.getenv("CHAT_DAILY_CALL_LIMIT", "30")),
             chat_max_output_tokens=int(os.getenv("CHAT_MAX_OUTPUT_TOKENS", "500")),
             cockpit_api_token=os.getenv("COCKPIT_API_TOKEN", "").strip(),
@@ -129,3 +133,63 @@ class Settings:
                 if host.strip()
             ),
         )
+
+
+def get_allowed_portfolios(settings: Settings | None = None) -> tuple[str, ...]:
+    """Returns the allowlist of authorized StockNow portfolio IDs: [LIVE, TEST]."""
+    if settings is None:
+        try:
+            settings = Settings.from_env()
+        except Exception:
+            live = os.getenv("STOCKNOW_LIVE_PORTFOLIO_ID", "164580").strip()
+            test = os.getenv("STOCKNOW_TEST_PORTFOLIO_ID", "").strip()
+            res = [live]
+            if test and test not in res:
+                res.append(test)
+            return tuple(res)
+    live = settings.stocknow_live_portfolio_id.strip()
+    test = settings.stocknow_test_portfolio_id.strip()
+    res = [live]
+    if test and test not in res:
+        res.append(test)
+    return tuple(res)
+
+
+def get_active_target_portfolio(trading_mode: str, settings: Settings | None = None) -> str | None:
+    """Returns the active portfolio ID based on current trading mode:
+    - LIVE_HOURS -> STOCKNOW_LIVE_PORTFOLIO_ID (default 164580)
+    - TEST_OFFHOURS -> STOCKNOW_TEST_PORTFOLIO_ID (or None if unconfigured)
+    """
+    if settings is None:
+        try:
+            settings = Settings.from_env()
+        except Exception:
+            if trading_mode == "LIVE_HOURS":
+                return os.getenv("STOCKNOW_LIVE_PORTFOLIO_ID", "164580").strip()
+            return os.getenv("STOCKNOW_TEST_PORTFOLIO_ID", "").strip() or None
+
+    if trading_mode == "LIVE_HOURS":
+        return settings.stocknow_live_portfolio_id.strip()
+    return settings.stocknow_test_portfolio_id.strip() or None
+
+
+def get_portfolio_name(portfolio_id: str, settings: Settings | None = None) -> str:
+    """Returns human-readable portfolio name for a given portfolio ID."""
+    live_id = "164580"
+    test_id = ""
+    live_name = "Humming Bird"
+    if settings:
+        live_id = settings.stocknow_live_portfolio_id.strip()
+        test_id = settings.stocknow_test_portfolio_id.strip()
+        live_name = getattr(settings, "operator_portfolio", "Humming Bird")
+    else:
+        live_id = os.getenv("STOCKNOW_LIVE_PORTFOLIO_ID", "164580").strip()
+        test_id = os.getenv("STOCKNOW_TEST_PORTFOLIO_ID", "").strip()
+
+    pid = str(portfolio_id).strip()
+    if pid == live_id:
+        return live_name
+    elif test_id and pid == test_id:
+        return f"{live_name} (Test)"
+    return f"Portfolio #{pid}"
+

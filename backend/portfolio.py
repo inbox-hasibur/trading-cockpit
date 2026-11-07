@@ -11,7 +11,14 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from backend.adapters.stocknow_adapter import StockNowAdapter
-from backend.config import DHAKA, VERSION, Settings
+from backend.config import (
+    DHAKA,
+    VERSION,
+    Settings,
+    get_active_target_portfolio,
+    get_allowed_portfolios,
+    get_portfolio_name,
+)
 from backend.database import (
     AutomationCycle,
     CanaryThesis,
@@ -346,11 +353,16 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
     adapter = StockNowAdapter()
     companies = list(session.scalars(select(CompanyProfile).order_by(CompanyProfile.symbol)))
     rules = {rule.symbol: rule for rule in session.scalars(select(CustomRule))}
-    lots = list(session.scalars(select(TaxLot).where(TaxLot.remaining_qty > 0).order_by(TaxLot.id)))
+    active_pid = (
+        str(live_client.bound_portfolio_id)
+        if live_client and getattr(live_client, "bound_portfolio_id", None)
+        else (get_active_target_portfolio(getattr(state, "trading_mode", "LIVE_HOURS"), settings) or settings.stocknow_live_portfolio_id)
+    )
+    lots = list(session.scalars(select(TaxLot).where(TaxLot.remaining_qty > 0, TaxLot.portfolio_id == active_pid).order_by(TaxLot.id)))
     trades = list(session.scalars(
-        select(TradeLog).where(TradeLog.trade_on <= state.clock_date).order_by(TradeLog.id)
+        select(TradeLog).where(TradeLog.trade_on <= state.clock_date, TradeLog.portfolio_id == active_pid).order_by(TradeLog.id)
     ))
-    balances = bucket_balances(session, state)
+    balances = bucket_balances(session, state, portfolio_id=active_pid)
     active = calendar.bucket_for(state.clock_date)
 
     cur_date = state.clock_date
@@ -562,6 +574,8 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
     return {
         "all_shares_count": all_shares_total,
         "trading_mode": getattr(state, "trading_mode", "LIVE_HOURS"),
+        "portfolio_id": active_pid,
+        "portfolio_name": get_portfolio_name(active_pid, settings),
         "risk_caps": {
             "max_order_bdt": float(state.max_order_bdt) if getattr(state, "max_order_bdt", None) is not None else None,
             "max_symbol_bdt": float(state.max_symbol_bdt) if getattr(state, "max_symbol_bdt", None) is not None else None,
@@ -572,6 +586,9 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
         "app": {
             "name": state.name, "version": VERSION, "mode": "DEMO", "source": "SYNTHETIC",
             "trading_mode": getattr(state, "trading_mode", "LIVE_HOURS"),
+            "target_portfolio_id": active_pid,
+            "target_portfolio_name": get_portfolio_name(active_pid, settings),
+            "allowed_portfolios": list(get_allowed_portfolios(settings)),
             "kill_switch_active": bool(getattr(state, "kill_switch_active", False)),
             "date": state.clock_date.isoformat(), "revision": state.revision,
             "rules_revision": state.rules_revision, "paused": state.paused,

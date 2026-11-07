@@ -14,6 +14,8 @@ def settings(tmp_path):
         demo_start_date=date(2026, 11, 3),
         operator_username="test_operator",
         operator_password="test_password_123",
+        stocknow_live_portfolio_id="164580",
+        stocknow_test_portfolio_id="164580_test",
     )
 
 

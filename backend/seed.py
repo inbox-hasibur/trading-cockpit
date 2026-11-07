@@ -80,45 +80,52 @@ def seed_demo(session: Session, settings: Settings) -> None:
         ("BXPHARMA", -2, 10, "90", "93"),
         ("GP", -3, 8, "240", "275"),
     )
-    for symbol, offset, base_quantity, buy_at, observed_peak in lot_specs:
-        acquired_on = calendar.add_sessions(today, offset)
-        quantity = max(1, int(base_quantity * scale))
-        cost, fee = purchase_amount(quantity, decimal(buy_at), settings.buy_fee_rate)
-        lot = TaxLot(
-            symbol=symbol,
-            bucket=calendar.bucket_for(acquired_on),
-            acquired_on=acquired_on,
-            matures_on=calendar.add_sessions(acquired_on, settings.settlement_days),
-            original_qty=quantity,
-            remaining_qty=quantity,
-            buy_price=decimal(buy_at),
-            buy_fee=fee,
-            original_cost_basis=cost,
-            remaining_cost_basis=cost,
-            cycle_base_qty=quantity,
-            peak_price=decimal(observed_peak),
-        )
-        session.add(lot)
+    seed_pids = [settings.stocknow_live_portfolio_id]
+    if getattr(settings, "stocknow_test_portfolio_id", None) and settings.stocknow_test_portfolio_id != settings.stocknow_live_portfolio_id:
+        seed_pids.append(settings.stocknow_test_portfolio_id)
+
+    for pid in seed_pids:
+        for symbol, offset, base_quantity, buy_at, observed_peak in lot_specs:
+            acquired_on = calendar.add_sessions(today, offset)
+            quantity = max(1, int(base_quantity * scale))
+            cost, fee = purchase_amount(quantity, decimal(buy_at), settings.buy_fee_rate)
+            lot = TaxLot(
+                portfolio_id=pid,
+                symbol=symbol,
+                bucket=calendar.bucket_for(acquired_on),
+                acquired_on=acquired_on,
+                matures_on=calendar.add_sessions(acquired_on, settings.settlement_days),
+                original_qty=quantity,
+                remaining_qty=quantity,
+                buy_price=decimal(buy_at),
+                buy_fee=fee,
+                original_cost_basis=cost,
+                remaining_cost_basis=cost,
+                cycle_base_qty=quantity,
+                peak_price=decimal(observed_peak),
+            )
+            session.add(lot)
+            session.flush()
+            session.add(TradeLog(
+                portfolio_id=pid,
+                trade_key=f"SEED:{pid}:{symbol}",
+                lot_id=lot.id,
+                symbol=symbol,
+                side="BUY",
+                quantity=quantity,
+                price=lot.buy_price,
+                gross_amount=money(quantity * lot.buy_price),
+                fee=fee,
+                net_cash_change=-cost,
+                realized_pnl=Decimal("0"),
+                bucket=lot.bucket,
+                trade_on=acquired_on,
+                settles_on=lot.matures_on,
+                reason="Synthetic opening holding, funded from its rolling bucket.",
+                source="DEMO_SEED",
+            ))
         session.flush()
-        session.add(TradeLog(
-            trade_key=f"SEED:{symbol}",
-            lot_id=lot.id,
-            symbol=symbol,
-            side="BUY",
-            quantity=quantity,
-            price=lot.buy_price,
-            gross_amount=money(quantity * lot.buy_price),
-            fee=fee,
-            net_cash_change=-cost,
-            realized_pnl=Decimal("0"),
-            bucket=lot.bucket,
-            trade_on=acquired_on,
-            settles_on=lot.matures_on,
-            reason="Synthetic opening holding, funded from its rolling bucket.",
-            source="DEMO_SEED",
-        ))
-    session.flush()
-    bucket_balances(session, state)  # Refuse to seed an unfunded ledger.
+        bucket_balances(session, state, portfolio_id=pid)  # Refuse to seed an unfunded ledger.
 
 
 # Real StockNow Favorites Watchlist (Sprint 2 - Nov 5, 2026 data)

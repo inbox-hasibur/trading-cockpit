@@ -63,14 +63,26 @@ class BucketBalance:
     today_buy_spend: Decimal = ZERO
 
 
-def bucket_balances(session: Session, state: PortfolioState) -> dict[str, BucketBalance]:
+def bucket_balances(session: Session, state: PortfolioState, portfolio_id: str | None = None) -> dict[str, BucketBalance]:
+    if portfolio_id is None:
+        pids = list(session.scalars(select(TaxLot.portfolio_id).distinct()).all())
+        if len(pids) == 1:
+            portfolio_id = pids[0]
+        elif pids:
+            trading_mode = getattr(state, "trading_mode", "LIVE_HOURS")
+            from backend.config import get_active_target_portfolio
+            portfolio_id = get_active_target_portfolio(trading_mode) or "164580"
+
     base = (state.initial_capital / 3).quantize(CENT, rounding="ROUND_DOWN")
     allocations = {"A": base, "B": base, "C": state.initial_capital - 2 * base}
     balances = {
         name: BucketBalance(name=name, initial_cash=value, available_cash=value)
         for name, value in allocations.items()
     }
-    trades = session.scalars(select(TradeLog).where(TradeLog.trade_on <= state.clock_date))
+    trade_q = select(TradeLog).where(TradeLog.trade_on <= state.clock_date)
+    if portfolio_id:
+        trade_q = trade_q.where(TradeLog.portfolio_id == str(portfolio_id))
+    trades = session.scalars(trade_q)
     for trade in trades:
         bucket = balances[trade.bucket]
         if trade.side == "BUY":
@@ -81,7 +93,10 @@ def bucket_balances(session: Session, state: PortfolioState) -> dict[str, Bucket
             bucket.available_cash += trade.net_cash_change
         else:
             bucket.unsettled_proceeds += trade.net_cash_change
-    lots = session.scalars(select(TaxLot).where(TaxLot.remaining_qty > 0))
+    lot_q = select(TaxLot).where(TaxLot.remaining_qty > 0)
+    if portfolio_id:
+        lot_q = lot_q.where(TaxLot.portfolio_id == str(portfolio_id))
+    lots = session.scalars(lot_q)
     for lot in lots:
         bucket = balances[lot.bucket]
         bucket.open_cost_basis += lot.remaining_cost_basis
@@ -96,15 +111,24 @@ def bucket_balances(session: Session, state: PortfolioState) -> dict[str, Bucket
     return balances
 
 
-def assert_ledger(session: Session, state: PortfolioState) -> None:
+def assert_ledger(session: Session, state: PortfolioState, portfolio_id: str | None = None) -> None:
     """Book assets must equal initial capital plus realized P/L, to the paisa."""
-    balances = bucket_balances(session, state)
+    if portfolio_id is None:
+        pids = list(session.scalars(select(TaxLot.portfolio_id).distinct()).all())
+        if len(pids) == 1:
+            portfolio_id = pids[0]
+        elif pids:
+            trading_mode = getattr(state, "trading_mode", "LIVE_HOURS")
+            from backend.config import get_active_target_portfolio
+            portfolio_id = get_active_target_portfolio(trading_mode) or "164580"
+
+    balances = bucket_balances(session, state, portfolio_id=portfolio_id)
     book_assets = sum(
         (b.available_cash + b.unsettled_proceeds + b.open_cost_basis for b in balances.values()), ZERO
     )
-    realized = sum(
-        session.scalars(select(TradeLog.realized_pnl).where(TradeLog.trade_on <= state.clock_date)),
-        ZERO,
-    )
+    trade_q = select(TradeLog.realized_pnl).where(TradeLog.trade_on <= state.clock_date)
+    if portfolio_id:
+        trade_q = trade_q.where(TradeLog.portfolio_id == str(portfolio_id))
+    realized = sum(session.scalars(trade_q), ZERO)
     if money(book_assets) != money(state.initial_capital + realized):
         raise RuntimeError("Ledger invariant violated: cash, lots and realized P/L do not reconcile.")

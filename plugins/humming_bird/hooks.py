@@ -82,9 +82,10 @@ def on_pre_tool_call(tool_name: str, args: dict[str, Any] | None = None, **kwarg
         symbol = args.get("symbol", "UNKNOWN")
         side = args.get("side", "ORDER")
         qty = args.get("quantity", "")
+        pid = args.get("portfolio_id") or "active target"
         return {
             "action": "approve",
-            "message": f"Execute real live DSE order: {side} {qty} {symbol} on portfolio 164580 (dry_run=false).",
+            "message": f"Execute real live DSE order: {side} {qty} {symbol} on portfolio {pid} (dry_run=false).",
             "rule_key": f"dse_live_order:{symbol}",
         }
 

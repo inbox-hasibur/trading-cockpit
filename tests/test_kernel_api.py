@@ -150,7 +150,7 @@ def test_order_portfolio_must_be_164580(client, auth_headers):
     }
     res = client.post("/k/order", json=req_body, headers=auth_headers)
     assert res.status_code == 422
-    assert "Portfolio must be 164580" in res.json()["detail"]
+    assert "Unauthorized portfolio" in res.json()["detail"]
 
 
 def test_order_strict_no_loss_rejection(client, auth_headers):

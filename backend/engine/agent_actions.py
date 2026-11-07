@@ -28,7 +28,12 @@ def emergency_quarantine_and_canary(
     settings: Settings,
     symbol: str,
     thesis_text: str,
+    portfolio_id: str | None = None,
 ) -> dict:
+    if portfolio_id is None:
+        from backend.config import get_active_target_portfolio
+        portfolio_id = get_active_target_portfolio(getattr(state, "trading_mode", "LIVE_HOURS"), settings) or settings.stocknow_live_portfolio_id
+
     calendar = TradingCalendar(settings.holidays, settings.bucket_anchor)
     company = session.get(CompanyProfile, symbol.upper())
     if company is None:
@@ -37,9 +42,9 @@ def emergency_quarantine_and_canary(
     company.quarantined = True
     company.quarantine_reason = f"Hermes Agentic Quarantine: {thesis_text}"
 
-    # Check open lots
+    # Check open lots scoped by portfolio
     lots = list(session.scalars(
-        select(TaxLot).where(TaxLot.symbol == company.symbol, TaxLot.remaining_qty > 0).order_by(TaxLot.id)
+        select(TaxLot).where(TaxLot.symbol == company.symbol, TaxLot.remaining_qty > 0, TaxLot.portfolio_id == portfolio_id).order_by(TaxLot.id)
     ))
     total_shares = sum(lot.remaining_qty for lot in lots)
     total_basis = sum(lot.remaining_cost_basis for lot in lots)
@@ -79,6 +84,7 @@ def emergency_quarantine_and_canary(
                 total_net_proceeds += proceeds
 
                 trade = TradeLog(
+                    portfolio_id=portfolio_id,
                     trade_key=f"EMERGENCY_SELL:{cycle_key(state)}:{lot.id}:{uuid4().hex[:6]}",
                     cycle_id=None,
                     lot_id=lot.id,
@@ -116,7 +122,7 @@ def emergency_quarantine_and_canary(
     session.add(thesis)
     state.rules_revision += 1
     session.flush()
-    assert_ledger(session, state)
+    assert_ledger(session, state, portfolio_id=portfolio_id)
 
     return {
         "symbol": company.symbol,
@@ -200,7 +206,11 @@ def execute_agentic_buy(
     settings: Settings,
     symbol: str,
     requested_qty: int | None = None,
+    portfolio_id: str | None = None,
 ) -> dict:
+    from backend.config import get_active_target_portfolio
+    if portfolio_id is None:
+        portfolio_id = get_active_target_portfolio(getattr(state, "trading_mode", "LIVE_HOURS"), settings) or settings.stocknow_live_portfolio_id
     calendar = TradingCalendar(settings.holidays, settings.bucket_anchor)
     company = session.get(CompanyProfile, symbol.upper())
     if company is None:
@@ -208,7 +218,7 @@ def execute_agentic_buy(
     if company.quarantined:
         raise ValueError(f"Cannot buy {symbol}: Company is under Crash Quarantine.")
 
-    balances = bucket_balances(session, state)
+    balances = bucket_balances(session, state, portfolio_id=portfolio_id)
     active_name = calendar.bucket_for(state.clock_date)
     active = balances[active_name]
 
@@ -243,6 +253,7 @@ def execute_agentic_buy(
         remaining_cost_basis=cost,
         cycle_base_qty=quantity,
         peak_price=unit_price,
+        portfolio_id=portfolio_id,
     )
     session.add(lot)
     session.flush()
@@ -264,10 +275,11 @@ def execute_agentic_buy(
         settles_on=lot.matures_on,
         reason=f"Hermes Agentic buy execution requested by user/assistant.",
         source="HERMES_AGENTIC",
+        portfolio_id=portfolio_id,
     )
     session.add(trade)
     session.flush()
-    assert_ledger(session, state)
+    assert_ledger(session, state, portfolio_id=portfolio_id)
 
     return {
         "symbol": company.symbol,
@@ -276,6 +288,7 @@ def execute_agentic_buy(
         "price": float(unit_price),
         "cost": float(cost),
         "bucket": active_name,
+        "portfolio_id": portfolio_id,
     }
 
 
@@ -285,9 +298,13 @@ def execute_agentic_sell(
     settings: Settings,
     symbol: str,
     requested_qty: int,
+    portfolio_id: str | None = None,
 ) -> dict:
     if requested_qty <= 0:
         raise ValueError(f"Requested sell quantity must be positive, got {requested_qty}.")
+    from backend.config import get_active_target_portfolio
+    if portfolio_id is None:
+        portfolio_id = get_active_target_portfolio(getattr(state, "trading_mode", "LIVE_HOURS"), settings) or settings.stocknow_live_portfolio_id
     calendar = TradingCalendar(settings.holidays, settings.bucket_anchor)
     company = session.get(CompanyProfile, symbol.upper())
     if company is None:
@@ -298,6 +315,7 @@ def execute_agentic_sell(
         .where(
             TaxLot.symbol == company.symbol,
             TaxLot.remaining_qty > 0,
+            TaxLot.portfolio_id == portfolio_id,
             TaxLot.matures_on <= state.clock_date,
         )
         .order_by(TaxLot.id)
@@ -305,7 +323,7 @@ def execute_agentic_sell(
     mature_qty = sum(lot.remaining_qty for lot in mature_lots)
     if mature_qty <= 0:
         immature_lots = list(session.scalars(
-            select(TaxLot).where(TaxLot.symbol == company.symbol, TaxLot.remaining_qty > 0)
+            select(TaxLot).where(TaxLot.symbol == company.symbol, TaxLot.remaining_qty > 0, TaxLot.portfolio_id == portfolio_id)
         ))
         if immature_lots:
             earliest = min(lot.matures_on for lot in immature_lots)
@@ -366,11 +384,12 @@ def execute_agentic_sell(
             settles_on=calendar.add_sessions(state.clock_date, company.settlement_days),
             reason=f"Hermes Agentic sell execution requested by user/assistant.",
             source="HERMES_AGENTIC",
+            portfolio_id=portfolio_id,
         )
         session.add(trade)
 
     session.flush()
-    assert_ledger(session, state)
+    assert_ledger(session, state, portfolio_id=portfolio_id)
 
     return {
         "symbol": company.symbol,
@@ -379,6 +398,7 @@ def execute_agentic_sell(
         "price": float(unit_price),
         "proceeds": float(total_proceeds),
         "realized_pnl": float(total_pnl),
+        "portfolio_id": portfolio_id,
     }
 
 

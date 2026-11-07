@@ -1132,18 +1132,24 @@ function renderAutomationControlBar() {
   // Trading Mode (Live Hours vs Test Mode 24/7)
   const tradingMode = app.trading_mode || (state.snapshot && state.snapshot.trading_mode) || "LIVE_HOURS";
   const isTestMode = tradingMode === "TEST_OFFHOURS";
+  const targetPid = (state.snapshot && state.snapshot.portfolio_id) || (app && app.target_portfolio_id) || (isTestMode ? "" : "164580");
+  const targetPname = (state.snapshot && state.snapshot.portfolio_name) || (app && app.target_portfolio_name) || (isTestMode ? "Test Portfolio" : "Humming Bird");
 
   const hdrTmodePill = $("hdr-tmode-pill");
   const hdrTmodeLabel = $("hdr-tmode-label");
   const hdrTmodeDot = $("hdr-tmode-dot");
   if (hdrTmodeLabel) {
-    hdrTmodeLabel.textContent = isTestMode ? "Test Mode 24/7" : "Live Hours (virtual)";
+    if (isTestMode) {
+      hdrTmodeLabel.textContent = targetPid ? `Test Mode (#${targetPid})` : "Test Mode (No Test Portfolio)";
+    } else {
+      hdrTmodeLabel.textContent = `Live Hours (#${targetPid || "164580"})`;
+    }
   }
   if (hdrTmodePill) {
     hdrTmodePill.className = `topbar-tmode-pill ${isTestMode ? "tmode-test" : "tmode-live"}`;
     hdrTmodePill.title = isTestMode
-      ? "Trading Mode: Test Mode 24/7 (Off-hours testing enabled) — Click to open Settings"
-      : "Trading Mode: Live Hours (Strict DSE 10:00-14:30) — Click to open Settings";
+      ? `Trading Mode: Test Mode 24/7 (Target: #${targetPid || "Unconfigured"} - ${targetPname}) — Click to open Settings`
+      : `Trading Mode: Live Hours (Target: #${targetPid || "164580"} - ${targetPname}) — Click to open Settings`;
   }
   if (hdrTmodeDot) {
     hdrTmodeDot.style.background = isTestMode ? "#f59e0b" : "#10b981";
@@ -1183,7 +1189,9 @@ function renderAutomationControlBar() {
   }
   const settingsTmodePill = $("settings-trading-mode-pill");
   if (settingsTmodePill) {
-    settingsTmodePill.textContent = isTestMode ? "Test Mode 24/7" : "Live Hours (virtual)";
+    settingsTmodePill.textContent = isTestMode
+      ? `Test Mode 24/7 (#${targetPid || "UNSET"} - ${targetPname})`
+      : `Live Hours (virtual) (#${targetPid || "164580"} - ${targetPname})`;
   }
 
   // Polling Range Slider & Interval Pills
@@ -1234,6 +1242,18 @@ function renderAutomationControlBar() {
   if (ovText && ovDot) {
     ovText.textContent = `${mode === "BACKGROUND_POLLING" ? "Method A (" + interval + "s)" : "Method B (Onscreen Live)"} · ${enabled ? "AUTO ON" : "PAUSED"}`;
     ovDot.className = `status-dot ${enabled ? "live-dot active" : "amber"}`;
+  }
+
+  // Telemetry source badge
+  const srcBadge = $("source-badge");
+  if (srcBadge) {
+    if (isTestMode) {
+      srcBadge.className = targetPid ? "stream-badge" : "demo-badge";
+      srcBadge.innerHTML = `<span class="status-dot ${targetPid ? "live-dot" : "amber"}"></span> TEST MODE (#${targetPid || "UNSET"} - ${targetPname})`;
+    } else {
+      srcBadge.className = "stream-badge";
+      srcBadge.innerHTML = `<span class="status-dot live-dot"></span> LIVE HOURS (#${targetPid || "164580"} - ${targetPname})`;
+    }
   }
 
   // Circuit breaker state

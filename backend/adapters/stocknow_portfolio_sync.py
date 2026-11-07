@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import re
 from datetime import date, datetime, timezone
 from decimal import Decimal
@@ -11,7 +12,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.config import Settings
+from backend.config import Settings, get_allowed_portfolios, get_portfolio_name
 from backend.database import CompanyProfile, CustomRule, Database, DecisionLog, PortfolioState, TaxLot, TradeLog
 from backend.engine.money import decimal, money, price, purchase_amount
 from backend.engine.t2_ledger import BUCKETS, TradingCalendar, assert_ledger
@@ -136,7 +137,7 @@ async def extract_hummingbird_portfolio_from_browser(client: Any) -> dict[str, A
 
 
 async def _extract_hummingbird_portfolio_from_browser_impl(client: Any) -> dict[str, Any]:
-    p_id = getattr(client, "bound_portfolio_id", None) or "164580"
+    p_id = str(getattr(client, "bound_portfolio_id", None) or os.getenv("STOCKNOW_LIVE_PORTFOLIO_ID", "164580"))
     page = getattr(client, "page", None)
     if not page:
         raise RuntimeError("No active Playwright page in StockNowLiveClient.")
@@ -253,7 +254,7 @@ async def _extract_hummingbird_portfolio_from_browser_impl(client: Any) -> dict[
 
     return {
         "portfolio_id": p_id,
-        "portfolio_name": "Humming Bird",
+        "portfolio_name": get_portfolio_name(p_id),
         "cash_balance": decimal(str(show_data.get("cash", 107596.0))),
         "holdings": holdings,
         "source": "STOCKNOW_LIVE_DOM",
@@ -267,8 +268,16 @@ def _execute_reconciliation(
     if not state:
         raise RuntimeError("Demo database is not initialized.")
 
-    existing_lots = session.scalars(select(TaxLot)).all()
-    existing_trades = session.scalars(select(TradeLog)).all()
+    target_pid = str(portfolio_data.get("portfolio_id") or settings.stocknow_live_portfolio_id)
+    allowed = get_allowed_portfolios(settings)
+    is_scoped = target_pid in allowed
+
+    if is_scoped:
+        existing_lots = session.scalars(select(TaxLot).where(TaxLot.portfolio_id == target_pid)).all()
+        existing_trades = session.scalars(select(TradeLog).where(TradeLog.portfolio_id == target_pid)).all()
+    else:
+        existing_lots = session.scalars(select(TaxLot)).all()
+        existing_trades = session.scalars(select(TradeLog)).all()
 
     lots_snap = [{
         "id": l.id, "symbol": l.symbol, "bucket": l.bucket, "acquired_on": l.acquired_on.isoformat(),
@@ -298,14 +307,21 @@ def _execute_reconciliation(
 
     cp = checkpoint_mgr.create_checkpoint(
         session=session, state=state, action="PORTFOLIO_SYNC",
-        description=f"Synchronized virtual portfolio '{portfolio_data.get('portfolio_name', 'Humming Bird')}' from StockNow",
+        description=f"Synchronized virtual portfolio '{portfolio_data.get('portfolio_name') or get_portfolio_name(target_pid, settings)}' from StockNow",
         diff_payload={"portfolio_lots": lots_snap, "portfolio_trades": trades_snap, "initial_capital": str(state.initial_capital)},
         extra_snapshot={"portfolio_lots": lots_snap, "portfolio_trades": trades_snap, "initial_capital": str(state.initial_capital)},
     )
 
-    session.query(TradeLog).delete()
-    session.query(DecisionLog).update({"lot_id": None})
-    session.query(TaxLot).delete()
+    if is_scoped:
+        lot_ids = [l.id for l in existing_lots]
+        if lot_ids:
+            session.query(DecisionLog).filter(DecisionLog.lot_id.in_(lot_ids)).update({"lot_id": None}, synchronize_session=False)
+        session.query(TradeLog).filter(TradeLog.portfolio_id == target_pid).delete()
+        session.query(TaxLot).filter(TaxLot.portfolio_id == target_pid).delete()
+    else:
+        session.query(TradeLog).delete()
+        session.query(DecisionLog).update({"lot_id": None})
+        session.query(TaxLot).delete()
     session.flush()
 
     calendar = TradingCalendar(settings.holidays, settings.bucket_anchor)
@@ -340,6 +356,7 @@ def _execute_reconciliation(
 
         prev = tier_cache.get(sym, {})
         lot = TaxLot(
+            portfolio_id=target_pid,
             symbol=sym, bucket=bucket, acquired_on=acq_date, matures_on=matures_date,
             original_qty=qty, remaining_qty=qty, buy_price=price(avg_cost), buy_fee=fee,
             original_cost_basis=cost, remaining_cost_basis=cost,
@@ -351,12 +368,13 @@ def _execute_reconciliation(
         session.flush()
 
         session.add(TradeLog(
-            trade_key=f"SYNC:{portfolio_data.get('portfolio_id')}:{sym}:{lot.id}",
+            portfolio_id=target_pid,
+            trade_key=f"SYNC:{target_pid}:{sym}:{lot.id}",
             cycle_id=None, lot_id=lot.id, symbol=sym, side="BUY", quantity=qty,
             price=price(avg_cost), gross_amount=money(qty * price(avg_cost)), fee=fee,
             net_cash_change=-cost, realized_pnl=Decimal("0"), bucket=bucket,
             trade_on=acq_date, settles_on=matures_date,
-            reason=f"Synced from StockNow portfolio '{portfolio_data.get('portfolio_name')}'",
+            reason=f"Synced from StockNow portfolio '{portfolio_data.get('portfolio_name') or get_portfolio_name(target_pid, settings)}'",
             source="STOCKNOW_SYNC",
         ))
         created_lots.append(lot)
@@ -370,11 +388,11 @@ def _execute_reconciliation(
     state.name = portfolio_data.get("portfolio_name") or state.name
     state.revision += 1
     session.flush()
-    assert_ledger(session, state)
+    assert_ledger(session, state, portfolio_id=target_pid)
 
     return {
-        "success": True, "portfolio_id": portfolio_data.get("portfolio_id"),
-        "portfolio_name": portfolio_data.get("portfolio_name"),
+        "success": True, "portfolio_id": target_pid,
+        "portfolio_name": portfolio_data.get("portfolio_name") or get_portfolio_name(target_pid, settings),
         "synced_holdings_count": len(created_lots), "symbols": [lot.symbol for lot in created_lots],
         "cash_balance": float(cash_bal), "total_holdings_cost": float(total_cost),
         "initial_capital": float(state.initial_capital),

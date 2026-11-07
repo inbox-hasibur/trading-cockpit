@@ -34,7 +34,14 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from backend.adapters.stocknow_adapter import StockNowAdapter
 from backend.adapters.stocknow_client import StockNowLiveClient
 from backend.adapters.stocknow_market_sync import extract_quotes_from_stocknow, sync_live_market_to_db
-from backend.config import ROOT, VERSION, Settings
+from backend.config import (
+    ROOT,
+    VERSION,
+    Settings,
+    get_active_target_portfolio,
+    get_allowed_portfolios,
+    get_portfolio_name,
+)
 from backend.database import CustomRule, Database, KernelAuditLog, RuleAudit, TradeLog, portfolio_state
 from backend.engine.auto_trader import AutomationPaused, AutoTrader
 from backend.engine.scheduler import DSEMarketScheduler, get_active_scheduler
@@ -357,13 +364,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def get_caps_public():
         with database.read() as session:
             state = portfolio_state(session)
+            active_pid = get_active_target_portfolio(getattr(state, "trading_mode", "LIVE_HOURS"), settings) or settings.stocknow_live_portfolio_id
             today_buys_spend = sum(
                 (abs(t.net_cash_change) for t in session.scalars(
-                    select(TradeLog).where(TradeLog.trade_on == state.clock_date, TradeLog.side == "BUY")
+                    select(TradeLog).where(
+                        TradeLog.trade_on == state.clock_date,
+                        TradeLog.side == "BUY",
+                        TradeLog.portfolio_id == active_pid,
+                    )
                 )),
                 ZERO,
             )
-            today_orders_count = len(session.scalars(select(TradeLog.id).where(TradeLog.trade_on == state.clock_date)).all())
+            today_orders_count = len(session.scalars(select(TradeLog.id).where(
+                TradeLog.trade_on == state.clock_date,
+                TradeLog.portfolio_id == active_pid,
+            )).all())
             return {
                 "max_order_bdt": float(state.max_order_bdt) if getattr(state, "max_order_bdt", None) is not None else None,
                 "max_symbol_bdt": float(state.max_symbol_bdt) if getattr(state, "max_symbol_bdt", None) is not None else None,
@@ -373,6 +388,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "today_buy_spend_bdt": float(today_buys_spend),
                 "today_orders_count": int(today_orders_count),
                 "trading_mode": getattr(state, "trading_mode", "LIVE_HOURS"),
+                "portfolio_id": active_pid,
+                "portfolio_name": get_portfolio_name(active_pid, settings),
             }
 
     @app.post("/api/caps")

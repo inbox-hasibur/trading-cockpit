@@ -112,12 +112,14 @@ class TaxLot(Base):
     peak_price: Mapped[Decimal] = mapped_column(PRICE)
     phase: Mapped[str] = mapped_column(String(24), default="ACTIVE")
     recovery_anchor: Mapped[Decimal | None] = mapped_column(PRICE, nullable=True)
+    portfolio_id: Mapped[str] = mapped_column(String(32), default="164580")
     __table_args__ = (
         CheckConstraint("original_qty > 0 AND remaining_qty >= 0 AND remaining_qty <= original_qty"),
         CheckConstraint("remaining_cost_basis >= 0 AND original_cost_basis > 0"),
         CheckConstraint("cycle_base_qty > 0 AND next_tier >= 0"),
         CheckConstraint("bucket IN ('A', 'B', 'C')"),
         Index("ix_lot_symbol_maturity", "symbol", "matures_on"),
+        Index("ix_lot_portfolio", "portfolio_id"),
     )
 
 
@@ -152,12 +154,14 @@ class TradeLog(Base):
     settles_on: Mapped[date] = mapped_column(Date)
     reason: Mapped[str] = mapped_column(String(500))
     source: Mapped[str] = mapped_column(String(32), default="DEMO_PAPER")
+    portfolio_id: Mapped[str] = mapped_column(String(32), default="164580")
     created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
     __table_args__ = (
         CheckConstraint("quantity > 0 AND price > 0 AND fee >= 0"),
         CheckConstraint("side IN ('BUY', 'SELL')"),
         CheckConstraint("side != 'SELL' OR realized_pnl >= 0"),
         Index("ix_trade_symbol_date", "symbol", "trade_on"),
+        Index("ix_trade_portfolio", "portfolio_id"),
     )
 
 
@@ -323,6 +327,18 @@ class Database:
             ra_cols = [row[1] for row in result.fetchall()]
             if ra_cols and "trading_mode" not in ra_cols:
                 conn.execute(text("ALTER TABLE rule_audit ADD COLUMN trading_mode VARCHAR(32) DEFAULT 'LIVE_HOURS'"))
+                conn.commit()
+
+            result = conn.execute(text("PRAGMA table_info(tax_lots)"))
+            tl_cols = [row[1] for row in result.fetchall()]
+            if tl_cols and "portfolio_id" not in tl_cols:
+                conn.execute(text("ALTER TABLE tax_lots ADD COLUMN portfolio_id VARCHAR(32) DEFAULT '164580'"))
+                conn.commit()
+
+            result = conn.execute(text("PRAGMA table_info(trade_logs)"))
+            tr_cols = [row[1] for row in result.fetchall()]
+            if tr_cols and "portfolio_id" not in tr_cols:
+                conn.execute(text("ALTER TABLE trade_logs ADD COLUMN portfolio_id VARCHAR(32) DEFAULT '164580'"))
                 conn.commit()
 
             # Drop any legacy hermes_* tables

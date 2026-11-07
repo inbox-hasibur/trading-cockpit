@@ -23,7 +23,12 @@ from backend.adapters.stocknow_market_sync import (
     sync_live_market_to_db,
 )
 from backend.adapters.stocknow_portfolio_sync import reconcile_portfolio_to_db
-from backend.config import Settings
+from backend.config import (
+    Settings,
+    get_active_target_portfolio,
+    get_allowed_portfolios,
+    get_portfolio_name,
+)
 from backend.database import (
     CanaryThesis,
     CompanyProfile,
@@ -432,10 +437,11 @@ def post_quarantine(
 
         # 2. Mutate state via existing engine action
         try:
+            target_pid = get_active_target_portfolio(getattr(state, "trading_mode", "LIVE_HOURS"), settings) or settings.stocknow_live_portfolio_id
             if act == "restore":
                 res = restore_quarantine(session, state, sym, reason=body.reason)
             else:
-                res = emergency_quarantine_and_canary(session, state, settings, sym, thesis_text=body.reason)
+                res = emergency_quarantine_and_canary(session, state, settings, sym, thesis_text=body.reason, portfolio_id=target_pid)
         except Exception as exc:
             raise HTTPException(status_code=422, detail=str(exc))
 
@@ -533,7 +539,28 @@ async def post_sync(
             res: Any = {"synced_quotes": len(quotes) if quotes else 0}
 
         elif target == "portfolio":
-            p_data = body.payload or {"portfolio_id": "164580"}
+            trading_mode = getattr(state, "trading_mode", "LIVE_HOURS")
+            active_pid = get_active_target_portfolio(trading_mode, settings)
+            if trading_mode == "TEST_OFFHOURS" and not active_pid:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Sync rejected in Test Mode: STOCKNOW_TEST_PORTFOLIO_ID is not configured. Set STOCKNOW_TEST_PORTFOLIO_ID in .env or switch to LIVE_HOURS.",
+                )
+            target_pid = active_pid or settings.stocknow_live_portfolio_id
+            if isinstance(body.payload, dict) and body.payload.get("portfolio_id"):
+                provided_pid = str(body.payload["portfolio_id"]).strip()
+                if provided_pid != target_pid:
+                    raise HTTPException(
+                        status_code=422,
+                        detail=f"Cannot sync portfolio '{provided_pid}' in {trading_mode} mode. Active target portfolio is '{target_pid}'.",
+                    )
+            p_data = body.payload or {"portfolio_id": target_pid}
+            if isinstance(p_data, dict) and not p_data.get("portfolio_id"):
+                p_data["portfolio_id"] = target_pid
+            if not body.payload and stocknow_client is not None and getattr(stocknow_client, "page", None):
+                setattr(stocknow_client, "bound_portfolio_id", target_pid)
+                from backend.adapters.stocknow_portfolio_sync import extract_hummingbird_portfolio_from_browser
+                p_data = await extract_hummingbird_portfolio_from_browser(stocknow_client)
             res = reconcile_portfolio_to_db(session, settings, p_data, checkpoint_mgr=CheckpointManager)
 
         elif target == "all_shares":
@@ -564,20 +591,24 @@ def _compute_order_reconcile_and_drift(
     state: PortfolioState,
     live_client: Any | None,
     symbol: str,
+    portfolio_id: str | None = None,
 ) -> dict[str, Any]:
     """Verifies local ledger integrity and compares holdings with StockNow to detect drift."""
     from backend.engine.t2_ledger import assert_ledger, bucket_balances
     book_reconciled = True
     try:
-        assert_ledger(session, state)
+        assert_ledger(session, state, portfolio_id=portfolio_id)
     except Exception as exc:
         logger.warning("Local ledger assert warning: %s", exc)
         book_reconciled = False
 
-    balances = bucket_balances(session, state)
+    balances = bucket_balances(session, state, portfolio_id=portfolio_id)
     local_cash = sum((b.available_cash for b in balances.values()), ZERO)
 
-    local_lots = list(session.scalars(select(TaxLot).where(TaxLot.remaining_qty > 0)))
+    lot_q = select(TaxLot).where(TaxLot.remaining_qty > 0)
+    if portfolio_id:
+        lot_q = lot_q.where(TaxLot.portfolio_id == str(portfolio_id))
+    local_lots = list(session.scalars(lot_q))
     local_holdings: dict[str, int] = {}
     for lot in local_lots:
         local_holdings[lot.symbol] = local_holdings.get(lot.symbol, 0) + lot.remaining_qty
@@ -653,7 +684,7 @@ class OrderRequest(BaseModel):
     side: str = Field(..., pattern="^(BUY|SELL|buy|sell)$")
     quantity: int = Field(..., gt=0)
     price: Decimal | None = None
-    portfolio_id: str = "164580"
+    portfolio_id: str | None = None
     dry_run: bool = True  # dry_run defaults true
     operator_confirmed: bool = False
     preview_token: str | None = None
@@ -675,13 +706,6 @@ async def post_order(
     settings: Settings = Depends(get_settings),
 ) -> dict[str, Any]:
     """Submits a virtual BUY or SELL order enforcing T+2 maturity, strict no-loss, and 0.5% fees."""
-    # 1. Enforce portfolio must be 164580
-    if str(body.portfolio_id).strip() != "164580":
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Portfolio must be 164580.",
-        )
-
     sym = body.symbol.strip().upper()
     side = body.side.strip().upper()
     commission_rate = Decimal("0.005")  # 0.5% commission strictly enforced
@@ -691,6 +715,45 @@ async def post_order(
         with db.write() as session:
             state = portfolio_state(session)
             trading_mode = getattr(state, "trading_mode", "LIVE_HOURS")
+            active_pid = get_active_target_portfolio(trading_mode, settings)
+
+            # Block Test Mode if no test ID configured (Requirement 4)
+            if trading_mode == "TEST_OFFHOURS" and not active_pid:
+                reason = "Order execution rejected in Test Mode: STOCKNOW_TEST_PORTFOLIO_ID is not configured. Set STOCKNOW_TEST_PORTFOLIO_ID in .env or switch to LIVE_HOURS."
+                _record_order_rejection(session, state, sym, "MISSING_TEST_PORTFOLIO", reason, trading_mode, body.model_dump(mode="json"))
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=reason,
+                )
+
+            # Resolve target portfolio ID
+            target_pid = str(body.portfolio_id or active_pid or "").strip()
+
+            # Enforce allowlist (Requirement 1)
+            allowed_portfolios = get_allowed_portfolios(settings)
+            if target_pid not in allowed_portfolios:
+                reason = f"Unauthorized portfolio '{target_pid}'. Allowed portfolios: {list(allowed_portfolios)}."
+                _record_order_rejection(session, state, sym, "UNAUTHORIZED_PORTFOLIO", reason, trading_mode, body.model_dump(mode="json"))
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=reason,
+                )
+
+            # Enforce mode matching (Requirement 2): Test Mode -> test portfolio only; Live Hours -> 164580 only
+            if trading_mode == "TEST_OFFHOURS" and target_pid != active_pid:
+                reason = f"Order rejected: Test Mode sends orders only to the configured test portfolio '{active_pid}', but received '{target_pid}'."
+                _record_order_rejection(session, state, sym, "PORTFOLIO_MODE_MISMATCH", reason, trading_mode, body.model_dump(mode="json"))
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=reason,
+                )
+            elif trading_mode == "LIVE_HOURS" and target_pid != settings.stocknow_live_portfolio_id:
+                reason = f"Order rejected: LIVE_HOURS mode sends orders only to the live portfolio '{settings.stocknow_live_portfolio_id}', but received '{target_pid}'."
+                _record_order_rejection(session, state, sym, "PORTFOLIO_MODE_MISMATCH", reason, trading_mode, body.model_dump(mode="json"))
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=reason,
+                )
 
             # 2. SQLite Idempotency Deduplication Check (persists across server restarts)
             existing_key = session.get(OrderIdempotencyKey, body.idempotency_key)
@@ -720,11 +783,14 @@ async def post_order(
                 _record_order_rejection(session, state, sym, "KILL_SWITCH", reason, trading_mode, body.model_dump(mode="json"))
                 raise HTTPException(status_code=422, detail=reason)
 
-            # 4. Max Orders Per Day Check (AutoTrader & Hermes shared)
+            # 4. Max Orders Per Day Check (AutoTrader & Hermes shared, scoped by portfolio)
             max_orders = getattr(state, "max_orders_per_day", 20)
-            today_orders_count = len(session.scalars(select(TradeLog.id).where(TradeLog.trade_on == state.clock_date)).all())
+            today_orders_count = len(session.scalars(select(TradeLog.id).where(
+                TradeLog.trade_on == state.clock_date,
+                TradeLog.portfolio_id == target_pid,
+            )).all())
             if today_orders_count >= max_orders:
-                reason = f"Order rejected: Daily order limit reached ({today_orders_count}/{max_orders} orders executed today)."
+                reason = f"Order rejected: Daily order limit reached ({today_orders_count}/{max_orders} orders executed today for portfolio {target_pid})."
                 _record_order_rejection(session, state, sym, "DAILY_ORDER_LIMIT", reason, trading_mode, body.model_dump(mode="json"))
                 raise HTTPException(status_code=422, detail=reason)
 
@@ -745,10 +811,10 @@ async def post_order(
 
                 cost, fee = purchase_amount(body.quantity, unit_price, commission_rate)
 
-                # 6. Max Symbol Exposure Cap Check (AutoTrader & Hermes shared)
+                # 6. Max Symbol Exposure Cap Check (AutoTrader & Hermes shared, scoped by portfolio)
                 max_symbol_bdt = getattr(state, "max_symbol_bdt", None)
                 open_basis = sum(session.scalars(select(TaxLot.remaining_cost_basis).where(
-                    TaxLot.symbol == sym, TaxLot.remaining_qty > 0
+                    TaxLot.symbol == sym, TaxLot.remaining_qty > 0, TaxLot.portfolio_id == target_pid,
                 )), ZERO)
                 new_symbol_exposure = open_basis + (body.quantity * unit_price)
                 if max_symbol_bdt is not None and new_symbol_exposure > max_symbol_bdt:
@@ -756,26 +822,31 @@ async def post_order(
                     _record_order_rejection(session, state, sym, "MAX_SYMBOL_CAP", reason, trading_mode, body.model_dump(mode="json"))
                     raise HTTPException(status_code=422, detail=reason)
 
-                # 7. Daily Buy Budget Exhaustion Check (AutoTrader & Hermes shared)
+                # 7. Daily Buy Budget Exhaustion Check (AutoTrader & Hermes shared, scoped by portfolio)
                 daily_budget_bdt = getattr(state, "daily_budget_bdt", Decimal("4000.00"))
                 today_buys_spend = sum(
                     (abs(t.net_cash_change) for t in session.scalars(
-                        select(TradeLog).where(TradeLog.trade_on == state.clock_date, TradeLog.side == "BUY")
+                        select(TradeLog).where(
+                            TradeLog.trade_on == state.clock_date,
+                            TradeLog.side == "BUY",
+                            TradeLog.portfolio_id == target_pid,
+                        )
                     )),
                     ZERO,
                 )
                 if (today_buys_spend + cost) > daily_budget_bdt:
-                    reason = f"Order rejected: Daily buy spend would reach ৳{float(today_buys_spend + cost):.2f}, exceeding daily budget cap of ৳{float(daily_budget_bdt):.2f}."
+                    reason = f"Order rejected: Daily buy spend would reach ৳{float(today_buys_spend + cost):.2f}, exceeding daily budget cap of ৳{float(daily_budget_bdt):.2f} for portfolio {target_pid}."
                     _record_order_rejection(session, state, sym, "DAILY_BUDGET_EXHAUSTED", reason, trading_mode, body.model_dump(mode="json"))
                     raise HTTPException(status_code=422, detail=reason)
 
-            # Pre-validate SELL (enforces T+2 maturity and strict no-loss)
+            # Pre-validate SELL (enforces T+2 maturity and strict no-loss, scoped by portfolio)
             if side == "SELL":
                 mature_lots = list(session.scalars(
                     select(TaxLot)
                     .where(
                         TaxLot.symbol == sym,
                         TaxLot.remaining_qty > 0,
+                        TaxLot.portfolio_id == target_pid,
                         TaxLot.matures_on <= state.clock_date,
                     )
                     .order_by(TaxLot.id)
@@ -783,18 +854,18 @@ async def post_order(
                 mature_qty = sum(lot.remaining_qty for lot in mature_lots)
                 if mature_qty <= 0:
                     immature_lots = list(session.scalars(
-                        select(TaxLot).where(TaxLot.symbol == sym, TaxLot.remaining_qty > 0)
+                        select(TaxLot).where(TaxLot.symbol == sym, TaxLot.remaining_qty > 0, TaxLot.portfolio_id == target_pid)
                     ))
                     if immature_lots:
                         earliest = min(lot.matures_on for lot in immature_lots)
                         reason = f"Cannot sell {sym}: shares are settlement-locked until {earliest.isoformat()} (T+2 lock)."
                     else:
-                        reason = f"Cannot sell {sym}: no open shares held."
+                        reason = f"Cannot sell {sym}: no open shares held in portfolio {target_pid}."
                     _record_order_rejection(session, state, sym, "SETTLEMENT_LOCK", reason, trading_mode, body.model_dump(mode="json"))
                     raise HTTPException(status_code=422, detail=reason)
 
                 if body.quantity > mature_qty:
-                    reason = f"Cannot sell {body.quantity} shares of {sym}: only {mature_qty} mature shares available."
+                    reason = f"Cannot sell {body.quantity} shares of {sym}: only {mature_qty} mature shares available in portfolio {target_pid}."
                     _record_order_rejection(session, state, sym, "INSUFFICIENT_SHARES", reason, trading_mode, body.model_dump(mode="json"))
                     raise HTTPException(status_code=422, detail=reason)
 
@@ -846,7 +917,8 @@ async def post_order(
                     "status": "VALIDATED",
                     "preview_token": token,
                     "idempotency_key": body.idempotency_key,
-                    "portfolio_id": "164580",
+                    "portfolio_id": target_pid,
+                    "portfolio_name": get_portfolio_name(target_pid, settings),
                     "symbol": sym,
                     "side": side,
                     "quantity": body.quantity,
@@ -939,7 +1011,7 @@ async def post_order(
                     side=side,
                     quantity=body.quantity,
                     price=unit_price,
-                    portfolio_id=body.portfolio_id,
+                    portfolio_id=target_pid,
                     idempotency_key=body.idempotency_key,
                     dry_run=False,
                     live_client=live_client,
@@ -957,9 +1029,9 @@ async def post_order(
 
                 # Update local ledger ONLY after receipt matches and is verified
                 if side == "BUY":
-                    order_res = execute_agentic_buy(session, state, settings, sym, requested_qty=body.quantity)
+                    order_res = execute_agentic_buy(session, state, settings, sym, requested_qty=body.quantity, portfolio_id=target_pid)
                 else:
-                    order_res = execute_agentic_sell(session, state, settings, sym, requested_qty=body.quantity)
+                    order_res = execute_agentic_sell(session, state, settings, sym, requested_qty=body.quantity, portfolio_id=target_pid)
 
             except Exception as exc:
                 logger.error("Order path failure for %s %s: %s. Rolling back checkpoint %s.", side, sym, exc, cp.id)
@@ -973,14 +1045,15 @@ async def post_order(
                 )
 
             # Portfolio reconciliation & drift report
-            reconcile_report = _compute_order_reconcile_and_drift(session, state, live_client, sym)
+            reconcile_report = _compute_order_reconcile_and_drift(session, state, live_client, sym, portfolio_id=target_pid)
 
             final_res = {
                 **order_res,
                 "dry_run": False,
                 "checkpoint_id": cp.id,
                 "idempotency_key": body.idempotency_key,
-                "portfolio_id": "164580",
+                "portfolio_id": target_pid,
+                "portfolio_name": get_portfolio_name(target_pid, settings),
                 "stocknow_receipt": receipt,
                 "reconcile": reconcile_report,
                 "trading_mode": trading_mode,
@@ -1397,17 +1470,26 @@ class CapsUpdateRequest(BaseModel):
 @router.get("/caps")
 def get_caps(
     db: Database = Depends(get_db),
+    settings: Settings = Depends(get_settings),
 ) -> dict[str, Any]:
-    """Fetch current risk limits, kill switch status, and today's usage."""
+    """Fetch current risk limits, kill switch status, and today's usage scoped by active portfolio."""
     with db.read() as session:
         state = portfolio_state(session)
+        active_pid = get_active_target_portfolio(getattr(state, "trading_mode", "LIVE_HOURS"), settings) or settings.stocknow_live_portfolio_id
         today_buys_spend = sum(
             (abs(t.net_cash_change) for t in session.scalars(
-                select(TradeLog).where(TradeLog.trade_on == state.clock_date, TradeLog.side == "BUY")
+                select(TradeLog).where(
+                    TradeLog.trade_on == state.clock_date,
+                    TradeLog.side == "BUY",
+                    TradeLog.portfolio_id == active_pid,
+                )
             )),
             ZERO,
         )
-        today_orders_count = len(session.scalars(select(TradeLog.id).where(TradeLog.trade_on == state.clock_date)).all())
+        today_orders_count = len(session.scalars(select(TradeLog.id).where(
+            TradeLog.trade_on == state.clock_date,
+            TradeLog.portfolio_id == active_pid,
+        )).all())
         return {
             "max_order_bdt": float(state.max_order_bdt) if getattr(state, "max_order_bdt", None) is not None else None,
             "max_symbol_bdt": float(state.max_symbol_bdt) if getattr(state, "max_symbol_bdt", None) is not None else None,
@@ -1417,6 +1499,8 @@ def get_caps(
             "today_buy_spend_bdt": float(today_buys_spend),
             "today_orders_count": int(today_orders_count),
             "trading_mode": getattr(state, "trading_mode", "LIVE_HOURS"),
+            "portfolio_id": active_pid,
+            "portfolio_name": get_portfolio_name(active_pid, settings),
         }
 
 

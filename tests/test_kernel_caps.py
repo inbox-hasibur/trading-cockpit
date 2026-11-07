@@ -269,7 +269,11 @@ def test_autotrader_and_hermes_share_same_budget(client, auth_headers):
         state = portfolio_state(session)
         total_buys = sum(
             (abs(t.net_cash_change) for t in session.scalars(
-                select(TradeLog).where(TradeLog.trade_on == state.clock_date, TradeLog.side == "BUY")
+                select(TradeLog).where(
+                    TradeLog.trade_on == state.clock_date,
+                    TradeLog.side == "BUY",
+                    TradeLog.portfolio_id == "164580_test",
+                )
             )),
             Decimal("0"),
         )
