@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-07 13:11:36 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-07 13:29:28 UTC**.
 
 ---
 
@@ -8,11 +8,11 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 75 | 15,794 | Python Core Kernel, Engine & Hermes Agent |
+| `.py` | 79 | 16,724 | Python Core Kernel, Engine & Hermes Agent |
 | `.png` | 3 | 11,100 | Configuration / Asset |
 | `.css` | 2 | 8,429 | Custom Dark / Light / Terminal Design System |
 | `.js` | 3 | 4,276 | Vanilla ES6+ Reactive Terminal Controller |
-| `.md` | 13 | 3,178 | Architecture & Strategy Documentation |
+| `.md` | 13 | 3,321 | Architecture & Strategy Documentation |
 | `.html` | 1 | 1,046 | Single Page Application DOM Structure |
 | `.ps1` | 2 | 295 | Configuration / Asset |
 | `.yaml` | 1 | 32 | Configuration / Asset |
@@ -26,7 +26,7 @@
 | `.bat` | 1 | 8 | Configuration / Asset |
 | `.db` | 2 | 2 | Configuration / Asset |
 | `.svg` | 1 | 1 | Configuration / Asset |
-| **TOTAL** | **112** | **44,239** | *Entire Humming Bird Repository* |
+| **TOTAL** | **116** | **45,312** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -64,9 +64,12 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py) | `backend.adapters.stocknow_client.StockNowLiveClient`, `backend.adapters.stocknow_market_sync.extract_quotes_from_stocknow`, `backend.adapters.stocknow_market_sync.get_or_fetch_all_dse_shares`, `backend.adapters.stocknow_market_sync.sync_live_market_to_db`, `backend.adapters.stocknow_order_executor.execute_stocknow_virtual_order`, `backend.adapters.stocknow_portfolio_sync.extract_hummingbird_portfolio`, `backend.adapters.stocknow_portfolio_sync.extract_hummingbird_portfolio_from_browser`, `backend.adapters.stocknow_portfolio_sync.reconcile_portfolio_to_db`, `backend.config.Settings`, `backend.database.CompanyProfile`, `backend.database.Database`, `backend.database.PortfolioState`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.engine.agent_actions.execute_agentic_buy`, `backend.engine.agent_actions.execute_agentic_sell`, `backend.engine.checkpoint.CheckpointManager`, `backend.engine.scheduler.DSEMarketScheduler`, `backend.engine.scheduler.get_active_scheduler`, `backend.portfolio.build_snapshot` |
 | [`backend/secret_guard.py`](/backend/secret_guard.py) | *Independent Core Module* |
 | [`backend/seed.py`](/backend/seed.py) | `backend.config.DHAKA`, `backend.config.Settings`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.DecisionLog`, `backend.database.PortfolioState`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.engine.money.decimal`, `backend.engine.money.money`, `backend.engine.money.price`, `backend.engine.money.purchase_amount`, `backend.engine.t2_ledger.TradingCalendar`, `backend.engine.t2_ledger.assert_ledger`, `backend.engine.t2_ledger.bucket_balances` |
+| [`scripts/backup_db.py`](/scripts/backup_db.py) | *Independent Core Module* |
 | [`scripts/check_dse_market_open.py`](/scripts/check_dse_market_open.py) | *Independent Core Module* |
 | [`scripts/generate_code_map.py`](/scripts/generate_code_map.py) | *Independent Core Module* |
 | [`scripts/migrate_drop_hermes_tables.py`](/scripts/migrate_drop_hermes_tables.py) | *Independent Core Module* |
+| [`scripts/preflight.py`](/scripts/preflight.py) | `backend.adapters.stocknow_client.get_safe_profile_dir`, `backend.config.DEFAULT_DATABASE_URL`, `backend.config.Settings`, `backend.database.Database`, `backend.database.PortfolioState`, `backend.database.TaxLot`, `backend.engine.t2_ledger.assert_ledger`, `backend.engine.t2_ledger.bucket_balances`, `backend.hermes_bridge.get_hermes_dir`, `backend.hermes_bridge.read_hermes_state`, `scripts.backup_db.backup_database`, `scripts.backup_db.get_default_backup_dir`, `scripts.backup_db.get_default_db_path` |
+| [`scripts/restore_db.py`](/scripts/restore_db.py) | `scripts.backup_db.backup_database`, `scripts.backup_db.get_default_backup_dir`, `scripts.backup_db.get_default_db_path` |
 
 ---
 
@@ -790,6 +793,20 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 ---
 
+### 📄 [`scripts/backup_db.py`](/scripts/backup_db.py)
+
+#### Standalone Functions
+
+| Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `get_default_db_path` | `L20–L22` | `(...)` | `Path` | Returns absolute path to hummingbird.db. | — |
+| `get_default_backup_dir` | `L25–L27` | `(...)` | `Path` | Returns absolute path to backups directory. | — |
+| `backup_database` | `L30–L79` | `(db_path: Path | None=None, backup_d...)` | `Path` | Creates a verified timestamped backup of the SQLite database. | `FileNotFoundError`, `RuntimeError`, `backup`, `close` |
+| `main` | `L82–L97` | `(...)` | `int` | — | `ArgumentParser`, `add_argument`, `backup_database`, `parse_args` |
+
+
+---
+
 ### 📄 [`scripts/check_dse_market_open.py`](/scripts/check_dse_market_open.py)
 
 #### Standalone Functions
@@ -850,6 +867,49 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `run_migration` | `L15–L70` | `(db_path: Path | str | None=None, ba...)` | `dict` | — | `Path`, `close`, `commit`, `connect` |
+
+
+---
+
+### 📄 [`scripts/preflight.py`](/scripts/preflight.py)
+
+#### Classes & Methods
+
+| Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
+| :--- | :--- | :--- | :--- | :--- |
+| `CheckResult` | `L41–L44` | `NamedTuple` | — | 0 |
+
+
+#### Standalone Functions
+
+| Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `check_gateway` | `L47–L64` | `(url: str='http://127.0.0.1:8642'...)` | `CheckResult` | Verifies Hermes Gateway HTTP service on port 8642. | `CheckResult`, `Request`, `get`, `rstrip` |
+| `check_model_and_fallback` | `L67–L92` | `(...)` | `CheckResult` | Verifies primary inference model and fallback chain in Hermes configuration. | `CheckResult`, `get`, `join`, `read_hermes_state` |
+| `check_plugin_tools` | `L95–L124` | `(...)` | `CheckResult` | Verifies humming_bird plugin registration and expected tool count. | `CheckResult`, `exists`, `get`, `get_hermes_dir` |
+| `check_kernel_token` | `L127–L146` | `(...)` | `CheckResult` | Verifies KERNEL_TOKEN authorization configuration. | `CheckResult`, `exists`, `get`, `len` |
+| `check_stocknow_session` | `L149–L217` | `(db: Database...)` | `CheckResult` | Verifies StockNow session state, credentials, and profile binding. | `CheckResult`, `Request`, `bool`, `close` |
+| `check_portfolio_drift` | `L220–L253` | `(db: Database...)` | `CheckResult` | Verifies that book assets match initial capital with exact 0.00 paisa drift. | `CheckResult`, `Decimal`, `abs`, `assert_ledger` |
+| `check_trading_mode` | `L256–L278` | `(db: Database...)` | `CheckResult` | Verifies trading mode configuration. | `CheckResult`, `get`, `getattr`, `read` |
+| `check_caps_set` | `L281–L310` | `(db: Database...)` | `CheckResult` | Verifies kernel risk caps and kill switch configuration. | `CheckResult`, `get`, `read` |
+| `check_automation_state` | `L313–L329` | `(db: Database...)` | `CheckResult` | Verifies master automation switch, ingestion mode, and scheduler settings. | `CheckResult`, `get`, `read` |
+| `check_and_create_db_backup` | `L332–L343` | `(db_path: Path...)` | `CheckResult` | Takes a fresh verified backup of hummingbird.db and confirms backup integrity. | `CheckResult`, `backup_database`, `stat` |
+| `run_preflight` | `L346–L396` | `(verbose: bool=False...)` | `tuple[list[CheckResult], bool]` | Runs all 10 preflight checks and returns (results, all_passed). | `Database`, `Settings`, `all`, `check_and_create_db_backup` |
+| `print_table` | `L399–L424` | `(checks: list[CheckResult], all_pass...)` | `None` | Formats and prints GO / NO-GO table. | `enumerate`, `len`, `print`, `sum` |
+| `main` | `L427–L435` | `(...)` | `int` | — | `ArgumentParser`, `add_argument`, `parse_args`, `print_table` |
+
+
+---
+
+### 📄 [`scripts/restore_db.py`](/scripts/restore_db.py)
+
+#### Standalone Functions
+
+| Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `find_latest_backup` | `L21–L31` | `(backup_dir: Path | None=None...)` | `Path` | Finds the most recent hummingbird_*.db backup file. | `FileNotFoundError`, `exists`, `get_default_backup_dir`, `glob` |
+| `restore_database` | `L34–L121` | `(backup_file: Path | str | None=None...)` | `Path` | Restores database from specified or latest backup file. | `FileNotFoundError`, `Path`, `RuntimeError`, `backup` |
+| `main` | `L124–L144` | `(...)` | `int` | — | `ArgumentParser`, `add_argument`, `get_default_db_path`, `parse_args` |
 
 
 ---
@@ -1199,6 +1259,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/secret_guard.py` | `redact_secrets` | 11 | 4 | Acceptable; well-scoped logic |
 | `backend/seed.py` | `seed_demo` | 87 | 3 | Acceptable; well-scoped logic |
 | `backend/seed.py` | `migrate_real_stocknow_market` | 148 | 7 | Decompose into sub-functions |
+| `scripts/backup_db.py` | `backup_database` | 50 | 4 | Acceptable; well-scoped logic |
 | `scripts/check_dse_market_open.py` | `check_kernel_market_open` | 19 | 4 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `is_ignored` | 6 | 4 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `collect_file_metrics` | 15 | 4 | Acceptable; well-scoped logic |
@@ -1209,6 +1270,12 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `generate_markdown` | 189 | 6 | Decompose into sub-functions |
 | `scripts/generate_code_map.py` | `visit_Call` | 10 | 4 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
+| `scripts/preflight.py` | `check_gateway` | 18 | 5 | Acceptable; well-scoped logic |
+| `scripts/preflight.py` | `check_kernel_token` | 20 | 5 | Acceptable; well-scoped logic |
+| `scripts/preflight.py` | `check_stocknow_session` | 69 | 5 | Acceptable; well-scoped logic |
+| `scripts/preflight.py` | `check_portfolio_drift` | 34 | 4 | Acceptable; well-scoped logic |
+| `scripts/preflight.py` | `check_trading_mode` | 23 | 4 | Acceptable; well-scoped logic |
+| `scripts/restore_db.py` | `restore_database` | 88 | 4 | Acceptable; well-scoped logic |
 
 
-> **Audit Summary:** 33 Python modules inspected, 31 FastAPI endpoints registered, 44,239 total LOC indexed.
+> **Audit Summary:** 36 Python modules inspected, 31 FastAPI endpoints registered, 45,312 total LOC indexed.

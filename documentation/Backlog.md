@@ -249,7 +249,7 @@
     - Installed official `hermes-agent` beside the project (`~/.hermes`).
     - Configured OpenRouter provider with tool-calling models (`gemini-3.1-flash-lite`, `mimo-v2.6-pro`) in native Hermes config.
   - **Streaming SSE Chat Bridge (`backend/hermes_bridge.py`):**
-    - High-performance bridge streaming events (`tool_use`, `tool_result`, `text`, `done`) to the Cockpit UI via Hermes Gateway API server (`/v1/chat/completions`) or transparent CLI fallback.
+    - High-performance bridge streaming events (`tool_use`, `tool_result`, `text`, `done`) to the Cockpit UI via Hermes Gateway API server (`/v1/chat/completions`) with zero CLI subprocess fallback.
     - Live tool-call cards rendered directly in Cockpit chat with inputs, execution badges, and expandable outputs.
   - **Hermes Native Cron & Memory:**
     - Native cron jobs created in `~/.hermes/cron/jobs.json` with timezone `Asia/Dhaka` and pre-execution market hours gate.
@@ -259,6 +259,28 @@
     - Exported legacy Hermes SQLite tables to `backend/data/hermes_tables_backup.json` and dropped legacy tables.
     - Preserved `SecretGuard` in `backend/secret_guard.py` for adapter credential isolation.
     - Verified full test suite passes (74 passing unit tests).
+
+- [x] **Step 2.10: Hardened Production Runtime, Unified Launcher, Risk Caps, Trading Modes & Preflight Suite:**
+  - **Unified Supervisor Launcher (`start.ps1` & `run.py`):**
+    - One-command startup script setting `HERMES_HOME`, initializing Hermes Gateway on `127.0.0.1:8642` with profile `hummingbird`, polling `/health` for liveness, and starting FastAPI Uvicorn on `127.0.0.1:8000`.
+    - Automatic 3-restart crash recovery and clean teardown on `Ctrl+C` (SIGINT/SIGTERM).
+  - **Dual Trading Modes (`LIVE_HOURS` vs `TEST_OFFHOURS`):**
+    - Database-backed trading mode in `PortfolioState`.
+    - `LIVE_HOURS` enforces Asia/Dhaka Sun-Thu 10:00–14:30 market gate across hooks, kernel orders, and scheduler.
+    - `TEST_OFFHOURS` bypasses *only* the market hours gate for continuous off-hours end-to-end integration testing while keeping T+2, no-loss, fees, caps, and single-writer concurrency locks 100% active.
+    - Added `#trading-mode-toggle` in topbar and Settings; exposed via `hb_mode_get` and `hb_mode_set`.
+  - **Enforced Risk Limits & Kernel Caps:**
+    - SQLite-backed `max_order_bdt`, `max_symbol_bdt`, `daily_budget_bdt` (default 4000 BDT), `max_orders_per_day` (default 20), and global `kill_switch_active`.
+    - Shared single-writer lock (`SingleWriterTradingLock`) guaranteeing AutoTrader and Hermes order paths never run concurrently.
+    - Exposed via `/k/caps` endpoints and plugin tools `hb_caps_get` / `hb_caps_set` (autonomous limit lowering, operator confirmation required for raising). Rejections write `DecisionLog` and `KernelAuditLog`.
+  - **Verified Order Execution Path & StockNow Integration:**
+    - Full execution pipeline: acquire lock -> state checkpoint -> preflight validation -> call `StockNowAdapter.execute_order` on live browser session -> verify fill against StockNow ledger -> commit local ledger update *only* on verified receipt match -> rollback on failure.
+    - Two-step confirmation token in `LIVE_HOURS`, dry_run=true default, explicit operator confirmation required.
+  - **Preflight Verification & Safe Backup Suite (`scripts/preflight.py`, `scripts/backup_db.py`, `scripts/restore_db.py`):**
+    - `scripts/preflight.py`: Prints a 10-point GO / NO-GO readiness audit table covering Gateway up, Primary Model & Fallback chain, 22 plugin tools, `KERNEL_TOKEN`, StockNow session, 0.00 portfolio drift, trading mode, risk caps, automation state, and fresh verified database backup. Exits with code 1 on any NO-GO.
+    - `scripts/backup_db.py` & `scripts/restore_db.py`: Atomic timestamped copies of `hummingbird.db` via SQLite online backup API with `PRAGMA integrity_check` verification.
+  - **Comprehensive MVP Rules Test Suite (`tests/test_mvp_rules.py`):**
+    - 12 comprehensive unit tests covering L1 before L2 priority, base GSC observation guard, T+2 settlement, no-loss hurdle, 25% sequential profit sells, 50/50 pullback split, caps/budget, kill switch, polling vs onscreen-live decision equivalence, single-writer lock sharing, restart idempotency, and trading mode market-hours gating (117 total passing tests).
 
 ---
 

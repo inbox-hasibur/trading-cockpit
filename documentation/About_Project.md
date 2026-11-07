@@ -274,7 +274,7 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
 |  +---------------------------------------+             +-------------------------------------------+  |
 |  |     OFFICIAL HERMES INTELLIGENCE      |             |       MODULAR DATA & ADAPTER LAYER        |  |
 |  | - Nous Hermes Agent (~/.hermes)       |             | - Dual Ingestion Pipeline:                |  |
-|  | - Humming Bird Plugin (13 Tools)      |             |   * Method A: Background HTTP Polling     |  |
+|  | - Humming Bird Plugin (22 Tools)      |             |   * Method A: Background HTTP Polling     |  |
 |  | - Procedural Skills (4 SKILL.md)      |             |   * Method B: Playwright Headed CDP Live  |  |
 |  | - Real Hermes Cron (Asia/Dhaka)       |             | - StockNowAdapter (DSE Fixtures & Sync)   |  |
 |  | - SSE Chat Bridge & Kernel API        |             | - Broadcaster (SSE Realtime Stream)       |  |
@@ -323,9 +323,20 @@ Following the official Hermes Agent plugin architecture (`plugin.yaml`, `__init_
    - `hb_quarantine_canary`: Initiates 90/10 emergency profit lock with canary probe on insolvency threats.
    - `hb_restore_quarantine`: Releases a stock from quarantine back into active watchlist rotation.
    - `hb_sync`: Synchronizes live market prices, favorites, or portfolio #164580 holdings from StockNow.
-   - `hb_place_order`: Places virtual orders with `dry_run=true` by default, requiring explicit user confirmation before submitting, and validating DSE market hours.
+   - `hb_place_order`: Places virtual orders with `dry_run=true` by default, requiring explicit operator confirmation, and validating market hours gates.
    - `hb_rollback_last`: Reverts the last state checkpoint atomically.
-3. **Official Procedural Skills (`plugins/humming_bird/skills/`):**
+3. **Engine & Automation Control Tools:**
+   - `hb_automation_get`: Inspects master buy/sell switch, ingestion mode (`BACKGROUND_POLLING`, `ONSCREEN_LIVE`), and polling interval.
+   - `hb_automation_set`: Updates automation switches, polling cadence, and ingestion pipeline parameters.
+   - `hb_scheduler`: Starts, stops, or inspects status of the background evaluation cycle scheduler.
+   - `hb_run_cycle`: Triggers an immediate deterministic evaluation cycle (`dry_run=true` by default).
+   - `hb_stocknow_session`: Manages persistent Playwright browser session (`launch`, `status`, `login`).
+4. **Trading Mode & Risk Caps Tools:**
+   - `hb_mode_get`: Inspects active trading mode (`LIVE_HOURS` vs `TEST_OFFHOURS`).
+   - `hb_mode_set`: Switches trading mode with operator confirmation guard.
+   - `hb_caps_get`: Fetches current risk caps, daily budget, and kill switch status.
+   - `hb_caps_set`: Lowers caps autonomously; raising limits requires operator confirmation in Cockpit UI.
+5. **Official Procedural Skills (`plugins/humming_bird/skills/`):**
    - Encoded as `<name>/SKILL.md` with official `agentskills` YAML frontmatter and registered via `ctx.register_skill`:
      - `canary_90_10`: Emergency threat response and 90/10 split execution.
      - `gsc_tiers`: 3-tier GSC watchlist rules and turnaround priority.
@@ -336,7 +347,50 @@ Following the official Hermes Agent plugin architecture (`plugin.yaml`, `__init_
 - **Isolation:** Bound strictly to `127.0.0.1` and protected by `X-Kernel-Token` matching `KERNEL_TOKEN` from the environment.
 - **Zero Agent Imports:** Contains no LLM, agent, prompt, or external network code.
 - **Audit & Atomic Checkpoints:** Every state mutation takes a `KernelStateCheckpoint` snapshot and writes a structured `KernelAuditLog` entry before modifying state.
-- **Strict Invariants:** Enforces T+2 maturity, strict no-loss (>= +1.005% gross hurdle after round-trip 1% commission), and target portfolio #164580 constraint.
+- **Strict Invariants:** Enforces T+2 maturity, strict no-loss (>= +1.005% gross hurdle after round-trip 1% commission), single-writer lock, and target portfolio #164580 constraint.
+
+### Unified Supervisor & Launcher (`start.ps1` & `run.py`)
+- **One-Command Orchestration:** Starts Hermes Gateway daemon (`127.0.0.1:8642`) with profile `hummingbird`, waits for HTTP 200 on `/health`, and launches FastAPI Uvicorn on `127.0.0.1:8000`.
+- **Environment & Profile Protection:** Resolves Windows `HERMES_HOME` path bug and enforces profile isolation.
+- **Process Supervision:** Restarts Hermes Gateway up to 3 times on unexpected process exit; cleanly terminates child processes on `Ctrl+C` (SIGINT/SIGTERM).
+
+### Dual Trading Modes (`LIVE_HOURS` vs `TEST_OFFHOURS`)
+- **`LIVE_HOURS` (Default):** Strictly enforces Sunday-Thursday 10:00–14:30 Asia/Dhaka trading gate in plugin pre-tool hooks, kernel `post_order`, and scheduler ticks.
+- **`TEST_OFFHOURS`:** Bypasses *only* the market hours gate for continuous off-hours end-to-end integration testing. T+2 maturity, no-loss hurdle, fees, risk caps, and single-writer concurrency locks remain 100% enforced.
+- **Operator Safety Guard:** Switching to `LIVE_HOURS` or `TEST_OFFHOURS` requires explicit operator confirmation via `#trading-mode-toggle` in the UI or `hb_mode_set`.
+
+### Enforced Risk Limits & Kernel Caps
+- **Database-Enforced Constraints:** Stored in SQLite (`portfolio_state`): `max_order_bdt` (e.g. 20,000 BDT), `max_symbol_bdt` (e.g. 50,000 BDT), `daily_budget_bdt` (default 4,000 BDT), `max_orders_per_day` (20), and a global `kill_switch_active`.
+- **Single-Writer Concurrency Lock:** AutoTrader evaluation cycles and Hermes order execution share an exclusive transactional lock (`SingleWriterTradingLock`).
+- **Autonomous vs Operator Boundaries:** Hermes may lower caps autonomously; raising limits requires cockpit operator confirmation. Rejected orders record structured `DecisionLog` and `KernelAuditLog` entries. Advisory rules taught in chat remain non-binding until applied via `hb_caps_set` or `hb_set_allocation`.
+
+### Verified Order Execution Path & Reconciled Drift
+- **End-to-End Execution Pipeline:**
+  1. Acquire single-writer trading lock (`/k/order`).
+  2. Take atomic state checkpoint (`KernelStateCheckpoint`).
+  3. Run preflight verification (T+2, no-loss hurdle, risk caps, daily budget, market hours gate).
+  4. Call `StockNowAdapter.execute_order` on live browser session (or mock adapter in dry run).
+  5. Verify execution fill by inspecting the StockNow ledger receipt.
+  6. Update local SQLite transactional ledger *only* after receipt matches.
+  7. On any fill failure or timeout, automatically roll back to the state checkpoint.
+- **Zero-Drift Ledger Reassurance:** Verifies local ledger integrity (`assert_ledger`) against broker portfolio, confirming exact 0.00 paisa drift.
+
+### Preflight Verification & Backup Suite (`scripts/preflight.py`, `scripts/backup_db.py`, `scripts/restore_db.py`)
+- **10-Point Readiness Audit (`scripts/preflight.py`):**
+  1. Hermes Gateway Up (HTTP 200 on `127.0.0.1:8642`)
+  2. Primary Model & Fallback chain present
+  3. Humming Bird plugin loaded with 22 tools
+  4. Kernel Token configured (`KERNEL_TOKEN`)
+  5. StockNow session authenticated (Portfolio #164580)
+  6. Portfolio drift 0.00 (`assert_ledger` verified)
+  7. Trading mode (`LIVE_HOURS` or `TEST_OFFHOURS`)
+  8. Risk caps configured (`max_order`, `max_symbol`, `daily_budget`, `kill_switch`)
+  9. Automation state valid
+  10. Fresh verified SQLite database backup generated
+  - Exits with code 0 on `ALL GO`, code 1 on any `NO-GO`.
+- **Atomic Database Backup & Restore (`scripts/backup_db.py`, `scripts/restore_db.py`):**
+  - Uses SQLite online backup API to take verified, timestamped snapshots of `hummingbird.db`.
+  - Clears stale `-wal` and `-shm` artifacts upon restoration and runs `PRAGMA integrity_check`.
 
 ---
 
