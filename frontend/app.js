@@ -136,15 +136,24 @@ function badge(action, label) {
   return node;
 }
 
-function notify(message, error = false) {
+function notify(message, type = false) {
   clearTimeout(state.toastTimer);
   const toast = $("toast");
   if (!toast) return;
   toast.textContent = message;
-  toast.classList.toggle("error", error);
+  toast.classList.remove("error", "warning", "success");
+  if (type === true || type === "error") {
+    toast.classList.add("error");
+  } else if (type === "warning" || type === "warn") {
+    toast.classList.add("warning");
+  } else if (type === "success") {
+    toast.classList.add("success");
+  }
   toast.hidden = false;
   state.toastTimer = setTimeout(() => { toast.hidden = true; }, 5500);
 }
+window.notify = notify;
+window.showToast = notify;
 
 function showError(message, withToast = true) {
   setText("error-text", message);

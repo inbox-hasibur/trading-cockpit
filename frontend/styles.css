@@ -2428,11 +2428,19 @@ input[type=checkbox] {
 }
 
 .toast {
-  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); border: 1px solid #416d5d; background: #19372f; color: #c1e7d9; box-shadow: 0 8px 30px #0006; padding: 13px 18px; border-radius: 8px; z-index: 10; font-size: 11px; max-width: min(90vw, 580px); line-height: 1.6;
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); border: 1px solid var(--brand); background: var(--brand-bg); color: var(--text); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); padding: 13px 18px; border-radius: 8px; z-index: 10000; font-size: 11px; max-width: min(90vw, 580px); line-height: 1.6;
+}
+
+.toast.success {
+  border-color: var(--brand); background: var(--brand-bg); color: var(--brand);
 }
 
 .toast.error {
-  border-color: #78414f; background: #35232b; color: #f0b6be;
+  border-color: var(--red); background: #35232b; color: var(--red);
+}
+
+.toast.warning {
+  border-color: var(--amber); background: #352d19; color: var(--amber);
 }
 
 @media (min-width: 1800px) {
@@ -4667,7 +4675,7 @@ button.local-avatar:hover {
 }
 
 .operator-profile-dialog::backdrop {
-  background: rgba(10, 16, 24, 0.75);
+  background: var(--modal-bg);
   backdrop-filter: blur(8px);
 }
 

@@ -2950,3 +2950,24 @@ body.is-resizing-hermes .app-shell {
   color: #475569 !important;
   border-color: #cbd5e1 !important;
 }
+
+/* Toast Notifications in Light Theme */
+[data-theme="light"] .toast,
+[data-theme="light"] .toast.success {
+  background: var(--brand-bg);
+  border-color: var(--brand);
+  color: var(--brand);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+[data-theme="light"] .toast.error {
+  background: var(--red-bg);
+  border-color: var(--red);
+  color: var(--red);
+}
+
+[data-theme="light"] .toast.warning {
+  background: var(--amber-bg);
+  border-color: var(--amber);
+  color: var(--amber);
+}
