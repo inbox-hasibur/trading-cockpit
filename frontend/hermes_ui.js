@@ -9,21 +9,45 @@ function renderHermesSkills() {
   const hermes = state.snapshot.hermes;
   if (!hermes) return;
   const skills = hermes.skills || [];
-  if ($("skills-count")) setText("skills-count", skills.length);
+  const activeSkills = skills.filter((s) => s.origin !== "bundled");
+  const bundledSkills = skills.filter((s) => s.origin === "bundled");
+
+  if ($("skills-count")) setText("skills-count", activeSkills.length);
+  if ($("skills-badge")) setText("skills-badge", activeSkills.length);
+
+  const drawerTitle = document.querySelector("#pane-hermes-skills .drawer-title");
+  if (drawerTitle) drawerTitle.textContent = "Skills";
 
   const skillsList = $("skills-list");
   if (skillsList) {
-    const skillCards = skills.map((s) => {
+    function createCard(s) {
       const card = element("div", "skill-card");
       const top = element("div", "skill-card-top");
       top.append(element("strong", "", s.title || s.name));
       top.append(element("span", "skill-rev", `v${s.version || "1.0.0"}${s.revision_count ? ` · ${s.revision_count} patches` : ""}`));
+      const isLearned = s.origin === "learned" || s.is_auto_learned;
+      const tag = element("span", isLearned ? "skill-badge-autolearned" : "skill-tag", isLearned ? "LEARNED" : (s.origin === "bundled" ? "BUNDLED" : (s.source || "plugin")));
+      top.append(tag);
       const tags = element("div", "skill-tags");
       (s.tags || []).forEach((t) => tags.append(element("span", "skill-tag", t)));
       card.append(top, tags);
       return card;
-    });
-    skillsList.replaceChildren(...skillCards);
+    }
+
+    const cards = (activeSkills.length ? activeSkills : skills).map(createCard);
+    skillsList.replaceChildren(...cards);
+
+    if (bundledSkills.length) {
+      const details = document.createElement("details");
+      details.className = "bundled-skills-details";
+      const summary = document.createElement("summary");
+      summary.textContent = `Bundled (hidden) ${bundledSkills.length}`;
+      const listWrap = document.createElement("div");
+      listWrap.className = "bundled-skills-list";
+      bundledSkills.forEach((bs) => listWrap.append(createCard(bs)));
+      details.append(summary, listWrap);
+      skillsList.append(details);
+    }
   }
 
   const factsList = $("durable-facts-list");
@@ -81,26 +105,56 @@ async function loadHermesOSState() {
     const skillsList = $("skills-list");
     const skillsBadge = $("skills-badge");
     const skills = data.skills || [];
-    if (skillsBadge) skillsBadge.textContent = skills.length;
+
+    const activeSkills = skills.filter((s) => s.origin !== "bundled");
+    const bundledSkills = skills.filter((s) => s.origin === "bundled");
+
+    if (skillsBadge) skillsBadge.textContent = activeSkills.length;
+
+    const drawerTitle = document.querySelector("#pane-hermes-skills .drawer-title");
+    if (drawerTitle) drawerTitle.textContent = "Skills";
+
+    function renderSkillCardHtml(s) {
+      const isLearned = s.origin === "learned" || s.is_auto_learned;
+      const originTag = s.origin === "bundled"
+        ? '<span class="skill-tag">BUNDLED</span>'
+        : (isLearned
+            ? '<span class="skill-badge-autolearned">LEARNED</span>'
+            : `<span class="skill-tag">${escapeHtml(s.source || "plugin")}</span>`);
+      return `
+        <div class="skill-card">
+          <div class="skill-card-top">
+            <strong>${escapeHtml(s.title || s.name)}</strong>
+            <span class="skill-rev">v${escapeHtml(s.version || "1.0.0")}</span>
+            ${originTag}
+          </div>
+          <div class="muted small">${escapeHtml(s.description || "")}</div>
+          <div class="skill-tags">
+            ${(s.tags || []).map((t) => `<span class="skill-tag">#${escapeHtml(t)}</span>`).join("")}
+          </div>
+        </div>
+      `;
+    }
 
     if (skillsList) {
-      if (skills.length) {
-        skillsList.innerHTML = skills.map((s) => `
-          <div class="skill-card">
-            <div class="skill-card-top">
-              <strong>${escapeHtml(s.title || s.name)}</strong>
-              <span class="skill-rev">v${escapeHtml(s.version || "1.0.0")}</span>
-              ${s.is_auto_learned ? '<span class="skill-badge-autolearned">LEARNED</span>' : `<span class="skill-tag">${escapeHtml(s.source || "plugin")}</span>`}
-            </div>
-            <div class="muted small">${escapeHtml(s.description || "")}</div>
-            <div class="skill-tags">
-              ${(s.tags || []).map((t) => `<span class="skill-tag">#${escapeHtml(t)}</span>`).join("")}
-            </div>
-          </div>
-        `).join("");
+      let html = "";
+      if (activeSkills.length) {
+        html += activeSkills.map(renderSkillCardHtml).join("");
       } else {
-        skillsList.innerHTML = '<div class="muted small">No procedural skills loaded.</div>';
+        html += '<div class="muted small">No procedural skills loaded.</div>';
       }
+
+      if (bundledSkills.length) {
+        html += `
+          <details class="bundled-skills-details">
+            <summary>Bundled (hidden) ${bundledSkills.length}</summary>
+            <div class="bundled-skills-list">
+              ${bundledSkills.map(renderSkillCardHtml).join("")}
+            </div>
+          </details>
+        `;
+      }
+      skillsList.innerHTML = html;
     }
 
     // 3. Memory & Profile Previews

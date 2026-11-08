@@ -1322,11 +1322,11 @@ body.is-resizing-hermes .app-shell {
 /* Hermes Chat Toolbar & Skills Drawer */
 
 .chat-toolbar {
-  display: flex; gap: 6px; padding: 8px 18px; background: #121d28; border-bottom: 1px solid var(--soft-line);
+  display: flex; gap: 6px; padding: 8px 18px; background: var(--panel); border-bottom: 1px solid var(--soft-line);
 }
 
 .skill-card {
-  padding: 8px 10px; border-radius: 5px; background: #14202c; border: 1px solid #223547; font-size: var(--fs-xs, 11px);
+  padding: 8px 10px; border-radius: 5px; background: var(--panel-hover); border: 1px solid var(--line); font-size: var(--fs-xs, 11px);
 }
 
 .skill-card-top {
@@ -1334,11 +1334,11 @@ body.is-resizing-hermes .app-shell {
 }
 
 .skill-card strong {
-  color: #d6e4f0;
+  color: var(--text);
 }
 
 .skill-rev {
-  font-size: var(--fs-xs, 11px); color: #38bdf8; background: #0c2738; padding: 2px 4px; border-radius: 3px; border: 1px solid #1a4f70;
+  font-size: var(--fs-xs, 11px); color: var(--teal); background: var(--teal-bg); padding: 2px 4px; border-radius: 3px; border: 1px solid var(--line);
 }
 
 .skill-tags {
@@ -1346,7 +1346,7 @@ body.is-resizing-hermes .app-shell {
 }
 
 .skill-tag {
-  font-size: var(--fs-xs, 11px); color: #8ba2b8; background: #1a2b3c; padding: 1px 4px; border-radius: 2px;
+  font-size: var(--fs-xs, 11px); color: var(--muted); background: var(--panel); padding: 1px 4px; border-radius: 2px; border: 1px solid var(--line);
 }
 
 .checkpoints-list {
@@ -2970,4 +2970,49 @@ body.is-resizing-hermes .app-shell {
   background: var(--amber-bg);
   border-color: var(--amber);
   color: var(--amber);
+}
+
+/* Skills Drawer in Light Theme */
+[data-theme="light"] .skills-drawer {
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+[data-theme="light"] .skill-card {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+[data-theme="light"] .skill-card strong {
+  color: #050811;
+}
+
+[data-theme="light"] .skill-tag {
+  background: #f1f5f9;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
+  font-weight: 500;
+}
+
+[data-theme="light"] .skill-rev {
+  background: #f0fdfa;
+  color: #0f766e;
+  border: 1px solid #99f6e4;
+  font-weight: 600;
+}
+
+[data-theme="light"] .skill-badge-autolearned {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+[data-theme="light"] .bundled-skills-details summary {
+  color: #1e293b;
+}
+
+[data-theme="light"] .bundled-skills-details summary:hover {
+  color: #050811;
 }

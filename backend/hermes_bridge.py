@@ -253,6 +253,7 @@ def read_hermes_state() -> dict[str, Any]:
                     "version": meta.get("version", "1.0.0"),
                     "tags": meta.get("tags", []),
                     "source": "humming_bird plugin",
+                    "origin": "plugin",
                     "is_auto_learned": False,
                 })
 
@@ -264,6 +265,7 @@ def read_hermes_state() -> dict[str, Any]:
     for s_root in search_skill_dirs:
         if not s_root.exists():
             continue
+        bundled_names = _get_bundled_skill_names(s_root)
         for sk_file in s_root.rglob("SKILL.md"):
             # Avoid repeating plugin skills, hub bundle dirs, or locks
             if ".hub" in sk_file.parts or "plugins" in sk_file.parts or ".locks" in sk_file.parts:
@@ -272,14 +274,18 @@ def read_hermes_state() -> dict[str, Any]:
             if any(s["name"] == name for s in skills):
                 continue
             meta = _extract_skill_meta(sk_file)
+            is_bundled = name in bundled_names
+            origin = "bundled" if is_bundled else "learned"
+            source = "bundled hermes skill" if is_bundled else ("profile skill" if s_root == h_dir / "skills" else "hermes skill")
             skills.append({
                 "name": name,
                 "title": meta.get("name", name),
                 "description": meta.get("description", ""),
                 "version": meta.get("version", "1.0.0"),
                 "tags": meta.get("tags", []),
-                "source": "profile skill" if s_root == h_dir / "skills" else "hermes skill",
-                "is_auto_learned": True,
+                "source": source,
+                "origin": origin,
+                "is_auto_learned": not is_bundled,
             })
 
     return {
@@ -315,6 +321,45 @@ def _extract_skill_meta(path: Path) -> dict[str, Any]:
     except Exception:
         pass
     return meta
+
+
+def _get_bundled_skill_names(skills_root: Path | None = None) -> set[str]:
+    """Resolves names of bundled Hermes skills via hidden manifest or vendor directory."""
+    bundled: set[str] = set()
+    manifest_candidates: list[Path] = []
+    if skills_root:
+        manifest_candidates.append(skills_root / ".bundled_manifest")
+        if skills_root.parent:
+            manifest_candidates.append(skills_root.parent / ".bundled_manifest")
+    try:
+        h_dir = get_hermes_dir()
+        manifest_candidates.append(h_dir / "skills" / ".bundled_manifest")
+        manifest_candidates.append(h_dir / ".bundled_manifest")
+    except Exception:
+        pass
+
+    for m in manifest_candidates:
+        if m.is_file():
+            try:
+                for line in m.read_text(encoding="utf-8").splitlines():
+                    line = line.strip()
+                    if line and not line.startswith("#"):
+                        skill_name = line.split(":", 1)[0].strip()
+                        if skill_name:
+                            bundled.add(skill_name)
+                if bundled:
+                    return bundled
+            except Exception:
+                pass
+
+    vendor_skills_dir = WORKSPACE_ROOT / "vendor" / "hermes-agent" / "skills"
+    if vendor_skills_dir.exists():
+        try:
+            for sk in vendor_skills_dir.rglob("SKILL.md"):
+                bundled.add(sk.parent.name)
+        except Exception:
+            pass
+    return bundled
 
 
 def run_hermes_cron_cmd(*args: str) -> dict[str, Any]:
