@@ -147,34 +147,29 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
    - **Continuous Smooth Spline Curves:** Pure continuous cubic bezier spline curves without static point dots, paired with continuous pixel-level hover crosshairs and subtle Buy/Sell execution markers.
    - **DSE Live Market Clock & Countdown:** Topbar live telemetry showing session state (`🟢 DSE OPEN` vs `🔴 DSE CLOSED`) with real-time countdown to next session opening or market close.
 
-9. **Master Automation Controller & Ingestion Pipeline:**
-   - **Dual Ingestion Mode Architecture:**
-     - **Method A (`BACKGROUND_POLLING`):** Lightweight periodic data polling (configurable 30s to 300s, default 120s) with interval pill selector and range slider. Ideal for low-resource VPS, battery saving, or stealth operation.
-     - **Method B (`ONSCREEN_LIVE`):** Headed, persistent Playwright browser context running alongside the operator on desktop (Onscreen Live Mode), allowing live DOM/CDP telemetry inspection and immediate event triggers.
-   - **Hermes Chat Orchestration:** Operator can command in chat (*"Switch to onscreen live mode"*, *"Background polling 60s koro"*, *"Turn off buy sell automation"*), with automatic state checkpointing for 1-click `/rollback`.
+9. **Master Automation Controller & Dual Run Modes:**
+   - **Dual Run Mode Architecture:**
+     - **Background Mode:** Headless, direct async HTTP API transport (`stocknow_api.py`) running 24/7 without a browser. Polling cadence configurable (30s to 300s, default 120s) with interval slider active only in Background mode. Ideal for low-resource environments, battery saving, and unattended operation.
+     - **Onscreen Mode:** Persistent Chromium browser context via Playwright CDP (`stocknow_client.py`) running alongside the operator on desktop, allowing live DOM inspection and visual verification.
+   - **Single-Writer Handoff & Orchestration:** Switching between Background and Onscreen modes completes the current evaluation cycle before handoff (`/api/stocknow/handoff`). Hermes chat commands (*"Switch to onscreen mode"*, *"Background mode 60s koro"*, *"Turn off buy sell automation"*) trigger coordinated state transitions with automatic checkpoints for 1-click `/rollback`.
 
-10. **Unified Continuous Dashboard, ScrollSpy & Dedicated Settings Page:**
-    - **4 Scrollable Dashboard Sections + 5th Separate Settings View:**
+10. **Unified Continuous Dashboard, ScrollSpy & 4 Balanced Settings Cards:**
+    - **4 Scrollable Dashboard Sections + 5th Dedicated Settings View:**
       1. `#overview`: Financial telemetry, rebased Watchlist pulse curve, 3-Bucket rolling capital, and Decision stream.
       2. `#watchlist`: Multi-tier company watchlist, Position inspector with maturity lots, DSE Market Map Treemap with Finviz heat scale, and Top Sectors by Gainer chart.
       3. `#rules`: Strategy Rules, "What-If" profit simulator, custom buy cap form, sequential profit tiers (+1.5%, +3.5%, +6.0%), 50/50 pullback setting, and Canary Theses observation board.
       4. `#ledger`: Accounting periods (Overall, Today, Week, Month, Year) and full FIFO tax lot execution table.
-      5. `#settings`: Dedicated page for Master Buy/Sell automation switch, Method A vs Method B ingestion pipeline, polling cadence slider, read-only Hermes AI Brain card, fee structure & settlement rules, and notification credentials.
+      5. `#settings`: Dedicated page configured in 4 balanced cards plus a collapsed Advanced section:
+         - Card 1: **Automation** (Master Automation toggle, Run Mode segmented switch between Background and Onscreen with handoff indicator, Trading Mode status, cadence slider active in Background).
+         - Card 2: **StockNow Connection** (API session status, persistent browser session, prices synced, portfolio synced with drift metric, active portfolio ID/name, and direct control buttons: Launch browser, Check login, Sync, Log out).
+         - Card 3: **Safety Caps** (Order cap, symbol cap, daily budget, daily order limit, and emergency Kill Switch).
+         - Card 4: **Hermes AI Brain** (Primary model, fallback chain, active provider telemetry, and prompt configuration).
+         - Advanced (Collapsed): System notifications (Telegram), Fee structure & T+2 settlement rules, and Security credentials.
     - **ScrollSpy Left Nav Rail Sync:** Seamlessly tracks operator scrolling across `#overview`, `#watchlist`, `#rules`, and `#ledger` in the main workspace and dynamically highlights the active section icon.
-    - **Sticky Top Navbar:** Locked mission-critical navigation with live DSE market clock & countdown, two-way ingestion mode toggle, master engine controls, and theme switcher, allowing all dashboard sections to slide cleanly underneath.
+    - **Institutional Top Navbar:** Locked mission-critical navigation with live DSE market pill (`DSE OPEN · closes in ...` / `DSE CLOSED · next in ...`) with `Test Mode` / `Live Hours` badge, Run Mode segmented switch (`Background` / `Onscreen`), labelled `Automation` ON/OFF switch, `Run cycle now` trigger button, and theme switcher.
     - **Fixed Viewport Lock Architecture:** Locked outer viewport (`height: 100vh; overflow: hidden;`) with middle `.workspace` scrolling independently (`height: 100vh; overflow-y: auto;`). Left nav rail and right Hermes assistant stay 100% viewport-fixed at all times, never scrolling off screen.
     - **Continuous Smooth Curves Without Point Dots:** Pure continuous cubic bezier curves without static session dots, paired with continuous pixel-level hover interpolation so crosshairs glide smoothly with pixel precision.
     - **Rebuilt Hermes `[Changes]` Tab as System & Rule Diff Review:** Visual GitHub/IDE-style structured Before vs. After diff cards (`.diff-card`) featuring red deleted lines (`[-] Previous`) and green added lines (`[+] Updated`), actor badges, timestamps, and 1-click `/rollback`.
-    - **Settings Page Complete Overhaul:**
-      - *Telemetry Ingestion Pipeline Card:* Interactive Method A (Background HTTP Polling) vs Method B (Onscreen Live Mode CDP) selector tiles with status pills, smooth polling interval slider (30s to 300s), and quick preset cadence pills (30s Hyper, 60s Fast, 120s Standard, 180s Relaxed).
-      - *System Notifications & Telegram Bot Card:* Masked credential form for Telegram Bot Token & Chat ID with toggleable password visibility and one-click save.
-      - *Market Clearing & Settlement Rules Card:* Fee structure (0.50% buy, 0.50% sell, +1.005% gross hurdle) and T+2 settlement rolling bucket explanation.
-      - *System & Security Card:* Consolidated technical badges (Realtime SSE status, Demo/Paper mode indicator, and optional session API tokens).
-    - **Read-Only Hermes AI Brain Card:**
-      - Live telemetry synchronized from `~/.hermes/profiles/hummingbird` via `GET /api/hermes/bridge/state`.
-      - Displays Primary Inference Model (e.g. `gemini-3.1-flash-lite`, `mimo-v2.6-pro`), configured fallback provider chain from `config.yaml` (`fallback_providers`), and the exact provider/model that served the last conversation turn.
-      - Models, fallbacks, and API keys are managed exclusively through Hermes native CLI (`hermes model`, `hermes fallback add`, `config.yaml`).
-    - **Exhaustive Light Mode Daylight Uniformity:** Complete elimination of hardcoded dark background artifacts across tables, cards, canvases, settings, and sidebars, featuring 50% lighter pastel treemap tiles and dark legible text contrast.
     - **Developer Productivity & Instant Local Reload:** Disabled aggressive static asset browser caching (`Cache-Control: no-cache, no-store, must-revalidate`) in `DevStaticFiles` and root cockpit endpoint so frontend UI changes reflect immediately upon browser refresh (`F5`) without cache clearing.
 
 11. **Hermes IDE Resizable Sidebar, Topics & Antigravity History:**
@@ -284,9 +279,9 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
 |                      v                                                         v                      |
 |  +---------------------------------------+             +-------------------------------------------+  |
 |  |     OFFICIAL HERMES INTELLIGENCE      |             |       MODULAR DATA & ADAPTER LAYER        |  |
-|  | - Nous Hermes Agent (~/.hermes)       |             | - Dual Ingestion Pipeline:                |  |
-|  | - Humming Bird Plugin (22 Tools)      |             |   * Method A: Background HTTP Polling     |  |
-|  | - Procedural Skills (4 SKILL.md)      |             |   * Method B: Playwright Headed CDP Live  |  |
+|  | - Nous Hermes Agent (~/.hermes)       |             | - Dual Run Modes:                         |  |
+|  | - Humming Bird Plugin (22 Tools)      |             |   * Background: Async HTTP API (24/7)     |  |
+|  | - Procedural Skills (4 SKILL.md)      |             |   * Onscreen: Persistent Chromium CDP     |  |
 |  | - Real Hermes Cron (Asia/Dhaka)       |             | - StockNowAdapter (DSE Fixtures & Sync)   |  |
 |  | - SSE Chat Bridge & Kernel API        |             | - Broadcaster (SSE Realtime Stream)       |  |
 |  +-------------------+-------------------+             +---------------------+---------------------+  |
@@ -307,11 +302,25 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
 
 Humming Bird uses the official **Nous Research Hermes Agent** (`hermes-agent`) as its autonomous intelligence layer, keeping the local repository dedicated strictly to the trading kernel, StockNow adapters, and Cockpit UI.
 
-### Integration Path & SSE Chat Bridge (`backend/hermes_bridge.py`)
-- **Gateway Server & Streaming SSE:** The Cockpit connects via `backend/hermes_bridge.py` directly to the running Hermes Gateway API server (`http://127.0.0.1:8642/v1/chat/completions`) streaming over standard OpenAI-compatible SSE. If the gateway server is offline, the bridge returns a clear error instructing the operator to start it. `--yolo` and `--in` have been removed to preserve profile security boundaries.
-- **Granular Streaming Events:** Emits standard Server-Sent Events (`tool_use`, `tool_result`, `text`, `done`, `error`) directly to the web UI.
+### Architectural Facts & Extension Points
+- **Hermes Runtime & Python Split:** The official Hermes Agent CLI and Gateway daemon run under Python 3.14 (`v0.23.0` / pinned commit `b777adb7918713e5786cc9d95ad5b854074f2cb6`, installed in editable mode at `vendor/hermes-agent`). The Cockpit kernel, FastAPI, and Playwright adapters run in the local `.venv` under Python 3.12.
+- **Profile Isolation (`hummingbird`):** Configured at `~/.hermes/profiles/hummingbird` with toolset allowlist strictly restricted to registered `hb_*` tools (`toolsets: [hb_*]`).
+- **Security & Command Approvals:** Configured with `approvals.mode: smart` (or `manual`) in `~/.hermes/config.yaml` to fail closed against any unprompted host command execution.
+- **Provider Fallback Routing:** Automatic multi-provider failover configured in `~/.hermes/config.yaml` under `fallback_providers` list (e.g. primary model failing over cleanly to backup OpenRouter/Google providers without session loss).
+- **Plugin Extension Architecture:** Standalone plugin at `plugins/humming_bird/` discovered via `plugin.yaml` manifest. Entry point `register(ctx)` registers tools via `ctx.register_tool(schema, handler)` and procedural skills via `ctx.register_skill(...)`.
+- **SSE Chat Bridge Path:** Cockpit chat dispatches to `POST /api/hermes/chat` (`backend/hermes_bridge.py`), which proxies turns directly to the Hermes Gateway API server (`http://127.0.0.1:8642/v1/chat/completions`) streaming OpenAI-compatible Server-Sent Events (`tool_use`, `tool_result`, `text`, `done`, `error`) back to the frontend. If the gateway server is offline, the bridge returns a clear error instructing the operator to start it.
 - **Tool-Call Inspection Cards:** The Cockpit chat interface dynamically renders interactive collapsible cards showing the tool name, JSON input arguments, running/done status badge, and execution output.
-- **Provider & Model Configuration:** Model selection and API keys are managed exclusively in Hermes' native runtime configuration (`~/.hermes/config.yaml`), completely isolated from repository source code. The active model (`gemini-3.1-flash-lite`, `mimo-v2.6-pro`, etc.) is read dynamically by `GET /api/hermes/bridge/state` and displayed in the sidebar badge.
+- **Provider & Model Telemetry:** Model selection and API keys are managed exclusively in Hermes' native runtime configuration (`~/.hermes/config.yaml`), completely isolated from repository source code. The active model (`gemini-3.1-flash-lite`, `mimo-v2.6-pro`, etc.) is read dynamically by `GET /api/hermes/bridge/state` and displayed in the sidebar badge.
+
+### Submodule Pinned Commit & Update Procedure
+- **Submodule Location:** `vendor/hermes-agent`
+- **Pinned Commit SHA:** `b777adb7918713e5786cc9d95ad5b854074f2cb6`
+- **Submodule Update Procedure:**
+  1. Fetch upstream changes in submodule: `git -C vendor/hermes-agent fetch upstream`
+  2. Check out target commit or release: `git -C vendor/hermes-agent checkout <commit-sha-or-tag>`
+  3. Commit the updated submodule pointer in root repo: `git add vendor/hermes-agent`
+  4. Re-install in editable mode: `.venv\Scripts\pip install -e vendor/hermes-agent`
+  5. Run verification suite: `hermes doctor` and `.venv\Scripts\python scripts/preflight.py`
 
 ---
 
@@ -337,8 +346,8 @@ Following the official Hermes Agent plugin architecture (`plugin.yaml`, `__init_
    - `hb_place_order`: Places virtual orders with `dry_run=true` by default, requiring explicit operator confirmation, and validating market hours gates.
    - `hb_rollback_last`: Reverts the last state checkpoint atomically.
 3. **Engine & Automation Control Tools:**
-   - `hb_automation_get`: Inspects master buy/sell switch, ingestion mode (`BACKGROUND_POLLING`, `ONSCREEN_LIVE`), and polling interval.
-   - `hb_automation_set`: Updates automation switches, polling cadence, and ingestion pipeline parameters.
+   - `hb_automation_get`: Inspects master buy/sell switch, run mode (`BACKGROUND`, `ONSCREEN`), and polling interval.
+   - `hb_automation_set`: Updates automation switches, polling cadence, and run mode parameters.
    - `hb_scheduler`: Starts, stops, or inspects status of the background evaluation cycle scheduler.
    - `hb_run_cycle`: Triggers an immediate deterministic evaluation cycle (`dry_run=true` by default).
    - `hb_stocknow_session`: Manages persistent Playwright browser session (`launch`, `status`, `login`).
@@ -403,6 +412,27 @@ Following the official Hermes Agent plugin architecture (`plugin.yaml`, `__init_
   - Uses SQLite online backup API to take verified, timestamped snapshots of `hummingbird.db`.
   - Clears stale `-wal` and `-shm` artifacts upon restoration and runs `PRAGMA integrity_check`.
 
+### Operations: autostart, reboot, recovery
+- **Windows Task Scheduler Autostart:**
+  - Configured via automated installer `.\scripts\install_autostart.ps1` (with `-Force` to update and `-Uninstall` to remove).
+  - Registers task `HummingBirdTradingCockpit` triggered At Logon (`-AtLogOn`), executing `.venv\Scripts\python.exe run.py --no-reload` in the workspace root.
+  - Windows restarts the supervisor up to 3 times on unexpected failure with a 1-minute recovery interval (`PT1M`), battery run policy enabled, and unlimited execution timeout (`PT0S`).
+- **Power Management (`powercfg`):**
+  - Disables AC standby sleep (`powercfg /change standby-timeout-ac 0`) and AC hibernation (`powercfg /change hibernate-timeout-ac 0`) to prevent machine suspension during unattended trading sessions.
+  - Display/monitor sleep is preserved so monitors turn off to save energy without pausing background execution.
+- **Post-Reboot Recovery & The `WAITING` Gate:**
+  - Upon system boot and supervisor launch, SQLite loads persisted state.
+  - If automation was previously enabled, the system does NOT trade blindly. It sets `startup_health_status = 'WAITING'` and `startup_health_passed = False`.
+  - AutoTrader strictly skips cycles returning `"STARTUP_WAITING"` until an automated preflight health audit executes.
+  - The health audit verifies SQLite connectivity and schema integrity, StockNow auth/test credentials, and risk caps.
+  - On pass: transitions to `startup_health_status = 'READY'` (`startup_health_passed = True`) and normal trading cycles resume.
+  - On failure: remains locked in `WAITING`, holding capital safe and sending Telegram alerts.
+- **Watchdogs, Heartbeats & Circuit Breakers:**
+  - **Minute Heartbeat:** Every 60 seconds, Cockpit logs a `SystemHeartbeat` record to SQLite (records older than 7 days auto-pruned).
+  - **Dead-Man Alert:** During live DSE market hours (Sunday–Thursday 10:00–14:30 Asia/Dhaka), if heartbeats cease for > 2 minutes, an urgent Telegram dead-man alert is dispatched to the operator.
+  - **Daily 14:45 Summary:** At 14:45 Asia/Dhaka (15 min after market close), a comprehensive summary detailing today's orders, skips breakdown, drift, and errors is sent to Telegram and saved to `DailySummaryLog`.
+  - **Circuit Breaker:** After 3 consecutive critical failures (auth, schema, network, or ledger mismatch), master automation is automatically set to OFF, alerts are dispatched, and manual re-enable is strictly required. A remote kill switch can also be triggered via Telegram.
+
 ---
 
 ## 8. Real Hermes Cron Scheduler & Memory Subsystem
@@ -440,7 +470,7 @@ trading-cockpit/
 ├── package.json                             # Root tooling metadata
 ├── pyproject.toml                           # Python project configuration & packaging metadata
 ├── run.bat                                  # Windows quick-launch script
-├── run.py                                   # Unified server launcher script
+├── run.py                                   # Unified supervisor launcher script
 ├── run.sh                                   # Linux/macOS launcher script
 │
 ├── backend/                                 # Deterministic Trading Kernel & FastAPI Server
@@ -450,11 +480,12 @@ trading-cockpit/
 │   ├── database.py                          # SQLite schema (WAL mode) & SQLAlchemy ORM models
 │   ├── hermes_bridge.py                     # Streaming SSE bridge to official Hermes Gateway API
 │   ├── kernel_api.py                        # Standalone local Trading Kernel API (X-Kernel-Token protected)
+│   ├── logging_config.py                    # Standardized rotating logging configuration
 │   ├── main.py                              # FastAPI entrypoint, middleware & route mounter
 │   ├── market_map.py                        # DSE sector tree, market capitalization & categorization
 │   ├── portfolio.py                         # Portfolio holdings calculation & valuation engine
-│   ├── requirements.txt                     # Production runtime Python dependencies
 │   ├── requirements-dev.txt                 # Development & testing Python dependencies
+│   ├── requirements.txt                     # Production runtime Python dependencies
 │   ├── routes_auth_settings.py              # Settings, auth tokens & system configuration endpoints
 │   ├── routes_hermes.py                     # Hermes chat streaming bridge & bridge state endpoints
 │   ├── routes_stocknow.py                   # StockNow ingestion routes, telemetry & market data endpoints
@@ -471,10 +502,9 @@ trading-cockpit/
 │   │   ├── stocknow_portfolio_sync.py       # Portfolio holdings & cash synchronization
 │   │   └── stocknow_write_guard.py          # Write guards restricting test portfolio mutations
 │   │
-│   ├── data/                                # Local persistent database & backup stores
+│   ├── data/                                # Local runtime database & backup stores (gitignored)
 │   │   ├── backups/                         # Atomic SQLite backups & legacy exports
-│   │   │   └── legacy/                      # Exported backup rows from dropped legacy Hermes tables
-│   │   └── hummingbird.db                   # Primary SQLite database file (WAL mode)
+│   │   └── hummingbird.db                   # Primary SQLite database file (WAL mode; hummingbird.db is live)
 │   │
 │   └── engine/                              # Core Quantitative & Deterministic Trading Engine
 │       ├── __init__.py                      # Engine package initializer
@@ -485,12 +515,28 @@ trading-cockpit/
 │       ├── curve_analyzer.py                # 7-30 day trend slope, support/resistance, & crash detection
 │       ├── heartbeat.py                     # Minute SQLite heartbeat, dead-man alert & daily summary (14:45)
 │       ├── money.py                         # Strict decimal brokerage fee math (1.00% round trip)
+│       ├── preflight_service.py             # Reusable preflight health audit service
 │       ├── scheduler.py                     # Market calendar engine & session status evaluator
 │       ├── sequential_seller.py             # Multi-tier profit locking & 50/50 pullback seller
 │       ├── signals.py                       # Quantitative trading signal generators & indicators
 │       ├── t2_ledger.py                     # DSE T+2 settlement rolling 3-bucket ledger (A, B, C)
 │       ├── telegram_bot.py                  # Telegram daemon for alerts, summaries & remote kill switch
 │       └── trading_lock.py                  # Single-writer cross-process trading concurrency lock
+│
+├── documentation/                           # System Architecture & Strategy Documentation
+│   ├── About_Project.md                     # Core architecture, system philosophy & repo topology
+│   ├── Backlog.md                           # Implementation roadmap, sprint plans & backlog items
+│   ├── CODEBASE_MAP.md                      # Auto-generated AST map, LOC metrics & endpoint radar
+│   └── STOCKNOW_SITE_MAP.md                 # StockNow site map, write contracts & unauthenticated curl audit
+│
+├── frontend/                                # Cockpit Single-Page Interface
+│   ├── app.js                               # Reactive state manager, DOM updater & telemetry polling
+│   ├── charts.js                            # Canvas chart renderer (trend curves, sparklines, treemap)
+│   ├── favicon.svg                          # Humming Bird brand icon
+│   ├── hermes_ui.js                         # Hermes SSE chat stream, order preview cards, skills & crons
+│   ├── index.html                           # Single-page cockpit dashboard layout & 4 balanced settings cards
+│   ├── styles.css                           # Dark theme styling, terminal aesthetic, card layout & design system
+│   └── theme_light_hermes.css               # WCAG AA compliant light theme design system
 │
 ├── plugins/                                 # Official Hermes Agent Plugins
 │   └── humming_bird/                        # Humming Bird Trading Engine Hermes Plugin
@@ -509,17 +555,8 @@ trading-cockpit/
 │           └── stocknow_dse_quirks/
 │               └── SKILL.md                 # Virtual portfolio #164580 constraints & DSE session rules
 │
-├── frontend/                                # Cockpit Single-Page Interface
-│   ├── app.js                               # Reactive state manager, DOM updater & telemetry polling
-│   ├── charts.js                            # Canvas chart renderer (trend curves, sparklines, treemap)
-│   ├── favicon.svg                          # Humming Bird brand icon
-│   ├── hermes_ui.js                         # Hermes SSE chat stream, order preview cards, skills & crons
-│   ├── index.html                           # Single-page cockpit dashboard layout & 4 balanced settings cards
-│   ├── styles.css                           # Dark theme styling, terminal aesthetic, card layout & design system
-│   └── theme_light_hermes.css               # WCAG AA compliant light theme design system
-│
 ├── scripts/                                 # Administrative & Automation Scripts
-│   ├── backup_db.py                         # Atomic SQLite database backup utility
+│   ├── backup_db.py                         # Atomic SQLite database backup utility (auto-prune to 5)
 │   ├── check_dse_market_open.py             # DSE trading hours & session validator
 │   ├── check_heartbeat.py                   # Heartbeat verification & dead-man alert probe
 │   ├── generate_code_map.py                 # Zero-dependency AST inspection & Codebase Map generator
@@ -527,10 +564,12 @@ trading-cockpit/
 │   ├── install_plugin.ps1                   # Hermes plugin installation & linking script
 │   ├── preflight.py                         # Pre-flight environment, auth, ledger & safety check suite
 │   ├── restore_db.py                        # Atomic database restore utility
-│   └── verify_chat_card.py                  # Playwright visual card renderer & screenshot capture probe
+│   ├── verify_chat_card.py                  # Playwright visual card renderer & screenshot capture probe
+│   └── verify_step10_ui.py                  # Step 10 UI verification probe
 │
 ├── tests/                                   # Pytest Automated Test Suite (204 Tests)
 │   ├── conftest.py                          # Shared test fixtures, mock client & test database setup
+│   ├── fixtures/                            # Test fixtures, recorded JSON responses & HAR captures
 │   ├── test_api.py                          # REST API endpoint tests
 │   ├── test_chat_order_preview_card.py      # Chat order preview card, execution & failure rollback tests
 │   ├── test_engine.py                       # Quantitative engine unit tests (T2 ledger, fee math, curves)
@@ -558,13 +597,7 @@ trading-cockpit/
 │   ├── test_stocknow_write_guard.py         # Hard test-only write contract guards
 │   └── test_trading_mode.py                 # Live Hours vs Test Mode operational gate tests
 │
-└── documentation/                           # System Architecture & Strategy Documentation
-    ├── About_Project.md                     # Core architecture, system philosophy & repo topology
-    ├── Backlog.md                           # Implementation roadmap, sprint plans & backlog items
-    ├── CODEBASE_MAP.md                      # Auto-generated AST map, LOC metrics & endpoint radar
-    ├── REAL_HERMES_MIGRATION.md             # Verified Hermes extension points, runtime docs & evidence
-    ├── Recent.md                            # Recent change logs, UI polish passes & sprint accomplishments
-    ├── STOCKNOW_CURL_AUDIT.md               # Raw curl verification & endpoint response audits
-    └── STOCKNOW_SITE_MAP.md                 # StockNow site map, write contracts & sanitized fixtures
+└── vendor/                                  # Third-Party Dependencies & Upstream Repositories
+    └── hermes-agent/                        # Official Nous Research Hermes Agent (git submodule)
 ```
 

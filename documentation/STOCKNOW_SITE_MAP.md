@@ -2,7 +2,19 @@
 
 > **Exploration Context:**  
 > Audit conducted on live StockNow session for Virtual Portfolio `#164580` ("Humming Bird") using authenticated Playwright persistent profile (`.hummingbird_stocknow_profile`).  
-> Strictly read-only exploration (zero mutating requests, zero Buy/Sell/Delete executions). Auth tokens and PII are redacted.
+> Strictly read-only exploration and contract verification. Auth tokens and PII are strictly redacted.
+
+---
+
+## Table of Contents
+1. [Per-Page Breakdown](#1-per-page-breakdown)
+2. [API Contract Specification](#2-api-contract-specification)
+3. [Chart Historical Candles & WebSocket Feed](#3-chart-historical-candles--websocket-feed)
+4. [Authentication Audit](#4-authentication-audit)
+5. [Buy & Sell Save API Signatures](#5-buy--sell-save-api-signatures)
+6. [Write Contract (Test Portfolio #164580)](#6-write-contract-test-portfolio-164580)
+7. [Unauthenticated curl audit](#7-unauthenticated-curl-audit)
+8. [Risks and Unknowns](#8-risks-and-unknowns)
 
 ---
 
@@ -229,7 +241,7 @@ Complete live DSE scrip ticker catalog.
 | Property | Value / Verification |
 |:---|:---|
 | **Login Request Endpoint** | `POST https://stocknow.com.bd/api/v1/auth/login` |
-| **Login Request Payload** | `{"username": "+8801XXXXXXXXX", "password": "[REDACTED]"}` |
+| **Login Request Payload** | `{"email": "+8801XXXXXXXXX", "password": "[REDACTED]"}` |
 | **Login Response** | `{"token_type": "Bearer", "expires_in": 31536000, "access_token": "[REDACTED]", "refresh_token": null}` |
 | **JWT Expiration Lifetime** | **31,536,000 seconds (365 days / 1 full year)**. Decoded payload contains `iat`, `exp`, `jti`, `sub`, `scopes`. |
 | **LocalStorage Keys** | `access_token`, `rememberCredentials`, `username`, `password`, `cached_favorites_202083`, `cached_instruments`, `cached_sectors`, `cached_user_info`, `darkMode`, `fundamentals`, `fundamentals-hash`, `stocknowAdvancedChartSettings`, `stocknow_banner_first_place_v1`, `stocknow_last_feature_intent`, `stocknow_usage_session_id`, `tvlocalstorage.available` |
@@ -237,7 +249,7 @@ Complete live DSE scrip ticker catalog.
 
 ---
 
-## 5. Buy & Sell Save API Signatures (from Disassembled JS)
+## 5. Buy & Sell Save API Signatures
 
 Both `/buy` and `/sell` Vue components intercept form submission with `e.preventDefault()` and execute XHR POST requests to the portfolio endpoint:
 
@@ -379,7 +391,7 @@ Probes executed against `POST /api/v1/user/portfolios/164580` using valid Bearer
 
 1. **Does the API validate price against the day range?**
    - **No.** The API does not enforce daily circuit limits or high/low price ranges on virtual portfolios. A buy at ৳999,999.00 was accepted with `200 OK`. The client-side kernel must strictly validate market prices before order dispatch.
-2. **Does an API login invalidate the browser session (credentials from env, never printed)?**
+2. **Does an API login invalidate the browser session?**
    - **No.** Authenticating via `POST /api/v1/auth/login` generates an independent valid token. The browser's active `access_token` remains completely valid (`status: 200` on subsequent requests). Multiple concurrent JWT tokens are permitted per user.
 3. **What does `POST /auth/logout` do to the token?**
    - Endpoint: `POST https://stocknow.com.bd/api/v1/auth/logout`.
@@ -388,16 +400,89 @@ Probes executed against `POST /api/v1/user/portfolios/164580` using valid Bearer
 
 ---
 
-## 7. Risks and Unknowns
+## 7. Unauthenticated curl audit
+
+Audit conducted via read-only requests (`GET` and `HEAD` only) with rate pacing $\le 1$ req/sec, zero credentials transmitted, strict adherence to `robots.txt`, and zero speculative probing.
+
+### 7.1 Endpoint Fetch Audit Table
+
+All endpoints were audited via non-intrusive `curl -sS -D <headers> -o <body>` commands with a minimum 1.5-second pacing between requests.
+
+| Target URL | HTTP Status | Redirects | Content-Type | Content-Length | Server | ETag | Cache-Control / Expires | Set-Cookie Flags |
+|---|:---:|:---:|---|:---:|---|---|---|---|
+| `https://www.stocknow.com.bd/` | `200 OK` | `None` | `text/html` | 4,251 bytes | `nginx/1.22.0` | `"6ae81001-109b"` | `max-age=1800, public, no-transform` (Expires: +30m) | *None* |
+| `https://www.stocknow.com.bd/login` | `200 OK` | `None` | `text/html` | 4,251 bytes | `nginx/1.22.0` | `"6ae81001-109b"` | `max-age=1800, public, no-transform` (Expires: +30m) | *None* |
+| `https://www.stocknow.com.bd/favorites` | `200 OK` | `None` | `text/html` | 4,251 bytes | `nginx/1.22.0` | `"6ae81001-109b"` | `max-age=1800, public, no-transform` (Expires: +30m) | *None* |
+| `https://www.stocknow.com.bd/top-shares` | `200 OK` | `None` | `text/html` | 4,251 bytes | `nginx/1.22.0` | `"6ae81001-109b"` | `max-age=1800, public, no-transform` (Expires: +30m) | *None* |
+| `https://www.stocknow.com.bd/news` | `200 OK` | `None` | `text/html` | 4,251 bytes | `nginx/1.22.0` | `"6ae81001-109b"` | `max-age=1800, public, no-transform` (Expires: +30m) | *None* |
+| `https://www.stocknow.com.bd/robots.txt` | `200 OK` | `None` | `text/plain` | 69 bytes | `nginx/1.22.0` | `"6ae81000-45"` | `max-age=1800, public, no-transform` (Expires: +30m) | *None* |
+
+### 7.2 Robots.txt Analysis
+The `robots.txt` payload:
+```text
+User-agent: *
+Allow: /
+
+Sitemap: https://stocknow.com.bd/sitemap.xml
+```
+- **Observations:** StockNow permits global crawling (`User-agent: *`, `Allow: /`). No endpoints or paths are blocked or disallowed.
+- **Sitemap:** An XML sitemap is maintained at `https://stocknow.com.bd/sitemap.xml`.
+
+### 7.3 `/login` Form & Client-Side SPA Rendering Architecture
+
+On requesting `GET https://www.stocknow.com.bd/login`, the server response contains **no static HTML form markup**. Like all other routes, it returns the SPA shell:
+```html
+<!doctype html>
+<html lang="en" mode="ios">
+  <head>
+    <script defer="defer" src="/js/chunk-vendors.63ce6077.js" type="module"></script>
+    <script defer="defer" src="/js/app.cdcacfd3.js" type="module"></script>
+  </head>
+  <body class="light">
+    <noscript><strong>We're sorry but stocknow doesn't work properly without JavaScript enabled.</strong></noscript>
+    <div id="app"></div>
+  </body>
+</html>
+```
+
+Inspection of chunk `9048.64f7ca9e.js` reveals:
+1. **Rendered Form Structure:** `<form method="post" action="" @submit="login">`
+2. **Form Fields:**
+   - **Identifier:** `<ion-input name="mobile" type="text" label="Mobile *" required v-model="mobile">` (accepts phone number or email string).
+   - **Password:** `<ion-input name="password" type="password" label="Password *" required v-model="password">`
+   - **Remember Credentials:** `<ion-checkbox v-model="rememberCredentials">`
+   - **Submit Element:** `<ion-button type="submit">`
+3. **Hidden Inputs:** `0` (None). No hidden state fields exist.
+4. **CSRF Protection:** `None`. No CSRF token input, meta tag, or anti-CSRF request header is utilized.
+5. **Submission Type:** Pure XHR/JSON Call. Native form submit event is prevented via `e.preventDefault()`, and credentials are sent via Axios `POST /api/v1/auth/login`.
+
+### 7.4 Page Data Rendering Strategy (SSR vs. Client XHR)
+
+| Endpoint | Rendering Method | Data Source & Mechanism |
+|---|:---:|---|
+| `/` (Home) | **Client-Side XHR / SPA** | Server sends 4,251-byte empty HTML skeleton. Vue mounts into `#app`, dispatches `updateInstruments` to fetch `GET /api/v1/instruments`, caches in browser storage, connects to `https://ws.stocknow.com.bd` for live tick streaming. |
+| `/login` | **Client-Side XHR / SPA** | Server sends 4,251-byte empty HTML skeleton. Lazy chunk `9048` dynamically renders the Ionic form. Zero HTML input fields are rendered by the server. |
+| `/favorites` | **Client-Side XHR / SPA** | Server sends 4,251-byte empty HTML skeleton. Watchlist rendered dynamically by querying `GET /api/v1/user/lists` (if authenticated) or reading browser `localStorage.favorites`. |
+| `/top-shares` | **Client-Side XHR / SPA** | Server sends 4,251-byte empty HTML skeleton. Top gainers/losers/turnover lists are filtered and computed on the client side from the cached/fetched `/instruments` dataset. |
+| `/news` | **Client-Side XHR / SPA** | Server sends 4,251-byte empty HTML skeleton. News feed articles fetched via client-side XHR. |
+| `/robots.txt` | **Server-Rendered Static** | Pure static text served directly by Nginx (69 bytes). |
+
+### 7.5 Cookie Policy & Token Storage Lifecycle
+- **Zero Cookies:** Neither Nginx nor the SPA issues any `Set-Cookie` header on static pages or initial requests.
+- **Token Storage:** Token is transmitted as a JWT string in `POST /api/v1/auth/login` and stored strictly in browser `localStorage` under `access_token`.
+- **Subsequent Requests:** Requests include `Authorization: Bearer <access_token>`. Token lifetime is governed by the JWT `exp` claim (365 days) rather than browser cookie expiration flags.
+
+---
+
+## 8. Risks and Unknowns
 
 1. **Absence of Server-Side Price Sanity Checks on Virtual Portfolios:**
    - Because StockNow permits arbitrary prices and unknown symbols on virtual portfolios, any corrupted quote from the aggregator could theoretically corrupt the paper ledger if not guarded by Humming Bird kernel caps.
 2. **No Order Idempotency / Fast Duplicate Safeguards:**
    - StockNow executes duplicate submissions in rapid succession without server-side deduplication. Humming Bird's client-side order mutex and 2-second rate limiter are critical.
-3. **Single-Device Session Eviction Risk on Password Change / Manual Logout:**
-   - While secondary login does not invalidate existing tokens, calling `POST /auth/logout` immediately invalidates that specific token.
+3. **Single-Device Session Eviction Risk on Manual Logout:**
+   - While secondary login does not invalidate existing tokens, calling `POST /auth/logout` immediately invalidates that specific token on the server.
 4. **Cleartext Password in LocalStorage:**
    - Because `rememberCredentials: true` writes the plaintext password to `localStorage.password`, any client host vulnerability poses a credential leak risk.
 5. **DSE Market Hours & Latency Spikes:**
    - Market session runs 10:00 AM – 2:30 PM (Sunday–Thursday). Peak open latency can reach 3.5 seconds; caching with local stale-while-revalidate is mandatory.
-

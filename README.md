@@ -154,6 +154,7 @@ Comprehensive system architecture, mathematical formulas, trading rules, and tel
 | [**About_Project.md**](documentation/About_Project.md) | DSE Sun–Thu market hours, T+2 settlement pipeline, 3-tier GSC watchlist framework, 90/10 Canary probe, and Dual-Mode Ingestion mechanics. |
 | [**Backlog.md**](documentation/Backlog.md) | Sprint deliverables, Hermes agent milestones, and technical audit trail. |
 | [**CODEBASE_MAP.md**](documentation/CODEBASE_MAP.md) | Standard-library AST X-Ray: file metrics, dependency graphs, database schema, route registry, DOM topology, and Code Health Radar. |
+| [**STOCKNOW_SITE_MAP.md**](documentation/STOCKNOW_SITE_MAP.md) | StockNow site map, write contracts & unauthenticated curl audit. |
 
 ---
 

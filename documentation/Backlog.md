@@ -78,11 +78,11 @@
   - **"What-If" Profit Simulator Slider:** Real-time calculator allowing traders to slide target price up/down and compute simulated gross exit value, 1% DSE brokerage fee, and net pocket cash profit in BDT.
   - **Theme Switcher (Dark / Light):** High-contrast daylight mode for daytime readability and sleek dark slate default with clean card borders and contrast.
   - **Continuous Smooth Spline Curves:** Pure continuous cubic bezier spline curves without static point dots, paired with continuous pixel-level hover crosshairs and subtle Buy/Sell execution markers.
-  - **Master Automation Controller & Dual Ingestion Mode (`Background Polling` vs `Onscreen Live Mode`):**
+  - **Master Automation Controller & Run Modes (`Background` vs `Onscreen`):**
     - Database schema & persistence: `automation_enabled`, `ingestion_mode`, `polling_interval_sec` in `PortfolioState`.
     - API endpoint: `POST /api/automation/config` with real-time SSE broadcast.
-    - Two-way segmented slider switch in the sticky topbar and dedicated settings page: Master toggle (`AUTOMATION ON` vs `AUTOMATION OFF / PAUSED`), Dual Ingestion Mode toggle (Method A: Background Polling vs Method B: Onscreen Live Mode), and polling cadence slider.
-    - Hermes agentic tool `set_automation_config` with `/rollback` checkpointing and natural Bangla/Banglish command support (*"Switch to onscreen live mode"*, *"Background polling 60s koro"*, *"Turn off buy sell automation"*).
+    - Two-way segmented slider switch in the sticky topbar and dedicated settings page: Master toggle (`AUTOMATION ON` vs `AUTOMATION OFF / PAUSED`), Run Mode switch (`Background` vs `Onscreen`), and polling cadence slider (active in Background mode).
+    - Hermes agentic tool `set_automation_config` with `/rollback` checkpointing and natural Bangla/Banglish command support (*"Switch to onscreen mode"*, *"Background polling 60s koro"*, *"Turn off buy sell automation"*).
   - **Unified Continuous Dashboard, ScrollSpy & Dedicated Settings Page:**
     - 4 scrollable dashboard sections on the single main page (`#overview`, `#watchlist`, `#rules`, `#ledger`) with ScrollSpy left nav sync, plus 5th dedicated separate `#settings` page.
     - **Sticky Top Navbar:** Locked mission-critical navigation with live DSE market clock & countdown, two-way ingestion mode toggle, master engine controls, and theme switcher, allowing all dashboard sections to slide cleanly underneath.
@@ -320,6 +320,23 @@
   - Interactive Confirm / Cancel buttons (operator never types parameters).
   - Transition to verified receipt state or red `live submission failed: <reason>` with guaranteed no ledger change.
   - 203 automated test suites passing.
+
+---
+
+### 📋 Open Items & MVP Audit Reconciliation
+
+Reconciliation of all audit findings and architectural items from historical MVP audits and recent sprint passes:
+
+| Item / Finding | Severity | Status | Evidence / Resolution |
+| :--- | :---: | :---: | :--- |
+| **1. `hb_place_order` disconnect from StockNow virtual execution** | CRITICAL | **FIXED** | Kernel `post_order` calls `StockNowAdapter.execute_order`, which delegates to `StockNowExecutor` (`BrowserTransport` for Onscreen mode, `ApiTransport` for Background mode). Verified by `tests/test_stocknow_executor.py` and `tests/test_chat_order_preview_card.py`. |
+| **2. Hermes Gateway API daemon offline on port 8642** | HIGH | **OPEN / OPERATIONAL** | Hermes Gateway (`127.0.0.1:8642`) must be started via unified supervisor `python run.py` (or Windows Task Scheduler logon task `scripts/install_autostart.ps1`). Monitored and verified by `scripts/preflight.py` Check 1. |
+| **3. Local ledger mutates before StockNow receipt verification** | HIGH | **FIXED** | Atomic checkpoint taken prior to external order dispatch (`CheckpointManager.create_checkpoint`). Local SQLite `TaxLot` and `TradeLog` records are mutated strictly after fill verification matches the broker receipt (`verify_fill`). On rejection or timeout, state is rolled back automatically (`tests/test_stocknow_executor.py:test_ledger_mismatch_restores_checkpoint`). |
+| **4. Kernel `POST /k/order` lacks internal DSE market hours gate** | MEDIUM | **FIXED** | `backend/kernel_api.py:920-930` checks `is_dse_market_open(settings=settings)` in `LIVE_HOURS` mode, rejecting off-hours orders with HTTP 422 `MARKET_CLOSED`. Verified by `tests/test_trading_mode.py`. |
+| **5. Unauthenticated StockNow DOM failure silently defaults to Paper mode** | MEDIUM | **FIXED** | Zero paper fallback in live mode. `BrowserTransport` and `ApiTransport` in `backend/adapters/stocknow_executor.py` raise `NotAuthenticatedExecutionError` on missing or expired tokens, triggering checkpoint rollback. Verified by `tests/test_stocknow_executor.py:test_logged_out_order_fails_on_browser_transport`. |
+| **6. Stale `--yolo` mention in documentation** | LOW | **FIXED** | All mentions of `--yolo` and subprocess CLI fallback purged from `hermes_bridge.py`, tests, and documentation. |
+| **7. Telegram Bot push notifications for trade alerts** | MEDIUM | **OPEN** | Autonomous real-time push alerts on automated Buy, Sequential Tier Sell, 50/50 Pullback Split, or Crash Quarantine events queued for Sprint 4. |
+| **8. Multi-Broker Live Adapters (LankaBangla / Shanta)** | LOW | **OPEN** | Plug-and-play live brokerage portal adapters queued for Version 0.3. |
 
 ---
 
