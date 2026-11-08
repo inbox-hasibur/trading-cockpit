@@ -193,3 +193,17 @@ def get_portfolio_name(portfolio_id: str, settings: Settings | None = None) -> s
         return f"{live_name} (Test)"
     return f"Portfolio #{pid}"
 
+
+def test_portfolio_configured(settings: Settings | None = None) -> bool:
+    """Returns False when the test portfolio id is empty or equal to the live id."""
+    if settings is not None:
+        live = settings.stocknow_live_portfolio_id.strip()
+        test = settings.stocknow_test_portfolio_id.strip()
+    else:
+        live = os.getenv("STOCKNOW_LIVE_PORTFOLIO_ID", "164580").strip()
+        test = os.getenv("STOCKNOW_TEST_PORTFOLIO_ID", "").strip()
+    if not test:
+        return False
+    return test != live
+
+

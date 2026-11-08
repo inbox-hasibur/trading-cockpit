@@ -28,6 +28,7 @@ from backend.config import (
     get_active_target_portfolio,
     get_allowed_portfolios,
     get_portfolio_name,
+    test_portfolio_configured,
 )
 from backend.database import (
     CanaryThesis,
@@ -746,10 +747,10 @@ async def post_order(
             trading_mode = getattr(state, "trading_mode", "LIVE_HOURS")
             active_pid = get_active_target_portfolio(trading_mode, settings)
 
-            # Block Test Mode if no test ID configured (Requirement 4)
-            if trading_mode == "TEST_OFFHOURS" and not active_pid:
-                reason = "Order execution rejected in Test Mode: STOCKNOW_TEST_PORTFOLIO_ID is not configured. Set STOCKNOW_TEST_PORTFOLIO_ID in .env or switch to LIVE_HOURS."
-                _record_order_rejection(session, state, sym, "MISSING_TEST_PORTFOLIO", reason, trading_mode, body.model_dump(mode="json"))
+            # Block Test Mode if test portfolio is not configured (Requirement: TEST_PORTFOLIO_NOT_CONFIGURED)
+            if trading_mode == "TEST_OFFHOURS" and not test_portfolio_configured(settings):
+                reason = "Order execution rejected in Test Mode: TEST_PORTFOLIO_NOT_CONFIGURED. STOCKNOW_TEST_PORTFOLIO_ID is not configured or equals live portfolio. Set STOCKNOW_TEST_PORTFOLIO_ID in .env or switch to LIVE_HOURS."
+                _record_order_rejection(session, state, sym, "TEST_PORTFOLIO_NOT_CONFIGURED", reason, trading_mode, body.model_dump(mode="json"))
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=reason,

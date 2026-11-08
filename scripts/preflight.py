@@ -30,7 +30,7 @@ WORKSPACE_ROOT = Path(__file__).resolve().parent.parent
 if str(WORKSPACE_ROOT) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_ROOT))
 
-from backend.config import DEFAULT_DATABASE_URL, Settings
+from backend.config import DEFAULT_DATABASE_URL, Settings, test_portfolio_configured
 from backend.database import Database, PortfolioState
 from backend.engine.t2_ledger import assert_ledger, bucket_balances
 from backend.hermes_bridge import get_hermes_dir, read_hermes_state
@@ -343,8 +343,23 @@ def check_and_create_db_backup(db_path: Path) -> CheckResult:
         return CheckResult("DB Backup Exists", False, f"Failed taking database backup: {exc}")
 
 
+def check_test_portfolio_configured() -> CheckResult:
+    """Verifies that test portfolio is configured and distinct from live portfolio."""
+    if test_portfolio_configured():
+        return CheckResult(
+            "test portfolio configured",
+            True,
+            "Configured and distinct from live portfolio",
+        )
+    return CheckResult(
+        "test portfolio configured",
+        False,
+        "STOCKNOW_TEST_PORTFOLIO_ID is unconfigured or equals live ID",
+    )
+
+
 def run_preflight(verbose: bool = False) -> tuple[list[CheckResult], bool]:
-    """Runs all 10 preflight checks and returns (results, all_passed)."""
+    """Runs all preflight checks and returns (results, all_passed)."""
     db_path = get_default_db_path()
     settings = Settings(database_url=DEFAULT_DATABASE_URL)
     db = Database(settings.database_url)
@@ -379,6 +394,9 @@ def run_preflight(verbose: bool = False) -> tuple[list[CheckResult], bool]:
     # 10. Take backup and verify it exists
     res_backup = check_and_create_db_backup(db_path)
 
+    # 11. Test portfolio configured
+    res_test_port = check_test_portfolio_configured()
+
     checks = [
         res_gateway,
         res_model,
@@ -390,6 +408,7 @@ def run_preflight(verbose: bool = False) -> tuple[list[CheckResult], bool]:
         res_caps,
         res_auto,
         res_backup,
+        res_test_port,
     ]
 
     all_passed = all(c.is_go for c in checks)

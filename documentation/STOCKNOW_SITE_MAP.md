@@ -12,7 +12,7 @@
 3. [Chart Historical Candles & WebSocket Feed](#3-chart-historical-candles--websocket-feed)
 4. [Authentication Audit](#4-authentication-audit)
 5. [Buy & Sell Save API Signatures](#5-buy--sell-save-api-signatures)
-6. [Write Contract (Test Portfolio #164580)](#6-write-contract-test-portfolio-164580)
+6. [Write Contract (captured while the test id was misconfigured to the live portfolio)](#6-write-contract-captured-while-the-test-id-was-misconfigured-to-the-live-portfolio)
 7. [Unauthenticated curl audit](#7-unauthenticated-curl-audit)
 8. [Risks and Unknowns](#8-risks-and-unknowns)
 
@@ -288,11 +288,11 @@ Both `/buy` and `/sell` Vue components intercept form submission with `e.prevent
 
 ---
 
-## 6. Write Contract (Test Portfolio #164580)
+## 6. Write Contract (captured while the test id was misconfigured to the live portfolio)
 
 > **Test Environment & Safety Guard:**  
 > All mutating requests are strictly gated by `backend.adapters.stocknow_write_guard.verify_test_portfolio_post_guard`.  
-> The guard enforces that the target portfolio ID strictly matches `STOCKNOW_TEST_PORTFOLIO_ID` (`164580`) and refuses any POST if unconfigured or pointing to non-test portfolios.  
+> The guard enforces that the target portfolio ID strictly matches `STOCKNOW_TEST_PORTFOLIO_ID` (which must be distinct from the live portfolio) and refuses any POST if unconfigured, equal to live portfolio #164580, or pointing to non-test portfolios (note: earlier contract captures were recorded while the test id was misconfigured to live portfolio #164580).  
 > Captured live under HAR recording: `tests/fixtures/stocknow/har/stocknow_write_contract.har`. Sanitized results in `tests/fixtures/stocknow/write_contract_results.json` and `tests/fixtures/stocknow/write_contract_ledger.json`.
 
 ### 6.1 Order Execution Contract (UI Buy & Sell)

@@ -12,7 +12,9 @@ from typing import Any
 
 class StockNowWriteGuardError(PermissionError):
     """Raised when a POST operation attempts to target an unauthorized or non-test portfolio."""
-    pass
+    def __init__(self, message: str = "TEST_PORTFOLIO_NOT_CONFIGURED", reason: str = "TEST_PORTFOLIO_NOT_CONFIGURED") -> None:
+        super().__init__(message)
+        self.reason = reason
 
 
 def verify_test_portfolio_post_guard(
@@ -38,23 +40,30 @@ def verify_test_portfolio_post_guard(
     StockNowWriteGuardError
         If test ID is not configured, target ID is empty, or target ID does not strictly equal test ID.
     """
-    test_id = str(configured_test_id if configured_test_id is not None else os.getenv("STOCKNOW_TEST_PORTFOLIO_ID", "")).strip()
-    if not test_id:
+    from backend.config import test_portfolio_configured
+
+    if not test_portfolio_configured():
         raise StockNowWriteGuardError(
-            "Hard guard violation: STOCKNOW_TEST_PORTFOLIO_ID is not configured. "
-            "All write/POST requests are strictly blocked."
+            "Hard guard violation: TEST_PORTFOLIO_NOT_CONFIGURED. "
+            "STOCKNOW_TEST_PORTFOLIO_ID is not configured or equals live portfolio. "
+            "All write/POST requests are strictly blocked.",
+            reason="TEST_PORTFOLIO_NOT_CONFIGURED",
         )
+
+    test_id = str(configured_test_id if configured_test_id is not None else os.getenv("STOCKNOW_TEST_PORTFOLIO_ID", "")).strip()
 
     target_id = str(target_portfolio_id or "").strip()
     if not target_id:
         raise StockNowWriteGuardError(
-            f"Hard guard violation: Target portfolio ID is missing. Expected test id '{test_id}'."
+            f"Hard guard violation: Target portfolio ID is missing. Expected test id '{test_id}'.",
+            reason="TARGET_PORTFOLIO_MISSING",
         )
 
     if target_id != test_id:
         raise StockNowWriteGuardError(
             f"Hard guard violation: Target portfolio '{target_id}' does not match test id '{test_id}'. "
-            "All write/POST operations to non-test portfolios are strictly refused."
+            "All write/POST operations to non-test portfolios are strictly refused.",
+            reason="PORTFOLIO_MISMATCH",
         )
 
     return target_id
