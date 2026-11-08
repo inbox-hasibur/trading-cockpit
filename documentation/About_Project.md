@@ -472,8 +472,9 @@ trading-cockpit/
 │   │   └── stocknow_portfolio_sync.py       # Portfolio holdings & cash synchronization
 │   │
 │   ├── data/                                # Local persistent database & backup stores
-│   │   ├── hermes_tables_backup.json        # Exported backup rows from dropped legacy Hermes tables
-│   │   └── stocknow_paper.db                # SQLite database file (WAL mode)
+│   │   ├── backups/                         # Atomic SQLite backups & legacy exports
+│   │   │   └── legacy/                      # Exported backup rows from dropped legacy Hermes tables
+│   │   └── hummingbird.db                   # Primary SQLite database file (WAL mode)
 │   │
 │   └── engine/                              # Core Quantitative & Deterministic Trading Engine
 │       ├── __init__.py                      # Engine package initializer
@@ -526,7 +527,6 @@ trading-cockpit/
 │   ├── generate_code_map.py                 # Zero-dependency AST inspection & Codebase Map generator
 │   ├── install_autostart.ps1                # Windows Task Scheduler logon autostart installer with restart
 │   ├── install_plugin.ps1                   # Hermes plugin installation & linking script
-│   ├── migrate_drop_hermes_tables.py        # Legacy Hermes tables data backup & schema drop migration
 │   ├── preflight.py                         # Pre-flight environment, auth, ledger & safety check suite
 │   ├── restore_db.py                        # Atomic database restore utility
 │   └── verify_chat_card.py                  # Playwright visual card renderer & screenshot capture probe

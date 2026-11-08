@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-08 07:36:47 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-08 08:24:48 UTC**.
 
 ---
 
@@ -8,9 +8,9 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 10874 | 2,672,258 | Python Core Kernel, Engine & Hermes Agent |
+| `.py` | 10818 | 2,670,256 | Python Core Kernel, Engine & Hermes Agent |
 | `.ts` | 3911 | 775,975 | Configuration / Asset |
-| `.md` | 1560 | 453,713 | Architecture & Strategy Documentation |
+| `.md` | 1560 | 453,701 | Architecture & Strategy Documentation |
 | `.tsx` | 1548 | 384,054 | Configuration / Asset |
 | `.json` | 232 | 158,742 | Configuration / Asset |
 | `.yaml` | 1264 | 120,668 | Configuration / Asset |
@@ -18,27 +18,28 @@
 | `.tiff` | 1 | 42,784 | Configuration / Asset |
 | `.icns` | 4 | 39,764 | Configuration / Asset |
 | `.woff2` | 13 | 22,964 | Configuration / Asset |
-| `.css` | 36 | 20,606 | Custom Dark / Light / Terminal Design System |
+| `.css` | 36 | 20,746 | Custom Dark / Light / Terminal Design System |
 | `.wav` | 1 | 16,257 | Configuration / Asset |
 | `.pdf` | 4 | 14,579 | Configuration / Asset |
 | `.h` | 3 | 14,533 | Configuration / Asset |
-| `.js` | 35 | 14,090 | Vanilla ES6+ Reactive Terminal Controller |
 | `.sh` | 79 | 13,746 | Configuration / Asset |
+| `.js` | 28 | 13,660 | Vanilla ES6+ Reactive Terminal Controller |
 | `.ps1` | 41 | 11,447 | Configuration / Asset |
 | `.lock` | 3 | 7,975 | Configuration / Asset |
 | `.rs` | 12 | 7,810 | Configuration / Asset |
 | `.bst` | 5 | 7,756 | Configuration / Asset |
 | `.sty` | 13 | 6,846 | Configuration / Asset |
+| `.log` | 1 | 6,598 | Configuration / Asset |
 | `.nix` | 23 | 6,155 | Configuration / Asset |
-| `.html` | 23 | 5,402 | Single Page Application DOM Structure |
-| `.log` | 1 | 5,377 | Configuration / Asset |
-| `.txt` | 40 | 4,678 | Dependency Specifications |
+| `.html` | 18 | 5,199 | Single Page Application DOM Structure |
+| `.txt` | 30 | 4,548 | Dependency Specifications |
 | `.tflite` | 1 | 4,542 | Configuration / Asset |
 | `.tex` | 11 | 4,062 | Configuration / Asset |
 | `.example` | 2 | 2,439 | Environment Configuration Template |
 | `.com` | 1838 | 2,381 | Configuration / Asset |
 | `.toml` | 6 | 1,896 | PyProject Configuration |
 | `.cjs` | 15 | 1,609 | Configuration / Asset |
+| `.db-shm` | 1 | 777 | Configuration / Asset |
 | `.mp4` | 1 | 687 | Configuration / Asset |
 | `.webp` | 4 | 680 | Configuration / Asset |
 | `Dockerfile` | 1 | 577 | Configuration / Asset |
@@ -124,7 +125,6 @@
 | `.sg` | 2 | 3 | Configuration / Asset |
 | `.kitchen` | 1 | 3 | Configuration / Asset |
 | `type` | 3 | 3 | Configuration / Asset |
-| `.db` | 2 | 2 | Configuration / Asset |
 | `.id` | 2 | 2 | Configuration / Asset |
 | `a@l` | 1 | 2 | Configuration / Asset |
 | `.best` | 1 | 2 | Configuration / Asset |
@@ -199,11 +199,12 @@
 | `vega38@localhost` | 1 | 1 | Configuration / Asset |
 | `.localdomain` | 1 | 1 | Configuration / Asset |
 | `.top` | 1 | 1 | Configuration / Asset |
+| `.db-wal` | 1 | 0 | Configuration / Asset |
 | `base` | 3 | 0 | Configuration / Asset |
 | `dashboard` | 1 | 0 | Configuration / Asset |
 | `main-hermes` | 1 | 0 | Configuration / Asset |
 | `profile-gateways` | 1 | 0 | Configuration / Asset |
-| **TOTAL** | **22458** | **4,911,634** | *Entire Humming Bird Repository* |
+| **TOTAL** | **22380** | **4,910,993** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -253,7 +254,6 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | [`scripts/check_dse_market_open.py`](/scripts/check_dse_market_open.py) | *Independent Core Module* |
 | [`scripts/check_heartbeat.py`](/scripts/check_heartbeat.py) | `backend.config.DEFAULT_DATABASE_URL`, `backend.config.Settings`, `backend.database.Database`, `backend.engine.heartbeat.check_dead_man_switch`, `backend.engine.heartbeat.record_system_heartbeat` |
 | [`scripts/generate_code_map.py`](/scripts/generate_code_map.py) | *Independent Core Module* |
-| [`scripts/migrate_drop_hermes_tables.py`](/scripts/migrate_drop_hermes_tables.py) | *Independent Core Module* |
 | [`scripts/preflight.py`](/scripts/preflight.py) | `backend.adapters.stocknow_client.get_safe_profile_dir`, `backend.config.DEFAULT_DATABASE_URL`, `backend.config.Settings`, `backend.database.Database`, `backend.database.PortfolioState`, `backend.database.TaxLot`, `backend.engine.t2_ledger.assert_ledger`, `backend.engine.t2_ledger.bucket_balances`, `backend.hermes_bridge.get_hermes_dir`, `backend.hermes_bridge.read_hermes_state`, `scripts.backup_db.backup_database`, `scripts.backup_db.get_default_backup_dir`, `scripts.backup_db.get_default_db_path` |
 | [`scripts/restore_db.py`](/scripts/restore_db.py) | `scripts.backup_db.backup_database`, `scripts.backup_db.get_default_backup_dir`, `scripts.backup_db.get_default_db_path` |
 | [`scripts/verify_chat_card.py`](/scripts/verify_chat_card.py) | *Independent Core Module* |
@@ -1308,8 +1308,9 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `get_default_db_path` | `L20–L22` | `(...)` | `Path` | Returns absolute path to hummingbird.db. | — |
 | `get_default_backup_dir` | `L25–L27` | `(...)` | `Path` | Returns absolute path to backups directory. | — |
-| `backup_database` | `L30–L79` | `(db_path: Path | None=None, backup_d...)` | `Path` | Creates a verified timestamped backup of the SQLite database. | `FileNotFoundError`, `RuntimeError`, `backup`, `close` |
-| `main` | `L82–L97` | `(...)` | `int` | — | `ArgumentParser`, `add_argument`, `backup_database`, `parse_args` |
+| `backup_database` | `L30–L82` | `(db_path: Path | None=None, backup_d...)` | `Path` | Creates a verified timestamped backup of the SQLite database. | `FileNotFoundError`, `RuntimeError`, `backup`, `close` |
+| `prune_backups` | `L85–L116` | `(backup_dir: Path | None=None, keep_...)` | `list[Path]` | Prunes older hummingbird_*.db backups in backup_dir, keeping the newest keep_count. | `append`, `exists`, `get_default_backup_dir`, `glob` |
+| `main` | `L119–L134` | `(...)` | `int` | — | `ArgumentParser`, `add_argument`, `backup_database`, `parse_args` |
 
 
 ---
@@ -1374,17 +1375,6 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | `scan_file` | `L258–L307` | `(css_text: str, filename: str...)` | — | — | `any`, `append`, `escape`, `get` |
 | `parse_frontend` | `L315–L340` | `(...)` | — | — | `add`, `append`, `enumerate`, `exists` |
 | `generate_markdown` | `L343–L531` | `(...)` | — | — | `append`, `collect_file_metrics`, `get`, `items` |
-
-
----
-
-### 📄 [`scripts/migrate_drop_hermes_tables.py`](/scripts/migrate_drop_hermes_tables.py)
-
-#### Standalone Functions
-
-| Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `run_migration` | `L15–L70` | `(db_path: Path | str | None=None, ba...)` | `dict` | — | `Path`, `close`, `commit`, `connect` |
 
 
 ---
@@ -1586,12 +1576,12 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 | `.topbar-right` | [`frontend/styles.css`](/frontend/styles.css#L416) | `L416` | `flex` | — | — | — | `nowrap` |
 | `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L426) | `L426` | `flex` | — | — | — | `nowrap` |
 | `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L435) | `L435` | — | — | — | — | — |
-| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L677) | `L677` | — | — | — | — | — |
-| `.engine-controls` | [`frontend/styles.css`](/frontend/styles.css#L843) | `L843` | `flex` | — | — | — | — |
-| `.session-bar` | [`frontend/styles.css`](/frontend/styles.css#L879) | `L879` | `flex` | — | — | `#0e161f` | `wrap` |
-| `.metric-card` | [`frontend/styles.css`](/frontend/styles.css#L931) | `L931` | — | — | — | `var(--panel)` | — |
-| `.skills-drawer` | [`frontend/styles.css`](/frontend/styles.css#L2593) | `L2593` | — | — | — | `#0c141d` | — |
-| `.model-dropup-menu` | [`frontend/styles.css`](/frontend/styles.css#L4464) | `L4464` | — | — | `absolute` | `var(--panel, #111a24)` | — |
+| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L796) | `L796` | — | — | — | — | — |
+| `.engine-controls` | [`frontend/styles.css`](/frontend/styles.css#L962) | `L962` | `flex` | — | — | — | — |
+| `.session-bar` | [`frontend/styles.css`](/frontend/styles.css#L998) | `L998` | `flex` | — | — | `#0e161f` | `wrap` |
+| `.metric-card` | [`frontend/styles.css`](/frontend/styles.css#L1050) | `L1050` | — | — | — | `var(--panel)` | — |
+| `.skills-drawer` | [`frontend/styles.css`](/frontend/styles.css#L2712) | `L2712` | — | — | — | `#0c141d` | — |
+| `.model-dropup-menu` | [`frontend/styles.css`](/frontend/styles.css#L4565) | `L4565` | — | — | `absolute` | `var(--panel, #111a24)` | — |
 | `.session-bar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L69) | `L69` | — | — | — | `#ffffff` | — |
 | `.metric-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L95) | `L95` | — | — | — | `#ffffff` | — |
 | `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L499) | `L499` | — | — | — | `#f8fafc !important` | — |
@@ -1599,19 +1589,19 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 | `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L596) | `L596` | — | — | — | `#ffffff !important` | — |
 | `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L784) | `L784` | — | — | — | `#ccfbf1 !important` | — |
 | `.topbar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L846) | `L846` | — | — | — | `rgba(226, 232, 240, 0.92)` | — |
-| `#hermes-resizer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L869) | `L869` | — | — | `absolute` | `transparent` | — |
-| `.app-shell` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L910) | `L910` | — | — | — | — | — |
-| `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1019) | `L1019` | — | — | — | — | — |
-| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1509) | `L1509` | — | — | — | `var(--panel)` | — |
-| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1644) | `L1644` | — | — | `absolute` | `var(--panel, #111a24)` | — |
-| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1661) | `L1661` | — | — | — | `#ffffff` | — |
-| `.workspace` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1784) | `L1784` | — | — | — | — | — |
-| `.skills-drawer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L2115) | `L2115` | — | — | — | `#ffffff !important` | — |
+| `#hermes-resizer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L908) | `L908` | — | — | `absolute` | `transparent` | — |
+| `.app-shell` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L949) | `L949` | — | — | — | — | — |
+| `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1058) | `L1058` | — | — | — | — | — |
+| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1548) | `L1548` | — | — | — | `var(--panel)` | — |
+| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1683) | `L1683` | — | — | `absolute` | `var(--panel, #111a24)` | — |
+| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1700) | `L1700` | — | — | — | `#ffffff` | — |
+| `.workspace` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1823) | `L1823` | — | — | — | — | — |
+| `.skills-drawer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L2154) | `L2154` | — | — | — | `#ffffff !important` | — |
 
 
 ### Key DOM Identifiers (`frontend/index.html`)
 
-Identified **294** distinct element IDs in the UI shell. Key controller anchors:
+Identified **300** distinct element IDs in the UI shell. Key controller anchors:
 
 `#overview`, `#watchlist`, `#market-map`, `#master-automation-toggle`, `#mode-btn-polling`, `#mode-btn-live`, `#polling-interval-pills`, `#main-chart`, `#bucket-stack`, `#what-if-slider`, `#theme-toggle-btn`, `#topbar-clock-widget`
 
@@ -1620,8 +1610,8 @@ Identified **294** distinct element IDs in the UI shell. Key controller anchors:
 
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
-| `styles.css` | 6357 | Core design tokens, layout & widgets |
-| `theme_light_hermes.css` | 2842 | Daylight overrides & Hermes IDE sidebar |
+| `styles.css` | 6458 | Core design tokens, layout & widgets |
+| `theme_light_hermes.css` | 2881 | Daylight overrides & Hermes IDE sidebar |
 
 
 ### Frontend API Contract Invocations (`frontend/*.js`)
@@ -1692,17 +1682,19 @@ Identified **294** distinct element IDs in the UI shell. Key controller anchors:
 | `setTheme()` | `app.js` | `L1171` | Reactive DOM rendering / event controller |
 | `toggleTheme()` | `app.js` | `L1182` | Reactive DOM rendering / event controller |
 | `tickMarketClock()` | `app.js` | `L1188` | Reactive DOM rendering / event controller |
-| `tickClock()` | `app.js` | `L1257` | Reactive DOM rendering / event controller |
-| `renderAutomationControlBar()` | `app.js` | `L1266` | Reactive DOM rendering / event controller |
-| `setAutomationConfig()` | `app.js` | `L1581` | Reactive DOM rendering / event controller |
-| `executeHandoff()` | `app.js` | `L1702` | Reactive DOM rendering / event controller |
-| `switchToLiveHours()` | `app.js` | `L1783` | Reactive DOM rendering / event controller |
-| `switchToTestMode()` | `app.js` | `L1792` | Reactive DOM rendering / event controller |
-| `initRealtimeStream()` | `app.js` | `L1844` | Reactive DOM rendering / event controller |
-| `switchView()` | `app.js` | `L1870` | Reactive DOM rendering / event controller |
-| `initViewRouter()` | `app.js` | `L1928` | Reactive DOM rendering / event controller |
-| `initScrollSpy()` | `app.js` | `L1965` | Reactive DOM rendering / event controller |
-| `updateActiveNav()` | `app.js` | `L1978` | Reactive DOM rendering / event controller |
+| `tickClock()` | `app.js` | `L1270` | Reactive DOM rendering / event controller |
+| `renderAutomationControlBar()` | `app.js` | `L1279` | Reactive DOM rendering / event controller |
+| `setAutomationConfig()` | `app.js` | `L1620` | Reactive DOM rendering / event controller |
+| `setHandoffPendingState()` | `app.js` | `L1743` | Reactive DOM rendering / event controller |
+| `executeRunModeHandoff()` | `app.js` | `L1761` | Reactive DOM rendering / event controller |
+| `executeHandoff()` | `app.js` | `L1786` | Reactive DOM rendering / event controller |
+| `switchToLiveHours()` | `app.js` | `L1887` | Reactive DOM rendering / event controller |
+| `switchToTestMode()` | `app.js` | `L1896` | Reactive DOM rendering / event controller |
+| `initRealtimeStream()` | `app.js` | `L1948` | Reactive DOM rendering / event controller |
+| `switchView()` | `app.js` | `L1974` | Reactive DOM rendering / event controller |
+| `initViewRouter()` | `app.js` | `L2032` | Reactive DOM rendering / event controller |
+| `initScrollSpy()` | `app.js` | `L2069` | Reactive DOM rendering / event controller |
+| `updateActiveNav()` | `app.js` | `L2082` | Reactive DOM rendering / event controller |
 | `smoothCurvePath()` | `charts.js` | `L8` | Reactive DOM rendering / event controller |
 | `getBezierPointAtContinuousIndex()` | `charts.js` | `L31` | Reactive DOM rendering / event controller |
 | `renderMainChart()` | `charts.js` | `L63` | Reactive DOM rendering / event controller |
@@ -1847,7 +1839,8 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/secret_guard.py` | `redact_secrets` | 11 | 4 | Acceptable; well-scoped logic |
 | `backend/seed.py` | `seed_demo` | 105 | 3 | Decompose into sub-functions |
 | `backend/seed.py` | `migrate_real_stocknow_market` | 148 | 7 | Decompose into sub-functions |
-| `scripts/backup_db.py` | `backup_database` | 50 | 4 | Acceptable; well-scoped logic |
+| `scripts/backup_db.py` | `backup_database` | 53 | 4 | Acceptable; well-scoped logic |
+| `scripts/backup_db.py` | `prune_backups` | 32 | 5 | Acceptable; well-scoped logic |
 | `scripts/check_dse_market_open.py` | `check_kernel_market_open` | 19 | 4 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `is_ignored` | 8 | 4 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `collect_file_metrics` | 15 | 4 | Acceptable; well-scoped logic |
@@ -1867,4 +1860,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/verify_chat_card.py` | `main` | 121 | 3 | Decompose into sub-functions |
 
 
-> **Audit Summary:** 47 Python modules inspected, 39 FastAPI endpoints registered, 4,911,634 total LOC indexed.
+> **Audit Summary:** 46 Python modules inspected, 39 FastAPI endpoints registered, 4,910,993 total LOC indexed.

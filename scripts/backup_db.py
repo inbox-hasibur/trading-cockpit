@@ -76,7 +76,44 @@ def backup_database(
     finally:
         verify_conn.close()
 
+    # Automatically prune older backups to newest 5 (never pruning pre_restore)
+    prune_backups(dst_dir, keep_count=5)
+
     return backup_path
+
+
+def prune_backups(backup_dir: Path | None = None, keep_count: int = 5) -> list[Path]:
+    """Prunes older hummingbird_*.db backups in backup_dir, keeping the newest keep_count.
+    Never prunes files inside pre_restore or other subdirectories.
+    """
+    b_dir = (backup_dir or get_default_backup_dir()).resolve()
+    if not b_dir.exists():
+        return []
+
+    # Only look for top-level files matching hummingbird_*.db directly in b_dir
+    backups = sorted(
+        [p for p in b_dir.glob("hummingbird_*.db") if p.is_file()],
+        key=lambda p: (p.name, p.stat().st_mtime),
+        reverse=True,
+    )
+
+    pruned = []
+    if len(backups) > keep_count:
+        to_delete = backups[keep_count:]
+        for p in to_delete:
+            try:
+                # Also delete associated shm/wal if present
+                shm = p.parent / f"{p.name}-shm"
+                wal = p.parent / f"{p.name}-wal"
+                if shm.exists():
+                    shm.unlink()
+                if wal.exists():
+                    wal.unlink()
+                p.unlink()
+                pruned.append(p)
+            except Exception:
+                pass
+    return pruned
 
 
 def main() -> int:
