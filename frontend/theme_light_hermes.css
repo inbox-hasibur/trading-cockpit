@@ -755,7 +755,10 @@
 }
 
 [data-theme="light"] .button.primary,
-[data-theme="light"] #run-cycle {
+[data-theme="light"] #run-cycle,
+[data-theme="light"] #run-cycle span,
+[data-theme="light"] #run-label,
+[data-theme="light"] .button.primary span {
   background: #0d9488 !important;
   border-color: #0d9488 !important;
   color: #ffffff !important;
@@ -763,10 +766,32 @@
   box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25) !important;
 }
 
+[data-theme="light"] #run-cycle svg,
+[data-theme="light"] .button.primary svg {
+  fill: #ffffff !important;
+  color: #ffffff !important;
+}
+
 [data-theme="light"] .button.primary:hover:not(:disabled),
 [data-theme="light"] #run-cycle:hover:not(:disabled) {
   background: #0f766e !important;
   border-color: #0f766e !important;
+  color: #ffffff !important;
+}
+
+[data-theme="light"] #run-cycle:disabled,
+[data-theme="light"] #run-cycle:disabled span,
+[data-theme="light"] #run-cycle:disabled #run-label,
+[data-theme="light"] .button.primary:disabled,
+[data-theme="light"] .button.primary:disabled span {
+  opacity: 0.75 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="light"] #run-cycle:disabled svg,
+[data-theme="light"] .button.primary:disabled svg {
+  opacity: 0.75 !important;
+  fill: #ffffff !important;
   color: #ffffff !important;
 }
 
@@ -844,6 +869,7 @@
 }
 
 [data-theme="light"] .topbar {
+  top: 0;
   background: rgba(226, 232, 240, 0.92);
   border-bottom-color: var(--line);
 }
@@ -859,6 +885,20 @@
   border-color: #94a3b8;
 }
 
+[data-theme="light"] .topbar-tmode-badge.badge-test {
+  background: var(--amber-bg, #fef3c7) !important;
+  color: var(--amber, #b45309) !important;
+  border: 1px solid rgba(180, 83, 9, 0.35) !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="light"] .topbar-tmode-badge.badge-live {
+  background: var(--green-bg, #dcfce7) !important;
+  color: var(--green, #15803d) !important;
+  border: 1px solid rgba(21, 128, 61, 0.35) !important;
+  font-weight: 700 !important;
+}
+
 [data-theme="light"] .topbar-runmode-segmented {
   background: #f1f5f9;
   border-color: #cbd5e1;
@@ -869,13 +909,23 @@
 }
 
 [data-theme="light"] .topbar-runmode-btn:hover:not(.active) {
-  color: #0f172a;
-  background: rgba(0, 0, 0, 0.05);
+  color: var(--brand, #0f766e) !important;
+  background: var(--brand-bg, #ccfbf1) !important;
 }
 
 [data-theme="light"] .topbar-runmode-btn.active {
-  background: #0284c7;
-  color: #ffffff;
+  background: var(--brand, #0f766e) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(15, 118, 110, 0.3) !important;
+}
+
+[data-theme="light"] .topbar-switching-state {
+  color: var(--brand, #0f766e) !important;
+}
+
+[data-theme="light"] .pending-switch-state {
+  color: var(--brand, #0f766e) !important;
 }
 
 [data-theme="light"] .topbar-automation-control {
@@ -1827,6 +1877,27 @@ body.is-resizing-hermes .app-shell {
 [data-theme="light"] label,
 [data-theme="light"] div {
   color: var(--text);
+}
+
+/* Preserve white text on dark solid action buttons in light mode */
+[data-theme="light"] #run-cycle,
+[data-theme="light"] #run-cycle *,
+[data-theme="light"] #run-cycle span,
+[data-theme="light"] #run-label,
+[data-theme="light"] .button.primary,
+[data-theme="light"] .button.primary *,
+[data-theme="light"] .button.primary span,
+[data-theme="light"] .topbar-runmode-btn.active,
+[data-theme="light"] .chat-input-bottom button,
+[data-theme="light"] .chat-input-bottom button * {
+  color: #ffffff !important;
+}
+
+[data-theme="light"] #run-cycle svg,
+[data-theme="light"] .button.primary svg,
+[data-theme="light"] .chat-input-bottom button svg {
+  fill: #ffffff !important;
+  color: #ffffff !important;
 }
 
 

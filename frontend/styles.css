@@ -383,7 +383,7 @@ h2 {
   justify-content: space-between;
   min-height: 64px;
   position: sticky;
-  top: 27px;
+  top: 0;
   z-index: 100;
   background: rgba(10, 16, 24, 0.88);
   backdrop-filter: blur(12px);
@@ -527,14 +527,14 @@ h2 {
 }
 
 .topbar-tmode-badge.badge-live {
-  background: rgba(16, 185, 129, 0.15);
-  color: #10b981;
+  background: var(--green-bg, rgba(16, 185, 129, 0.15));
+  color: var(--green, #10b981);
   border: 1px solid rgba(16, 185, 129, 0.35);
 }
 
 .topbar-tmode-badge.badge-test {
-  background: rgba(245, 158, 11, 0.18);
-  color: #f59e0b;
+  background: var(--amber-bg, rgba(245, 158, 11, 0.18));
+  color: var(--amber, #f59e0b);
   border: 1px solid rgba(245, 158, 11, 0.4);
 }
 
@@ -576,15 +576,15 @@ h2 {
 }
 
 .topbar-runmode-btn.active {
-  background: var(--accent, #0284c7);
-  color: #ffffff;
+  background: var(--brand, #5de4c7);
+  color: #0a1018;
   font-weight: 700;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
 .topbar-switching-state {
   font-size: 11px;
-  color: #38bdf8;
+  color: var(--brand, #5de4c7);
   font-weight: 600;
   white-space: nowrap;
   animation: pulse 1.5s infinite;
@@ -658,7 +658,7 @@ h2 {
 }
 
 .pending-switch-state {
-  color: #38bdf8;
+  color: var(--brand, #5de4c7);
   font-weight: 600;
   animation: pulse 1.5s infinite;
 }
