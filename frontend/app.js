@@ -1189,7 +1189,17 @@ function tickMarketClock() {
   const dot = $("market-status-dot");
   const statusTxt = $("market-status-text");
   const countdownTxt = $("market-countdown-text");
-  if (!dot || !statusTxt || !countdownTxt) return;
+  const pillBtn = $("topbar-clock-widget");
+  const tmodeBadge = $("topbar-tmode-badge");
+
+  const app = (state.snapshot && state.snapshot.app) || {};
+  const tradingMode = app.trading_mode || (state.snapshot && state.snapshot.trading_mode) || "LIVE_HOURS";
+  const isTestMode = tradingMode === "TEST_OFFHOURS";
+
+  if (tmodeBadge) {
+    tmodeBadge.textContent = isTestMode ? "Test Mode" : "Live Hours";
+    tmodeBadge.className = `topbar-tmode-badge ${isTestMode ? "badge-test" : "badge-live"}`;
+  }
 
   const now = new Date();
   const dhakaStr = now.toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
@@ -1207,17 +1217,20 @@ function tickMarketClock() {
   const isTradingDay = dayOfWeek >= 0 && dayOfWeek <= 4;
 
   if (isTradingDay && totalMinutes >= openMinutes && totalMinutes < closeMinutes) {
-    dot.className = "status-dot clock-dot open";
-    setText("market-status-text", "DSE OPEN");
+    if (dot) dot.className = "status-dot clock-dot open";
+    if (statusTxt) statusTxt.textContent = "DSE OPEN";
     const diffSec = (closeMinutes * 60) - (totalMinutes * 60 + seconds);
     const remH = Math.floor(diffSec / 3600);
     const remM = Math.floor((diffSec % 3600) / 60);
-    const remS = diffSec % 60;
-    setText("market-countdown-text", `Closes in ${String(remH).padStart(2, "0")}h ${String(remM).padStart(2, "0")}m ${String(remS).padStart(2, "0")}s`);
-    if ($("topbar-clock-widget")) $("topbar-clock-widget").title = "DSE trading session open until 14:30 (Asia/Dhaka)";
+    const hStr = String(remH).padStart(2, "0");
+    const mStr = String(remM).padStart(2, "0");
+    if (countdownTxt) countdownTxt.textContent = `closes in ${hStr}h ${mStr}m`;
+    if (pillBtn) {
+      pillBtn.title = `DSE OPEN · closes in ${hStr}h ${mStr}m · Click to view Settings > Trading Mode`;
+    }
   } else {
-    dot.className = "status-dot clock-dot closed";
-    setText("market-status-text", "DSE CLOSED");
+    if (dot) dot.className = "status-dot clock-dot closed";
+    if (statusTxt) statusTxt.textContent = "DSE CLOSED";
 
     let daysToAdd = 0;
     if (isTradingDay && totalMinutes < openMinutes) {
@@ -1232,19 +1245,19 @@ function tickMarketClock() {
     const nextSession = new Date(dhakaDate);
     nextSession.setDate(nextSession.getDate() + daysToAdd);
     nextSession.setHours(10, 0, 0, 0);
-    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const nextDayName = dayNames[nextSession.getDay()];
-    if ($("topbar-clock-widget")) $("topbar-clock-widget").title = `DSE opens ${nextDayName} 10:00 (Asia/Dhaka)`;
 
     const diffMs = nextSession.getTime() - dhakaDate.getTime();
     if (diffMs > 0) {
       const diffSec = Math.floor(diffMs / 1000);
       const remH = Math.floor(diffSec / 3600);
       const remM = Math.floor((diffSec % 3600) / 60);
-      const remS = diffSec % 60;
-      setText("market-countdown-text", `Next: ${remH}h ${remM}m ${remS}s`);
+      const hStr = String(remH).padStart(2, "0");
+      const mStr = String(remM).padStart(2, "0");
+      if (countdownTxt) countdownTxt.textContent = `next in ${hStr}h ${mStr}m`;
+      if (pillBtn) pillBtn.title = `DSE CLOSED · next in ${hStr}h ${mStr}m · Click to view Settings > Trading Mode`;
     } else {
-      setText("market-countdown-text", "Opens at 10:00 AM");
+      if (countdownTxt) countdownTxt.textContent = "next in 10:00 AM";
+      if (pillBtn) pillBtn.title = "DSE CLOSED · Click to view Settings > Trading Mode";
     }
   }
 }
@@ -1289,7 +1302,7 @@ function renderAutomationControlBar() {
     toggleInput.disabled = state.busy;
   }
 
-  // Topbar Unified Status Chip
+  // Topbar Run Mode Segmented Switch
   const isKilled = Boolean(app.kill_switch_active);
   const isBackground = mode === "BACKGROUND_POLLING" || mode === "BACKGROUND_24_7";
   const runModeText = isBackground ? "Background" : "Onscreen";
@@ -1301,11 +1314,34 @@ function renderAutomationControlBar() {
   let stateText = enabled ? "ON" : "OFF";
   if (isKilled) stateText = "KILLED";
 
-  const statusChipText = `${stateText} · ${runModeText} · ${tradingModeText}`;
+  const topbarModeBg = $("topbar-mode-btn-background");
+  const topbarModeOs = $("topbar-mode-btn-onscreen");
+  if (topbarModeBg) {
+    topbarModeBg.classList.toggle("active", isBackground);
+    topbarModeBg.disabled = state.busy || pendingHandoff;
+  }
+  if (topbarModeOs) {
+    topbarModeOs.classList.toggle("active", !isBackground);
+    topbarModeOs.disabled = state.busy || pendingHandoff;
+  }
 
+  // Topbar Automation Switch
+  const topbarAutoInput = $("topbar-automation-toggle-input");
+  const topbarAutoState = $("topbar-automation-state");
+  if (topbarAutoInput) {
+    topbarAutoInput.checked = enabled && !isKilled;
+    topbarAutoInput.disabled = state.busy || isKilled;
+  }
+  if (topbarAutoState) {
+    topbarAutoState.textContent = isKilled ? "KILL" : (enabled ? "ON" : "OFF");
+    topbarAutoState.className = `topbar-automation-state ${enabled && !isKilled ? "is-on" : "is-off"}`;
+  }
+
+  // Compatibility topbar chips if present in test harness
   const topbarMasterToggle = $("topbar-master-toggle");
   const topbarStatusText = $("topbar-status-text");
   const topbarMasterLabel = $("topbar-master-label");
+  const statusChipText = `${stateText} · ${runModeText} · ${tradingModeText}`;
   if (topbarMasterToggle) {
     topbarMasterToggle.classList.toggle("is-on", enabled && !isKilled);
     topbarMasterToggle.classList.toggle("is-off", !enabled && !isKilled);
@@ -1331,8 +1367,7 @@ function renderAutomationControlBar() {
     topbarKillLabel.textContent = isKilled ? "KILL ACTIVE" : "Kill";
   }
 
-  // Run Mode & Handoff Controls
-  const handoffNextMode = isBackground ? "ONSCREEN_LIVE" : "BACKGROUND_POLLING";
+  // Run Mode & Handoff Controls (Settings Page)
   const handoffActionLabel = isBackground ? "Go Onscreen" : "Go Background";
   const handoffTitle = isBackground
     ? "Handoff: Finish current cycle under lock, then switch to headed Onscreen"
@@ -1342,7 +1377,7 @@ function renderAutomationControlBar() {
   const topbarHandoffLabel = $("topbar-handoff-label");
   if (topbarHandoff) {
     topbarHandoff.title = handoffTitle;
-    topbarHandoff.disabled = state.busy;
+    topbarHandoff.disabled = state.busy || pendingHandoff;
   }
   if (topbarHandoffLabel) {
     topbarHandoffLabel.textContent = handoffActionLabel;
@@ -1352,7 +1387,7 @@ function renderAutomationControlBar() {
   const settingsHandoffLabel = $("settings-handoff-label");
   if (settingsHandoff) {
     settingsHandoff.title = handoffTitle;
-    settingsHandoff.disabled = state.busy;
+    settingsHandoff.disabled = state.busy || pendingHandoff;
   }
   if (settingsHandoffLabel) {
     settingsHandoffLabel.textContent = handoffActionLabel;
@@ -1363,15 +1398,19 @@ function renderAutomationControlBar() {
   const liveBtn = $("mode-btn-live");
   if (pollingBtn) {
     pollingBtn.classList.toggle("active", isBackground);
-    pollingBtn.disabled = state.busy;
+    pollingBtn.disabled = state.busy || pendingHandoff;
   }
   if (liveBtn) {
     liveBtn.classList.toggle("active", !isBackground);
-    liveBtn.disabled = state.busy;
+    liveBtn.disabled = state.busy || pendingHandoff;
   }
   const modePill = $("current-mode-pill");
   if (modePill) {
     modePill.textContent = isBackground ? "Background Active" : "Onscreen Active";
+  }
+  const settingsActiveMode = $("settings-active-mode-text");
+  if (settingsActiveMode) {
+    settingsActiveMode.textContent = isBackground ? "Active: Background" : "Active: Onscreen";
   }
 
   // Header Mode Slider (Portfolio Overview Header)
@@ -1605,7 +1644,7 @@ async function setAutomationConfig(newConfig) {
       state.snapshot.adapter = res.adapter;
       renderSnapshot();
     }
-    const modeLabel = res.ingestion_mode === "BACKGROUND_POLLING" ? "Background Polling" : "Onscreen Live Mode";
+    const modeLabel = res.ingestion_mode === "BACKGROUND_POLLING" ? "Background" : "Onscreen";
     notify(`Automation: ${res.automation_enabled ? "ON" : "OFF"} · ${modeLabel} (${res.polling_interval_sec}s)`);
     if (res.ingestion_mode === "ONSCREEN_LIVE") {
       await refresh(true);
@@ -1699,26 +1738,71 @@ if ($("topbar-kill-btn")) {
   });
 }
 
+let pendingHandoff = false;
+
+function setHandoffPendingState(isPending) {
+  pendingHandoff = isPending;
+  const topbarPending = $("topbar-switching-state");
+  const settingsPending = $("settings-pending-handoff-state");
+  if (topbarPending) topbarPending.style.display = isPending ? "inline-block" : "none";
+  if (settingsPending) settingsPending.style.display = isPending ? "inline-block" : "none";
+
+  const topbarBg = $("topbar-mode-btn-background");
+  const topbarOs = $("topbar-mode-btn-onscreen");
+  if (topbarBg) topbarBg.disabled = isPending || state.busy;
+  if (topbarOs) topbarOs.disabled = isPending || state.busy;
+
+  const modePolling = $("mode-btn-polling");
+  const modeLive = $("mode-btn-live");
+  if (modePolling) modePolling.disabled = isPending || state.busy;
+  if (modeLive) modeLive.disabled = isPending || state.busy;
+}
+
+async function executeRunModeHandoff(targetMode) {
+  if (state.busy || !state.snapshot || pendingHandoff) return;
+  const currentApp = state.snapshot.app || {};
+  const currentMode = currentApp.ingestion_mode || "BACKGROUND_POLLING";
+  const isCurrentBg = currentMode === "BACKGROUND_POLLING" || currentMode === "BACKGROUND_24_7";
+  const isTargetBg = targetMode === "BACKGROUND_POLLING" || targetMode === "BACKGROUND_24_7";
+  if (isCurrentBg === isTargetBg) return;
+
+  setHandoffPendingState(true);
+  try {
+    await mutate(async () => {
+      await api("/api/automation/handoff", {
+        method: "POST",
+        body: { target_mode: targetMode, reason: "Operator run mode handoff" },
+      });
+      await refresh(true);
+      notify(`Active run mode is now ${isTargetBg ? "Background" : "Onscreen"}`);
+    });
+  } catch (err) {
+    notify(`Handoff failed: ${err.message}`, "error");
+  } finally {
+    setHandoffPendingState(false);
+  }
+}
+
 async function executeHandoff() {
   if (state.busy || !state.snapshot) return;
   const currentApp = state.snapshot.app || {};
   const currentMode = currentApp.ingestion_mode || "BACKGROUND_POLLING";
   const isBackground = currentMode === "BACKGROUND_POLLING" || currentMode === "BACKGROUND_24_7";
   const targetMode = isBackground ? "ONSCREEN_LIVE" : "BACKGROUND_POLLING";
-  const label = isBackground ? "Onscreen" : "Background";
+  return executeRunModeHandoff(targetMode);
+}
 
-  if (!confirm(`Perform run mode handoff to ${label}? This waits for any in-flight AutoTrader cycle under the single-writer trading lock, then switches mode.`)) {
-    return;
-  }
-
-  await mutate(async () => {
-    await api("/api/automation/handoff", {
-      method: "POST",
-      body: { target_mode: targetMode, reason: "Operator run mode handoff" },
-    });
-    await refresh(true);
-    notify(`Handoff complete: Active run mode is now ${targetMode === "ONSCREEN_LIVE" ? "Onscreen" : "Background"}`);
-  });
+if ($("topbar-mode-btn-background")) {
+  $("topbar-mode-btn-background").addEventListener("click", () => executeRunModeHandoff("BACKGROUND_POLLING"));
+}
+if ($("topbar-mode-btn-onscreen")) {
+  $("topbar-mode-btn-onscreen").addEventListener("click", () => executeRunModeHandoff("ONSCREEN_LIVE"));
+}
+if ($("mode-btn-polling")) {
+  $("mode-btn-polling").addEventListener("click", () => executeRunModeHandoff("BACKGROUND_POLLING"));
+}
+if ($("mode-btn-live")) {
+  $("mode-btn-live").addEventListener("click", () => executeRunModeHandoff("ONSCREEN_LIVE"));
 }
 
 if ($("topbar-handoff-btn")) {
@@ -1726,6 +1810,26 @@ if ($("topbar-handoff-btn")) {
 }
 if ($("settings-handoff-btn")) {
   $("settings-handoff-btn").addEventListener("click", executeHandoff);
+}
+
+if ($("topbar-clock-widget")) {
+  $("topbar-clock-widget").addEventListener("click", () => {
+    window.location.hash = "settings";
+    if (typeof switchView === "function") {
+      switchView("settings");
+    }
+    setTimeout(() => {
+      const target = $("settings-trading-mode-wrap") || $("settings-trading-mode-toggle");
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        target.style.transition = "box-shadow 0.3s ease";
+        target.style.boxShadow = "0 0 0 2px #0284c7, 0 0 16px rgba(2, 132, 199, 0.4)";
+        setTimeout(() => {
+          target.style.boxShadow = "";
+        }, 2000);
+      }
+    }, 100);
+  });
 }
 
 if ($("hdr-mode-polling")) {

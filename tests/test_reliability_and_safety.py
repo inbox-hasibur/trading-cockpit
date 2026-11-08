@@ -266,14 +266,15 @@ def test_background_mode_requires_caps_and_24h_preflight(client, db):
     assert res2.status_code == 422
     assert "Background mode requires risk caps set" in str(res2.json())
 
-    # 3. Run preflight
-    res_pref = client.post("/api/automation/preflight")
-    assert res_pref.status_code == 200
+    # 3. Run preflight (mocking external gateway connectivity so test is self-contained)
+    with patch("scripts.preflight.run_preflight", return_value=([], True)):
+        res_pref = client.post("/api/automation/preflight")
+        assert res_pref.status_code == 200
 
-    # 4. Now handoff succeeds
-    res3 = client.post("/api/automation/handoff", json={"target_mode": "BACKGROUND_24_7"})
-    assert res3.status_code == 200
-    assert res3.json()["active_mode"] == "BACKGROUND_POLLING"
+        # 4. Now handoff succeeds
+        res3 = client.post("/api/automation/handoff", json={"target_mode": "BACKGROUND_24_7"})
+        assert res3.status_code == 200
+        assert res3.json()["active_mode"] == "BACKGROUND_POLLING"
 
 
 # -----------------------------------------------------------------------------

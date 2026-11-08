@@ -42,24 +42,32 @@ def auth_headers(monkeypatch):
 
 
 def test_topbar_and_settings_dom_elements():
-    """Verify Master toggle chip, emergency Kill button, handoff buttons and Run cycle now."""
+    """Verify Topbar market pill, run mode switch, automation toggle, Run cycle now, and settings."""
     with open("frontend/index.html", "r", encoding="utf-8") as f:
         html = f.read()
 
-    # Master automation chip & emergency kill
-    assert 'id="topbar-master-toggle"' in html
-    assert 'id="topbar-kill-btn"' in html
-    assert "Auto ON" in html or "topbar-master-label" in html
+    # Topbar market pill
+    assert 'id="topbar-clock-widget"' in html
+    assert 'id="market-status-dot"' in html
+    assert 'id="topbar-tmode-badge"' in html
+
+    # Topbar run mode segmented switch
+    assert 'id="topbar-run-mode-switch"' in html
+    assert 'id="topbar-mode-btn-background"' in html
+    assert 'id="topbar-mode-btn-onscreen"' in html
+
+    # Topbar automation switch
+    assert 'id="topbar-automation-control"' in html
+    assert 'id="topbar-automation-toggle-input"' in html
 
     # Run cycle now button
     assert 'id="run-cycle"' in html
     assert "Run cycle now" in html
 
-    # Run modes and handoff buttons
-    assert "Background 24/7" in html
-    assert "Onscreen Live" in html
-    assert 'id="topbar-handoff-btn"' in html
-    assert 'id="settings-handoff-btn"' in html
+    # Settings run modes and status line
+    assert 'id="mode-btn-polling"' in html
+    assert 'id="mode-btn-live"' in html
+    assert 'id="settings-runmode-status-line"' in html
 
 
 def test_master_automation_toggle(client, db):

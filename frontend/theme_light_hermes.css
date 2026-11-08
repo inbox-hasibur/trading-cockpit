@@ -848,6 +848,45 @@
   border-bottom-color: var(--line);
 }
 
+[data-theme="light"] .topbar-market-pill {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+[data-theme="light"] .topbar-market-pill:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+[data-theme="light"] .topbar-runmode-segmented {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .topbar-runmode-btn {
+  color: #64748b;
+}
+
+[data-theme="light"] .topbar-runmode-btn:hover:not(.active) {
+  color: #0f172a;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .topbar-runmode-btn.active {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+[data-theme="light"] .topbar-automation-control {
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .topbar-automation-title {
+  color: #0f172a;
+}
+
 
 /* Hermes: Resizable IDE Copilot Surface (VS Code / Antigravity Style) */
 

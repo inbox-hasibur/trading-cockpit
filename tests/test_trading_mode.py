@@ -51,18 +51,17 @@ def db(client):
 
 
 def test_ui_elements_in_index_html():
-    """Verify #trading-mode-toggle, banner, and labels in frontend/index.html."""
+    """Verify topbar market pill with mode badge and settings trading mode in frontend/index.html."""
     with open("frontend/index.html", "r", encoding="utf-8") as f:
         html = f.read()
 
-    # Permanent virtual banner
-    assert "StockNow virtual portfolio, no real money" in html
-    assert 'id="permanent-banner"' in html
+    # Permanent virtual banner deleted
+    assert 'id="permanent-banner"' not in html
+    assert "StockNow virtual portfolio, no real money" not in html
 
-    # Topbar trading mode toggle
-    assert 'id="trading-mode-toggle"' in html
-    assert "Live Hours (virtual)" in html
-    assert "Test Mode 24/7" in html
+    # Topbar market pill with trading mode badge
+    assert 'id="topbar-clock-widget"' in html
+    assert 'id="topbar-tmode-badge"' in html
 
     # Settings trading mode toggle
     assert 'id="settings-trading-mode-toggle"' in html

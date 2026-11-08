@@ -31,23 +31,41 @@
     </nav>
 
     <main class="workspace">
-      <div class="permanent-banner" id="permanent-banner">StockNow virtual portfolio, no real money</div>
       <header class="topbar">
         <div class="workspace-name"><span class="eyebrow">TRADING COCKPIT</span><span class="workspace-title">Humming Bird <span class="version">v0.01</span></span></div>
         <div class="topbar-right">
-          <div class="market-clock-widget" id="topbar-clock-widget" title="Dhaka Stock Exchange (DSE) Session Clock">
+          <!-- Item 3a: Market Pill -->
+          <button class="topbar-market-pill" id="topbar-clock-widget" type="button" title="DSE Trading Session & Trading Mode (Click to open Settings)">
             <span class="status-dot clock-dot" id="market-status-dot"></span>
-            <strong id="market-status-text">DSE CLOSED</strong>
-            <span class="clock-countdown" id="market-countdown-text">Next: 10:00 AM</span>
-          </div>
-
-          <button class="topbar-status-chip is-on" id="topbar-master-toggle" type="button" title="System Status: Click to view Settings">
-            <span class="chip-dot"></span>
-            <span id="topbar-status-text">ON · Background · Live Hours</span>
+            <span class="market-pill-status" id="market-status-text">DSE CLOSED</span>
+            <span class="market-pill-sep">·</span>
+            <span class="market-pill-countdown" id="market-countdown-text">next in ...</span>
+            <span class="topbar-tmode-badge badge-live" id="topbar-tmode-badge">Live Hours</span>
           </button>
 
+          <!-- Item 3b: Run Mode Segmented Switch -->
+          <div class="topbar-runmode-wrap">
+            <div class="topbar-runmode-segmented" id="topbar-run-mode-switch" role="radiogroup" aria-label="Run Mode">
+              <button type="button" class="topbar-runmode-btn active" id="topbar-mode-btn-background" data-mode="BACKGROUND_POLLING" title="Away from PC: runs 24/7 without a browser">Background</button>
+              <button type="button" class="topbar-runmode-btn" id="topbar-mode-btn-onscreen" data-mode="ONSCREEN_LIVE" title="At the PC: visible browser">Onscreen</button>
+            </div>
+            <span class="topbar-switching-state" id="topbar-switching-state" style="display:none;" title="Waiting for current trading cycle to finish before switching">Switching after current cycle...</span>
+          </div>
+
+          <!-- Item 3c: Labelled switch "Automation" ON / OFF -->
+          <div class="topbar-automation-control" id="topbar-automation-control">
+            <span class="topbar-automation-title">Automation</span>
+            <label class="ios-switch topbar-ios-switch" title="Toggle Automation ON/OFF">
+              <input type="checkbox" id="topbar-automation-toggle-input" checked>
+              <span class="ios-slider"></span>
+            </label>
+            <span class="topbar-automation-state is-on" id="topbar-automation-state">ON</span>
+          </div>
+
+          <!-- Item 3d: Run cycle now button -->
           <button class="button primary" id="run-cycle" type="button" disabled title="Run trading cycle now"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6V4Z"/></svg><span id="run-label">Run cycle now</span></button>
 
+          <!-- Theme toggle button -->
           <button class="theme-toggle-btn" id="theme-toggle-btn" type="button" title="Switch Theme (Dark / Light)">
             <span class="theme-icon">◐</span> <span id="theme-name">Dark</span>
           </button>
@@ -449,10 +467,9 @@
                   </div>
                 </button>
               </div>
-              <div style="margin-top: 12px;">
-                <button type="button" class="button secondary" id="settings-handoff-btn" style="width: 100%; justify-content: center; font-weight: 600; padding: 9px 14px;">
-                  <span class="handoff-icon">⇄</span> <span id="settings-handoff-label">Go Onscreen</span>
-                </button>
+              <div class="settings-runmode-status-line" id="settings-runmode-status-line" style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--text-muted, #94a3b8); padding: 4px 2px;">
+                <span id="settings-active-mode-text" style="font-weight: 600; color: var(--text);">Active: Background</span>
+                <span id="settings-pending-handoff-state" class="pending-switch-state" style="display: none; color: #38bdf8; font-weight: 500;">Switching after current cycle...</span>
               </div>
             </div>
 
