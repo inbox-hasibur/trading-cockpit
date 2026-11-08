@@ -567,11 +567,12 @@ trading-cockpit/
 │   ├── verify_chat_card.py                  # Playwright visual card renderer & screenshot capture probe
 │   └── verify_step10_ui.py                  # Step 10 UI verification probe
 │
-├── tests/                                   # Pytest Automated Test Suite (204 Tests)
+├── tests/                                   # Pytest Automated Test Suite (211 Tests)
 │   ├── conftest.py                          # Shared test fixtures, mock client & test database setup
 │   ├── fixtures/                            # Test fixtures, recorded JSON responses & HAR captures
 │   ├── test_api.py                          # REST API endpoint tests
 │   ├── test_chat_order_preview_card.py      # Chat order preview card, execution & failure rollback tests
+│   ├── test_code_map.py                     # Codebase map exclude rules & AST indexing tests
 │   ├── test_engine.py                       # Quantitative engine unit tests (T2 ledger, fee math, curves)
 │   ├── test_humming_bird_plugin.py          # Hermes plugin tool handler tests with mock kernel
 │   ├── test_ingestion_switch.py             # Ingestion mode toggle & handoff tests

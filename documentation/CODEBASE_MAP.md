@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-08 09:15:20 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-08 09:23:44 UTC**.
 > **Excluded Paths:** `vendor/`, `node_modules/`, `.venv/`, `venv/`, `.git/`, `__pycache__/`, `backend/data/`, `.pytest_cache/`, `dist/`, `build/`, `scratch/`
 > **Pinned Vendor Commit (`vendor/hermes-agent`):** `b777adb7918713e5786cc9d95ad5b854074f2cb6`
 
@@ -10,11 +10,11 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 78 | 22,998 | Python Core Kernel, Engine, Tests & Plugins |
+| `.py` | 78 | 22,999 | Python Core Kernel, Engine, Tests & Plugins |
 | `.css` | 2 | 9,339 | Custom Dark / Light / Terminal Design System |
 | `.json` | 13 | 5,659 | Fixtures & Configuration |
 | `.js` | 3 | 5,256 | Vanilla ES6+ Reactive Terminal Controller & UI |
-| `.md` | 10 | 3,916 | Architecture & Strategy Documentation |
+| `.md` | 10 | 3,923 | Architecture & Strategy Documentation |
 | `.html` | 1 | 1,103 | Single Page Application DOM Structure |
 | `.ps1` | 2 | 199 | Windows PowerShell Automation |
 | `.yaml` | 1 | 32 | Manifest & Plugin Configuration |
@@ -23,7 +23,7 @@
 | `.sh` | 1 | 9 | Shell Scripts |
 | `.bat` | 1 | 8 | Batch Launchers |
 | *other* | 9 | 43,383 | Other Configuration, Assets & Dotfiles |
-| **TOTAL** | **124** | **91,926** | *Entire Humming Bird Repository* |
+| **TOTAL** | **124** | **91,934** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -2112,4 +2112,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/verify_chat_card.py` | `main` | 121 | 3 | Decompose into sub-functions |
 
 
-> **Audit Summary:** 49 Python modules inspected, 65 FastAPI endpoints registered, 108 JS functions mapped, 300 DOM IDs indexed, 22 Hermes tools registered, 91,926 total LOC indexed across 124 repository files.
+> **Audit Summary:** 49 Python modules inspected, 65 FastAPI endpoints registered, 108 JS functions mapped, 300 DOM IDs indexed, 22 Hermes tools registered, 91,934 total LOC indexed across 124 repository files.

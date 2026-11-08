@@ -136,3 +136,4 @@ def test_pinned_vendor_commit():
     sha = get_pinned_vendor_commit(REPO_ROOT)
     assert len(sha) == 40
     assert sha == "b777adb7918713e5786cc9d95ad5b854074f2cb6"
+

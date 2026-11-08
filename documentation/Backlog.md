@@ -320,6 +320,12 @@
   - Interactive Confirm / Cancel buttons (operator never types parameters).
   - Transition to verified receipt state or red `live submission failed: <reason>` with guaranteed no ledger change.
   - 203 automated test suites passing.
+- [x] **Step 11: Documentation Consolidation & Codebase Map Regeneration:**
+  - Consolidated `documentation/` to exactly 4 canonical files (`About_Project.md`, `Backlog.md`, `CODEBASE_MAP.md`, `STOCKNOW_SITE_MAP.md`).
+  - Fixed `scripts/generate_code_map.py` discovery to exclude submodules (`vendor/hermes-agent`), `node_modules/`, `.venv/`, `backend/data/`, `scratch/`, etc.
+  - Suffix-only parsing with long-tail grouping into `*other*`, zero `.png`, exact 10 `.md`, and low-hundreds `.py`.
+  - Mapped 108 JS controller functions (`app.js`, `charts.js`, `hermes_ui.js`), 300 HTML element IDs, and all 22 registered `hb_*` plugin tools with line references.
+  - 211 automated test suites passing (including `tests/test_code_map.py`).
 
 ---
 
