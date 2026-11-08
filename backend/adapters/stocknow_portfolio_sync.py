@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from backend.config import Settings, get_allowed_portfolios, get_portfolio_name
 from backend.database import CompanyProfile, CustomRule, Database, DecisionLog, PortfolioState, TaxLot, TradeLog
 from backend.engine.money import decimal, money, price, purchase_amount
-from backend.engine.t2_ledger import BUCKETS, TradingCalendar, assert_ledger
+from backend.engine.t2_ledger import BUCKETS, TradingCalendar, assert_ledger, bucket_balances
 
 logger = logging.getLogger(__name__)
 
@@ -87,19 +87,29 @@ def extract_hummingbird_portfolio(
     if not raw_p:
         raise ValueError("Could not locate virtual portfolio 'Humming Bird' in StockNow session.")
 
-    p_id = str(raw_p.get("portfolio_id") or raw_p.get("id") or "hummingbird_v1")
+    p_id = str(raw_p.get("portfolio_id") or raw_p.get("id") or "164580")
     p_name = str(raw_p.get("portfolio_name") or raw_p.get("name") or "Humming Bird")
-    cash_val = raw_p.get("cash_balance") or raw_p.get("cash") or raw_p.get("available_cash", 0)
+    cash_val = (
+        raw_p.get("cash_amount")
+        if raw_p.get("cash_amount") is not None
+        else (raw_p.get("cash_balance") or raw_p.get("cash") or raw_p.get("available_cash", 0))
+    )
 
-    raw_holdings = raw_p.get("holdings") or raw_p.get("stocks") or raw_p.get("items") or []
+    raw_holdings = (
+        raw_p.get("scrips")
+        or raw_p.get("holdings")
+        or raw_p.get("stocks")
+        or raw_p.get("items")
+        or []
+    )
     raw_ledger = raw_p.get("ledger") or raw_p.get("transactions") or []
     buy_date_map: dict[str, str] = {}
     for entry in raw_ledger:
         if isinstance(entry, dict):
-            entry_type = str(entry.get("type") or entry.get("side") or "").upper()
+            entry_type = str(entry.get("type") or entry.get("side") or entry.get("action") or "").upper()
             if "BUY" in entry_type or not entry_type:
-                sym_raw = str(entry.get("symbol") or entry.get("description") or "").upper().strip()
-                date_val = entry.get("date") or entry.get("trade_on") or entry.get("trade_date")
+                sym_raw = str(entry.get("symbol") or entry.get("description") or entry.get("code") or "").upper().strip()
+                date_val = entry.get("date") or entry.get("trade_on") or entry.get("trade_date") or entry.get("created_at")
                 if sym_raw and date_val:
                     d_iso = parse_stocknow_ledger_date(str(date_val))
                     if d_iso and sym_raw not in buy_date_map:
@@ -109,10 +119,10 @@ def extract_hummingbird_portfolio(
     for h in raw_holdings:
         if not isinstance(h, dict):
             continue
-        sym = str(h.get("symbol") or h.get("ticker") or h.get("code") or "").strip().upper()
-        qty = int(h.get("quantity") or h.get("qty") or h.get("shares") or 0)
-        avg = decimal(h.get("avg_cost") or h.get("average_cost") or h.get("buy_price") or h.get("rate") or 0)
-        raw_acq = str(h.get("acquired_date") or h.get("date") or h.get("buy_date") or "")
+        sym = str(h.get("symbol") or h.get("ticker") or h.get("code") or h.get("instrument_id") or "").strip().upper()
+        qty = int(h.get("quantity") or h.get("qty") or h.get("shares") or h.get("no_of_shares") or 0)
+        avg = decimal(h.get("avg_cost") or h.get("average_cost") or h.get("buy_price") or h.get("buying_price") or h.get("rate") or 0)
+        raw_acq = str(h.get("acquired_date") or h.get("date") or h.get("buy_date") or h.get("buying_date") or "")
         acq_date = parse_stocknow_ledger_date(raw_acq) if raw_acq else buy_date_map.get(sym)
 
         if sym and qty > 0 and avg > Decimal("0"):
@@ -268,6 +278,11 @@ def _execute_reconciliation(
     if not state:
         raise RuntimeError("Demo database is not initialized.")
 
+    if "holdings" not in portfolio_data and (
+        "scrips" in portfolio_data or "cash_amount" in portfolio_data or "id" in portfolio_data
+    ):
+        portfolio_data = extract_hummingbird_portfolio(injected_portfolio=portfolio_data)
+
     target_pid = str(portfolio_data.get("portfolio_id") or settings.stocknow_live_portfolio_id)
     allowed = get_allowed_portfolios(settings)
     is_scoped = target_pid in allowed
@@ -278,6 +293,13 @@ def _execute_reconciliation(
     else:
         existing_lots = session.scalars(select(TaxLot)).all()
         existing_trades = session.scalars(select(TradeLog)).all()
+
+    old_holdings_map: dict[str, int] = {}
+    for l in existing_lots:
+        old_holdings_map[l.symbol] = old_holdings_map.get(l.symbol, 0) + l.remaining_qty
+
+    old_balances = bucket_balances(session, state, portfolio_id=target_pid)
+    old_cash = sum((b.available_cash for b in old_balances.values()), Decimal("0"))
 
     lots_snap = [{
         "id": l.id, "symbol": l.symbol, "bucket": l.bucket, "acquired_on": l.acquired_on.isoformat(),
@@ -390,6 +412,26 @@ def _execute_reconciliation(
     session.flush()
     assert_ledger(session, state, portfolio_id=target_pid)
 
+    new_holdings_map = {h["symbol"]: int(h["quantity"]) for h in portfolio_data.get("holdings", [])}
+    all_syms = sorted(set(old_holdings_map.keys()) | set(new_holdings_map.keys()))
+    holdings_diff = {
+        s: {
+            "local_qty": old_holdings_map.get(s, 0),
+            "stocknow_qty": new_holdings_map.get(s, 0),
+            "diff": new_holdings_map.get(s, 0) - old_holdings_map.get(s, 0),
+        }
+        for s in all_syms
+        if old_holdings_map.get(s, 0) != new_holdings_map.get(s, 0)
+    }
+    cash_diff = float(cash_bal - old_cash)
+
+    diff_report = {
+        "old_cash": float(old_cash),
+        "new_cash": float(cash_bal),
+        "cash_diff": cash_diff,
+        "holdings_diff": holdings_diff,
+    }
+
     return {
         "success": True, "portfolio_id": target_pid,
         "portfolio_name": portfolio_data.get("portfolio_name") or get_portfolio_name(target_pid, settings),
@@ -397,6 +439,7 @@ def _execute_reconciliation(
         "cash_balance": float(cash_bal), "total_holdings_cost": float(total_cost),
         "initial_capital": float(state.initial_capital),
         "synced_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "checkpoint_id": cp.id,
+        "diff": diff_report,
     }
 
 
@@ -408,3 +451,82 @@ def reconcile_portfolio_to_db(
         return _execute_reconciliation(target, settings, portfolio_data, checkpoint_mgr)
     with target.write() as session:
         return _execute_reconciliation(session, settings, portfolio_data, checkpoint_mgr)
+
+
+async def sync_stocknow_portfolio_via_api(
+    portfolio_id: str | int,
+    api_client: Any | None = None,
+    live_client: Any | None = None,
+    settings: Settings | None = None,
+    injected_portfolio: dict[str, Any] | None = None,
+    injected_ledger: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Sync target portfolio via StockNow REST API (GET /portfolios/{id} & ledger).
+
+    Never writes zero holdings or default cash on failure.
+    Uses browser DOM sync only as an Onscreen cross-check (logging mismatches as warnings).
+    """
+    from backend.adapters.stocknow_api import StockNowAPI, SchemaChangedError
+
+    target_pid = str(portfolio_id).strip()
+    api = api_client or StockNowAPI()
+
+    # 1. Fetch portfolio show data
+    if injected_portfolio is not None:
+        raw_show = injected_portfolio
+    else:
+        try:
+            raw_show = await api.get_portfolio(target_pid)
+        except Exception as exc:
+            logger.error("Portfolio API sync failed for portfolio %s: %s. Aborting without mutating ledger.", target_pid, exc)
+            raise
+
+    # 2. Fetch portfolio ledger data
+    if injected_ledger is not None:
+        raw_ledger = injected_ledger
+    else:
+        try:
+            raw_ledger = await api.get_ledger(target_pid)
+        except Exception as exc:
+            logger.warning("Portfolio ledger API fetch failed: %s (continuing with show data)", exc)
+            raw_ledger = {}
+
+    # 3. Extract portfolio data from API responses
+    # A failed or empty payload must never proceed to write zero holdings or default cash!
+    if not isinstance(raw_show, dict) or "id" not in raw_show:
+        raise SchemaChangedError(f"Invalid portfolio API response for {target_pid}: {raw_show}")
+
+    # Combine ledger into show for buy_date_map if available
+    combined = dict(raw_show)
+    if raw_ledger and isinstance(raw_ledger, dict) and ("ledger" in raw_ledger or "transactions" in raw_ledger):
+        combined["ledger"] = raw_ledger.get("ledger") or raw_ledger.get("transactions")
+
+    extracted = extract_hummingbird_portfolio(
+        client=live_client,
+        injected_portfolio=combined,
+    )
+
+    # 4. Browser DOM Onscreen Cross-Check (Requirement 5)
+    if live_client and getattr(live_client, "page", None) and not getattr(live_client.page, "is_closed", lambda: False)():
+        try:
+            dom_data = await extract_hummingbird_portfolio_from_browser(live_client)
+            if dom_data:
+                dom_cash = float(dom_data.get("cash_balance", 0))
+                dom_holdings = {h["symbol"]: h["quantity"] for h in dom_data.get("holdings", [])}
+                api_cash = float(extracted["cash_balance"])
+                api_holdings = {h["symbol"]: h["quantity"] for h in extracted["holdings"]}
+
+                if abs(api_cash - dom_cash) > 0.01:
+                    logger.warning(
+                        "StockNow API vs DOM cross-check cash mismatch: API=৳%.2f vs DOM=৳%.2f (diff=৳%.2f)",
+                        api_cash, dom_cash, api_cash - dom_cash,
+                    )
+                if api_holdings != dom_holdings:
+                    logger.warning(
+                        "StockNow API vs DOM cross-check holdings mismatch: API=%s vs DOM=%s",
+                        api_holdings, dom_holdings,
+                    )
+        except Exception as dom_err:
+            logger.warning("Browser DOM cross-check failed: %s (API data remains authoritative)", dom_err)
+
+    return extracted

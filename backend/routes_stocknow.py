@@ -16,6 +16,7 @@ logger = logging.getLogger("hummingbird.stocknow_routes")
 from backend.adapters.stocknow_client import StockNowLiveClient
 from backend.adapters.stocknow_market_sync import (
     extract_quotes_from_stocknow,
+    fetch_stocknow_live_market_data,
     get_or_fetch_all_dse_shares,
     sync_live_market_to_db,
 )
@@ -23,8 +24,9 @@ from backend.adapters.stocknow_portfolio_sync import (
     extract_hummingbird_portfolio,
     extract_hummingbird_portfolio_from_browser,
     reconcile_portfolio_to_db,
+    sync_stocknow_portfolio_via_api,
 )
-from backend.config import Settings
+from backend.config import Settings, get_active_target_portfolio
 from backend.database import CompanyProfile, Database, PortfolioState, TaxLot, TradeLog
 from backend.portfolio import build_snapshot
 
@@ -153,7 +155,10 @@ def build_stocknow_router(
     @router.post("/sync-market")
     async def post_stocknow_sync_market(body: StockNowMarketSyncRequest | None = None):
         injected = body.payload if body is not None else None
-        quotes = await extract_quotes_from_stocknow(stocknow_client, injected_payload=injected)
+        if injected:
+            quotes = await extract_quotes_from_stocknow(stocknow_client, injected_payload=injected)
+        else:
+            quotes = await fetch_stocknow_live_market_data(client=stocknow_client)
         result = sync_live_market_to_db(database, quotes)
         if result["synced_count"] > 0:
             stocknow_client.last_sync_at = result["synced_at"]
@@ -186,14 +191,29 @@ def build_stocknow_router(
     @router.post("/sync-portfolio")
     async def post_stocknow_sync_portfolio(body: StockNowPortfolioSyncRequest | None = None):
         injected = body.injected_portfolio if body is not None else None
-        extracted = None
-        if not injected and stocknow_client.state == "READY":
-            try:
-                extracted = await extract_hummingbird_portfolio_from_browser(stocknow_client)
-            except Exception as exc:
-                logger.warning("Browser extraction from live tab failed, falling back: %s", exc)
-        if not extracted:
+
+        with database.read() as session:
+            state = session.scalars(select(PortfolioState)).first()
+            trading_mode = getattr(state, "trading_mode", "LIVE_HOURS") if state else "LIVE_HOURS"
+
+        target_pid = get_active_target_portfolio(trading_mode, settings) or settings.stocknow_live_portfolio_id
+
+        if injected:
             extracted = extract_hummingbird_portfolio(stocknow_client, injected_portfolio=injected)
+        else:
+            from backend.adapters.stocknow_api import StockNowError
+            try:
+                extracted = await sync_stocknow_portfolio_via_api(
+                    portfolio_id=target_pid,
+                    live_client=stocknow_client,
+                    settings=settings,
+                )
+            except StockNowError as sne:
+                logger.error("StockNow API portfolio sync failed: %s", sne)
+                raise HTTPException(status_code=422, detail={"error": sne.error_code, "detail": str(sne)})
+            except Exception as exc:
+                logger.error("StockNow API portfolio sync unexpected error: %s", exc)
+                raise HTTPException(status_code=422, detail={"error": "SYNC_FAILED", "detail": str(exc)})
 
         result = reconcile_portfolio_to_db(database, settings, extracted)
         if result.get("success"):

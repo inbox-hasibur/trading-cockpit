@@ -37,7 +37,7 @@ class StockNowAdapter:
         self.last_order_receipt: dict | None = None
 
     def quote(self, company: CompanyProfile, as_of: date) -> DemoQuote:
-        if not (company.source.startswith("DEMO_") or company.source == "STOCKNOW_LIVE"):
+        if not (company.source.startswith("DEMO_") or company.source in ("STOCKNOW_LIVE", "STOCKNOW_API")):
             raise QuoteError("This adapter only accepts explicitly synthetic data or verified StockNow live quotes.")
         if company.quote_on != as_of:
             raise QuoteError("Quote date does not match the current demo session.")
@@ -49,11 +49,11 @@ class StockNowAdapter:
                 raise QuoteError("Quote and final history observation do not reconcile.")
         except (IndexError, KeyError, TypeError, ArithmeticError) as exc:
             raise QuoteError("Quote history is invalid.") from exc
-        quote_source = "STOCKNOW_LIVE" if company.source == "STOCKNOW_LIVE" else "DEMO_PAPER"
+        quote_source = company.source if company.source in ("STOCKNOW_LIVE", "STOCKNOW_API") else "DEMO_PAPER"
         return DemoQuote(company.symbol, company.last_price, company.price_history, as_of, source=quote_source)
 
     def paper_fill(self, quote: DemoQuote, quantity: int) -> Decimal:
-        if quantity <= 0 or quote.source not in ("DEMO_PAPER", "STOCKNOW_LIVE"):
+        if quantity <= 0 or quote.source not in ("DEMO_PAPER", "STOCKNOW_LIVE", "STOCKNOW_API"):
             raise ValueError("Only positive paper fills are allowed.")
         return quote.unit_price  # No simulated liquidity/slippage: disclosed in UI/docs.
 

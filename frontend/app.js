@@ -86,7 +86,7 @@ function setPnl(id, value, asPercentage = false) {
 }
 
 function tone(action) {
-  if (/CRASH|BLOCKED|INVALID|STALE/.test(action)) return "negative";
+  if (/CRASH|BLOCKED|INVALID|STALE|NO_DATA/.test(action)) return "negative";
   if (/BUY_ZONE|^BUY$/.test(action)) return "buy";
   if (/SELL_ZONE|^SELL$|SELL_TIER|RECOVERY|PULLBACK|RUNNER/.test(action)) return "sell";
   if (/WAIT|MID_RANGE|NO_CHURN|BUDGET/.test(action)) return "neutral";
@@ -96,7 +96,7 @@ function tone(action) {
 }
 
 function badge(action, label) {
-  const labels = { CRASH_QUARANTINE: "CRASH GUARD", BUY_ZONE: "BUY ZONE", SELL_ZONE: "SELL ZONE", MID_RANGE: "MID RANGE" };
+  const labels = { CRASH_QUARANTINE: "CRASH GUARD", BUY_ZONE: "BUY ZONE", SELL_ZONE: "SELL ZONE", MID_RANGE: "MID RANGE", NO_DATA: "NO DATA" };
   const node = element("span", `signal-badge tone-${tone(action)}`, label || labels[action] || action.replaceAll("_", " "));
   node.title = action;
   return node;

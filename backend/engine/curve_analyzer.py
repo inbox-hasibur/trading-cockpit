@@ -42,6 +42,8 @@ def analyze_curve(
     crash_drawdown_pct: Decimal = Decimal("15"),
     min_net_upside_pct: Decimal = Decimal("1.5"),
 ) -> CurveAnalysis:
+    if not history:
+        return CurveAnalysis("NO_DATA", "No historical candle data available from StockNow API.")
     if len(history) < 7:
         return CurveAnalysis("WAIT_DATA", "At least seven session closes are required.")
     try:

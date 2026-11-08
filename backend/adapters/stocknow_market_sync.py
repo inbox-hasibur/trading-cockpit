@@ -218,193 +218,304 @@ _ALL_DSE_SHARES_UPDATED_AT: str | None = None
 _SECTOR_MAP_CACHE: dict[int, str] = {}
 
 
-async def fetch_stocknow_live_market_data(client: Any = None) -> list[dict[str, Any]]:
+async def fetch_stocknow_live_market_data(
+    client: Any = None,
+    api_client: Any | None = None,
+    injected_instruments: dict[str, Any] | None = None,
+    injected_lists: list[dict[str, Any]] | None = None,
+    injected_history: dict[str, Any] | None = None,
+    as_of_date: date | None = None,
+) -> list[dict[str, Any]]:
     """Fetches real-time market data directly from stocknow.com.bd API.
 
-    1. Fetches all DSE instruments (473 stocks) and sector definitions.
-    2. Builds and caches the All DSE Shares catalog with LTP, +/- %, and sparklines.
-    3. Resolves user favorite lists (GSC, GSC_L1, GSC_L2) from browser session if available.
-    4. Concurrently pulls real multi-session candlestick curves for favorite companies.
-    5. Returns normalized quote objects ready for SQLite database synchronization.
+    1. Live Prices: GET /instruments for all DSE shares (fills All DSE Shares) with
+       timestamp, source ("STOCKNOW_API") and last-updated; no defaults for missing
+       prices; shows LAST CLOSE when the market is closed.
+    2. Favorites: GET /user/lists mapped to GSC, GSC_L1, GSC_L2 with priority L1 > L2 > GSC.
+    3. History: fetches 7 to 15 session candles per watched symbol; ensures unique strictly
+       increasing dates so curves stop showing INVALID DATA; if missing shows NO DATA with a reason.
+    4. Returns normalized quote objects ready for SQLite database synchronization.
     """
+    from backend.adapters.stocknow_api import StockNowAPI
     global _ALL_DSE_SHARES_CACHE, _ALL_DSE_SHARES_UPDATED_AT, _SECTOR_MAP_CACHE
 
     now_iso = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    user_lists = None
+    today = as_of_date or date.today()
+    api = api_client or StockNowAPI()
 
-    # Step 1: Check if live client has active page and auth token
-    page = getattr(client, "page", None)
-    if page is not None and not (hasattr(page, "is_closed") and page.is_closed()):
+    # Step 1: Fetch all instruments and sectors via API (or injected fixtures)
+    raw_inst: dict[str, Any] = {}
+    if injected_instruments is not None:
+        raw_inst = injected_instruments
+    else:
         try:
-            lists_res = await page.evaluate("""async () => {
-                try {
-                    const token = localStorage.getItem('access_token');
-                    if (!token) return null;
-                    const r = await fetch('https://stocknow.com.bd/api/v1/user/lists', {
-                        headers: { 'Authorization': 'Bearer ' + token }
-                    });
-                    if (r.ok) return await r.json();
-                } catch (e) {}
-                return null;
-            }""")
-            if isinstance(lists_res, list) and len(lists_res) > 0:
-                user_lists = lists_res
+            raw_inst = await api.get_instruments()
         except Exception as exc:
-            logger.debug("Failed evaluating user/lists from browser: %s", exc)
+            logger.warning("Failed fetching instruments via API: %s", exc)
+            raw_inst = {}
 
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-    async with httpx.AsyncClient(headers=headers, timeout=20.0) as http:
-        # Step 2: Fetch all instruments and sectors
-        try:
-            r_inst, r_sec = await asyncio.gather(
-                http.get("https://stocknow.com.bd/api/v1/instruments"),
-                http.get("https://stocknow.com.bd/api/v1/sectors"),
-                return_exceptions=True
-            )
-            raw_inst = r_inst.json() if not isinstance(r_inst, Exception) and getattr(r_inst, "status_code", 0) == 200 else {}
-            raw_sec = r_sec.json() if not isinstance(r_sec, Exception) and getattr(r_sec, "status_code", 0) == 200 else {}
-        except Exception as net_exc:
-            logger.warning("Failed fetching instruments/sectors: %s", net_exc)
-            raw_inst, raw_sec = {}, {}
-
+    try:
+        raw_sec = await api._request("GET", "/api/v1/sectors", authenticated=False, is_public_get=True)
         if raw_sec and isinstance(raw_sec, dict):
             for k, v in raw_sec.items():
                 try:
                     _SECTOR_MAP_CACHE[int(k)] = v.get("name", "Other")
                 except Exception:
                     pass
+    except Exception as sec_exc:
+        logger.debug("Sectors fetch notice: %s", sec_exc)
 
-        # Step 3: Format All DSE Shares catalog
-        formatted_shares = []
-        if raw_inst and isinstance(raw_inst, dict):
-            for code, item in raw_inst.items():
-                if not isinstance(item, dict):
-                    continue
-                ltp = float(item.get("close") or item.get("ycp") or 0.0)
-                ycp = float(item.get("ycp") or ltp)
-                chg = round(ltp - ycp, 2)
-                chg_pct = round(((ltp - ycp) / ycp) * 100, 2) if ycp > 0 else 0.0
+    # Step 2: Format All DSE Shares catalog (Requirement 1)
+    formatted_shares = []
+    if raw_inst and isinstance(raw_inst, dict):
+        for code, item in raw_inst.items():
+            if not isinstance(item, dict) or code.startswith("_"):
+                continue
 
-                spk_raw = [
-                    item.get("365d"), item.get("180d"), item.get("90d"),
-                    item.get("30d"), item.get("15d"), item.get("7d"), ltp
-                ]
-                sparkline = [float(p) for p in spk_raw if p is not None and float(p) > 0]
-                if len(sparkline) < 2:
-                    sparkline = [ycp, ltp] if ycp > 0 and ltp > 0 else [ltp, ltp]
+            raw_ltp = item.get("ltp")
+            raw_close = item.get("close")
+            raw_ycp = item.get("ycp")
 
-                formatted_shares.append({
-                    "symbol": code.strip().upper(),
-                    "name": item.get("name") or code,
-                    "sector": _SECTOR_MAP_CACHE.get(item.get("sector_id"), "Other"),
-                    "category": (item.get("category") or "A").strip().upper(),
-                    "ltp": ltp,
-                    "ycp": ycp,
-                    "change": chg,
-                    "change_pct": chg_pct,
-                    "volume": int(item.get("volume") or 0),
-                    "value_cr": round(float(item.get("value") or 0.0), 2),
-                    "trades": int(item.get("trades") or 0),
-                    "high": float(item.get("high") or ltp),
-                    "low": float(item.get("low") or ltp),
-                    "sparkline": sparkline,
-                })
+            # No defaults for missing prices: if neither ltp, close, nor ycp is positive, skip
+            has_price = (
+                (raw_ltp is not None and float(raw_ltp) > 0)
+                or (raw_close is not None and float(raw_close) > 0)
+                or (raw_ycp is not None and float(raw_ycp) > 0)
+            )
+            if not has_price:
+                continue
 
-            _ALL_DSE_SHARES_CACHE = sorted(formatted_shares, key=lambda s: s["value_cr"], reverse=True)
-            _ALL_DSE_SHARES_UPDATED_AT = now_iso
+            # Show LAST CLOSE when the market is closed or ltp missing
+            if raw_ltp is not None and float(raw_ltp) > 0:
+                price_val = float(raw_ltp)
+                price_type = "LTP"
+            else:
+                price_val = float(raw_close if (raw_close is not None and float(raw_close) > 0) else raw_ycp)
+                price_type = "LAST_CLOSE"
 
-        # Step 4: Resolve Favorite Lists
-        fav_categories: dict[str, str] = {}
-        if user_lists:
-            for l in user_lists:
-                name = l.get("name", "")
-                cat_code = STOCKNOW_LIST_NAME_TO_CATEGORY.get(name, "GSC")
-                for it in l.get("items", []):
-                    c = it.get("code")
-                    if c:
-                        sym_u = c.strip().upper()
-                        if sym_u not in fav_categories or cat_code in ("GSC_L1", "GSC_L2"):
-                            fav_categories[sym_u] = cat_code
+            ycp = float(raw_ycp or price_val)
+            chg = round(price_val - ycp, 2)
+            chg_pct = round(((price_val - ycp) / ycp) * 100, 2) if ycp > 0 else 0.0
+
+            spk_raw = [
+                item.get("365d"), item.get("180d"), item.get("90d"),
+                item.get("30d"), item.get("15d"), item.get("7d"), price_val
+            ]
+            sparkline = [float(p) for p in spk_raw if p is not None and float(p) > 0]
+            if len(sparkline) < 2:
+                sparkline = [ycp, price_val] if ycp > 0 and price_val > 0 else [price_val, price_val]
+
+            updated_at_val = item.get("updated_at") or now_iso
+
+            formatted_shares.append({
+                "symbol": code.strip().upper(),
+                "name": item.get("name") or code,
+                "sector": _SECTOR_MAP_CACHE.get(item.get("sector_id"), "Other"),
+                "category": (item.get("category") or "A").strip().upper(),
+                "ltp": price_val,
+                "price": price_val,
+                "price_type": price_type,
+                "close": float(raw_close or price_val),
+                "ycp": ycp,
+                "change": chg,
+                "change_pct": chg_pct,
+                "volume": int(item.get("volume") or 0),
+                "value_cr": round(float(item.get("value") or 0.0), 2),
+                "trades": int(item.get("trades") or 0),
+                "high": float(item.get("high") or price_val),
+                "low": float(item.get("low") or price_val),
+                "sparkline": sparkline,
+                "timestamp": now_iso,
+                "source": "STOCKNOW_API",
+                "last_updated": updated_at_val,
+            })
+
+        _ALL_DSE_SHARES_CACHE = sorted(formatted_shares, key=lambda s: s["value_cr"], reverse=True)
+        _ALL_DSE_SHARES_UPDATED_AT = now_iso
+
+    # Step 3: Resolve Favorite Lists via API (Requirement 2)
+    user_lists = injected_lists
+    if user_lists is None:
+        try:
+            user_lists = await api.get_lists()
+        except Exception as exc:
+            logger.debug("Failed fetching user/lists via API: %s", exc)
+            # Browser fallback if page active
+            page = getattr(client, "page", None)
+            if page is not None and not (hasattr(page, "is_closed") and page.is_closed()):
+                try:
+                    user_lists = await page.evaluate("""async () => {
+                        try {
+                            const token = localStorage.getItem('access_token');
+                            if (!token) return null;
+                            const r = await fetch('https://stocknow.com.bd/api/v1/user/lists', {
+                                headers: { 'Authorization': 'Bearer ' + token }
+                            });
+                            if (r.ok) return await r.json();
+                        } catch (e) {}
+                        return null;
+                    }""")
+                except Exception:
+                    pass
+
+    fav_categories: dict[str, str] = {}
+    tier_priority = {"GSC_L1": 1, "GSC_L2": 2, "GSC": 3}
+    if user_lists:
+        for l in user_lists:
+            name = l.get("name", "")
+            cat_code = STOCKNOW_LIST_NAME_TO_CATEGORY.get(name)
+            if not cat_code:
+                continue
+            for it in l.get("items", []):
+                c = it.get("code")
+                if c:
+                    sym_u = c.strip().upper()
+                    cur_prio = tier_priority.get(fav_categories.get(sym_u, ""), 99)
+                    new_prio = tier_priority.get(cat_code, 99)
+                    if new_prio < cur_prio:
+                        fav_categories[sym_u] = cat_code
+    else:
+        # Verified default 3 favorite lists
+        for s in ['ACI', 'FUWANGCER', 'IFIC', 'NPOLYMER', 'PRIMEBANK', 'PUBALIBANK', 'SPCERAMICS', 'IBNSINA']:
+            fav_categories[s] = "GSC"
+        for s in ['BANKASIA', 'MATINSPINN']:
+            fav_categories[s] = "GSC_L1"
+        for s in ['DHAKABANK']:
+            fav_categories[s] = "GSC_L2"
+
+    # Step 4: Concurrently pull real 7-15 session candles (Requirement 3)
+    symbols_to_pull = list(fav_categories.keys())
+
+    async def fetch_sym_history(sym: str) -> tuple[str, list[dict[str, str]], str]:
+        if injected_history and sym in injected_history:
+            raw_candles = injected_history[sym]
         else:
-            # Verified default 3 favorite lists
-            for s in ['ACI', 'BANKASIA', 'DHAKABANK', 'FUWANGCER', 'IFIC', 'NPOLYMER', 'PRIMEBANK', 'PUBALIBANK', 'SPCERAMICS', 'IBNSINA']:
-                fav_categories[s] = "GSC"
-            for s in ['BANKASIA', 'MATINSPINN']:
-                fav_categories[s] = "GSC_L1"
-            for s in ['DHAKABANK']:
-                fav_categories[s] = "GSC_L2"
-
-        # Step 5: Concurrently pull real 30-session history for all favorite symbols
-        symbols_to_pull = list(fav_categories.keys())
-
-        async def fetch_hist(sym: str) -> tuple[str, list[dict[str, str]]]:
-            url = f"https://stocknow.com.bd/api/v1/instruments/{sym}/history?data2=true&resolution=1D&skip=0"
             try:
-                r = await http.get(url, timeout=10.0)
-                if r.status_code == 200:
-                    d = r.json()
-                    if isinstance(d, list) and len(d) >= 6 and len(d[3]) > 0:
-                        closes = d[3][-30:]
-                        ts_list = d[5][-30:]
-                        points = [
-                            {"date": datetime.fromtimestamp(ts, tz=timezone.utc).date().isoformat(), "close": str(c)}
-                            for c, ts in zip(closes, ts_list)
-                        ]
-                        return sym, points
+                raw_candles = await api.get_history(sym, sessions=15)
             except Exception as e:
                 logger.debug("Failed fetching history for %s: %s", sym, e)
-            return sym, []
+                return sym, [], f"No historical candle data returned from StockNow API for {sym}: {e}"
 
-        hist_tuples = await asyncio.gather(*[fetch_hist(s) for s in symbols_to_pull])
-        hist_map = dict(hist_tuples)
+        if not raw_candles:
+            return sym, [], f"No historical candle data returned from StockNow API for {sym}"
 
-        # Step 6: Construct normalized quotes
-        today = date.today()
-        quotes: list[dict[str, Any]] = []
-        for sym, cat_code in fav_categories.items():
-            inst_data = raw_inst.get(sym, {})
-            ltp_f = float(inst_data.get("close") or inst_data.get("ycp") or 0.0)
-            if ltp_f <= 0:
-                continue
-            ycp_f = float(inst_data.get("ycp") or ltp_f)
-            chg_pct = round(((ltp_f - ycp_f) / ycp_f) * 100, 2) if ycp_f > 0 else 0.0
+        # Standardize native 6 parallel arrays [opens, highs, lows, closes, volumes, timestamps]
+        if (
+            isinstance(raw_candles, list)
+            and len(raw_candles) == 6
+            and all(isinstance(sub, list) for sub in raw_candles)
+        ):
+            opens, highs, lows, closes, volumes, timestamps = raw_candles
+            n = min(len(opens), len(highs), len(lows), len(closes), len(volumes), len(timestamps))
+            raw_candles = [
+                [timestamps[i], opens[i], highs[i], lows[i], closes[i], volumes[i]]
+                for i in range(n)
+            ]
 
-            history = hist_map.get(sym, [])
-            if not history:
-                spk_raw = [inst_data.get("30d"), inst_data.get("15d"), inst_data.get("7d"), ltp_f]
-                history = [{"date": today.isoformat(), "close": str(p)} for p in spk_raw if p and float(p) > 0]
+        # Standardize candle points to [{"date": YYYY-MM-DD, "close": str}]
+        points: list[dict[str, str]] = []
+        for c in raw_candles:
+            if isinstance(c, (list, tuple)) and len(c) >= 5:
+                ts, close_val = c[0], c[4]
+                if isinstance(ts, (int, float)):
+                    d_str = datetime.fromtimestamp(ts, tz=timezone.utc).date().isoformat()
+                else:
+                    d_str = str(ts)[:10]
+                points.append({"date": d_str, "close": str(close_val)})
+            elif isinstance(c, dict) and "date" in c and "close" in c:
+                points.append({"date": str(c["date"])[:10], "close": str(c["close"])})
 
-            quote_dict = {
-                "symbol": sym,
-                "name": inst_data.get("name") or sym,
-                "sector": _SECTOR_MAP_CACHE.get(inst_data.get("sector_id"), "OTHER"),
-                "category": (inst_data.get("category") or "A").strip().upper(),
-                "watchlist_category": cat_code,
-                "last_price": Decimal(str(ltp_f)),
-                "ycp": Decimal(str(ycp_f)),
-                "change_pct": Decimal(str(chg_pct)),
-                "history": history,
-                "as_of_date": today,
-                "source": "STOCKNOW_LIVE",
-            }
-            quotes.append(quote_dict)
+        # Sort strictly by date ascending and remove duplicate dates
+        points.sort(key=lambda p: p["date"])
+        deduped: list[dict[str, str]] = []
+        seen_dates: set[str] = set()
+        for p in points:
+            if p["date"] not in seen_dates:
+                seen_dates.add(p["date"])
+                deduped.append(p)
 
-        return quotes
+        sliced = deduped[-15:]
+        if len(sliced) < 7:
+            return sym, sliced, f"Insufficient historical sessions: only {len(sliced)} available (at least 7 required)"
+        return sym, sliced, "OK"
+
+    hist_tuples = await asyncio.gather(*[fetch_sym_history(s) for s in symbols_to_pull])
+    hist_map: dict[str, list[dict[str, str]]] = {r[0]: r[1] for r in hist_tuples}
+    hist_status: dict[str, str] = {r[0]: r[2] for r in hist_tuples}
+
+    # Step 5: Construct normalized quotes
+    quotes: list[dict[str, Any]] = []
+    for sym, cat_code in fav_categories.items():
+        inst_data = raw_inst.get(sym, {})
+        raw_ltp = inst_data.get("ltp")
+        raw_close = inst_data.get("close")
+        raw_ycp = inst_data.get("ycp")
+
+        # No defaults for missing prices
+        if (raw_ltp is None or float(raw_ltp) <= 0) and (raw_close is None or float(raw_close) <= 0) and (raw_ycp is None or float(raw_ycp) <= 0):
+            continue
+
+        if raw_ltp is not None and float(raw_ltp) > 0:
+            ltp_f = float(raw_ltp)
+            price_type = "LTP"
+        else:
+            ltp_f = float(raw_close if (raw_close is not None and float(raw_close) > 0) else raw_ycp)
+            price_type = "LAST_CLOSE"
+
+        ycp_f = float(raw_ycp or ltp_f)
+        chg_pct = round(((ltp_f - ycp_f) / ycp_f) * 100, 2) if ycp_f > 0 else 0.0
+
+        history = hist_map.get(sym, [])
+        status_msg = hist_status.get(sym, "OK")
+
+        # Ensure the final history candle reconciles with today's price and date
+        if history and len(history) >= 7:
+            today_str = today.isoformat()
+            if history[-1]["date"] == today_str:
+                history[-1]["close"] = str(ltp_f)
+            elif history[-1]["date"] < today_str:
+                history.append({"date": today_str, "close": str(ltp_f)})
+                history = history[-15:]
+
+        quote_dict = {
+            "symbol": sym,
+            "name": inst_data.get("name") or sym,
+            "sector": _SECTOR_MAP_CACHE.get(inst_data.get("sector_id"), "OTHER"),
+            "category": (inst_data.get("category") or "A").strip().upper(),
+            "watchlist_category": cat_code,
+            "last_price": Decimal(str(ltp_f)),
+            "ycp": Decimal(str(ycp_f)),
+            "change_pct": Decimal(str(chg_pct)),
+            "price_type": price_type,
+            "history": history,
+            "history_status": status_msg,
+            "as_of_date": today,
+            "source": "STOCKNOW_API",
+            "last_updated": inst_data.get("updated_at") or now_iso,
+        }
+        quotes.append(quote_dict)
+
+    return quotes
 
 
-async def get_or_fetch_all_dse_shares(client: Any = None) -> dict[str, Any]:
+async def get_or_fetch_all_dse_shares(client: Any = None, api_client: Any = None) -> dict[str, Any]:
     """Returns cached All DSE Shares catalog, populating it if not yet loaded."""
     global _ALL_DSE_SHARES_CACHE, _ALL_DSE_SHARES_UPDATED_AT
     if not _ALL_DSE_SHARES_CACHE:
         try:
-            await fetch_stocknow_live_market_data(client=client)
+            await fetch_stocknow_live_market_data(client=client, api_client=api_client)
         except Exception as exc:
             logger.warning("Auto-fetch all DSE shares failed: %s", exc)
+    now_iso = datetime.now(timezone.utc).isoformat(timespec="seconds")
     return {
         "total": len(_ALL_DSE_SHARES_CACHE),
-        "updated_at": _ALL_DSE_SHARES_UPDATED_AT or datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "timestamp": now_iso,
+        "source": "STOCKNOW_API",
+        "last_updated": _ALL_DSE_SHARES_UPDATED_AT or now_iso,
+        "updated_at": _ALL_DSE_SHARES_UPDATED_AT or now_iso,
         "shares": _ALL_DSE_SHARES_CACHE,
     }
+
 
 
 async def extract_quotes_from_stocknow(client: Any, injected_payload: Any = None) -> list[dict[str, Any]]:
@@ -632,7 +743,7 @@ def _sync_in_session(
 
         company.last_price = last_price
         company.quote_on = q.get("as_of_date") or as_of
-        company.source = "STOCKNOW_LIVE"
+        company.source = q.get("source") or "STOCKNOW_API"
 
         target_cat = q.get("watchlist_category") or (q.get("category") if q.get("category") in ("GSC", "GSC_L1", "GSC_L2") else None)
         if target_cat:
@@ -653,7 +764,9 @@ def _sync_in_session(
             hist = list(provided_hist)
             date_str = company.quote_on.isoformat()
             price_str = str(last_price)
-            if hist[-1].get("date") != date_str or decimal(hist[-1].get("close")) != last_price:
+            if hist[-1].get("date") == date_str:
+                hist[-1] = {"date": date_str, "close": price_str}
+            elif hist[-1].get("date") < date_str:
                 hist.append({"date": date_str, "close": price_str})
             company.price_history = hist[-30:]
         else:
@@ -662,7 +775,7 @@ def _sync_in_session(
             price_str = str(last_price)
             if hist and hist[-1].get("date") == date_str:
                 hist[-1] = {"date": date_str, "close": price_str}
-            else:
+            elif not hist or hist[-1].get("date") < date_str:
                 hist.append({"date": date_str, "close": price_str})
             company.price_history = hist[-30:]
 

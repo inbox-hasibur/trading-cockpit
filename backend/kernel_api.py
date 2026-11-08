@@ -539,12 +539,13 @@ async def post_sync(
         )
 
         # 2. Run existing sync routines
-        if target == "favorites":
+        if target in ("favorites", "market", "live_prices", "quotes"):
             quotes = body.payload
-            if quotes is None and stocknow_client is not None:
-                quotes = await extract_quotes_from_stocknow(stocknow_client)
+            if quotes is None:
+                from backend.adapters.stocknow_market_sync import fetch_stocknow_live_market_data
+                quotes = await fetch_stocknow_live_market_data(client=stocknow_client, as_of_date=state.clock_date)
             if quotes:
-                sync_live_market_to_db(db, quotes)
+                sync_live_market_to_db(session, quotes, session_date=state.clock_date)
             res: Any = {"synced_quotes": len(quotes) if quotes else 0}
 
         elif target == "portfolio":
@@ -563,16 +564,32 @@ async def post_sync(
                         status_code=422,
                         detail=f"Cannot sync portfolio '{provided_pid}' in {trading_mode} mode. Active target portfolio is '{target_pid}'.",
                     )
-            p_data = body.payload or {"portfolio_id": target_pid}
-            if isinstance(p_data, dict) and not p_data.get("portfolio_id"):
-                p_data["portfolio_id"] = target_pid
-            if not body.payload and stocknow_client is not None and getattr(stocknow_client, "page", None):
-                setattr(stocknow_client, "bound_portfolio_id", target_pid)
-                from backend.adapters.stocknow_portfolio_sync import extract_hummingbird_portfolio_from_browser
-                p_data = await extract_hummingbird_portfolio_from_browser(stocknow_client)
+            if body.payload:
+                p_data = body.payload
+                if isinstance(p_data, dict) and ("scrips" in p_data or "cash_amount" in p_data or "holdings" not in p_data):
+                    from backend.adapters.stocknow_portfolio_sync import extract_hummingbird_portfolio
+                    p_data = extract_hummingbird_portfolio(injected_portfolio=p_data)
+                elif isinstance(p_data, dict) and not p_data.get("portfolio_id"):
+                    p_data["portfolio_id"] = target_pid
+            else:
+                from backend.adapters.stocknow_portfolio_sync import sync_stocknow_portfolio_via_api
+                from backend.adapters.stocknow_api import StockNowError
+                try:
+                    p_data = await sync_stocknow_portfolio_via_api(
+                        portfolio_id=target_pid,
+                        live_client=stocknow_client,
+                        settings=settings,
+                    )
+                except StockNowError as sne:
+                    logger.error("StockNow API sync failed: %s", sne)
+                    raise HTTPException(status_code=422, detail={"error": sne.error_code, "detail": str(sne)})
+                except Exception as exc:
+                    logger.error("StockNow API sync unexpected error: %s", exc)
+                    raise HTTPException(status_code=422, detail={"error": "SYNC_FAILED", "detail": str(exc)})
             res = reconcile_portfolio_to_db(session, settings, p_data, checkpoint_mgr=CheckpointManager)
 
-        elif target == "all_shares":
+        elif target in ("all_shares", "instruments", "shares"):
+            from backend.adapters.stocknow_market_sync import get_or_fetch_all_dse_shares
             res = await get_or_fetch_all_dse_shares(stocknow_client)
 
         # 3. Write audit row

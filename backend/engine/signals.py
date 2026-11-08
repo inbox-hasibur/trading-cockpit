@@ -9,7 +9,7 @@ from backend.database import CompanyProfile, CustomRule
 from backend.engine.curve_analyzer import CurveAnalysis, analyze_curve
 from backend.engine.money import decimal
 
-BLOCK_ALL_TRADING = {"INVALID_DATA", "STALE_DATA", "WAIT_DATA"}
+BLOCK_ALL_TRADING = {"INVALID_DATA", "STALE_DATA", "WAIT_DATA", "NO_DATA"}
 
 
 def assess_company(
@@ -22,7 +22,9 @@ def assess_company(
     try:
         quote = adapter.quote(company, as_of)
     except QuoteError as exc:
-        return CurveAnalysis("INVALID_DATA", str(exc)), None
+        err_msg = str(exc)
+        sig = "NO_DATA" if ("no data" in err_msg.lower() or not company.price_history) else "INVALID_DATA"
+        return CurveAnalysis(sig, err_msg), None
     analysis = analyze_curve(
         quote.history,
         as_of=as_of,
