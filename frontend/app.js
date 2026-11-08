@@ -54,6 +54,8 @@ const state = {
 };
 try { state.token = sessionStorage.getItem("humming-bird-token") || ""; } catch { /* Storage is optional. */ }
 
+let decisionFilter = "all";
+
 function element(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -941,27 +943,102 @@ function renderInspector() {
   updateWhatIfSimulator(company);
 }
 
-function renderDecisions() {
-  const { latest_cycle: cycle, decisions } = state.snapshot;
-  setText("cycle-badge", cycle ? `SNAPSHOT ${cycle.revision} · ${cycle.trades.length} TRADES` : "NO CYCLES YET");
-  if (!decisions || !decisions.length) return;
+function isBuyDecision(d) {
+  const act = (d.action || "").toUpperCase();
+  return (act === "BUY" || act === "PREVIEW_BUY" || act === "BUY_EXECUTION") &&
+    !act.includes("BLOCKED") && !act.includes("DISABLED") && !act.includes("FAILED");
+}
 
-  const filter = state.decisionFilter || "ALL";
-  const filtered = decisions.filter((d) => {
-    const act = (d.action || "").toUpperCase();
-    if (filter === "BUYS") return act === "BUY" || (act.startsWith("BUY") && !act.includes("BLOCKED"));
-    if (filter === "SELLS") return act === "SELL" || act.startsWith("SELL");
-    if (filter === "BLOCKED") return act.includes("BLOCKED");
-    if (filter === "LOCKS") return act.includes("LOCK");
-    return true;
-  });
+function isSellDecision(d) {
+  const act = (d.action || "").toUpperCase();
+  return (act === "SELL" || act === "PREVIEW_SELL" || act === "SELL_TIER_PROFIT" || act === "SELL_EXECUTION") &&
+    !act.includes("BLOCKED") && !act.includes("DISABLED") && !act.includes("FAILED");
+}
+
+function isLockDecision(d) {
+  const act = (d.action || "").toUpperCase();
+  const reason = (d.reason || "").toUpperCase();
+  return (
+    act.includes("LOCK") ||
+    act.includes("HOLD") ||
+    act.includes("SETTLEMENT") ||
+    act.includes("MATURITY") ||
+    reason.includes("T+2") ||
+    reason.includes("MATURES ON") ||
+    reason.includes("SETTLEMENT") ||
+    reason.includes("NO-LOSS") ||
+    reason.includes("STRICT NO-LOSS") ||
+    reason.includes("RECOVERY")
+  );
+}
+
+function isBlockedDecision(d) {
+  if (isLockDecision(d)) return false;
+  const act = (d.action || "").toUpperCase();
+  const reason = (d.reason || "").toUpperCase();
+  return (
+    act.includes("BLOCK") ||
+    act.includes("REJECT") ||
+    act.includes("FAIL") ||
+    act.includes("DISABLE") ||
+    act.includes("KILL") ||
+    act.includes("CAPS") ||
+    act.includes("TRIP") ||
+    act.includes("WAIT") ||
+    act.includes("LIMIT") ||
+    act.includes("QUARANTINE") ||
+    reason.includes("BLOCK") ||
+    reason.includes("REJECT") ||
+    reason.includes("FAIL") ||
+    reason.includes("EXHAUSTED") ||
+    reason.includes("KILL SWITCH")
+  );
+}
+
+function renderDecisions() {
+  if (!state.snapshot) return;
+  const { latest_cycle: cycle } = state.snapshot;
+  const decisions = state.snapshot.decisions || [];
+  setText("cycle-badge", cycle ? `SNAPSHOT ${cycle.revision} · ${cycle.trades.length} TRADES` : "NO CYCLES YET");
+
+  const counts = {
+    all: decisions.length,
+    buys: decisions.filter(isBuyDecision).length,
+    sells: decisions.filter(isSellDecision).length,
+    blocked: decisions.filter(isBlockedDecision).length,
+    locks: decisions.filter(isLockDecision).length,
+  };
+
+  const chipLabels = {
+    ALL: `All (${counts.all})`,
+    BUYS: `Buys (${counts.buys})`,
+    SELLS: `Sells (${counts.sells})`,
+    BLOCKED: `Blocked (${counts.blocked})`,
+    LOCKS: `Locks (${counts.locks})`,
+  };
+
+  const currentFilter = (decisionFilter || "all").toLowerCase();
 
   document.querySelectorAll(".decision-filter-chip").forEach((chip) => {
-    chip.classList.toggle("active", chip.dataset.decisionFilter === filter);
+    const rawFilter = (chip.dataset.decisionFilter || "").toUpperCase();
+    if (chipLabels[rawFilter]) {
+      chip.textContent = chipLabels[rawFilter];
+    }
+    const filterKey = rawFilter.toLowerCase();
+    const isActive = (currentFilter === filterKey);
+    chip.classList.toggle("active", isActive);
   });
 
+  if (!decisions.length) return;
+
+  let filtered = decisions;
+  if (currentFilter === "buys") filtered = decisions.filter(isBuyDecision);
+  else if (currentFilter === "sells") filtered = decisions.filter(isSellDecision);
+  else if (currentFilter === "blocked") filtered = decisions.filter(isBlockedDecision);
+  else if (currentFilter === "locks") filtered = decisions.filter(isLockDecision);
+
   if (!filtered.length) {
-    const empty = element("div", "decision-feed-empty muted small", "No decisions match this filter.");
+    const empty = element("div", "decision-feed-empty muted small", `No ${currentFilter} decisions in this snapshot`);
     empty.style.padding = "20px 14px";
     empty.style.textAlign = "center";
     $("decision-feed").replaceChildren(empty);
@@ -992,14 +1069,8 @@ function renderLedger() {
   setText("period-buy", currency(period.buy_turnover));
   setText("period-sell", currency(period.sell_turnover));
   setText("period-trades", `${period.buy_count} buy / ${period.sell_count} sell`);
-  document.querySelectorAll(".decision-filter-chip").forEach((button) => {
-  button.addEventListener("click", () => {
-    state.decisionFilter = button.dataset.decisionFilter;
-    if (state.snapshot) renderDecisions();
-  });
-});
 
-document.querySelectorAll("[data-period]").forEach((button) => {
+  document.querySelectorAll("[data-period]").forEach((button) => {
     const active = button.dataset.period === state.period;
     button.classList.toggle("active", active); button.setAttribute("aria-pressed", String(active));
   });
@@ -1078,8 +1149,11 @@ $("dismiss-error").addEventListener("click", () => { $("error-banner").hidden = 
 
 document.querySelectorAll(".decision-filter-chip").forEach((button) => {
   button.addEventListener("click", () => {
-    state.decisionFilter = button.dataset.decisionFilter;
-    if (state.snapshot) renderDecisions();
+    decisionFilter = (button.dataset.decisionFilter || "all").toLowerCase();
+    document.querySelectorAll(".decision-filter-chip").forEach((btn) => {
+      btn.classList.toggle("active", btn === button);
+    });
+    renderDecisions();
   });
 });
 
