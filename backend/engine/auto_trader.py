@@ -19,11 +19,13 @@ from backend.database import (
     CycleRequestKey,
     Database,
     DecisionLog,
+    OrderIdempotencyKey,
     TaxLot,
     TradeLog,
     portfolio_state,
 )
 from backend.engine.agent_actions import check_canary_theses
+from backend.engine.circuit_breaker import record_circuit_failure, record_circuit_success
 from backend.engine.money import HUNDRED, ZERO, decimal, money, price, purchase_amount, whole_shares
 from backend.engine.sequential_seller import SellState, plan_sale
 from backend.engine.signals import BLOCK_ALL_TRADING, assess_company
@@ -142,7 +144,72 @@ class AutoTrader:
                 "sell_count": 0,
             })
 
-        # 2. Check session day (applies whenever date is not a session, to prevent bucket failure)
+        # 2. Check Circuit Breaker halt
+        if getattr(state, "circuit_breaker_tripped", False):
+            breaker_reason = getattr(state, "circuit_breaker_reason", "Circuit breaker is tripped")
+            log_entry = DecisionLog(
+                cycle_id=None,
+                symbol="SYSTEM",
+                action="CIRCUIT_BREAKER_TRIPPED",
+                quantity=0,
+                reason=f"CIRCUIT_BREAKER: {breaker_reason}",
+                trading_mode=mode_val,
+            )
+            session.add(log_entry)
+            session.flush()
+            return CycleResult({
+                "id": str(uuid4()),
+                "cycle_id": None,
+                "status": "SKIPPED",
+                "reason": "CIRCUIT_BREAKER",
+                "detail": breaker_reason,
+                "is_preview": is_preview,
+                "decisions": [{
+                    "id": log_entry.id,
+                    "symbol": "SYSTEM",
+                    "action": "CIRCUIT_BREAKER_TRIPPED",
+                    "reason": f"CIRCUIT_BREAKER: {breaker_reason}",
+                    "quantity": 0,
+                    "trading_mode": mode_val,
+                }],
+                "trades": [],
+                "buy_count": 0,
+                "sell_count": 0,
+            })
+
+        # 3. Check Startup Health gate (WAITING after reboot until health check passes)
+        if not is_preview and (getattr(state, "startup_health_status", "READY") == "WAITING" or not getattr(state, "startup_health_passed", True)):
+            log_entry = DecisionLog(
+                cycle_id=None,
+                symbol="SYSTEM",
+                action="STARTUP_WAITING",
+                quantity=0,
+                reason="STARTUP_WAITING: System is in WAITING state following startup/reboot until health check passes.",
+                trading_mode=mode_val,
+            )
+            session.add(log_entry)
+            session.flush()
+            return CycleResult({
+                "id": str(uuid4()),
+                "cycle_id": None,
+                "status": "SKIPPED",
+                "reason": "STARTUP_WAITING",
+                "detail": "System is in WAITING state following startup/reboot until health check passes.",
+                "is_preview": is_preview,
+                "decisions": [{
+                    "id": log_entry.id,
+                    "symbol": "SYSTEM",
+                    "action": "STARTUP_WAITING",
+                    "reason": "STARTUP_WAITING: System is in WAITING state following startup/reboot until health check passes.",
+                    "quantity": 0,
+                    "trading_mode": mode_val,
+                }],
+                "trades": [],
+                "buy_count": 0,
+                "sell_count": 0,
+            })
+
+        # 4. Check session day (applies whenever date is not a session, to prevent bucket failure)
         if not self.calendar.is_session(state.clock_date):
             log_entry = DecisionLog(
                 cycle_id=None,
@@ -328,6 +395,12 @@ class AutoTrader:
                     record(lot.symbol, "PREVIEW_SELL", f"Would sell {plan.quantity} shares: {plan.reason}", plan.quantity, lot.id)
                     continue
 
+                sell_idem_key = f"auto:sell:{state.clock_date}:{lot.id}:{lot.symbol}:{active_pid or '164580'}"
+                existing_sell = session.get(OrderIdempotencyKey, sell_idem_key)
+                if existing_sell:
+                    logger.info("AutoTrader sell skipped via persisted idempotency key: %s", sell_idem_key)
+                    continue
+
                 # In non-DEMO mode, submit to executor first and verify fill before local ledger update
                 if getattr(self.adapter, "mode", "DEMO") != "DEMO":
                     try:
@@ -339,9 +412,11 @@ class AutoTrader:
                             portfolio_id=active_pid or "164580",
                             trade_date=state.clock_date,
                         )
+                        record_circuit_success(self.database)
                     except Exception as exc:
                         error_code = getattr(exc, "error_code", "EXECUTION_ERROR")
                         logger.warning("AutoTrader live sell execution failed: %s (%s)", error_code, exc)
+                        record_circuit_failure(self.database, self.settings, error_code, str(exc))
                         if error_code == "NOT_AUTHENTICATED":
                             record(lot.symbol, "NOT_AUTHENTICATED", f"NOT_AUTHENTICATED: {exc}", plan.quantity, lot.id)
                         elif error_code == "SCHEMA_CHANGED":
@@ -349,6 +424,15 @@ class AutoTrader:
                         else:
                             record(lot.symbol, f"SELL_FAILED_{error_code}", str(exc), plan.quantity, lot.id)
                         continue
+
+                session.add(OrderIdempotencyKey(
+                    idempotency_key=sell_idem_key,
+                    symbol=lot.symbol,
+                    side="SELL",
+                    quantity=plan.quantity,
+                    price=fill_price,
+                    response_payload={"action": plan.action, "reason": plan.reason},
+                ))
 
                 lot.remaining_qty = plan.state.remaining_qty
                 lot.remaining_cost_basis = plan.state.remaining_basis
@@ -515,6 +599,12 @@ class AutoTrader:
                 )
                 continue
 
+            buy_idem_key = f"auto:buy:{state.clock_date}:{company.symbol}:{active_pid or '164580'}"
+            existing_buy = session.get(OrderIdempotencyKey, buy_idem_key)
+            if existing_buy:
+                logger.info("AutoTrader buy skipped via persisted idempotency key: %s", buy_idem_key)
+                continue
+
             # In non-DEMO mode, submit to executor first and verify fill before local ledger update
             if getattr(self.adapter, "mode", "DEMO") != "DEMO":
                 try:
@@ -526,9 +616,11 @@ class AutoTrader:
                         portfolio_id=active_pid or "164580",
                         trade_date=state.clock_date,
                     )
+                    record_circuit_success(self.database)
                 except Exception as exc:
                     error_code = getattr(exc, "error_code", "EXECUTION_ERROR")
                     logger.warning("AutoTrader live buy execution failed: %s (%s)", error_code, exc)
+                    record_circuit_failure(self.database, self.settings, error_code, str(exc))
                     if error_code == "NOT_AUTHENTICATED":
                         record(company.symbol, "NOT_AUTHENTICATED", f"NOT_AUTHENTICATED: {exc}", quantity)
                     elif error_code == "SCHEMA_CHANGED":
@@ -536,6 +628,15 @@ class AutoTrader:
                     else:
                         record(company.symbol, f"BUY_FAILED_{error_code}", str(exc), quantity)
                     continue
+
+            session.add(OrderIdempotencyKey(
+                idempotency_key=buy_idem_key,
+                symbol=company.symbol,
+                side="BUY",
+                quantity=quantity,
+                price=fill_price,
+                response_payload={"reason": analysis.reason},
+            ))
 
             lot = TaxLot(
                 symbol=company.symbol, bucket=active_name,

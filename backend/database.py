@@ -32,6 +32,7 @@ from backend.config import utc_now_iso
 MONEY = Numeric(18, 2)
 PRICE = Numeric(18, 4)
 PERCENT = Numeric(8, 4)
+ZERO = Decimal("0.00")
 
 
 class Base(DeclarativeBase):
@@ -58,6 +59,11 @@ class PortfolioState(Base):
     daily_budget_bdt: Mapped[Decimal] = mapped_column(MONEY, default=Decimal("4000.00"))
     max_orders_per_day: Mapped[int] = mapped_column(Integer, default=20)
     kill_switch_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    consecutive_failure_count: Mapped[int] = mapped_column(Integer, default=0)
+    circuit_breaker_tripped: Mapped[bool] = mapped_column(Boolean, default=False)
+    circuit_breaker_reason: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
+    startup_health_passed: Mapped[bool] = mapped_column(Boolean, default=True)
+    startup_health_status: Mapped[str] = mapped_column(String(32), default="READY")
     calendar_holidays: Mapped[list[str]] = mapped_column(JSON, default=list)
     bucket_anchor: Mapped[date] = mapped_column(Date)
     created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
@@ -254,6 +260,48 @@ class ChatBudget(Base):
     calls: Mapped[int] = mapped_column(Integer, default=0)
 
 
+class SystemHeartbeat(Base):
+    __tablename__ = "system_heartbeats"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    status: Mapped[str] = mapped_column(String(32), default="OK")
+    ingestion_mode: Mapped[str] = mapped_column(String(32), default="BACKGROUND_POLLING")
+    trading_mode: Mapped[str] = mapped_column(String(32), default="LIVE_HOURS")
+    automation_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    kill_switch_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    circuit_breaker_tripped: Mapped[bool] = mapped_column(Boolean, default=False)
+    details: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso, index=True)
+
+
+class PreflightCheckLog(Base):
+    __tablename__ = "preflight_check_logs"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    status: Mapped[str] = mapped_column(String(20))  # "PASSED" or "FAILED"
+    passed_count: Mapped[int] = mapped_column(Integer)
+    total_count: Mapped[int] = mapped_column(Integer)
+    checks: Mapped[list[dict[str, Any]]] = mapped_column(JSON)
+    actor: Mapped[str] = mapped_column(String(40), default="System")
+    created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso, index=True)
+
+
+class DailySummaryLog(Base):
+    __tablename__ = "daily_summary_logs"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    session_date: Mapped[date] = mapped_column(Date, index=True)
+    orders_count: Mapped[int] = mapped_column(Integer, default=0)
+    buys_count: Mapped[int] = mapped_column(Integer, default=0)
+    sells_count: Mapped[int] = mapped_column(Integer, default=0)
+    buy_spend_bdt: Mapped[Decimal] = mapped_column(MONEY, default=ZERO)
+    sell_proceeds_bdt: Mapped[Decimal] = mapped_column(MONEY, default=ZERO)
+    skips_count: Mapped[int] = mapped_column(Integer, default=0)
+    skips_breakdown: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    drift_bdt: Mapped[Decimal] = mapped_column(MONEY, default=ZERO)
+    errors_count: Mapped[int] = mapped_column(Integer, default=0)
+    errors_summary: Mapped[list[str]] = mapped_column(JSON, default=list)
+    telegram_sent: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
+
+
 class Database:
     def __init__(self, url: str):
         parsed = make_url(url)
@@ -309,6 +357,16 @@ class Database:
                     conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN max_orders_per_day INTEGER DEFAULT 20"))
                 if "kill_switch_active" not in ps_cols:
                     conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN kill_switch_active BOOLEAN DEFAULT 0"))
+                if "consecutive_failure_count" not in ps_cols:
+                    conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN consecutive_failure_count INTEGER DEFAULT 0"))
+                if "circuit_breaker_tripped" not in ps_cols:
+                    conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN circuit_breaker_tripped BOOLEAN DEFAULT 0"))
+                if "circuit_breaker_reason" not in ps_cols:
+                    conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN circuit_breaker_reason VARCHAR(255) DEFAULT NULL"))
+                if "startup_health_passed" not in ps_cols:
+                    conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN startup_health_passed BOOLEAN DEFAULT 1"))
+                if "startup_health_status" not in ps_cols:
+                    conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN startup_health_status VARCHAR(32) DEFAULT 'READY'"))
                 conn.commit()
 
             result = conn.execute(text("PRAGMA table_info(decision_logs)"))

@@ -1277,6 +1277,25 @@ def post_automation_config(
     with db.write() as session:
         state = portfolio_state(session)
 
+        # Circuit breaker check when enabling
+        if body.automation_enabled is True or body.paused is False:
+            if getattr(state, "circuit_breaker_tripped", False):
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Circuit breaker is tripped: {state.circuit_breaker_reason}. Reset breaker first via /k/automation/circuit-breaker/reset.",
+                )
+
+        # Preflight check when enabling or switching to Background mode
+        target_mode_candidate = body.ingestion_mode or state.ingestion_mode
+        target_enabled_candidate = body.automation_enabled if body.automation_enabled is not None else (not body.paused if body.paused is not None else state.automation_enabled)
+        if target_mode_candidate == "BACKGROUND_POLLING" and target_enabled_candidate:
+            from backend.engine.preflight_service import are_caps_set, has_passing_preflight_within_24h
+            if not are_caps_set(db) or not has_passing_preflight_within_24h(db):
+                raise HTTPException(
+                    status_code=422,
+                    detail="Enabling Background mode requires risk caps set and a passing preflight check within the last 24 hours.",
+                )
+
         # 1. Snapshot state first
         cp = CheckpointManager.create_checkpoint(
             session=session,
@@ -1344,6 +1363,14 @@ def post_automation_handoff(
 ) -> dict[str, Any]:
     """Single-writer run mode handoff: finishes current cycle under lock, then switches mode."""
     target = "BACKGROUND_POLLING" if body.target_mode in ("BACKGROUND_24_7", "BACKGROUND 24/7") else body.target_mode
+    if target == "BACKGROUND_POLLING":
+        from backend.engine.preflight_service import are_caps_set, has_passing_preflight_within_24h
+        if not are_caps_set(db) or not has_passing_preflight_within_24h(db):
+            raise HTTPException(
+                status_code=422,
+                detail="Enabling Background mode requires risk caps set and a passing preflight check within the last 24 hours.",
+            )
+
     with acquire_trading_lock():
         with db.write() as session:
             state = portfolio_state(session)
@@ -1383,6 +1410,26 @@ def post_automation_handoff(
                 "active_mode": target,
                 "automation_enabled": state.automation_enabled,
             }
+
+
+@router.post("/automation/circuit-breaker/reset")
+def post_reset_circuit_breaker(
+    db: Database = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+) -> dict[str, Any]:
+    """Manually resets the tripped circuit breaker and clears consecutive failure count."""
+    from backend.engine.circuit_breaker import reset_circuit_breaker
+    return reset_circuit_breaker(db, settings, actor="Kernel API")
+
+
+@router.post("/automation/preflight")
+def post_run_preflight(
+    db: Database = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+) -> dict[str, Any]:
+    """Executes the preflight check suite and returns the readiness audit."""
+    from backend.engine.preflight_service import run_cockpit_preflight
+    return run_cockpit_preflight(db, settings, actor="Kernel API")
 
 
 class SchedulerActionRequest(BaseModel):

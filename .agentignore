@@ -9,4 +9,6 @@
 **/*.db-wal
 **/*.sqlite*
 **/trading-cockpit.zip
+**/.stocknow_profile/**
+.stocknow_profile
 

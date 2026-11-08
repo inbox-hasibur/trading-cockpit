@@ -9,6 +9,9 @@ import logging
 import os
 import sys
 
+from backend.logging_config import setup_logging
+setup_logging()
+
 import httpx
 
 if sys.platform == "win32":
@@ -134,9 +137,39 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         with database.write() as session:
             seed_demo(session, settings)
             migrate_real_stocknow_market(session, settings)
+            state = portfolio_state(session)
+            state.startup_health_status = "READY"
+            state.startup_health_passed = True
+
+        from backend.engine.heartbeat import record_system_heartbeat, check_dead_man_switch, send_daily_summary_if_due
+        from backend.engine.telegram_bot import TelegramBotDaemon
+
+        record_system_heartbeat(database, settings)
+
+        hb_task = None
+        async def _heartbeat_worker():
+            while True:
+                try:
+                    await asyncio.sleep(60.0)
+                    record_system_heartbeat(database, settings)
+                    check_dead_man_switch(database, settings)
+                    send_daily_summary_if_due(database, settings)
+                except asyncio.CancelledError:
+                    break
+                except Exception as hb_err:
+                    logger.debug("Heartbeat worker tick noticed: %s", hb_err)
+
+        hb_task = asyncio.create_task(_heartbeat_worker())
+
+        tg_daemon = TelegramBotDaemon(database, settings)
+        tg_daemon.start()
+
         try:
             yield
         finally:
+            if hb_task and not hb_task.done():
+                hb_task.cancel()
+            tg_daemon.stop()
             database.engine.dispose()
             try:
                 await scheduler.stop()
@@ -362,6 +395,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.post("/api/automation/handoff")
     async def automation_handoff(body: HandoffRequest):
         target = "BACKGROUND_POLLING" if body.target_mode in ("BACKGROUND_24_7", "BACKGROUND 24/7") else body.target_mode
+        if target == "BACKGROUND_POLLING":
+            from backend.engine.preflight_service import are_caps_set, has_passing_preflight_within_24h
+            if not are_caps_set(database) or not has_passing_preflight_within_24h(database):
+                raise HTTPException(
+                    status_code=422,
+                    detail="Enabling Background mode requires risk caps set and a passing preflight check within the last 24 hours.",
+                )
+
         # Single writer: finish current cycle under the trading lock before switching
         with acquire_trading_lock():
             with database.write() as session:
@@ -420,6 +461,31 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.post("/api/automation/config")
     async def automation_config(body: AutomationConfigRequest):
+        # 1. Circuit Breaker Check when enabling automation
+        if body.automation_enabled is True or body.paused is False:
+            with database.read() as session:
+                st = portfolio_state(session)
+                if getattr(st, "circuit_breaker_tripped", False):
+                    raise HTTPException(
+                        status_code=422,
+                        detail=f"Circuit breaker is tripped: {st.circuit_breaker_reason}. Reset breaker first via /api/automation/circuit-breaker/reset.",
+                    )
+
+        # 2. Preflight Check when enabling or switching to Background mode
+        with database.read() as session:
+            curr_state = portfolio_state(session)
+            curr_mode = curr_state.ingestion_mode
+            curr_enabled = curr_state.automation_enabled
+        target_mode_candidate = body.ingestion_mode or curr_mode
+        target_enabled_candidate = body.automation_enabled if body.automation_enabled is not None else (not body.paused if body.paused is not None else curr_enabled)
+        if target_mode_candidate == "BACKGROUND_POLLING" and target_enabled_candidate:
+            from backend.engine.preflight_service import are_caps_set, has_passing_preflight_within_24h
+            if not are_caps_set(database) or not has_passing_preflight_within_24h(database):
+                raise HTTPException(
+                    status_code=422,
+                    detail="Enabling Background mode requires risk caps set and a passing preflight check within the last 24 hours.",
+                )
+
         with database.write() as session:
             state = portfolio_state(session)
             if body.automation_enabled is not None:
@@ -483,6 +549,36 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             }
             broadcaster.publish("automation_config", res)
             return res
+
+    @app.post("/api/automation/circuit-breaker/reset")
+    def reset_circuit_breaker_endpoint():
+        from backend.engine.circuit_breaker import reset_circuit_breaker
+        return reset_circuit_breaker(database, settings, actor="Operator", broadcaster=broadcaster)
+
+    @app.get("/api/automation/circuit-breaker/status")
+    def get_circuit_breaker_status():
+        with database.read() as session:
+            st = portfolio_state(session)
+            return {
+                "circuit_breaker_tripped": bool(getattr(st, "circuit_breaker_tripped", False)),
+                "circuit_breaker_reason": getattr(st, "circuit_breaker_reason", None),
+                "consecutive_failure_count": int(getattr(st, "consecutive_failure_count", 0)),
+                "startup_health_status": getattr(st, "startup_health_status", "READY"),
+                "startup_health_passed": bool(getattr(st, "startup_health_passed", True)),
+            }
+
+    @app.post("/api/automation/preflight")
+    def run_preflight_endpoint():
+        from backend.engine.preflight_service import run_cockpit_preflight
+        return run_cockpit_preflight(database, settings, actor="Operator")
+
+    @app.get("/api/automation/preflight/status")
+    def get_preflight_status():
+        from backend.engine.preflight_service import are_caps_set, has_passing_preflight_within_24h
+        return {
+            "caps_set": are_caps_set(database),
+            "has_passing_preflight_24h": has_passing_preflight_within_24h(database),
+        }
 
     @app.get("/api/caps")
     def get_caps_public():

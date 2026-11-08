@@ -23,3 +23,8 @@ def settings(tmp_path):
 def client(settings):
     with TestClient(create_app(settings), base_url="http://localhost") as client:
         yield client
+
+
+@pytest.fixture
+def db(client):
+    return client.app.state.database

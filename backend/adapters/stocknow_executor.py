@@ -754,12 +754,45 @@ async def notify_order_failure(
             "error_code": error_code,
         })
 
-    # 3. Telegram Notification
+    # 3. Circuit Breaker Integration
+    is_schema_divergence = error_code in ("SCHEMA_CHANGED", "SCHEMA")
+    if hasattr(state, "consecutive_failure_count"):
+        state.consecutive_failure_count += 1
+        count = state.consecutive_failure_count
+        if is_schema_divergence or count >= 3:
+            state.circuit_breaker_tripped = True
+            state.automation_enabled = False
+            state.paused = True
+            if is_schema_divergence:
+                breaker_reason = f"SCHEMA_CHANGED: Immediate halt due to unexpected schema: {detail}"
+            else:
+                breaker_reason = f"Circuit breaker tripped after {count} consecutive failures ({error_code}): {detail}"
+            state.circuit_breaker_reason = breaker_reason
+
+            from backend.database import DecisionLog
+            session.add(DecisionLog(
+                cycle_id=None,
+                symbol="SYSTEM",
+                action="CIRCUIT_BREAKER_TRIPPED" if not is_schema_divergence else "SCHEMA_CHANGED",
+                quantity=0,
+                reason=breaker_reason,
+                trading_mode=getattr(state, "trading_mode", "LIVE_HOURS"),
+            ))
+
+            if broadcaster and hasattr(broadcaster, "publish"):
+                broadcaster.publish("circuit_breaker_tripped", {
+                    "reason": breaker_reason,
+                    "failure_type": error_code,
+                    "consecutive_count": count,
+                })
+
+    # 4. Telegram Notification
     bot_token = getattr(settings, "telegram_bot_token", None) or os.getenv("TELEGRAM_BOT_TOKEN")
     chat_id = getattr(settings, "telegram_chat_id", None) or os.getenv("TELEGRAM_CHAT_ID")
     if bot_token and chat_id:
         tg_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
         clock_str = state.clock_date.isoformat() if hasattr(getattr(state, "clock_date", None), "isoformat") else str(getattr(state, "clock_date", ""))
+        breaker_notice = f"\n*Circuit Breaker:* 🚨 TRIPPED ({state.circuit_breaker_reason})" if getattr(state, "circuit_breaker_tripped", False) else ""
         msg = (
             f"🚨 *Order Execution Failed*\n"
             f"*Symbol:* {symbol}\n"
@@ -767,6 +800,7 @@ async def notify_order_failure(
             f"*Error Code:* `{error_code}`\n"
             f"*Detail:* {detail}\n"
             f"*Session Date:* {clock_str}"
+            f"{breaker_notice}"
         )
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:

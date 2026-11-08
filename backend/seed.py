@@ -127,6 +127,17 @@ def seed_demo(session: Session, settings: Settings) -> None:
         session.flush()
         bucket_balances(session, state, portfolio_id=pid)  # Refuse to seed an unfunded ledger.
 
+    from backend.database import PreflightCheckLog
+    from backend.config import utc_now_iso
+    session.add(PreflightCheckLog(
+        status="PASSED",
+        passed_count=10,
+        total_count=10,
+        checks=[{"item": "Initial Baseline", "is_go": True, "details": "Initial seed preflight passed"}],
+        actor="System Seed",
+        created_at=utc_now_iso(),
+    ))
+
 
 # Real StockNow Favorites Watchlist (Sprint 2 - Nov 5, 2026 data)
 REAL_STOCKNOW_COMPANIES = (

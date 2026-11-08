@@ -4,6 +4,8 @@
 !.env.example
 backend/.browser-profile/
 playwright/.auth/
+.stocknow_profile/
+*.stocknow_profile
 
 # Python/runtime data
 .venv/

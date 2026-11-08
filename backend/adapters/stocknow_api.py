@@ -148,44 +148,52 @@ class StockNowAPI:
         url = f"{self.base_url}/api/v1/auth/login"
         payload = {"email": mobile, "password": password}
 
-        await self._rate_limiter.acquire()
-        try:
-            resp = await self._client.post(url, json=payload)
-        except (httpx.TimeoutException, httpx.NetworkError) as exc:
-            raise NetworkError(f"Network failure during login: {exc}") from exc
+        for attempt in range(self._max_retries + 1):
+            await self._rate_limiter.acquire()
+            try:
+                resp = await self._client.post(url, json=payload)
+            except (httpx.TimeoutException, httpx.NetworkError) as exc:
+                if attempt >= self._max_retries:
+                    raise NetworkError(f"Network failure during login: {exc}") from exc
+                jitter = random.uniform(0.1, 0.4)
+                backoff = (1.0 * (2**attempt)) + jitter
+                await asyncio.sleep(backoff)
+                continue
 
-        if resp.status_code == 429:
-            raise RateLimitedError("Login rate limited (HTTP 429)")
-        if resp.status_code != 200:
-            raise NotAuthenticatedError(
-                f"Login failed with HTTP {resp.status_code}: {resp.text[:200]}"
-            )
+            if resp.status_code == 429:
+                raise RateLimitedError("Login rate limited (HTTP 429)")
+            if resp.status_code != 200:
+                raise NotAuthenticatedError(
+                    f"Login failed with HTTP {resp.status_code}: {resp.text[:200]}"
+                )
 
-        try:
-            data = resp.json()
-        except Exception as exc:
-            raise SchemaChangedError(f"Login response is not valid JSON: {exc}") from exc
+            try:
+                data = resp.json()
+            except Exception as exc:
+                raise SchemaChangedError(f"Login response is not valid JSON: {exc}") from exc
 
-        token = data.get("access_token")
-        if not token:
-            raise NotAuthenticatedError("Login response missing 'access_token'")
+            token = data.get("access_token")
+            if not token:
+                raise NotAuthenticatedError("Login response missing 'access_token'")
 
-        self._access_token = str(token)
+            self._access_token = str(token)
 
-        # Determine expiration: try decoding JWT payload 'exp' without verification
-        try:
-            decoded = jwt.decode(self._access_token, options={"verify_signature": False})
-            exp = float(decoded.get("exp", 0))
-            if exp > 0:
-                self._token_expires_at = exp
-            else:
+            # Determine expiration: try decoding JWT payload 'exp' without verification
+            try:
+                decoded = jwt.decode(self._access_token, options={"verify_signature": False})
+                exp = float(decoded.get("exp", 0))
+                if exp > 0:
+                    self._token_expires_at = exp
+                else:
+                    expires_in = float(data.get("expires_in", 31536000))
+                    self._token_expires_at = time.time() + expires_in
+            except Exception:
                 expires_in = float(data.get("expires_in", 31536000))
                 self._token_expires_at = time.time() + expires_in
-        except Exception:
-            expires_in = float(data.get("expires_in", 31536000))
-            self._token_expires_at = time.time() + expires_in
 
-        return self._access_token
+            return self._access_token
+
+        raise NotAuthenticatedError("Login failed: Maximum retry attempts exhausted.")
 
     async def logout(self) -> None:
         """Terminate active session on server and clear token from memory."""
@@ -272,11 +280,13 @@ class StockNowAPI:
                 await asyncio.sleep(backoff)
                 continue
 
-            # 401 Unauthorized handling: re-login once
+            # 401 Unauthorized handling: re-login once with backoff
             if resp.status_code == 401:
                 if authenticated and not has_reauthed:
                     has_reauthed = True
                     self._access_token = None
+                    jitter = random.uniform(0.1, 0.3)
+                    await asyncio.sleep(0.5 + jitter)
                     try:
                         await self.login()
                         continue
