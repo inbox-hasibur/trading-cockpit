@@ -1333,6 +1333,58 @@ def post_automation_config(
         }
 
 
+class KernelHandoffRequest(BaseModel):
+    target_mode: str = Field(..., pattern="^(BACKGROUND_POLLING|ONSCREEN_LIVE|BACKGROUND_24_7|BACKGROUND 24/7)$")
+
+
+@router.post("/automation/handoff")
+def post_automation_handoff(
+    body: KernelHandoffRequest,
+    db: Database = Depends(get_db),
+) -> dict[str, Any]:
+    """Single-writer run mode handoff: finishes current cycle under lock, then switches mode."""
+    target = "BACKGROUND_POLLING" if body.target_mode in ("BACKGROUND_24_7", "BACKGROUND 24/7") else body.target_mode
+    with acquire_trading_lock():
+        with db.write() as session:
+            state = portfolio_state(session)
+            old_mode = state.ingestion_mode
+            state.ingestion_mode = target
+            state.rules_revision += 1
+
+            sched = get_active_scheduler()
+            if target == "BACKGROUND_POLLING":
+                if sched and state.automation_enabled and not state.paused:
+                    sched.start()
+            elif target == "ONSCREEN_LIVE":
+                if sched:
+                    sched.stop_sync()
+
+            cp = CheckpointManager.create_checkpoint(
+                session=session,
+                state=state,
+                action="HANDOFF_MODE",
+                description=f"Handoff from {old_mode} to {target}",
+                actor="Kernel API",
+            )
+            session.add(KernelAuditLog(
+                endpoint="/k/automation/handoff",
+                action="HANDOFF_MODE",
+                symbol=None,
+                payload={"target_mode": target, "old_mode": old_mode},
+                result={"status": "HANDOFF_COMPLETE", "active_mode": target},
+                checkpoint_id=cp.id,
+                session_on=state.clock_date,
+            ))
+
+            return {
+                "status": "HANDOFF_COMPLETE",
+                "checkpoint_id": cp.id,
+                "old_mode": old_mode,
+                "active_mode": target,
+                "automation_enabled": state.automation_enabled,
+            }
+
+
 class SchedulerActionRequest(BaseModel):
     action: str = Field(..., pattern="^(start|stop|status)$")
 
@@ -1421,19 +1473,21 @@ def post_run_cycle(
     with acquire_trading_lock():
         with db.write() as session:
             state = portfolio_state(session)
+            auto_enabled = getattr(state, "automation_enabled", not getattr(state, "paused", False))
+            is_dry = body.dry_run if body.dry_run is not None else not auto_enabled
 
             # 1. Snapshot state first
             cp = CheckpointManager.create_checkpoint(
                 session=session,
                 state=state,
                 action="RUN_CYCLE",
-                description=f"Run cycle (dry_run={body.dry_run})",
+                description=f"Run cycle (dry_run={is_dry})",
                 actor="Kernel API",
             )
 
             # 2. Run AutoTrader cycle
             trader = AutoTrader(db, settings)
-            cycle_result = trader.run_cycle(request_id=body.idempotency_key, session=session)
+            cycle_result = trader.run_cycle(request_id=body.idempotency_key, session=session, dry_run=is_dry)
 
             # 3. Write audit row
             session.add(KernelAuditLog(
@@ -1449,7 +1503,7 @@ def post_run_cycle(
             return {
                 "status": "ok",
                 "checkpoint_id": cp.id,
-                "dry_run": body.dry_run,
+                "dry_run": is_dry,
                 "cycle": cycle_result,
             }
 

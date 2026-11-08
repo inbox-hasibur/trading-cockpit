@@ -86,17 +86,33 @@ function setPnl(id, value, asPercentage = false) {
 }
 
 function tone(action) {
-  if (/CRASH|BLOCKED|INVALID|STALE|NO_DATA/.test(action)) return "negative";
+  if (/CRASH|BLOCKED|INVALID|STALE|NO_DATA|KILL_SWITCH|NOT_AUTHENTICATED|SCHEMA_CHANGED/.test(action)) return "negative";
+  if (/PREVIEW_BUY|PREVIEW_SELL|PREVIEW|MASTER_OFF|CAPS|LOCK|LOSS|DISABLED|ODD/.test(action)) return "amber";
   if (/BUY_ZONE|^BUY$/.test(action)) return "buy";
   if (/SELL_ZONE|^SELL$|SELL_TIER|RECOVERY|PULLBACK|RUNNER/.test(action)) return "sell";
-  if (/WAIT|MID_RANGE|NO_CHURN|BUDGET/.test(action)) return "neutral";
-  if (/LOCK|LOSS|DISABLED|ODD/.test(action)) return "amber";
+  if (/WAIT|MID_RANGE|NO_CHURN|BUDGET|MARKET_CLOSED|NO_SESSION/.test(action)) return "neutral";
   if (/MATURE/.test(action)) return "positive";
   return "neutral";
 }
 
 function badge(action, label) {
-  const labels = { CRASH_QUARANTINE: "CRASH GUARD", BUY_ZONE: "BUY ZONE", SELL_ZONE: "SELL ZONE", MID_RANGE: "MID RANGE", NO_DATA: "NO DATA" };
+  const labels = {
+    CRASH_QUARANTINE: "CRASH GUARD",
+    BUY_ZONE: "BUY ZONE",
+    SELL_ZONE: "SELL ZONE",
+    MID_RANGE: "MID RANGE",
+    NO_DATA: "NO DATA",
+    MASTER_OFF: "MASTER OFF",
+    KILL_SWITCH: "KILL SWITCH",
+    MARKET_CLOSED: "MARKET CLOSED",
+    NO_SESSION: "NO SESSION",
+    NOT_AUTHENTICATED: "NOT AUTHENTICATED",
+    SCHEMA_CHANGED: "SCHEMA CHANGED",
+    CAPS: "CAPS LIMIT",
+    PREVIEW_BUY: "PREVIEW BUY",
+    PREVIEW_SELL: "PREVIEW SELL",
+    PREVIEW: "PREVIEW",
+  };
   const node = element("span", `signal-badge tone-${tone(action)}`, label || labels[action] || action.replaceAll("_", " "));
   node.title = action;
   return node;
@@ -154,10 +170,29 @@ async function api(path, { method = "GET", body, headers = {}, timeout = 35000 }
 
 function updateControls() {
   const ready = Boolean(state.snapshot);
-  $("run-cycle").disabled = !ready || state.busy || state.snapshot.app.paused;
-  $("pause-button").disabled = !ready || state.busy;
-  const topbarInput = $("topbar-automation-toggle-input");
-  if (topbarInput) topbarInput.disabled = !ready || state.busy;
+  const autoEnabled = ready && state.snapshot.app && (state.snapshot.app.automation_enabled !== undefined ? Boolean(state.snapshot.app.automation_enabled) : !state.snapshot.app.paused);
+
+  const runBtn = $("run-cycle");
+  if (runBtn) {
+    runBtn.disabled = !ready || state.busy;
+    const runLabel = $("run-label");
+    if (runLabel) {
+      runLabel.textContent = state.busy ? "Working…" : (autoEnabled ? "Run cycle now" : "Run cycle now (Preview)");
+    }
+    runBtn.title = autoEnabled
+      ? "Run trading cycle now (submits orders subject to mode, caps & checks)"
+      : "Run labeled PREVIEW cycle (decisions only; zero orders submitted while automation is OFF)";
+  }
+
+  const topbarMaster = $("topbar-master-toggle");
+  if (topbarMaster) topbarMaster.disabled = !ready || state.busy;
+  const topbarKill = $("topbar-kill-btn");
+  if (topbarKill) topbarKill.disabled = !ready || state.busy;
+  const topbarHandoff = $("topbar-handoff-btn");
+  if (topbarHandoff) topbarHandoff.disabled = !ready || state.busy;
+  const settingsHandoff = $("settings-handoff-btn");
+  if (settingsHandoff) settingsHandoff.disabled = !ready || state.busy;
+
   $("next-session").disabled = !ready || state.busy;
   $("scenario").disabled = state.busy;
   $("save-allocation").disabled = !ready || state.busy;
@@ -165,20 +200,10 @@ function updateControls() {
   $("company-enabled").disabled = !ready || state.busy;
   $("chat-send").disabled = !ready || state.chatBusy;
   document.querySelectorAll("[data-prompt]").forEach((button) => { button.disabled = !ready || state.chatBusy; });
-  setText("run-label", state.busy ? "Working…" : "Run automation cycle");
+
   if (ready) {
-    const paused = state.snapshot.app.paused;
-    const pauseTitle = paused ? "Resume engine" : "Pause engine";
-    const pauseBtn = $("pause-button");
-    if (pauseBtn) {
-      pauseBtn.title = pauseTitle;
-      pauseBtn.setAttribute("aria-label", pauseTitle);
-      const pauseLabel = $("pause-label");
-      if (pauseLabel) pauseLabel.textContent = pauseTitle;
-      pauseBtn.classList.toggle("pause-active", paused);
-    }
-    setText("engine-state", paused ? "ENGINE PAUSED" : "MANUAL CYCLES");
-    $("engine-state").classList.toggle("paused", paused);
+    setText("engine-state", autoEnabled ? "MANUAL CYCLES" : "ENGINE PAUSED");
+    $("engine-state").classList.toggle("paused", !autoEnabled);
     renderAutomationControlBar();
   }
 }
@@ -798,17 +823,29 @@ document.querySelectorAll("[data-period]").forEach((button) => {
   setText("ledger-range", `${sessionDate(period.start, true)} - ${sessionDate(period.end, true)} · Latest 100 records shown; totals use full ledger.`);
 }
 
-$("run-cycle").addEventListener("click", () => mutate(async () => {
-  const result = await api("/api/automation/cycle", { method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() } });
-  await refresh();
-  notify(result.duplicate ? "Snapshot already evaluated — no duplicate trades." : `Paper cycle complete: ${result.buy_count} buy, ${result.sell_count} sell. No external orders.`);
-}));
+const runCycleBtn = $("run-cycle");
+if (runCycleBtn) {
+  runCycleBtn.addEventListener("click", () => mutate(async () => {
+    const result = await api("/api/automation/cycle", { method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() } });
+    await refresh();
+    if (result.is_preview || result.status === "PREVIEW") {
+      notify(`Preview cycle complete (Automation OFF): ${result.buy_count || 0} buy, ${result.sell_count || 0} sell decisions generated. Zero orders submitted.`);
+    } else if (result.status === "SKIPPED") {
+      notify(`Cycle skipped: ${result.reason || "Preflight checks"}`);
+    } else {
+      notify(result.duplicate ? "Snapshot already evaluated — no duplicate trades." : `Cycle complete: ${result.buy_count} buy, ${result.sell_count} sell.`);
+    }
+  }));
+}
 
-$("pause-button").addEventListener("click", () => mutate(async () => {
-  const result = await api("/api/automation/pause", { method: "POST", body: { paused: !state.snapshot.app.paused } });
-  await refresh();
-  notify(result.paused ? "Automation paused. New paper cycles are blocked." : "Engine resumed. Cycles still require a manual click.");
-}));
+const pauseBtn = $("pause-button");
+if (pauseBtn) {
+  pauseBtn.addEventListener("click", () => mutate(async () => {
+    const result = await api("/api/automation/pause", { method: "POST", body: { paused: !state.snapshot.app.paused } });
+    await refresh();
+    notify(result.paused ? "Automation paused. New cycles blocked." : "Engine resumed.");
+  }));
+}
 
 $("next-session").addEventListener("click", () => mutate(async () => {
   const result = await api("/api/demo/advance", { method: "POST", body: { scenario: $("scenario").value } });
@@ -1002,7 +1039,6 @@ function tickMarketClock() {
     const remS = diffSec % 60;
     setText("market-countdown-text", `Closes in ${String(remH).padStart(2, "0")}h ${String(remM).padStart(2, "0")}m ${String(remS).padStart(2, "0")}s`);
     if ($("topbar-clock-widget")) $("topbar-clock-widget").title = "DSE trading session open until 14:30 (Asia/Dhaka)";
-    if ($("run-cycle")) $("run-cycle").title = "Run live automation cycle";
   } else {
     dot.className = "status-dot clock-dot closed";
     setText("market-status-text", "DSE CLOSED");
@@ -1023,7 +1059,6 @@ function tickMarketClock() {
     const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const nextDayName = dayNames[nextSession.getDay()];
     if ($("topbar-clock-widget")) $("topbar-clock-widget").title = `DSE opens ${nextDayName} 10:00 (Asia/Dhaka)`;
-    if ($("run-cycle")) $("run-cycle").title = "Market closed: runs on demo data";
 
     const diffMs = nextSession.getTime() - dhakaDate.getTime();
     if (diffMs > 0) {
@@ -1078,24 +1113,64 @@ function renderAutomationControlBar() {
     toggleInput.disabled = state.busy;
   }
 
-  // Topbar Engine Switch
-  const topbarInput = $("topbar-automation-toggle-input");
-  if (topbarInput) {
-    topbarInput.checked = enabled;
-    topbarInput.disabled = state.busy;
+  // Topbar Master Automation Chip
+  const topbarMasterToggle = $("topbar-master-toggle");
+  const topbarMasterLabel = $("topbar-master-label");
+  if (topbarMasterToggle) {
+    topbarMasterToggle.classList.toggle("is-on", enabled);
+    topbarMasterToggle.classList.toggle("is-off", !enabled);
+    topbarMasterToggle.disabled = state.busy;
   }
-  const topbarStatusText = $("topbar-engine-status-text");
-  if (topbarStatusText) {
-    topbarStatusText.textContent = enabled ? "Engine ON" : "Engine OFF";
-    topbarStatusText.className = `engine-switch-label ${enabled ? "is-active" : "is-paused"}`;
+  if (topbarMasterLabel) {
+    topbarMasterLabel.textContent = enabled ? "Auto ON" : "Auto OFF";
+  }
+
+  // Topbar Emergency Kill Switch
+  const isKilled = Boolean(app.kill_switch_active);
+  const topbarKillBtn = $("topbar-kill-btn");
+  const topbarKillLabel = $("topbar-kill-label");
+  if (topbarKillBtn) {
+    topbarKillBtn.classList.toggle("is-killed", isKilled);
+    topbarKillBtn.disabled = state.busy;
+  }
+  if (topbarKillLabel) {
+    topbarKillLabel.textContent = isKilled ? "KILL ACTIVE" : "Kill";
+  }
+
+  // Run Mode & Handoff Controls
+  const isBackground = mode === "BACKGROUND_POLLING" || mode === "BACKGROUND_24_7";
+  const isLive = mode === "ONSCREEN_LIVE" || mode === "SIDE_BY_SIDE_LIVE";
+  const handoffNextMode = isBackground ? "ONSCREEN_LIVE" : "BACKGROUND_POLLING";
+  const handoffActionLabel = isBackground ? "Go Onscreen" : "Go Background";
+  const handoffTitle = isBackground
+    ? "Handoff: Finish current cycle under lock, then switch to headed Onscreen Live"
+    : "Handoff: Finish current cycle under lock, then switch to unattended Background 24/7";
+
+  const topbarHandoff = $("topbar-handoff-btn");
+  const topbarHandoffLabel = $("topbar-handoff-label");
+  if (topbarHandoff) {
+    topbarHandoff.title = handoffTitle;
+    topbarHandoff.disabled = state.busy;
+  }
+  if (topbarHandoffLabel) {
+    topbarHandoffLabel.textContent = handoffActionLabel;
+  }
+
+  const settingsHandoff = $("settings-handoff-btn");
+  const settingsHandoffLabel = $("settings-handoff-label");
+  if (settingsHandoff) {
+    settingsHandoff.title = handoffTitle;
+    settingsHandoff.disabled = state.busy;
+  }
+  if (settingsHandoffLabel) {
+    settingsHandoffLabel.textContent = `Handoff: ${handoffActionLabel}`;
   }
 
   // Segmented mode buttons (Settings Page)
-  const isLive = mode === "ONSCREEN_LIVE" || mode === "SIDE_BY_SIDE_LIVE";
   const pollingBtn = $("mode-btn-polling");
   const liveBtn = $("mode-btn-live");
   if (pollingBtn) {
-    pollingBtn.classList.toggle("active", mode === "BACKGROUND_POLLING");
+    pollingBtn.classList.toggle("active", isBackground);
     pollingBtn.disabled = state.busy;
   }
   if (liveBtn) {
@@ -1104,14 +1179,14 @@ function renderAutomationControlBar() {
   }
   const modePill = $("current-mode-pill");
   if (modePill) {
-    modePill.textContent = mode === "BACKGROUND_POLLING" ? "Method A Active" : "Method B Active";
+    modePill.textContent = isBackground ? "Background 24/7 Active" : "Onscreen Live Active";
   }
 
   // Header Mode Slider (Portfolio Overview Header)
   const hdrPolling = $("hdr-mode-polling");
   const hdrLive = $("hdr-mode-live");
   if (hdrPolling) {
-    hdrPolling.classList.toggle("active", mode === "BACKGROUND_POLLING");
+    hdrPolling.classList.toggle("active", isBackground);
     hdrPolling.disabled = state.busy;
   }
   if (hdrLive) {
@@ -1121,7 +1196,7 @@ function renderAutomationControlBar() {
   const overflowPolling = $("overflow-mode-polling");
   const overflowLive = $("overflow-mode-live");
   if (overflowPolling) {
-    overflowPolling.classList.toggle("active", mode === "BACKGROUND_POLLING");
+    overflowPolling.classList.toggle("active", isBackground);
     overflowPolling.disabled = state.busy;
   }
   if (overflowLive) {
@@ -1194,10 +1269,11 @@ function renderAutomationControlBar() {
       : `Live Hours (virtual) (#${targetPid || "164580"} - ${targetPname})`;
   }
 
-  // Polling Range Slider & Interval Pills
+  // Polling Range Slider & Interval Pills (slider only shown in Background 24/7 mode)
   const intervalWrap = $("polling-interval-wrap");
-  const isPollingActive = enabled && mode === "BACKGROUND_POLLING";
+  const isPollingActive = enabled && isBackground;
   if (intervalWrap) {
+    intervalWrap.style.display = isBackground ? "block" : "none";
     intervalWrap.classList.toggle("disabled", !isPollingActive);
     intervalWrap.setAttribute("aria-disabled", String(!isPollingActive));
   }
@@ -1347,6 +1423,82 @@ if ($("topbar-automation-toggle-input")) {
       polling_interval_sec: interval,
     });
   });
+}
+
+if ($("topbar-master-toggle")) {
+  $("topbar-master-toggle").addEventListener("click", () => {
+    if (!state.snapshot) return;
+    const app = state.snapshot.app || {};
+    const enabled = app.automation_enabled !== undefined ? Boolean(app.automation_enabled) : !app.paused;
+    const mode = app.ingestion_mode || "BACKGROUND_POLLING";
+    const interval = Number(app.polling_interval_sec || 120);
+    setAutomationConfig({
+      automation_enabled: !enabled,
+      ingestion_mode: mode,
+      polling_interval_sec: interval,
+    });
+  });
+}
+
+if ($("topbar-kill-btn")) {
+  $("topbar-kill-btn").addEventListener("click", async () => {
+    if (!state.snapshot) return;
+    const isKilled = Boolean(state.snapshot.app && state.snapshot.app.kill_switch_active);
+    if (!isKilled) {
+      if (!confirm("ENGAGE EMERGENCY KILL SWITCH? This immediately halts all AutoTrader and Hermes order execution.")) {
+        return;
+      }
+      await mutate(async () => {
+        await api("/api/automation/kill", {
+          method: "POST",
+          body: { active: true, reason: "Manual operator emergency kill switch engaged from topbar" },
+        });
+        await refresh();
+        notify("EMERGENCY KILL SWITCH ENGAGED: All order execution halted.", "negative");
+      });
+    } else {
+      if (!confirm("Disarm emergency kill switch? Orders will be allowed again subject to risk caps.")) {
+        return;
+      }
+      await mutate(async () => {
+        await api("/api/automation/kill", {
+          method: "POST",
+          body: { active: false, reason: "Manual disarm from topbar" },
+        });
+        await refresh();
+        notify("Emergency kill switch disarmed. Trading resumed.");
+      });
+    }
+  });
+}
+
+async function executeHandoff() {
+  if (state.busy || !state.snapshot) return;
+  const currentApp = state.snapshot.app || {};
+  const currentMode = currentApp.ingestion_mode || "BACKGROUND_POLLING";
+  const isBackground = currentMode === "BACKGROUND_POLLING" || currentMode === "BACKGROUND_24_7";
+  const targetMode = isBackground ? "ONSCREEN_LIVE" : "BACKGROUND_POLLING";
+  const label = isBackground ? "Onscreen Live" : "Background 24/7";
+
+  if (!confirm(`Perform run mode handoff to ${label}? This waits for any in-flight AutoTrader cycle under the single-writer trading lock, then switches mode.`)) {
+    return;
+  }
+
+  await mutate(async () => {
+    await api("/api/automation/handoff", {
+      method: "POST",
+      body: { target_mode: targetMode, reason: "Operator run mode handoff" },
+    });
+    await refresh(true);
+    notify(`Handoff complete: Active run mode is now ${targetMode === "ONSCREEN_LIVE" ? "Onscreen Live" : "Background 24/7"}`);
+  });
+}
+
+if ($("topbar-handoff-btn")) {
+  $("topbar-handoff-btn").addEventListener("click", executeHandoff);
+}
+if ($("settings-handoff-btn")) {
+  $("settings-handoff-btn").addEventListener("click", executeHandoff);
 }
 
 if ($("hdr-mode-polling")) {

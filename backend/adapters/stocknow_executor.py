@@ -701,12 +701,12 @@ def get_stocknow_executor(
     if mode_upper == "DEMO":
         return DemoPaperExecutor()
 
-    if mode_upper in ("ONSCREEN_LIVE", "BROWSER"):
+    if mode_upper in ("ONSCREEN_LIVE", "BROWSER", "ONSCREEN"):
         if not stocknow_client:
             raise NotAuthenticatedExecutionError("StockNow browser client is not attached.")
         return BrowserTransport(stocknow_client, configured_test_id=test_id)
 
-    if mode_upper in ("BACKGROUND_POLLING", "API", "BACKGROUND"):
+    if mode_upper in ("BACKGROUND_POLLING", "API", "BACKGROUND", "BACKGROUND_24_7", "BACKGROUND_247", "BACKGROUND 24/7"):
         return ApiTransport(api_client, configured_test_id=test_id)
 
     # Fallback to browser if page is active, otherwise API

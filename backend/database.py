@@ -203,7 +203,7 @@ class DecisionLog(Base):
     __tablename__ = "decision_logs"
     id: Mapped[int] = mapped_column(primary_key=True)
     cycle_id: Mapped[str | None] = mapped_column(ForeignKey("automation_cycles.id"), nullable=True, index=True, default=None)
-    symbol: Mapped[str] = mapped_column(ForeignKey("company_profiles.symbol"))
+    symbol: Mapped[str] = mapped_column(String(40), index=True)
     lot_id: Mapped[int | None] = mapped_column(ForeignKey("tax_lots.id"), nullable=True)
     action: Mapped[str] = mapped_column(String(40))
     quantity: Mapped[int] = mapped_column(Integer, default=0)

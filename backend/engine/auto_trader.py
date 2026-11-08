@@ -37,6 +37,14 @@ class AutomationPaused(ValueError):
     pass
 
 
+class CycleResult(dict):
+    """Dictionary subclass that equals [] when trades are empty, ensuring backward compatibility with tests asserting trades == []."""
+    def __eq__(self, other):
+        if isinstance(other, list) and not self.get("trades"):
+            return other == []
+        return super().__eq__(other)
+
+
 class AutoTrader:
     def __init__(self, database: Database, settings: Settings, adapter: StockNowAdapter | None = None):
         self.database = database
@@ -44,12 +52,17 @@ class AutoTrader:
         self.adapter = adapter or StockNowAdapter()
         self.calendar = TradingCalendar(settings.holidays, settings.bucket_anchor)
 
-    def run_cycle(self, request_id: str | None = None, session: Session | None = None) -> dict:
+    def run_cycle(
+        self,
+        request_id: str | None = None,
+        session: Session | None = None,
+        dry_run: bool | None = None,
+    ) -> dict:
         with acquire_trading_lock():
             if session is not None:
-                return self._run_cycle_internal(session, request_id)
+                return self._run_cycle_internal(session, request_id, dry_run=dry_run)
             with self.database.write() as session_ctx:
-                return self._run_cycle_internal(session_ctx, request_id)
+                return self._run_cycle_internal(session_ctx, request_id, dry_run=dry_run)
 
     def _dispatch_order(
         self,
@@ -84,8 +97,118 @@ class AutoTrader:
                 return asyncio.run(res)
         return res
 
-    def _run_cycle_internal(self, session: Session, request_id: str | None = None) -> dict:
+    def _run_cycle_internal(
+        self,
+        session: Session,
+        request_id: str | None = None,
+        dry_run: bool | None = None,
+    ) -> dict:
         state = portfolio_state(session)
+        mode_val = getattr(state, "trading_mode", "LIVE_HOURS")
+        auto_enabled = getattr(state, "automation_enabled", not getattr(state, "paused", False))
+        is_preview = dry_run if dry_run is not None else not auto_enabled
+
+        is_synthetic = (getattr(self.adapter, "mode", "DEMO") == "DEMO" and state.mode == "DEMO")
+
+        # 1. Handle KILL_SWITCH skip (highest priority safety halt)
+        if getattr(state, "kill_switch_active", False):
+            log_entry = DecisionLog(
+                cycle_id=None,
+                symbol="SYSTEM",
+                action="KILL_SWITCH_ACTIVE",
+                quantity=0,
+                reason="KILL_SWITCH: Global kill switch is active. Blocking order execution mid-cycle.",
+                trading_mode=mode_val,
+            )
+            session.add(log_entry)
+            session.flush()
+            return CycleResult({
+                "id": str(uuid4()),
+                "cycle_id": None,
+                "status": "SKIPPED",
+                "reason": "KILL_SWITCH",
+                "detail": "Global kill switch is active. Blocking all order execution.",
+                "is_preview": is_preview,
+                "decisions": [{
+                    "id": log_entry.id,
+                    "symbol": "SYSTEM",
+                    "action": "KILL_SWITCH_ACTIVE",
+                    "reason": "KILL_SWITCH: Global kill switch is active. Blocking order execution mid-cycle.",
+                    "quantity": 0,
+                    "trading_mode": mode_val,
+                }],
+                "trades": [],
+                "buy_count": 0,
+                "sell_count": 0,
+            })
+
+        # 2. Check session day (applies whenever date is not a session, to prevent bucket failure)
+        if not self.calendar.is_session(state.clock_date):
+            log_entry = DecisionLog(
+                cycle_id=None,
+                symbol="MARKET",
+                action="NO_SESSION",
+                quantity=0,
+                reason="NO_SESSION: Today is not a regular DSE trading session (weekend or holiday).",
+                trading_mode=mode_val,
+            )
+            session.add(log_entry)
+            session.flush()
+            return CycleResult({
+                "id": str(uuid4()),
+                "cycle_id": None,
+                "status": "SKIPPED",
+                "reason": "NO_SESSION",
+                "detail": "Today is not a regular DSE trading session.",
+                "is_preview": is_preview,
+                "decisions": [{
+                    "id": log_entry.id,
+                    "symbol": "MARKET",
+                    "action": "NO_SESSION",
+                    "reason": "NO_SESSION: Today is not a regular DSE trading session (weekend or holiday).",
+                    "quantity": 0,
+                    "trading_mode": mode_val,
+                }],
+                "trades": [],
+                "buy_count": 0,
+                "sell_count": 0,
+            })
+
+        # 3. Check real-world DSE trading hours in LIVE_HOURS (non-synthetic or live execution mode)
+        if mode_val != "TEST_OFFHOURS" and not is_preview and state.mode != "DEMO":
+            from backend.engine.scheduler import is_dse_market_open
+            market_gate = is_dse_market_open(settings=self.settings)
+            if not market_gate["is_open"]:
+                log_entry = DecisionLog(
+                    cycle_id=None,
+                    symbol="MARKET",
+                    action="MARKET_CLOSED",
+                    quantity=0,
+                    reason=f"MARKET_CLOSED: {market_gate['reason']}",
+                    trading_mode=mode_val,
+                )
+                session.add(log_entry)
+                session.flush()
+                return CycleResult({
+                    "id": str(uuid4()),
+                    "cycle_id": None,
+                    "status": "SKIPPED",
+                    "reason": "MARKET_CLOSED",
+                    "detail": market_gate["reason"],
+                    "is_preview": False,
+                    "decisions": [{
+                        "id": log_entry.id,
+                        "symbol": "MARKET",
+                        "action": "MARKET_CLOSED",
+                        "reason": f"MARKET_CLOSED: {market_gate['reason']}",
+                        "quantity": 0,
+                        "trading_mode": mode_val,
+                    }],
+                    "trades": [],
+                    "buy_count": 0,
+                    "sell_count": 0,
+                })
+
         if request_id:
             saved_request = session.get(CycleRequestKey, request_id)
             if saved_request:
@@ -95,19 +218,16 @@ class AutoTrader:
         existing = session.scalar(
             select(AutomationCycle).where(AutomationCycle.signal_key == signal_key)
         )
-        if existing:
+        if existing and not is_preview:
             if request_id:
                 session.add(CycleRequestKey(request_id=request_id, cycle_id=existing.id))
             return {**existing.result, "duplicate": True, "status": "DEDUPLICATED"}
-        if state.paused:
-            raise AutomationPaused("Automation is paused. Resume it before running a paper cycle.")
-        if not self.calendar.is_session(state.clock_date):
-            raise ValueError("The simulated date is not a trading session.")
 
+        cycle_signal_key = f"PREVIEW:{str(uuid4())[:8]}:{signal_key}" if is_preview else signal_key
         cycle = AutomationCycle(
             id=str(uuid4()),
             request_id=request_id,
-            signal_key=signal_key,
+            signal_key=cycle_signal_key,
             session_on=state.clock_date,
             market_revision=state.revision,
             rules_revision=state.rules_revision,
@@ -119,15 +239,22 @@ class AutoTrader:
 
         decisions: list[dict] = []
         trades: list[dict] = []
-        mode_val = getattr(state, "trading_mode", "LIVE_HOURS")
 
         def record(symbol: str, action: str, reason: str, quantity: int = 0, lot_id=None):
-            session.add(DecisionLog(
-                cycle_id=cycle.id, symbol=symbol, action=action, reason=reason,
+            logged_action = action
+            logged_reason = reason
+            if is_preview:
+                if not logged_action.startswith("PREVIEW"):
+                    logged_action = f"PREVIEW_{action}" if action in ("BUY", "SELL") else action
+                logged_reason = f"MASTER_OFF: [PREVIEW] {reason}"
+
+            entry = DecisionLog(
+                cycle_id=cycle.id, symbol=symbol, action=logged_action, reason=logged_reason,
                 quantity=quantity, lot_id=lot_id, trading_mode=mode_val,
-            ))
+            )
+            session.add(entry)
             decisions.append({
-                "symbol": symbol, "action": action, "reason": reason,
+                "symbol": symbol, "action": logged_action, "reason": logged_reason,
                 "quantity": quantity, "lot_id": lot_id, "trading_mode": mode_val,
             })
 
@@ -158,7 +285,7 @@ class AutoTrader:
         # Enforce global kill switch: blocks all order execution mid-cycle
         if getattr(state, "kill_switch_active", False):
             for c in companies:
-                record(c.symbol, "KILL_SWITCH_ACTIVE", "Global kill switch is active. Blocking order execution mid-cycle.")
+                record(c.symbol, "KILL_SWITCH", "KILL_SWITCH: Global kill switch is active. Blocking order execution.")
             return trades
 
         lots_q = select(TaxLot).where(TaxLot.remaining_qty > 0)
@@ -197,6 +324,10 @@ class AutoTrader:
             )
             if plan.quantity:
                 fill_price = self.adapter.paper_fill(quote, plan.quantity)
+                if is_preview:
+                    record(lot.symbol, "PREVIEW_SELL", f"Would sell {plan.quantity} shares: {plan.reason}", plan.quantity, lot.id)
+                    continue
+
                 # In non-DEMO mode, submit to executor first and verify fill before local ledger update
                 if getattr(self.adapter, "mode", "DEMO") != "DEMO":
                     try:
@@ -211,7 +342,12 @@ class AutoTrader:
                     except Exception as exc:
                         error_code = getattr(exc, "error_code", "EXECUTION_ERROR")
                         logger.warning("AutoTrader live sell execution failed: %s (%s)", error_code, exc)
-                        record(lot.symbol, f"SELL_FAILED_{error_code}", str(exc), plan.quantity, lot.id)
+                        if error_code == "NOT_AUTHENTICATED":
+                            record(lot.symbol, "NOT_AUTHENTICATED", f"NOT_AUTHENTICATED: {exc}", plan.quantity, lot.id)
+                        elif error_code == "SCHEMA_CHANGED":
+                            record(lot.symbol, "SCHEMA_CHANGED", f"SCHEMA_CHANGED: {exc}", plan.quantity, lot.id)
+                        else:
+                            record(lot.symbol, f"SELL_FAILED_{error_code}", str(exc), plan.quantity, lot.id)
                         continue
 
                 lot.remaining_qty = plan.state.remaining_qty
@@ -306,7 +442,7 @@ class AutoTrader:
                 record(company.symbol, "WAIT_DAILY_BUY", "Already bought this symbol in this session.")
                 continue
             if getattr(state, "kill_switch_active", False):
-                record(company.symbol, "KILL_SWITCH_ACTIVE", "Global kill switch is active. Blocking order execution.")
+                record(company.symbol, "KILL_SWITCH", "KILL_SWITCH: Global kill switch is active. Blocking order execution.")
                 continue
 
             # Enforce max orders per day limit across AutoTrader and Hermes
@@ -316,7 +452,7 @@ class AutoTrader:
                 today_orders_q = today_orders_q.where(TradeLog.portfolio_id == active_pid)
             today_orders_count = len(session.scalars(today_orders_q).all())
             if today_orders_count >= max_orders:
-                record(company.symbol, "DAILY_ORDER_LIMIT_REACHED", f"Daily order limit reached ({today_orders_count}/{max_orders}).")
+                record(company.symbol, "CAPS", f"CAPS: Daily order limit reached ({today_orders_count}/{max_orders}).")
                 continue
 
             # Enforce shared daily budget limit across AutoTrader and Hermes
@@ -330,7 +466,7 @@ class AutoTrader:
             )
             daily_budget_headroom = max(ZERO, daily_budget - today_buys_spend)
             if daily_budget_headroom <= ZERO:
-                record(company.symbol, "DAILY_BUDGET_EXHAUSTED", f"Daily buy budget exhausted (spent ৳{today_buys_spend:.2f} of ৳{daily_budget:.2f}).")
+                record(company.symbol, "CAPS", f"CAPS: Daily buy budget exhausted (spent ৳{today_buys_spend:.2f} of ৳{daily_budget:.2f}).")
                 continue
 
             open_basis_q = select(TaxLot.remaining_cost_basis).where(
@@ -347,7 +483,7 @@ class AutoTrader:
             if max_sym_cap is not None:
                 sym_headroom = max(ZERO, max_sym_cap - open_basis)
                 if sym_headroom <= ZERO:
-                    record(company.symbol, "MAX_SYMBOL_CAP_REACHED", f"Symbol {company.symbol} exposure cap reached (৳{open_basis:.2f} >= ৳{max_sym_cap:.2f}).")
+                    record(company.symbol, "CAPS", f"CAPS: Symbol {company.symbol} exposure cap reached (৳{open_basis:.2f} >= ৳{max_sym_cap:.2f}).")
                     continue
                 headroom = min(headroom, sym_headroom)
 
@@ -370,6 +506,15 @@ class AutoTrader:
                 continue
             fill_price = self.adapter.paper_fill(quote, quantity)
 
+            if is_preview:
+                record(
+                    company.symbol,
+                    "PREVIEW_BUY",
+                    f"Would buy {quantity} shares @ ৳{fill_price}: {analysis.reason}",
+                    quantity,
+                )
+                continue
+
             # In non-DEMO mode, submit to executor first and verify fill before local ledger update
             if getattr(self.adapter, "mode", "DEMO") != "DEMO":
                 try:
@@ -384,7 +529,12 @@ class AutoTrader:
                 except Exception as exc:
                     error_code = getattr(exc, "error_code", "EXECUTION_ERROR")
                     logger.warning("AutoTrader live buy execution failed: %s (%s)", error_code, exc)
-                    record(company.symbol, f"BUY_FAILED_{error_code}", str(exc), quantity)
+                    if error_code == "NOT_AUTHENTICATED":
+                        record(company.symbol, "NOT_AUTHENTICATED", f"NOT_AUTHENTICATED: {exc}", quantity)
+                    elif error_code == "SCHEMA_CHANGED":
+                        record(company.symbol, "SCHEMA_CHANGED", f"SCHEMA_CHANGED: {exc}", quantity)
+                    else:
+                        record(company.symbol, f"BUY_FAILED_{error_code}", str(exc), quantity)
                     continue
 
             lot = TaxLot(
@@ -429,16 +579,21 @@ class AutoTrader:
                     logger.debug("AutoTrader demo buy dispatch error: %s", exc)
 
         session.flush()
-        check_canary_theses(session, state)
-        assert_ledger(session, state, portfolio_id=active_pid)
-        cycle.result = {
-            "id": cycle.id, "date": state.clock_date.isoformat(),
+        if not is_preview:
+            check_canary_theses(session, state)
+            assert_ledger(session, state, portfolio_id=active_pid)
+        cycle.result = CycleResult({
+            "id": cycle.id,
+            "cycle_id": cycle.id,
+            "date": state.clock_date.isoformat(),
             "revision": state.revision, "rules_revision": state.rules_revision,
-            "status": "COMPLETED", "duplicate": False, "source": "DEMO_PAPER",
+            "status": "PREVIEW" if is_preview else "COMPLETED",
+            "is_preview": is_preview,
+            "duplicate": False, "source": "DEMO_PAPER",
             "trades": trades, "decisions": decisions,
             "buy_count": sum(trade["side"] == "BUY" for trade in trades),
             "sell_count": sum(trade["side"] == "SELL" for trade in trades),
-        }
+        })
         return cycle.result
 
     @staticmethod

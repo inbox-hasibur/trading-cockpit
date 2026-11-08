@@ -130,9 +130,9 @@ def test_all_api_errors_return_error_and_detail_json(client):
     assert "detail" in data_404
     assert data_404["error"] == "NOT_FOUND"
 
-    # 3. 409 Conflict (e.g. paused cycle)
+    # 3. 409 Conflict (e.g. paused cycle when active execution is required)
     client.post("/api/automation/pause", json={"paused": True})
-    res_409 = client.post("/api/automation/cycle")
+    res_409 = client.post("/api/automation/cycle?require_active=true")
     assert res_409.status_code == 409
     data_409 = res_409.json()
     assert "error" in data_409

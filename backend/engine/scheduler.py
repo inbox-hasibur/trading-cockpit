@@ -17,7 +17,7 @@ from backend.adapters.stocknow_market_sync import (
     sync_live_market_to_db,
 )
 from backend.config import DHAKA, Settings
-from backend.database import Database, portfolio_state
+from backend.database import Database, DecisionLog, portfolio_state
 from backend.engine.auto_trader import AutoTrader
 from backend.engine.t2_ledger import TradingCalendar
 from backend.portfolio import build_snapshot
@@ -135,32 +135,58 @@ class DSEMarketScheduler:
             auto_enabled = getattr(state, "automation_enabled", True)
             paused = getattr(state, "paused", False)
             trading_mode = getattr(state, "trading_mode", "LIVE_HOURS")
+            kill_switch = getattr(state, "kill_switch_active", False)
+            ingestion_mode = getattr(state, "ingestion_mode", "BACKGROUND_POLLING")
 
         gate = is_dse_market_open(settings=self.settings)
         if not force:
             if trading_mode != "TEST_OFFHOURS" and not gate["is_open"]:
                 self.last_skip_reason = f"Market closed: {gate['reason']}"
-                return {"status": "SKIPPED", "reason": self.last_skip_reason, "market": gate}
-            if not auto_enabled:
+                with self.database.write() as session:
+                    session.add(DecisionLog(
+                        cycle_id=None, symbol="MARKET", action="MARKET_CLOSED", quantity=0,
+                        reason=f"MARKET_CLOSED: {gate['reason']}", trading_mode=trading_mode,
+                    ))
+                return {"status": "SKIPPED", "reason": f"MARKET_CLOSED: Market closed ({gate['reason']})", "market": gate}
+
+            if not auto_enabled or paused:
                 self.last_skip_reason = "Automation disabled by operator"
-                return {"status": "SKIPPED", "reason": self.last_skip_reason, "market": gate}
-            if paused:
-                self.last_skip_reason = "Engine paused by operator"
-                return {"status": "SKIPPED", "reason": self.last_skip_reason, "market": gate}
+                with self.database.write() as session:
+                    session.add(DecisionLog(
+                        cycle_id=None, symbol="AUTOMATION", action="MASTER_OFF", quantity=0,
+                        reason="MASTER_OFF: Master buy/sell automation is disabled by operator.", trading_mode=trading_mode,
+                    ))
+                return {"status": "SKIPPED", "reason": "MASTER_OFF", "market": gate}
+
+            if kill_switch:
+                self.last_skip_reason = "Global kill switch is active"
+                with self.database.write() as session:
+                    session.add(DecisionLog(
+                        cycle_id=None, symbol="SYSTEM", action="KILL_SWITCH", quantity=0,
+                        reason="KILL_SWITCH: Global kill switch is active. Blocking order execution.", trading_mode=trading_mode,
+                    ))
+                return {"status": "SKIPPED", "reason": "KILL_SWITCH", "market": gate}
 
         synced_count = 0
-        if self.client:
-            try:
+        try:
+            if ingestion_mode == "ONSCREEN_LIVE" and self.client and getattr(self.client, "page", None):
                 quotes = await extract_quotes_from_stocknow(self.client)
                 if quotes:
                     sync_res = sync_live_market_to_db(self.database, quotes)
                     synced_count = sync_res.get("synced_count", 0)
-            except Exception as exc:
-                logger.warning("Scheduler market quote sync error: %s", exc)
+            elif ingestion_mode in ("BACKGROUND_POLLING", "BACKGROUND_24_7", "BACKGROUND 24/7"):
+                if self.client and getattr(self.client, "is_authenticated", False):
+                    from backend.adapters.stocknow_market_sync import fetch_stocknow_live_market_data
+                    quotes = await fetch_stocknow_live_market_data(client=self.client)
+                    if quotes:
+                        sync_res = sync_live_market_to_db(self.database, quotes)
+                        synced_count = sync_res.get("synced_count", 0)
+        except Exception as exc:
+            logger.warning("Scheduler market quote sync notice: %s", exc)
 
         cycle_res = None
         try:
-            cycle_res = self.trader.run_cycle()
+            cycle_res = self.trader.run_cycle(dry_run=not auto_enabled)
             if self.broadcaster:
                 self.broadcaster.publish("cycle", cycle_res)
         except Exception as exc:

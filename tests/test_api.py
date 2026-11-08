@@ -40,7 +40,10 @@ def test_restart_retains_ledger_and_recovery(settings):
 
 def test_pause_and_allocation_validation(client):
     assert client.post("/api/automation/pause", json={"paused": True}).status_code == 200
-    assert client.post("/api/automation/cycle").status_code == 409
+    res_preview = client.post("/api/automation/cycle")
+    assert res_preview.status_code == 200
+    assert res_preview.json()["is_preview"] is True
+    assert client.post("/api/automation/cycle?require_active=true").status_code == 409
     assert client.post("/api/automation/pause", json={"paused": False}).status_code == 200
     invalid = client.patch("/api/companies/BANKASIA/allocation", json={
         "buy_allocation_pct": 50, "enabled": True,
@@ -195,7 +198,10 @@ def test_automation_config_endpoint(client):
     assert res3.status_code == 200
     assert res3.json()["automation_enabled"] is False
     assert res3.json()["paused"] is True
-    assert client.post("/api/automation/cycle").status_code == 409
+    res_preview = client.post("/api/automation/cycle")
+    assert res_preview.status_code == 200
+    assert res_preview.json()["is_preview"] is True
+    assert client.post("/api/automation/cycle?require_active=true").status_code == 409
 
     # 4. Input validation (interval out of bounds or invalid mode)
     assert client.post("/api/automation/config", json={

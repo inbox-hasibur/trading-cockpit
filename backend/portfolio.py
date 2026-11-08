@@ -511,15 +511,16 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
     decisions = []
     for decision, cycle in session.execute(
         select(DecisionLog, AutomationCycle)
-        .join(AutomationCycle, DecisionLog.cycle_id == AutomationCycle.id)
+        .outerjoin(AutomationCycle, DecisionLog.cycle_id == AutomationCycle.id)
         .order_by(DecisionLog.id.desc()).limit(50)
     ):
         decisions.append({
             "id": decision.id, "cycle_id": decision.cycle_id,
             "symbol": decision.symbol, "action": decision.action,
             "quantity": decision.quantity, "lot_id": decision.lot_id,
-            "reason": decision.reason, "date": cycle.session_on.isoformat(),
-            "revision": cycle.market_revision,
+            "reason": decision.reason,
+            "date": cycle.session_on.isoformat() if cycle else state.clock_date.isoformat(),
+            "revision": cycle.market_revision if cycle else state.revision,
             "trading_mode": getattr(decision, "trading_mode", "LIVE_HOURS"),
         })
     latest = session.scalar(select(AutomationCycle).order_by(

@@ -42,10 +42,11 @@ from backend.config import (
     get_allowed_portfolios,
     get_portfolio_name,
 )
-from backend.database import CustomRule, Database, KernelAuditLog, RuleAudit, TradeLog, portfolio_state
+from backend.database import CustomRule, Database, DecisionLog, KernelAuditLog, RuleAudit, TradeLog, portfolio_state
 from backend.engine.auto_trader import AutomationPaused, AutoTrader
 from backend.engine.scheduler import DSEMarketScheduler, get_active_scheduler
 from backend.engine.money import ZERO
+from backend.engine.trading_lock import acquire_trading_lock
 from backend.market_map import build_market_map_payload
 from backend.portfolio import build_snapshot, rule_view
 from backend.routes_auth_settings import (
@@ -71,9 +72,21 @@ class AutomationConfigRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     automation_enabled: bool | None = None
     paused: bool | None = None
-    ingestion_mode: Literal["BACKGROUND_POLLING", "ONSCREEN_LIVE", "SIDE_BY_SIDE_LIVE"] | None = None
-    polling_interval_sec: int | None = Field(default=None, ge=30, le=300)
+    ingestion_mode: Literal["BACKGROUND_POLLING", "ONSCREEN_LIVE", "SIDE_BY_SIDE_LIVE", "BACKGROUND_24_7", "BACKGROUND 24/7"] | None = None
+    polling_interval_sec: int | None = Field(default=None, ge=30, le=3600)
     trading_mode: Literal["TEST_OFFHOURS", "LIVE_HOURS"] | None = None
+
+
+class HandoffRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    target_mode: Literal["BACKGROUND_POLLING", "ONSCREEN_LIVE", "BACKGROUND_24_7", "BACKGROUND 24/7"]
+    reason: str | None = None
+
+
+class KillRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    active: bool = True
+    reason: str | None = None
 
 
 class AdvanceRequest(BaseModel):
@@ -272,21 +285,128 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return build_snapshot(database, settings, live_client=stocknow_client)
 
     @app.post("/api/automation/cycle")
-    async def cycle(idempotency_key: Annotated[UUID | None, Header(alias="Idempotency-Key")] = None):
-        # Sync latest quotes from live page before cycle if active
-        if stocknow_client and stocknow_client.state == "READY" and stocknow_client.page:
+    async def cycle(
+        idempotency_key: Annotated[UUID | None, Header(alias="Idempotency-Key")] = None,
+        require_active: bool = False,
+    ):
+        with database.read() as session:
+            state = portfolio_state(session)
+            mode = getattr(state, "ingestion_mode", "BACKGROUND_POLLING")
+            auto_enabled = getattr(state, "automation_enabled", not getattr(state, "paused", False))
+
+        if require_active and not auto_enabled:
+            raise HTTPException(status_code=409, detail="Cycle blocked: automation is paused.")
+
+        # Sync latest quotes from live page or API before cycle if active
+        if mode == "ONSCREEN_LIVE" and stocknow_client and stocknow_client.state == "READY" and stocknow_client.page:
             try:
                 quotes = await extract_quotes_from_stocknow(stocknow_client)
                 if quotes:
                     sync_live_market_to_db(database, quotes)
             except Exception as exc:
                 logger.warning("Pre-cycle live quote sync skipped: %s", exc)
-        try:
-            result = trader.run_cycle(str(idempotency_key) if idempotency_key else None)
-            broadcaster.publish("cycle", result)
-            return result
-        except AutomationPaused as exc:
-            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        elif mode in ("BACKGROUND_POLLING", "BACKGROUND_24_7", "BACKGROUND 24/7"):
+            api_client = getattr(app.state, "stocknow_api", None)
+            if api_client and getattr(api_client, "is_authenticated", False):
+                try:
+                    from backend.adapters.stocknow_market_sync import fetch_stocknow_live_market_data
+                    quotes = await fetch_stocknow_live_market_data(client=stocknow_client, api_client=api_client)
+                    if quotes:
+                        sync_live_market_to_db(database, quotes)
+                except Exception as exc:
+                    logger.warning("Pre-cycle background quote sync skipped: %s", exc)
+
+        # Automation OFF runs labeled PREVIEW (decisions only); ON submits subject to mode, caps and checks
+        dry_run = not auto_enabled
+        result = trader.run_cycle(str(idempotency_key) if idempotency_key else None, dry_run=dry_run)
+        broadcaster.publish("cycle", result)
+        snapshot = build_snapshot(database, settings, live_client=stocknow_client)
+        broadcaster.publish("snapshot", snapshot)
+        return result
+
+    @app.post("/api/automation/kill")
+    def quick_kill(body: KillRequest | None = None):
+        from backend.engine.checkpoint import CheckpointManager
+        is_active = True if body is None else body.active
+        reason_txt = (body.reason if body and body.reason else "") or (
+            "Emergency Kill Switch Engaged by Operator" if is_active else "Emergency Kill Switch Disarmed by Operator"
+        )
+        with database.write() as session:
+            state = portfolio_state(session)
+            state.kill_switch_active = is_active
+            cp = CheckpointManager.create_checkpoint(
+                session=session,
+                state=state,
+                action="KILL_SWITCH_ENGAGED" if is_active else "KILL_SWITCH_DISARMED",
+                description=reason_txt,
+                actor="Operator",
+            )
+            session.add(DecisionLog(
+                cycle_id=None,
+                symbol="SYSTEM",
+                action="KILL_SWITCH" if is_active else "KILL_SWITCH_DISARM",
+                quantity=0,
+                reason=f"KILL_SWITCH: Global kill switch {'engaged' if is_active else 'disarmed'} ({reason_txt}). Orders {'blocked' if is_active else 'unblocked'}.",
+                trading_mode=getattr(state, "trading_mode", "LIVE_HOURS"),
+            ))
+            res = {
+                "kill_switch_active": is_active,
+                "status": "KILLED" if is_active else "ACTIVE",
+                "checkpoint_id": cp.id,
+            }
+            broadcaster.publish("caps_updated", res)
+            snap = build_snapshot(database, settings, live_client=stocknow_client)
+            broadcaster.publish("snapshot", snap)
+            return res
+
+    @app.post("/api/automation/handoff")
+    async def automation_handoff(body: HandoffRequest):
+        target = "BACKGROUND_POLLING" if body.target_mode in ("BACKGROUND_24_7", "BACKGROUND 24/7") else body.target_mode
+        # Single writer: finish current cycle under the trading lock before switching
+        with acquire_trading_lock():
+            with database.write() as session:
+                state = portfolio_state(session)
+                old_mode = state.ingestion_mode
+                state.ingestion_mode = target
+                target_enabled = state.automation_enabled
+                target_paused = state.paused
+
+            sched = getattr(app.state, "scheduler", None) or get_active_scheduler()
+            if target == "BACKGROUND_POLLING":
+                # Background 24/7: away from PC, headless ApiTransport, unattended
+                if sched and target_enabled and not target_paused:
+                    sched.start()
+                if stocknow_client:
+                    stocknow_client.ingestion_mode = "BACKGROUND_POLLING"
+                    try:
+                        if stocknow_client.state == "READY":
+                            await stocknow_client.close()
+                    except Exception as exc:
+                        logger.debug("Closing headed browser on handoff notice: %s", exc)
+            elif target == "ONSCREEN_LIVE":
+                # Onscreen Live: at the PC, headed browser visible, browser transport
+                if sched:
+                    sched.stop_sync()
+                if stocknow_client:
+                    stocknow_client.ingestion_mode = "ONSCREEN_LIVE"
+                    try:
+                        await stocknow_client.launch(mode="ONSCREEN_LIVE")
+                        phone = getattr(settings, "operator_phone", settings.operator_username)
+                        password = settings.operator_password
+                        if phone and password:
+                            await stocknow_client.ensure_authenticated(phone, password)
+                    except Exception as exc:
+                        logger.warning("Launching headed browser on handoff notice: %s", exc)
+
+        snap = build_snapshot(database, settings, live_client=stocknow_client)
+        broadcaster.publish("snapshot", snap)
+        return {
+            "status": "HANDOFF_COMPLETE",
+            "old_mode": old_mode,
+            "active_mode": target,
+            "automation_enabled": target_enabled,
+            "snapshot": snap,
+        }
 
     @app.post("/api/automation/pause")
     def pause(body: PauseRequest):

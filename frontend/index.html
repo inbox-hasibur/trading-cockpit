@@ -40,16 +40,20 @@
             <strong id="market-status-text">DSE CLOSED</strong>
             <span class="clock-countdown" id="market-countdown-text">Next: 10:00 AM</span>
           </div>
-          <div class="header-mode-slider" id="header-mode-slider" role="radiogroup" aria-label="Ingestion Mode">
-            <button type="button" class="hdr-slider-btn active" id="hdr-mode-polling" data-mode="BACKGROUND_POLLING" title="Method A: Periodic background polling">
-              <span class="hdr-mode-full">Background Polling</span>
-              <span class="hdr-mode-short">Polling</span>
+          <div class="header-mode-slider" id="header-mode-slider" role="radiogroup" aria-label="Run Mode">
+            <button type="button" class="hdr-slider-btn active" id="hdr-mode-polling" data-mode="BACKGROUND_POLLING" title="Background 24/7: Unattended, headless ApiTransport, runs during trading time">
+              <span class="hdr-mode-full">Background 24/7</span>
+              <span class="hdr-mode-short">Background</span>
             </button>
-            <button type="button" class="hdr-slider-btn" id="hdr-mode-live" data-mode="ONSCREEN_LIVE" title="Method B: Onscreen Live Mode (Playwright Headed CDP Attached)">
-              <span class="hdr-mode-full">Onscreen Live Mode</span>
-              <span class="hdr-mode-short">Live</span>
+            <button type="button" class="hdr-slider-btn" id="hdr-mode-live" data-mode="ONSCREEN_LIVE" title="Onscreen Live: Headed browser visible at the PC, browser transport">
+              <span class="hdr-mode-full">Onscreen Live</span>
+              <span class="hdr-mode-short">Onscreen</span>
             </button>
           </div>
+          <button type="button" class="handoff-pill-btn" id="topbar-handoff-btn" title="Handoff run mode (finishes current cycle, then switches)">
+            <span class="handoff-icon">⇄</span>
+            <span id="topbar-handoff-label">Go Onscreen</span>
+          </button>
           <div class="header-mode-slider trading-mode-slider" id="trading-mode-toggle" role="radiogroup" aria-label="Trading Mode">
             <button type="button" class="hdr-slider-btn active" id="hdr-tmode-live" data-tmode="LIVE_HOURS" title="Live Hours (virtual): strictly enforces DSE market hours">
               <span class="hdr-mode-full">Live Hours (virtual)</span>
@@ -61,21 +65,24 @@
             </button>
           </div>
           <div class="engine-controls">
-            <button class="button secondary icon-button" id="pause-button" type="button" disabled title="Pause engine" aria-label="Pause engine">
-              <svg class="pause-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="5" y="4" width="3" height="12" rx="1"/><rect x="12" y="4" width="3" height="12" rx="1"/></svg>
-              <svg class="play-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="m6 4 10 6-10 6V4Z"/></svg>
-              <span class="sr-only" id="pause-label">Pause engine</span>
+            <button class="topbar-master-chip is-on" id="topbar-master-toggle" type="button" title="Master Buy/Sell Automation: Click to toggle ON/OFF">
+              <span class="chip-dot"></span>
+              <span id="topbar-master-label">Auto ON</span>
             </button>
-            <button class="button primary" id="run-cycle" type="button" disabled><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6V4Z"/></svg><span id="run-label">Run automation cycle</span></button>
+            <button class="topbar-kill-btn" id="topbar-kill-btn" type="button" title="Emergency Kill Switch: Immediately halt all order execution">
+              <span class="kill-icon">⚡</span>
+              <span id="topbar-kill-label">Kill</span>
+            </button>
+            <button class="button primary" id="run-cycle" type="button" disabled title="Run trading cycle now"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6V4Z"/></svg><span id="run-label">Run cycle now</span></button>
           </div>
           <div class="topbar-overflow-wrap" id="topbar-overflow-wrap">
             <button type="button" class="button secondary icon-button topbar-overflow-btn" id="topbar-overflow-btn" title="More options" aria-label="More options" aria-expanded="false">
               <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor" aria-hidden="true"><circle cx="10" cy="4" r="1.8"/><circle cx="10" cy="10" r="1.8"/><circle cx="10" cy="16" r="1.8"/></svg>
             </button>
             <div class="topbar-overflow-menu" id="topbar-overflow-menu" hidden>
-              <div class="overflow-section-label">INGESTION MODE</div>
+              <div class="overflow-section-label">RUN MODE</div>
               <div class="overflow-mode-options">
-                <button type="button" class="overflow-opt-btn active" id="overflow-mode-polling" data-mode="BACKGROUND_POLLING">Background Polling</button>
+                <button type="button" class="overflow-opt-btn active" id="overflow-mode-polling" data-mode="BACKGROUND_POLLING">Background 24/7</button>
                 <button type="button" class="overflow-opt-btn" id="overflow-mode-live" data-mode="ONSCREEN_LIVE">Onscreen Live</button>
               </div>
               <div class="overflow-section-label">TRADING MODE</div>
@@ -438,31 +445,36 @@
             <div class="settings-subgroup" style="margin-top: 20px;">
               <div class="subgroup-heading">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="settings-sub-label">TELEMETRY INGESTION PIPELINE</span>
-                  <span class="autosave-tag">Auto-saved</span>
+                  <span class="settings-sub-label">RUN MODE</span>
+                  <span class="autosave-tag">Single Writer</span>
                 </div>
-                <span class="mode-indicator-pill" id="current-mode-pill">Method A Active</span>
+                <span class="mode-indicator-pill" id="current-mode-pill">Background 24/7 Active</span>
               </div>
-              <div class="segmented-mode-tiles" id="ingestion-mode-switch" role="radiogroup" aria-label="Ingestion Mode">
+              <div class="segmented-mode-tiles" id="ingestion-mode-switch" role="radiogroup" aria-label="Run Mode">
                 <button class="mode-tile-btn active" id="mode-btn-polling" data-mode="BACKGROUND_POLLING" type="button">
                   <div class="tile-icon-box">⏱</div>
                   <div class="tile-content">
                     <div class="tile-title-row">
-                      <strong>Method A: Background Polling</strong>
-                      <span class="tile-badge">Low Overhead</span>
+                      <strong>Background 24/7</strong>
+                      <span class="tile-badge">Headless API</span>
                     </div>
-                    <span class="tile-desc">Periodic HTTP telemetry polling with configurable cycle</span>
+                    <span class="tile-desc">I am away · No browser needed · Headless ApiTransport · Unattended</span>
                   </div>
                 </button>
                 <button class="mode-tile-btn" id="mode-btn-live" data-mode="ONSCREEN_LIVE" type="button">
                   <div class="tile-icon-box">🖥</div>
                   <div class="tile-content">
                     <div class="tile-title-row">
-                      <strong>Method B: Onscreen Live Mode</strong>
-                      <span class="tile-badge live-tag">Playwright CDP</span>
+                      <strong>Onscreen Live</strong>
+                      <span class="tile-badge live-tag">Headed Browser</span>
                     </div>
-                    <span class="tile-desc">Real-time attached headed browser session with live DOM</span>
+                    <span class="tile-desc">I am at PC · Headed Playwright browser visible · Browser transport</span>
                   </div>
+                </button>
+              </div>
+              <div style="margin-top: 12px;">
+                <button type="button" class="button secondary" id="settings-handoff-btn" style="width: 100%; justify-content: center; font-weight: 600; padding: 9px 14px;">
+                  <span class="handoff-icon">⇄</span> <span id="settings-handoff-label">Go Onscreen Live</span>
                 </button>
               </div>
             </div>
@@ -470,7 +482,7 @@
             <div class="settings-subgroup" style="margin-top: 18px;" id="polling-interval-wrap">
               <div class="subgroup-heading">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="settings-sub-label">POLLING INTERVAL (METHOD A)</span>
+                  <span class="settings-sub-label">POLLING INTERVAL (BACKGROUND 24/7)</span>
                   <span class="autosave-tag">Auto-saved</span>
                 </div>
                 <strong id="polling-interval-display" class="slider-val-tag">120s</strong>
