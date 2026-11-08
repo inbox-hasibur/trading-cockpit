@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DHAKA = ZoneInfo("Asia/Dhaka")
 VERSION = "0.01"
 DEFAULT_DATABASE_URL = f"sqlite:///{(ROOT / 'backend/data/hummingbird.db').as_posix()}"
+PRICE_MAX_DEVIATION_PCT: float = float(os.getenv("PRICE_MAX_DEVIATION_PCT", "1.5"))
 
 
 def utc_now_iso() -> str:
@@ -49,6 +50,7 @@ class Settings:
     chat_daily_call_limit: int = 30
     chat_max_output_tokens: int = 500
     cockpit_api_token: str = ""
+    price_max_deviation_pct: float = 1.5
     trusted_hosts: tuple[str, ...] = ("localhost", "127.0.0.1")
 
     @property
@@ -127,6 +129,7 @@ class Settings:
             chat_daily_call_limit=int(os.getenv("CHAT_DAILY_CALL_LIMIT", "30")),
             chat_max_output_tokens=int(os.getenv("CHAT_MAX_OUTPUT_TOKENS", "500")),
             cockpit_api_token=os.getenv("COCKPIT_API_TOKEN", "").strip(),
+            price_max_deviation_pct=float(os.getenv("PRICE_MAX_DEVIATION_PCT", "1.5")),
             trusted_hosts=tuple(
                 host.strip()
                 for host in os.getenv("TRUSTED_HOSTS", "localhost,127.0.0.1").split(",")

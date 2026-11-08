@@ -56,6 +56,7 @@ from backend.engine.curve_analyzer import analyze_curve
 from backend.engine.money import ZERO, allocated_basis, purchase_amount, sale_amount
 from backend.engine.auto_trader import AutoTrader
 from backend.engine.scheduler import get_active_scheduler, is_dse_market_open
+from backend.engine.price_guard import check_price_sanity, get_market_quote
 from backend.engine.trading_lock import acquire_trading_lock
 from backend.portfolio import snapshot_from_session
 
@@ -928,6 +929,53 @@ async def post_order(
                         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                         detail=reason,
                     )
+
+            # 8. Price Sanity Guard (AutoTrader & Hermes shared, preflight for buy and sell)
+            max_dev_pct = getattr(settings, "price_max_deviation_pct", 1.5)
+            quote = get_market_quote(sym, comp=comp)
+            ltp = quote.get("ltp") if quote else None
+            day_low = quote.get("day_low") if quote else None
+            day_high = quote.get("day_high") if quote else None
+
+            if ltp is None or float(ltp) <= 0:
+                if trading_mode == "LIVE_HOURS":
+                    reason = f"Order rejected: No live market quote available for {sym} (NO_QUOTE)."
+                    _record_order_rejection(session, state, sym, "NO_QUOTE", reason, trading_mode, body.model_dump(mode="json"))
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail=reason,
+                    )
+                else:
+                    # In TEST_OFFHOURS, missing quote uses last close and continues
+                    last_close = None
+                    if quote and quote.get("close") and float(quote["close"]) > 0:
+                        last_close = float(quote["close"])
+                    elif comp.price_history:
+                        try:
+                            last_close = float(comp.price_history[-1].get("close"))
+                        except Exception:
+                            pass
+                    if last_close is None and comp.last_price and float(comp.last_price) > 0:
+                        last_close = float(comp.last_price)
+                    ltp = last_close
+
+            ok, reason_code = check_price_sanity(
+                price=unit_price,
+                ltp=ltp,
+                day_low=day_low,
+                day_high=day_high,
+                max_pct=max_dev_pct,
+            )
+            if not ok:
+                if reason_code == "NO_QUOTE":
+                    reason = f"Order rejected: No market quote available for {sym} (NO_QUOTE)."
+                else:
+                    reason = f"Order rejected: Price ৳{float(unit_price):.2f} is out of acceptable market range (PRICE_OUT_OF_RANGE)."
+                _record_order_rejection(session, state, sym, reason_code, reason, trading_mode, body.model_dump(mode="json"))
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=reason,
+                )
 
             # Handle dry_run default: generate preview token
             if body.dry_run:
