@@ -1431,6 +1431,19 @@ function initHermesChatListeners() {
       }
     }));
   }
+
+  const btnLogout = $("btn-stocknow-logout");
+  if (btnLogout) {
+    btnLogout.addEventListener("click", () => runBridgeAction(btnLogout, "Logging out...", "Log Out (Test)", async () => {
+      try {
+        const res = await api("/api/stocknow/session", { method: "POST", body: { action: "logout" } });
+        notify(res.message || "Logged out from StockNow test session.");
+        if (typeof refresh === "function") await refresh();
+      } catch (err) {
+        showError("Logout failed: " + err.message);
+      }
+    }));
+  }
 }
 
 // Wrap initHermesSidebar to also init chat listeners and active conversation

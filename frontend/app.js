@@ -778,7 +778,7 @@ function renderDecisions() {
     top.append(element("strong", "", decision.symbol), badge(decision.action));
     if (decision.quantity) top.append(element("span", "decision-quantity", `${decision.quantity} shares`));
     if (decision.trading_mode) {
-      const modeText = decision.trading_mode === "TEST_OFFHOURS" ? "Test Mode 24/7" : "Live Hours (virtual)";
+      const modeText = decision.trading_mode === "TEST_OFFHOURS" ? "Test Mode" : "Live Hours";
       const modeClass = decision.trading_mode === "TEST_OFFHOURS" ? "badge badge-test-mode" : "badge badge-live-mode";
       top.append(element("span", modeClass, modeText));
     }
@@ -1113,20 +1113,38 @@ function renderAutomationControlBar() {
     toggleInput.disabled = state.busy;
   }
 
-  // Topbar Master Automation Chip
+  // Topbar Unified Status Chip
+  const isKilled = Boolean(app.kill_switch_active);
+  const isBackground = mode === "BACKGROUND_POLLING" || mode === "BACKGROUND_24_7";
+  const runModeText = isBackground ? "Background" : "Onscreen";
+
+  const tradingMode = app.trading_mode || (state.snapshot && state.snapshot.trading_mode) || "LIVE_HOURS";
+  const isTestMode = tradingMode === "TEST_OFFHOURS";
+  const tradingModeText = isTestMode ? "Test Mode" : "Live Hours";
+
+  let stateText = enabled ? "ON" : "OFF";
+  if (isKilled) stateText = "KILLED";
+
+  const statusChipText = `${stateText} · ${runModeText} · ${tradingModeText}`;
+
   const topbarMasterToggle = $("topbar-master-toggle");
+  const topbarStatusText = $("topbar-status-text");
   const topbarMasterLabel = $("topbar-master-label");
   if (topbarMasterToggle) {
-    topbarMasterToggle.classList.toggle("is-on", enabled);
-    topbarMasterToggle.classList.toggle("is-off", !enabled);
+    topbarMasterToggle.classList.toggle("is-on", enabled && !isKilled);
+    topbarMasterToggle.classList.toggle("is-off", !enabled && !isKilled);
+    topbarMasterToggle.classList.toggle("is-killed", isKilled);
+    topbarMasterToggle.title = `System Status: ${statusChipText} (Click to open Settings)`;
     topbarMasterToggle.disabled = state.busy;
+  }
+  if (topbarStatusText) {
+    topbarStatusText.textContent = statusChipText;
   }
   if (topbarMasterLabel) {
     topbarMasterLabel.textContent = enabled ? "Auto ON" : "Auto OFF";
   }
 
-  // Topbar Emergency Kill Switch
-  const isKilled = Boolean(app.kill_switch_active);
+  // Topbar Emergency Kill Switch (preserved for test compatibility)
   const topbarKillBtn = $("topbar-kill-btn");
   const topbarKillLabel = $("topbar-kill-label");
   if (topbarKillBtn) {
@@ -1138,13 +1156,11 @@ function renderAutomationControlBar() {
   }
 
   // Run Mode & Handoff Controls
-  const isBackground = mode === "BACKGROUND_POLLING" || mode === "BACKGROUND_24_7";
-  const isLive = mode === "ONSCREEN_LIVE" || mode === "SIDE_BY_SIDE_LIVE";
   const handoffNextMode = isBackground ? "ONSCREEN_LIVE" : "BACKGROUND_POLLING";
   const handoffActionLabel = isBackground ? "Go Onscreen" : "Go Background";
   const handoffTitle = isBackground
-    ? "Handoff: Finish current cycle under lock, then switch to headed Onscreen Live"
-    : "Handoff: Finish current cycle under lock, then switch to unattended Background 24/7";
+    ? "Handoff: Finish current cycle under lock, then switch to headed Onscreen"
+    : "Handoff: Finish current cycle under lock, then switch to unattended Background";
 
   const topbarHandoff = $("topbar-handoff-btn");
   const topbarHandoffLabel = $("topbar-handoff-label");
@@ -1163,7 +1179,7 @@ function renderAutomationControlBar() {
     settingsHandoff.disabled = state.busy;
   }
   if (settingsHandoffLabel) {
-    settingsHandoffLabel.textContent = `Handoff: ${handoffActionLabel}`;
+    settingsHandoffLabel.textContent = handoffActionLabel;
   }
 
   // Segmented mode buttons (Settings Page)
@@ -1174,12 +1190,12 @@ function renderAutomationControlBar() {
     pollingBtn.disabled = state.busy;
   }
   if (liveBtn) {
-    liveBtn.classList.toggle("active", isLive);
+    liveBtn.classList.toggle("active", !isBackground);
     liveBtn.disabled = state.busy;
   }
   const modePill = $("current-mode-pill");
   if (modePill) {
-    modePill.textContent = isBackground ? "Background 24/7 Active" : "Onscreen Live Active";
+    modePill.textContent = isBackground ? "Background Active" : "Onscreen Active";
   }
 
   // Header Mode Slider (Portfolio Overview Header)
@@ -1190,7 +1206,7 @@ function renderAutomationControlBar() {
     hdrPolling.disabled = state.busy;
   }
   if (hdrLive) {
-    hdrLive.classList.toggle("active", isLive);
+    hdrLive.classList.toggle("active", !isBackground);
     hdrLive.disabled = state.busy;
   }
   const overflowPolling = $("overflow-mode-polling");
@@ -1200,13 +1216,11 @@ function renderAutomationControlBar() {
     overflowPolling.disabled = state.busy;
   }
   if (overflowLive) {
-    overflowLive.classList.toggle("active", isLive);
+    overflowLive.classList.toggle("active", !isBackground);
     overflowLive.disabled = state.busy;
   }
 
-  // Trading Mode (Live Hours vs Test Mode 24/7)
-  const tradingMode = app.trading_mode || (state.snapshot && state.snapshot.trading_mode) || "LIVE_HOURS";
-  const isTestMode = tradingMode === "TEST_OFFHOURS";
+  // Trading Mode (Live Hours vs Test Mode)
   const targetPid = (state.snapshot && state.snapshot.portfolio_id) || (app && app.target_portfolio_id) || (isTestMode ? "" : "164580");
   const targetPname = (state.snapshot && state.snapshot.portfolio_name) || (app && app.target_portfolio_name) || (isTestMode ? "Test Portfolio" : "Humming Bird");
 
@@ -1223,7 +1237,7 @@ function renderAutomationControlBar() {
   if (hdrTmodePill) {
     hdrTmodePill.className = `topbar-tmode-pill ${isTestMode ? "tmode-test" : "tmode-live"}`;
     hdrTmodePill.title = isTestMode
-      ? `Trading Mode: Test Mode 24/7 (Target: #${targetPid || "Unconfigured"} - ${targetPname}) — Click to open Settings`
+      ? `Trading Mode: Test Mode (Target: #${targetPid || "Unconfigured"} - ${targetPname}) — Click to open Settings`
       : `Trading Mode: Live Hours (Target: #${targetPid || "164580"} - ${targetPname}) — Click to open Settings`;
   }
   if (hdrTmodeDot) {
@@ -1265,11 +1279,11 @@ function renderAutomationControlBar() {
   const settingsTmodePill = $("settings-trading-mode-pill");
   if (settingsTmodePill) {
     settingsTmodePill.textContent = isTestMode
-      ? `Test Mode 24/7 (#${targetPid || "UNSET"} - ${targetPname})`
-      : `Live Hours (virtual) (#${targetPid || "164580"} - ${targetPname})`;
+      ? `Test Mode (#${targetPid || "UNSET"} - ${targetPname})`
+      : `Live Hours (#${targetPid || "164580"} - ${targetPname})`;
   }
 
-  // Polling Range Slider & Interval Pills (slider only shown in Background 24/7 mode)
+  // Polling Range Slider & Interval Pills (slider only shown in Background mode)
   const intervalWrap = $("polling-interval-wrap");
   const isPollingActive = enabled && isBackground;
   if (intervalWrap) {
@@ -1316,7 +1330,7 @@ function renderAutomationControlBar() {
   const ovDot = $("overview-sys-dot");
   const ovText = $("overview-sys-text");
   if (ovText && ovDot) {
-    ovText.textContent = `${mode === "BACKGROUND_POLLING" ? "Method A (" + interval + "s)" : "Method B (Onscreen Live)"} · ${enabled ? "AUTO ON" : "PAUSED"}`;
+    ovText.textContent = `${isBackground ? "Background (" + interval + "s)" : "Onscreen"} · ${enabled ? "AUTO ON" : "PAUSED"}`;
     ovDot.className = `status-dot ${enabled ? "live-dot active" : "amber"}`;
   }
 
@@ -1332,6 +1346,48 @@ function renderAutomationControlBar() {
     }
   }
 
+  // StockNow Connection Card Telemetry
+  const summary = (state.snapshot && state.snapshot.summary) || {};
+
+  const stocknowApi = $("stocknow-api-status");
+  if (stocknowApi) {
+    const hasToken = Boolean(adapter.has_token || adapter.ready);
+    stocknowApi.textContent = hasToken ? "Connected · Valid" : "Standby · Ready";
+    stocknowApi.className = hasToken ? "positive" : "";
+  }
+
+  const stocknowBrowser = $("stocknow-browser-status");
+  if (stocknowBrowser) {
+    if (adapter.cdp_attached) {
+      stocknowBrowser.textContent = "Connected · CDP Port 9222";
+      stocknowBrowser.className = "positive";
+    } else if (adapter.connected) {
+      stocknowBrowser.textContent = "Running · Session Active";
+      stocknowBrowser.className = "positive";
+    } else {
+      stocknowBrowser.textContent = "Not Running · Standby";
+      stocknowBrowser.className = "muted";
+    }
+  }
+
+  const stocknowPrices = $("stocknow-prices-synced");
+  if (stocknowPrices) {
+    const lastSync = adapter.last_sync_at || (state.snapshot && state.snapshot.last_market_sync);
+    stocknowPrices.textContent = lastSync ? `${formatTimestamp(lastSync)} (GET /instruments)` : "Just now (GET /instruments)";
+  }
+
+  const stocknowPortfolio = $("stocknow-portfolio-synced");
+  if (stocknowPortfolio) {
+    const reconciled = summary.book_reconciled !== false && summary.equity_reconciled !== false;
+    stocknowPortfolio.textContent = reconciled ? "Reconciled · 0 drift" : "Drift detected";
+    stocknowPortfolio.className = reconciled ? "positive" : "negative";
+  }
+
+  const stocknowActivePortfolio = $("stocknow-active-portfolio");
+  if (stocknowActivePortfolio) {
+    stocknowActivePortfolio.textContent = `#${targetPid || (isTestMode ? "UNSET" : "164580")} (${targetPname})`;
+  }
+
   // Circuit breaker state
   const circ = $("circuit-state");
   if (circ) {
@@ -1342,7 +1398,7 @@ function renderAutomationControlBar() {
   // Adapter telemetry details
   const adpMode = $("adp-mode-text");
   if (adpMode) {
-    adpMode.textContent = mode === "BACKGROUND_POLLING" ? `Method A (Polling · ${interval}s)` : "Method B (Onscreen Live Mode CDP)";
+    adpMode.textContent = isBackground ? `Background (Polling · ${interval}s)` : "Onscreen (Playwright CDP)";
   }
 }
 
@@ -1426,17 +1482,12 @@ if ($("topbar-automation-toggle-input")) {
 }
 
 if ($("topbar-master-toggle")) {
-  $("topbar-master-toggle").addEventListener("click", () => {
-    if (!state.snapshot) return;
-    const app = state.snapshot.app || {};
-    const enabled = app.automation_enabled !== undefined ? Boolean(app.automation_enabled) : !app.paused;
-    const mode = app.ingestion_mode || "BACKGROUND_POLLING";
-    const interval = Number(app.polling_interval_sec || 120);
-    setAutomationConfig({
-      automation_enabled: !enabled,
-      ingestion_mode: mode,
-      polling_interval_sec: interval,
-    });
+  $("topbar-master-toggle").addEventListener("click", (e) => {
+    e.preventDefault();
+    window.location.hash = "settings";
+    if (typeof switchView === "function") {
+      switchView("settings");
+    }
   });
 }
 
@@ -1478,7 +1529,7 @@ async function executeHandoff() {
   const currentMode = currentApp.ingestion_mode || "BACKGROUND_POLLING";
   const isBackground = currentMode === "BACKGROUND_POLLING" || currentMode === "BACKGROUND_24_7";
   const targetMode = isBackground ? "ONSCREEN_LIVE" : "BACKGROUND_POLLING";
-  const label = isBackground ? "Onscreen Live" : "Background 24/7";
+  const label = isBackground ? "Onscreen" : "Background";
 
   if (!confirm(`Perform run mode handoff to ${label}? This waits for any in-flight AutoTrader cycle under the single-writer trading lock, then switches mode.`)) {
     return;
@@ -1490,7 +1541,7 @@ async function executeHandoff() {
       body: { target_mode: targetMode, reason: "Operator run mode handoff" },
     });
     await refresh(true);
-    notify(`Handoff complete: Active run mode is now ${targetMode === "ONSCREEN_LIVE" ? "Onscreen Live" : "Background 24/7"}`);
+    notify(`Handoff complete: Active run mode is now ${targetMode === "ONSCREEN_LIVE" ? "Onscreen" : "Background"}`);
   });
 }
 
@@ -1556,7 +1607,7 @@ if ($("mode-btn-live")) {
 async function switchToLiveHours() {
   const current = (state.snapshot && state.snapshot.app && state.snapshot.app.trading_mode) || (state.snapshot && state.snapshot.trading_mode) || "LIVE_HOURS";
   if (current === "LIVE_HOURS") return;
-  if (!confirm("Switch to Live Hours (virtual)? Real virtual orders will be strictly restricted to Sun-Thu 10:00-14:30 Asia/Dhaka.")) {
+  if (!confirm("Switch to Live Hours? Real virtual orders will be strictly restricted to Sun-Thu 10:00-14:30 Asia/Dhaka.")) {
     return;
   }
   await setAutomationConfig({ trading_mode: "LIVE_HOURS" });

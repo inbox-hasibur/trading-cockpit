@@ -245,3 +245,4 @@ class TelegramBotDaemon:
             except Exception as exc:
                 logger.debug("Telegram polling transient error: %s", exc)
                 await asyncio.sleep(5.0)
+

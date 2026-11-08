@@ -503,7 +503,7 @@ class StockNowLiveClient:
             except Exception as exc:
                 logger.warning("Browser logout error: %s", exc)
         self.state = "LOGGED_OUT"
-        return {"status": "LOGGED_OUT", "connected": self.is_connected()}
+        return {"status": "LOGGED_OUT", "connected": bool(self.connected)}
 
     async def discover_portfolio(self) -> dict[str, Any]:
         """Discover 'Humming Bird' portfolio stats and ID from /portfolios."""

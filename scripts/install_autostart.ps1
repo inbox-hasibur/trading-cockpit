@@ -119,3 +119,4 @@ Write-Host "     AutoTrader skips order cycles until startup health verification
 Write-Host "     Once health checks pass, state transitions to 'READY', resuming automated operations."
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host "Setup Complete! Autostart is ready and power sleep is prevented." -ForegroundColor Green
+

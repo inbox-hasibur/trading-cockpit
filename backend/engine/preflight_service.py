@@ -117,3 +117,4 @@ def run_cockpit_preflight(
             all_passed = caps_ok
 
     return record_preflight_result(db, all_passed=all_passed, checks=checks_data, actor=actor)
+

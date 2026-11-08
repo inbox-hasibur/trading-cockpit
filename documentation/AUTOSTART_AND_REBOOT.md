@@ -95,3 +95,4 @@ flowchart TD
 1. **1-Minute Heartbeat:** Every 60 seconds, the Cockpit records a `SystemHeartbeat` row into the SQLite database. Records older than 7 days are pruned automatically.
 2. **Dead-Man Alert:** During live DSE market sessions (Sunday–Thursday 10:00–14:30 Asia/Dhaka), if the heartbeat stops for more than 2 minutes, a Telegram dead-man alert is dispatched to notify the operator.
 3. **Daily 14:45 Summary:** At 14:45 Asia/Dhaka (15 minutes after market close), a comprehensive summary detailing today's orders, skips breakdown, drift, and errors is dispatched to Telegram and archived to SQLite `DailySummaryLog`.
+

@@ -146,6 +146,11 @@ def build_stocknow_router(
                 res["reason"] = res.get("reason") or res.get("message") or "Authentication check failed"
         elif action == "close":
             res = await stocknow_client.close()
+        elif action == "logout":
+            if hasattr(stocknow_client, "logout"):
+                res = await stocknow_client.logout()
+            else:
+                res = await stocknow_client.close()
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported action '{action}'.")
 

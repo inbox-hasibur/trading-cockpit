@@ -118,3 +118,4 @@ def setup_logging(
         root_logger.addHandler(stream_handler)
 
     return root_logger
+
