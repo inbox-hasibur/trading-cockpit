@@ -264,6 +264,18 @@ async function mutate(action) {
   finally { state.busy = false; updateControls(); }
 }
 
+function isLiveSource() {
+  const app = (state.snapshot && state.snapshot.app) || {};
+  const adapter = (state.snapshot && state.snapshot.adapter) || {};
+  return Boolean(
+    adapter.connected ||
+    app.source === "STOCKNOW_LIVE" ||
+    adapter.source === "STOCKNOW_LIVE" ||
+    (app.trading_mode === "LIVE_HOURS" && (adapter.ready || adapter.has_token))
+  );
+}
+window.isLiveSource = isLiveSource;
+
 function renderPortfolioHeaderBadge() {
   const badgeEl = $("portfolio-header-badge");
   const badgeText = $("portfolio-header-badge-text");
@@ -275,12 +287,7 @@ function renderPortfolioHeaderBadge() {
   const metrics = (state.snapshot && state.snapshot.metrics) || {};
   const summary = (state.snapshot && state.snapshot.summary) || {};
 
-  const isLive = Boolean(
-    adapter.connected ||
-    app.source === "STOCKNOW_LIVE" ||
-    adapter.source === "STOCKNOW_LIVE" ||
-    (app.trading_mode === "LIVE_HOURS" && (adapter.ready || adapter.has_token))
-  );
+  const isLive = isLiveSource();
 
   if (!isLive) {
     badgeEl.className = "portfolio-header-badge is-demo";
@@ -339,14 +346,40 @@ function renderSnapshot() {
   const adapter = state.snapshot.adapter || {};
   renderPortfolioHeaderBadge();
 
+  const live = isLiveSource();
+
+  // Hide demo bar with CSS class when isLiveSource() is true
+  const sessionBar = document.querySelector(".session-bar");
+  if (sessionBar) {
+    sessionBar.classList.toggle("is-live-hidden", live);
+  }
+
   // Footer EXPERIMENTAL · DEMO ONLY shown only in DEMO
-  const isDemo = Boolean(
-    (!adapter.connected && app.source === "SYNTHETIC" && app.mode === "DEMO") ||
-    app.mode === "DEMO_FALLBACK"
-  );
   const footerTag = $("footer-mode-tag");
   if (footerTag) {
-    footerTag.style.display = isDemo ? "inline-flex" : "none";
+    footerTag.style.display = live ? "none" : "inline-flex";
+  }
+
+  // Chat safety note welcome line
+  const chatSafetyNote = $("chat-safety-note") || document.querySelector(".chat-safety-note");
+  if (chatSafetyNote) {
+    if (live) {
+      const name = state.snapshot.portfolio_name || app.target_portfolio_name || adapter.bound_portfolio_name || "Humming Bird";
+      const id = state.snapshot.portfolio_id || app.target_portfolio_id || adapter.bound_portfolio_id || "164580";
+      const tradingMode = app.trading_mode || (state.snapshot && state.snapshot.trading_mode) || "LIVE_HOURS";
+      const modeText = tradingMode === "TEST_OFFHOURS" ? "Test Mode" : "Live Hours";
+      chatSafetyNote.textContent = `Connected to StockNow portfolio ${name} #${id}, ${modeText}. Orders need your confirmation.`;
+    } else {
+      chatSafetyNote.textContent = "Demo Paper Mode: Hermes executes actions on local simulated holdings with strict ledger reconciliation.";
+    }
+  }
+
+  // Decision feed empty state text
+  const decisionEmptyP = document.querySelector("#decision-feed .empty-state p");
+  if (decisionEmptyP) {
+    decisionEmptyP.textContent = live
+      ? "Run cycle now to preview decisions"
+      : "Run a paper cycle to see range signals, settlement guards, and sequential selling decisions.";
   }
 
   setText("demo-date", sessionDate(app.date));
@@ -1038,7 +1071,25 @@ function renderDecisions() {
     chip.classList.toggle("active", isActive);
   });
 
-  if (!decisions.length) return;
+  if (!decisions.length) {
+    const feed = $("decision-feed");
+    const emptyP = feed ? feed.querySelector(".empty-state p") : null;
+    if (emptyP) {
+      emptyP.textContent = isLiveSource()
+        ? "Run cycle now to preview decisions"
+        : "Run a paper cycle to see range signals, settlement guards, and sequential selling decisions.";
+    } else if (feed) {
+      feed.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">⌁</div>
+          <strong>Ready when you are</strong>
+          <p>${isLiveSource() ? "Run cycle now to preview decisions" : "Run a paper cycle to see range signals, settlement guards, and sequential selling decisions."}</p>
+          <span>No orders run on startup.</span>
+        </div>
+      `;
+    }
+    return;
+  }
 
   let filtered = decisions;
   if (currentFilter === "buys") filtered = decisions.filter(isBuyDecision);

@@ -999,6 +999,10 @@ h1 {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid var(--line); border-radius: 6px; padding: 9px 12px; margin-top: 8px; margin-bottom: 17px; background: #0e161f; font-size: var(--fs-xs, 11px);
 }
 
+.session-bar.is-live-hidden {
+  display: none !important;
+}
+
 .session-meta {
   display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
 }
