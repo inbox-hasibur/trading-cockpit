@@ -60,7 +60,7 @@ def check_gateway(url: str = "http://127.0.0.1:8642") -> CheckResult:
     return CheckResult(
         "Gateway Up",
         False,
-        f"Offline at {gateway_url} (run: start.ps1 or run.py)",
+        f"Offline at {gateway_url} (run: python run.py)",
     )
 
 

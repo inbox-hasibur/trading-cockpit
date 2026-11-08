@@ -95,6 +95,7 @@ class StockNowAdapter:
                 "commission_pct": float(commission_pct),
                 "portfolio_id": str(portfolio_id or "164580"),
                 "trade_date": t_date_str,
+                "idempotency_key": idempotency_key,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
             self.last_order_receipt = receipt

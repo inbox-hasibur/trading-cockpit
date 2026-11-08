@@ -27,7 +27,6 @@ import pytest
 from sqlalchemy import select
 
 from backend.adapters.stocknow_adapter import StockNowAdapter
-from backend.adapters.stocknow_order_executor import clear_idempotency_cache
 from backend.database import (
     CompanyProfile,
     CustomRule,
@@ -49,10 +48,8 @@ from backend.kernel_api import clear_order_idempotency_cache
 def clean_test_isolation():
     """Clear all order and idempotency caches before and after each test."""
     clear_order_idempotency_cache()
-    clear_idempotency_cache()
     yield
     clear_order_idempotency_cache()
-    clear_idempotency_cache()
 
 
 @pytest.fixture(autouse=True)
@@ -537,7 +534,6 @@ def test_restart_idempotency_sqlite(client, auth_headers):
 
     # 2. Simulate cold server restart by purging all in-memory caches
     clear_order_idempotency_cache()
-    clear_idempotency_cache()
 
     # 3. Repeat exact same order -> Must return ALREADY_EXECUTED duplicate from SQLite
     res2 = client.post("/k/order", json=payload, headers=auth_headers)

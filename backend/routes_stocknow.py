@@ -5,10 +5,12 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+from decimal import Decimal
 from typing import Any, Literal
+from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, ConfigDict
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, ConfigDict, model_validator
 from sqlalchemy import select
 
 logger = logging.getLogger("hummingbird.stocknow_routes")
@@ -48,12 +50,25 @@ class StockNowPortfolioSyncRequest(BaseModel):
 
 
 class StockNowExecuteOrderRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
     symbol: str
-    side: Literal["BUY", "SELL"]
+    side: Literal["BUY", "SELL", "buy", "sell"]
     quantity: int
+    price: Decimal | None = None
+    portfolio_id: str | None = None
     dry_run: bool = False
+    operator_confirmed: bool = False
+    confirm: bool | None = None
+    preview_token: str | None = None
     idempotency_key: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def handle_confirm_alias(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "confirm" in data and "operator_confirmed" not in data:
+                data["operator_confirmed"] = bool(data.get("confirm"))
+        return data
 
 
 class StockNowSchedulerActionRequest(BaseModel):
@@ -232,84 +247,40 @@ def build_stocknow_router(
         return payload
 
     @router.post("/execute-order")
-    async def post_stocknow_execute_order(body: StockNowExecuteOrderRequest):
-        sym = body.symbol.upper()
-        side = body.side.upper()
-        qty = body.quantity
+    async def post_stocknow_execute_order(
+        body: StockNowExecuteOrderRequest,
+        request: Request,
+    ):
+        from backend.kernel_api import post_order, OrderRequest
 
-        from backend.adapters.stocknow_order_executor import execute_stocknow_virtual_order
-        from backend.engine.agent_actions import execute_agentic_buy, execute_agentic_sell
-        from backend.engine.checkpoint import CheckpointManager
-
-        with database.write() as session:
-            state = session.get(PortfolioState, 1)
-            if not state:
-                raise HTTPException(status_code=500, detail="Portfolio state not initialized.")
-            comp = session.get(CompanyProfile, sym)
-            if not comp:
-                raise HTTPException(status_code=404, detail=f"Company {sym} not found in database.")
-
-            lots = session.scalars(select(TaxLot)).all()
-            trades = session.scalars(select(TradeLog)).all()
-            lots_snap = [
-                {
-                    "id": l.id, "symbol": l.symbol, "bucket": l.bucket, "acquired_on": l.acquired_on.isoformat(),
-                    "matures_on": l.matures_on.isoformat(), "original_qty": l.original_qty, "remaining_qty": l.remaining_qty,
-                    "buy_price": str(l.buy_price), "buy_fee": str(l.buy_fee), "original_cost_basis": str(l.original_cost_basis),
-                    "remaining_cost_basis": str(l.remaining_cost_basis), "cycle_base_qty": l.cycle_base_qty,
-                    "next_tier": l.next_tier, "last_sale_revision": l.last_sale_revision, "peak_price": str(l.peak_price),
-                    "phase": l.phase, "recovery_anchor": str(l.recovery_anchor) if l.recovery_anchor else None,
-                }
-                for l in lots
-            ]
-            trades_snap = [
-                {
-                    "id": t.id, "trade_key": t.trade_key, "cycle_id": t.cycle_id, "lot_id": t.lot_id, "symbol": t.symbol,
-                    "side": t.side, "quantity": t.quantity, "price": str(t.price), "gross_amount": str(t.gross_amount),
-                    "fee": str(t.fee), "net_cash_change": str(t.net_cash_change), "realized_pnl": str(t.realized_pnl),
-                    "bucket": t.bucket, "trade_on": t.trade_on.isoformat(), "settles_on": t.settles_on.isoformat(),
-                    "reason": t.reason, "source": t.source,
-                }
-                for t in trades
-            ]
-
-            CheckpointManager.create_checkpoint(
-                session=session,
-                state=state,
-                action=f"STOCKNOW_{side}",
-                description=f"StockNow virtual {side} of {qty} shares of {sym}",
-                symbol=sym,
-                extra_snapshot={
-                    "portfolio_lots": lots_snap,
-                    "portfolio_trades": trades_snap,
-                    "initial_capital": str(state.initial_capital),
-                },
-                actor="StockNow Order Router",
-            )
-
-            try:
-                if side == "BUY":
-                    trade_res = execute_agentic_buy(session, state, settings, sym, requested_qty=qty)
-                else:
-                    trade_res = execute_agentic_sell(session, state, settings, sym, requested_qty=qty)
-            except ValueError as err:
-                raise HTTPException(status_code=400, detail=str(err))
-
-            unit_price = comp.last_price
-
-        receipt = await execute_stocknow_virtual_order(
-            client=stocknow_client,
-            symbol=sym,
-            side=side,
-            quantity=qty,
-            price=unit_price,
-            portfolio_id=stocknow_client.bound_portfolio_id or "Humming Bird",
-            idempotency_key=body.idempotency_key,
+        idem = body.idempotency_key or f"sn_exec_{uuid4().hex[:12]}"
+        order_req = OrderRequest(
+            idempotency_key=idem,
+            symbol=body.symbol.strip().upper(),
+            side=body.side.strip().upper(),
+            quantity=body.quantity,
+            price=body.price,
+            portfolio_id=body.portfolio_id,
             dry_run=body.dry_run,
+            operator_confirmed=body.operator_confirmed,
+            preview_token=body.preview_token,
+        )
+
+        res = await post_order(
+            body=order_req,
+            request=request,
+            db=database,
+            settings=settings,
         )
 
         snapshot = build_snapshot(database, settings)
-        payload = {"success": True, "receipt": receipt, "trade": trade_res, "snapshot": snapshot}
+        payload = {
+            "success": True,
+            "receipt": res.get("stocknow_receipt") or res,
+            "trade": res,
+            "snapshot": snapshot,
+            **res,
+        }
         broadcaster.publish("order_executed", payload)
         return payload
 

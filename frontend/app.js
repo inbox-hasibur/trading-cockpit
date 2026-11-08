@@ -468,9 +468,24 @@ function renderActiveHoldings() {
           sellBtn.disabled = true;
           sellBtn.textContent = "Selling...";
           try {
+            let previewToken = null;
+            if (state.snapshot?.state?.trading_mode === "LIVE_HOURS") {
+              const prev = await api("/api/stocknow/execute-order", {
+                method: "POST",
+                body: { symbol: c.symbol, side: "SELL", quantity: sliceQty, dry_run: true },
+              });
+              previewToken = prev.preview_token;
+            }
             const res = await api("/api/stocknow/execute-order", {
               method: "POST",
-              body: { symbol: c.symbol, side: "SELL", quantity: sliceQty, dry_run: false },
+              body: {
+                symbol: c.symbol,
+                side: "SELL",
+                quantity: sliceQty,
+                dry_run: false,
+                operator_confirmed: true,
+                preview_token: previewToken,
+              },
             });
             notify(`Order executed: Sold ${sliceQty} shares of ${c.symbol}.`);
             if (res.snapshot) {
@@ -491,9 +506,24 @@ function renderActiveHoldings() {
           sellAllBtn.disabled = true;
           sellAllBtn.textContent = "Selling...";
           try {
+            let previewToken = null;
+            if (state.snapshot?.state?.trading_mode === "LIVE_HOURS") {
+              const prev = await api("/api/stocknow/execute-order", {
+                method: "POST",
+                body: { symbol: c.symbol, side: "SELL", quantity: c.mature_qty, dry_run: true },
+              });
+              previewToken = prev.preview_token;
+            }
             const res = await api("/api/stocknow/execute-order", {
               method: "POST",
-              body: { symbol: c.symbol, side: "SELL", quantity: c.mature_qty, dry_run: false },
+              body: {
+                symbol: c.symbol,
+                side: "SELL",
+                quantity: c.mature_qty,
+                dry_run: false,
+                operator_confirmed: true,
+                preview_token: previewToken,
+              },
             });
             notify(`Order executed: Sold all ${c.mature_qty} shares of ${c.symbol}.`);
             if (res.snapshot) {

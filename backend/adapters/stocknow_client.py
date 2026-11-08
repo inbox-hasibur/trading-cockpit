@@ -1,8 +1,8 @@
-"""Persistent Playwright browser session, auto-login helper, and XHR network sniffer.
+"""browser session client, Onscreen mode.
 
-Operates in two modes:
-- ONSCREEN_LIVE: Headed persistent Chromium side-by-side with Cockpit.
-- BACKGROUND_POLLING: Headless persistent Chromium with background polling.
+Persistent Playwright browser session client used by BrowserTransport and sync
+in Onscreen mode. Provides auto-login helper and DOM automation.
+Not a duplicate of stocknow_api.py.
 """
 
 from __future__ import annotations

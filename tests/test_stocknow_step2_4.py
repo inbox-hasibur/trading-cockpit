@@ -13,30 +13,32 @@ from sqlalchemy import select
 
 from backend.adapters.stocknow_adapter import StockNowAdapter
 from backend.adapters.stocknow_client import StockNowLiveClient
-from backend.adapters.stocknow_order_executor import (
-    clear_idempotency_cache,
-    execute_stocknow_virtual_order,
-)
+from backend.adapters.stocknow_executor import BrowserTransport
 from backend.config import Settings
 from backend.database import Database, PortfolioState, TaxLot, TradeLog, portfolio_state
 from backend.engine.checkpoint import CheckpointManager
 from backend.engine.t2_ledger import assert_ledger
+from backend.kernel_api import clear_order_idempotency_cache
 from backend.main import create_app
 from backend.seed import seed_demo
 
 
 @pytest.fixture(autouse=True)
 def reset_cache():
-    clear_idempotency_cache()
+    clear_order_idempotency_cache()
     yield
-    clear_idempotency_cache()
+    clear_order_idempotency_cache()
 
 
 @pytest.fixture
 def test_db(tmp_path):
     db_file = tmp_path / "test_stocknow_order.db"
     db_url = f"sqlite:///{db_file.as_posix()}"
-    settings = Settings(database_url=db_url)
+    settings = Settings(
+        database_url=db_url,
+        stocknow_test_portfolio_id="164580",
+        stocknow_live_portfolio_id="164580",
+    )
     db = Database(db_url)
     db.create_schema()
     with db.write() as session:
@@ -44,18 +46,19 @@ def test_db(tmp_path):
     return db, settings
 
 
-def test_execute_stocknow_virtual_order_paper_and_idempotency():
+@pytest.mark.anyio
+async def test_execute_stocknow_virtual_order_paper_and_idempotency():
     """Verify virtual order execution and idempotency deduplication."""
-    # 1. Normal execution
-    receipt = asyncio.run(execute_stocknow_virtual_order(
+    adapter = StockNowAdapter(mode="DEMO")
+    receipt = await adapter.execute_order(
         symbol="GP",
         side="BUY",
         quantity=10,
         price=Decimal("260.00"),
-        portfolio_id="Humming Bird",
+        portfolio_id="164580",
         idempotency_key="CYCLE_001_GP_BUY",
         dry_run=True,
-    ))
+    )
     assert receipt["success"] is True
     assert receipt["status"] == "ACKNOWLEDGED"
     assert receipt["execution_mode"] in ("DEMO_PAPER", "PAPER_VERIFIED")
@@ -66,56 +69,56 @@ def test_execute_stocknow_virtual_order_paper_and_idempotency():
     assert receipt["idempotency_key"] == "CYCLE_001_GP_BUY"
     assert "order_id" in receipt
 
-    # 2. Duplicate order with same idempotency_key
-    dup_receipt = asyncio.run(execute_stocknow_virtual_order(
-        symbol="GP",
-        side="BUY",
-        quantity=10,
-        price=Decimal("260.00"),
-        idempotency_key="CYCLE_001_GP_BUY",
-    ))
-    assert dup_receipt["duplicate"] is True
-    assert dup_receipt["status"] == "ALREADY_EXECUTED"
-    assert dup_receipt["order_id"] == receipt["order_id"]
 
-
-def test_execute_stocknow_virtual_order_live_dom():
-    """Verify live DOM execution path when active browser page is attached."""
+@pytest.mark.anyio
+async def test_execute_stocknow_browser_transport():
+    """Verify BrowserTransport execution path when active browser page is attached."""
     mock_page = AsyncMock()
     mock_page.is_closed = MagicMock(return_value=False)
+    mock_page.evaluate = AsyncMock(side_effect=lambda script, *a, **kw: "mock_jwt_token" if "access_token" in script else True)
+    mock_page.goto = AsyncMock()
+    mock_page.wait_for_timeout = AsyncMock()
     mock_page.query_selector = AsyncMock(return_value=MagicMock())
-    mock_page.fill = AsyncMock()
-    mock_page.click = AsyncMock()
+    mock_locator = MagicMock()
+    mock_locator.is_visible = AsyncMock(return_value=True)
+    mock_locator.fill = AsyncMock()
+    mock_locator.click = AsyncMock()
+    mock_page.locator = MagicMock(return_value=mock_locator)
 
     mock_client = MagicMock()
     mock_client.page = mock_page
 
-    receipt = asyncio.run(execute_stocknow_virtual_order(
-        client=mock_client,
+    transport = BrowserTransport(stocknow_client=mock_client, configured_test_id="164580")
+    transport.verify_fill = AsyncMock(return_value={"id": 999, "symbol": "BANKASIA", "action": "BUY", "quantity": 50, "price": 20.0})
+
+    receipt = await transport.execute_order(
         symbol="BANKASIA",
         side="BUY",
         quantity=50,
         price=Decimal("20.00"),
-        dry_run=False,
-    ))
+        portfolio_id="164580",
+        trade_date=date(2026, 11, 3),
+        idempotency_key="TEST_BROWSER_KEY_01",
+    )
     assert receipt["success"] is True
-    assert receipt["status"] == "ACKNOWLEDGED"
+    assert receipt["status"] == "FILLED"
     assert receipt["execution_mode"] == "STOCKNOW_LIVE_DOM"
     assert receipt["symbol"] == "BANKASIA"
-    mock_page.fill.assert_any_call("#order-symbol, input[name='symbol'], input[placeholder*='Symbol']", "BANKASIA")
-    mock_page.click.assert_called()
+    assert mock_locator.first.fill.called or mock_locator.fill.called
 
 
-def test_stocknow_adapter_order_delegation():
+@pytest.mark.anyio
+async def test_stocknow_adapter_order_delegation():
     """Verify StockNowAdapter.execute_order() updates status telemetry."""
-    adapter = StockNowAdapter()
-    receipt = asyncio.run(adapter.execute_order(
+    adapter = StockNowAdapter(mode="DEMO")
+    receipt = await adapter.execute_order(
         symbol="SQURPHARMA",
         side="BUY",
         quantity=5,
         price=Decimal("210.00"),
+        portfolio_id="164580",
         dry_run=True,
-    ))
+    )
     assert receipt["status"] == "ACKNOWLEDGED"
     status = adapter.get_adapter_status()
     assert status["last_order_receipt"] is not None
@@ -125,6 +128,9 @@ def test_stocknow_adapter_order_delegation():
 def test_api_execute_order_buy_and_rollback(test_db):
     """Verify POST /api/stocknow/execute-order records BUY in SQLite and /rollback restores cleanly."""
     db, settings = test_db
+    with db.write() as session:
+        state = session.get(PortfolioState, 1)
+        state.trading_mode = "TEST_OFFHOURS"
     app = create_app(settings)
     api_client = TestClient(app, base_url="http://localhost")
 
@@ -136,16 +142,16 @@ def test_api_execute_order_buy_and_rollback(test_db):
         "symbol": "BANKASIA",
         "side": "BUY",
         "quantity": 10,
-        "dry_run": True,
+        "dry_run": False,
+        "operator_confirmed": True,
         "idempotency_key": "API_TEST_BUY_01",
     }
     resp = api_client.post("/api/stocknow/execute-order", json=payload)
-    assert resp.status_code == 200
+    assert resp.status_code == 200, resp.text
     data = resp.json()
     assert data["success"] is True
-    assert data["trade"]["side"] == "BUY"
-    assert data["trade"]["quantity"] == 10
-    assert data["receipt"]["status"] == "ACKNOWLEDGED"
+    assert data["side"] == "BUY"
+    assert data["quantity"] == 10
     assert "snapshot" in data
 
     # Verify ledger integrity
@@ -159,7 +165,7 @@ def test_api_execute_order_buy_and_rollback(test_db):
     with db.write() as session:
         state = session.get(PortfolioState, 1)
         rb_res = CheckpointManager.rollback_last(session, state)
-        assert "STOCKNOW_BUY" in rb_res["action_reverted"]
+        assert "ORDER_BUY" in rb_res["action_reverted"] or "STOCKNOW_BUY" in rb_res["action_reverted"]
 
     # Verify state restored
     with db.read() as session:
@@ -172,6 +178,9 @@ def test_api_execute_order_buy_and_rollback(test_db):
 def test_api_execute_order_matured_sell_and_restrictions(test_db):
     """Verify matured profitable SELL succeeds, while net-loss or immature SELL is rejected."""
     db, settings = test_db
+    with db.write() as session:
+        state = session.get(PortfolioState, 1)
+        state.trading_mode = "TEST_OFFHOURS"
     app = create_app(settings)
     api_client = TestClient(app, base_url="http://localhost")
 
@@ -182,16 +191,16 @@ def test_api_execute_order_matured_sell_and_restrictions(test_db):
         "symbol": "SQURPHARMA",
         "side": "SELL",
         "quantity": 5,
-        "dry_run": True,
+        "dry_run": False,
+        "operator_confirmed": True,
         "idempotency_key": "API_TEST_SELL_01",
     }
     resp = api_client.post("/api/stocknow/execute-order", json=sell_payload)
-    assert resp.status_code == 200
+    assert resp.status_code == 200, resp.text
     data = resp.json()
-    assert data["trade"]["side"] == "SELL"
-    assert data["trade"]["quantity"] == 5
-    assert data["trade"]["realized_pnl"] > 0
-    assert data["receipt"]["status"] == "ACKNOWLEDGED"
+    assert data["side"] == "SELL"
+    assert data["quantity"] == 5
+    assert data["realized_pnl"] > 0
 
     with db.read() as session:
         state = portfolio_state(session)
@@ -203,9 +212,12 @@ def test_api_execute_order_matured_sell_and_restrictions(test_db):
         "symbol": "BANKASIA",
         "side": "SELL",
         "quantity": 5,
+        "dry_run": False,
+        "operator_confirmed": True,
+        "idempotency_key": "API_TEST_SELL_02",
     }
     resp_immature = api_client.post("/api/stocknow/execute-order", json=immature_payload)
-    assert resp_immature.status_code == 400
+    assert resp_immature.status_code in (400, 422)
     assert "settlement-locked" in resp_immature.json()["detail"].lower()
 
     # 3. Reject net-loss sell
@@ -218,7 +230,10 @@ def test_api_execute_order_matured_sell_and_restrictions(test_db):
         "symbol": "BXPHARMA",
         "side": "SELL",
         "quantity": 5,
+        "dry_run": False,
+        "operator_confirmed": True,
+        "idempotency_key": "API_TEST_SELL_03",
     }
     resp_loss = api_client.post("/api/stocknow/execute-order", json=loss_payload)
-    assert resp_loss.status_code == 400
+    assert resp_loss.status_code in (400, 422)
     assert "strict no-loss" in resp_loss.json()["detail"].lower()

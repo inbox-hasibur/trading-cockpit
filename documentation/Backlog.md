@@ -156,7 +156,7 @@
   - API endpoint `POST /api/stocknow/sync-portfolio` with real-time SSE snapshot broadcast.
   - UI control button in `#settings` StockNow Bridge card (`Sync "Humming Bird" Portfolio`).
 - [x] **Step 2.4: Automated Virtual Order Execution on StockNow ("Humming Bird"):**
-  - Dedicated virtual order executor (`stocknow_order_executor.py`) supporting live browser DOM automation and paper verified execution.
+  - Dedicated virtual order executor (`stocknow_executor.py`) supporting live browser DOM automation and direct API execution.
   - Idempotency deduplication preventing accidental double-fills across retry loops or rapid commands.
   - Updated `StockNowAdapter.execute_order()` delegating to virtual order execution and exposing `last_order_receipt`.
   - REST endpoint `POST /api/stocknow/execute-order` with CheckpointManager state snapshot for 1-click `/rollback`.
@@ -261,8 +261,8 @@
     - Verified full test suite passes (74 passing unit tests).
 
 - [x] **Step 2.10: Hardened Production Runtime, Unified Launcher, Risk Caps, Trading Modes & Preflight Suite:**
-  - **Unified Supervisor Launcher (`start.ps1` & `run.py`):**
-    - One-command startup script setting `HERMES_HOME`, initializing Hermes Gateway on `127.0.0.1:8642` with profile `hummingbird`, polling `/health` for liveness, and starting FastAPI Uvicorn on `127.0.0.1:8000`.
+  - **Unified Supervisor Launcher (`run.py`):**
+    - One-command startup script setting `HERMES_HOME`, initializing Hermes Gateway on `127.0.0.1:8642` with profile `hummingbird`, polling `/health` for liveness, and starting FastAPI Uvicorn on `127.0.0.1:8000`. Thin wrappers `run.bat`, `run.sh`, and `package.json` delegate to `run.py`.
     - Automatic 3-restart crash recovery and clean teardown on `Ctrl+C` (SIGINT/SIGTERM).
   - **Dual Trading Modes (`LIVE_HOURS` vs `TEST_OFFHOURS`):**
     - Database-backed trading mode in `PortfolioState`.

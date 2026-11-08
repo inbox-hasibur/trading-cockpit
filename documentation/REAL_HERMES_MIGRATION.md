@@ -81,7 +81,7 @@ Following the project governance rule:
 | `backend/adapters/stocknow_adapter.py` | **KEEP** | Core interface for Playwright StockNow browser telemetry and quote extraction. |
 | `backend/adapters/stocknow_client.py` | **KEEP** | Persistent Chromium CDP browser manager and StockNow authentication. |
 | `backend/adapters/stocknow_market_sync.py` | **KEEP** | Scrapes 3 favorites lists and all DSE share boards into SQLite quotes. |
-| `backend/adapters/stocknow_order_executor.py` | **KEEP** | Automated virtual order submission (`/buy`, `/sell`) on StockNow virtual portfolio. |
+| `backend/adapters/stocknow_executor.py` | **KEEP** | Unified order execution (`BrowserTransport` and `ApiTransport`) with zero paper fallback. Retired legacy `stocknow_order_executor.py`. |
 | `backend/adapters/stocknow_portfolio_sync.py` | **KEEP** | Scrapes `/portfolios`, `/show`, `/ledger` and reconciles book basis to exact 0.00 drift. |
 | `backend/chat.py` | **DELETE** | Imitation chat router; replaced by thin client calling real Hermes Gateway API. |
 | `backend/config.py` | **ADAPT** | Remove imitation LLM/agent fields; keep trading kernel settings, DSE calendar, and auth. |

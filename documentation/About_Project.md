@@ -209,7 +209,7 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
       - Hermes conversational command (*"Sync Humming Bird portfolio"*, *"Humming Bird portfolio sync koro"*).
       - 1-Click UI action button in Settings (`Sync "Humming Bird" Portfolio`).
     - **Step 2.4 (Automated Virtual Order Execution on StockNow "Humming Bird"):**
-      - Dedicated order executor (`stocknow_order_executor.py`) supporting live browser DOM automation and paper verified fills.
+      - Dedicated order executor (`stocknow_executor.py`) supporting live browser DOM automation (`BrowserTransport`) and direct async HTTP API (`ApiTransport`).
       - Idempotency deduplication preventing duplicate trade executions on retries.
       - Delegated `StockNowAdapter.execute_order()` tracking `last_order_receipt` in telemetry status.
       - REST API endpoint `POST /api/stocknow/execute-order` with CheckpointManager state snapshot for 1-click `/rollback`.
@@ -360,8 +360,8 @@ Following the official Hermes Agent plugin architecture (`plugin.yaml`, `__init_
 - **Audit & Atomic Checkpoints:** Every state mutation takes a `KernelStateCheckpoint` snapshot and writes a structured `KernelAuditLog` entry before modifying state.
 - **Strict Invariants:** Enforces T+2 maturity, strict no-loss (>= +1.005% gross hurdle after round-trip 1% commission), single-writer lock, and target portfolio #164580 constraint.
 
-### Unified Supervisor & Launcher (`start.ps1` & `run.py`)
-- **One-Command Orchestration:** Starts Hermes Gateway daemon (`127.0.0.1:8642`) with profile `hummingbird`, waits for HTTP 200 on `/health`, and launches FastAPI Uvicorn on `127.0.0.1:8000`.
+### Unified Supervisor & Launcher (`run.py`)
+- **One-Command Orchestration:** Starts Hermes Gateway daemon (`127.0.0.1:8642`) with profile `hummingbird`, waits for HTTP 200 on `/health`, and launches FastAPI Uvicorn on `127.0.0.1:8000`. Wrappers `run.bat`, `run.sh`, and `package.json` delegate to `run.py`.
 - **Environment & Profile Protection:** Resolves Windows `HERMES_HOME` path bug and enforces profile isolation.
 - **Process Supervision:** Restarts Hermes Gateway up to 3 times on unexpected process exit; cleanly terminates child processes on `Ctrl+C` (SIGINT/SIGTERM).
 
@@ -464,12 +464,12 @@ trading-cockpit/
 │   ├── adapters/                            # External Exchange & Brokerage Adapters
 │   │   ├── __init__.py                      # Adapters package initializer
 │   │   ├── stocknow_adapter.py              # High-level StockNow client adapter & state synchronizer
-│   │   ├── stocknow_api.py                  # Direct async httpx StockNow API client (ETag, retry, memory token)
-│   │   ├── stocknow_client.py               # Direct HTTP API client with auth & payload parsing
+│   │   ├── stocknow_api.py                  # HTTP API client, Background mode (direct async httpx client)
+│   │   ├── stocknow_client.py               # Browser session client, Onscreen mode (persistent Playwright browser session)
 │   │   ├── stocknow_executor.py             # StockNowExecutor with ApiTransport and BrowserTransport
 │   │   ├── stocknow_market_sync.py          # Real-time market prices, indices & quotes sync
-│   │   ├── stocknow_order_executor.py       # Virtual/live order placement executor for StockNow
-│   │   └── stocknow_portfolio_sync.py       # Portfolio holdings & cash synchronization
+│   │   ├── stocknow_portfolio_sync.py       # Portfolio holdings & cash synchronization
+│   │   └── stocknow_write_guard.py          # Write guards restricting test portfolio mutations
 │   │
 │   ├── data/                                # Local persistent database & backup stores
 │   │   ├── backups/                         # Atomic SQLite backups & legacy exports
@@ -504,8 +504,6 @@ trading-cockpit/
 │           │   └── SKILL.md                 # 90/10 emergency profit lock & canary observation probe
 │           ├── gsc_tiers/
 │           │   └── SKILL.md                 # GSC master observation, L1 turnaround, L2 swing rally tiers
-│           ├── learned_rule_general/
-│           │   └── SKILL.md                 # Dynamic skill learning test case & rule evolution
 │           ├── sequential_no_regret/
 │           │   └── SKILL.md                 # Multi-tier profit locking, 50/50 pullback & T+2 capital rolling
 │           └── stocknow_dse_quirks/

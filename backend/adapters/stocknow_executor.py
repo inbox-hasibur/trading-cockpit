@@ -537,30 +537,52 @@ class BrowserTransport(StockNowExecutor):
 
         # 4. Fill Quantity, Price, Commission
         try:
-            qty_input = page.locator('input[name="no_of_shares[0]"]')
-            if not await qty_input.is_visible():
+            qty_loc = page.locator('input[name="no_of_shares[0]"], input[name*="no_of_shares"], input[name*="quantity"], input[placeholder*="Quantity"]')
+            qty_input = getattr(qty_loc, "first", qty_loc)
+            is_vis = qty_input.is_visible()
+            if hasattr(is_vis, "__await__"):
+                is_vis = await is_vis
+            if not is_vis:
                 raise SelectorMissingExecutionError("Quantity input selector not found.")
-            await qty_input.fill(str(quantity))
+            fill_res = qty_input.fill(str(quantity))
+            if hasattr(fill_res, "__await__"):
+                await fill_res
 
-            price_input = page.locator('input[name="buying_price[0]"]')
-            if not await price_input.is_visible():
+            price_loc = page.locator('input[name="buying_price[0]"], input[name*="buying_price"], input[name*="price"], input[placeholder*="Price"]')
+            price_input = getattr(price_loc, "first", price_loc)
+            is_vis = price_input.is_visible()
+            if hasattr(is_vis, "__await__"):
+                is_vis = await is_vis
+            if not is_vis:
                 raise SelectorMissingExecutionError("Price input selector not found.")
-            await price_input.fill(str(price))
+            fill_res = price_input.fill(str(price))
+            if hasattr(fill_res, "__await__"):
+                await fill_res
 
-            comm_input = page.locator('input[name="commission[0]"]')
-            if not await comm_input.is_visible():
+            comm_loc = page.locator('input[name="commission[0]"], input[name*="commission"], input[placeholder*="Commission"]')
+            comm_input = getattr(comm_loc, "first", comm_loc)
+            is_vis = comm_input.is_visible()
+            if hasattr(is_vis, "__await__"):
+                is_vis = await is_vis
+            if not is_vis:
                 raise SelectorMissingExecutionError("Commission input selector not found.")
-            await comm_input.fill(str(commission_pct))
+            fill_res = comm_input.fill(str(commission_pct))
+            if hasattr(fill_res, "__await__"):
+                await fill_res
         except StockNowExecutionError:
             raise
         except Exception as exc:
             raise SelectorMissingExecutionError(f"Error filling order inputs: {exc}") from exc
 
         # 5. Click Save
-        save_btn = page.locator('ion-button:has-text("Save")')
+        save_loc = page.locator('ion-button:has-text("Save"), button:has-text("Save"), button[type="submit"]')
+        save_btn = getattr(save_loc, "first", save_loc)
         try:
-            await save_btn.click(timeout=5000)
-            await page.wait_for_timeout(1000)
+            click_res = save_btn.click(timeout=5000)
+            if hasattr(click_res, "__await__"):
+                await click_res
+            if hasattr(page, "wait_for_timeout"):
+                await page.wait_for_timeout(1000)
         except Exception as exc:
             # On timeout: read ledger first before retry to prevent duplicate order
             logger.warning("Save button click or response timed out: %s. Verifying ledger...", exc)

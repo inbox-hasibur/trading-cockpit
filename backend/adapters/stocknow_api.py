@@ -1,9 +1,8 @@
-"""StockNow Async API Client (HTTPX).
+"""HTTP API client, Background mode.
 
+StockNow Async API Client (HTTPX).
 Implements the StockNow REST contract per documentation/STOCKNOW_SITE_MAP.md.
-No browser required. Uses memory-only JWT token management, strict rate limiting,
-ETag caching, typed error handling, bounded retries with jitter, and idempotent
-ledger verification before mutating retries.
+No browser required. Used by ApiTransport and background polling in 24/7 mode.
 """
 
 from __future__ import annotations

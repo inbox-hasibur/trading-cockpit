@@ -18,7 +18,7 @@ from backend.adapters.stocknow_market_sync import (
     sync_live_market_to_db,
 )
 from pathlib import Path
-from backend.adapters.stocknow_order_executor import execute_stocknow_virtual_order
+from backend.adapters.stocknow_adapter import StockNowAdapter
 from backend.adapters.stocknow_portfolio_sync import (
     extract_hummingbird_portfolio,
     parse_stocknow_ledger_date,
@@ -173,13 +173,15 @@ def test_extract_hummingbird_portfolio_with_ledger():
 @pytest.mark.anyio
 async def test_execute_stocknow_virtual_order_0_5_commission():
     """Verify order execution defaults to 0.5% commission on both BUY and SELL."""
-    receipt_buy = await execute_stocknow_virtual_order(
+    adapter = StockNowAdapter(mode="DEMO")
+    receipt_buy = await adapter.execute_order(
         symbol="BANKASIA",
         side="BUY",
         quantity=294,
         price=Decimal("17.00"),
         portfolio_id="164580",
         commission_pct=Decimal("0.5"),
+        dry_run=True,
     )
     assert receipt_buy["success"] is True
     assert receipt_buy["status"] == "ACKNOWLEDGED"
@@ -187,13 +189,14 @@ async def test_execute_stocknow_virtual_order_0_5_commission():
     assert receipt_buy["portfolio_id"] == "164580"
     assert receipt_buy["side"] == "BUY"
 
-    receipt_sell = await execute_stocknow_virtual_order(
+    receipt_sell = await adapter.execute_order(
         symbol="MATINSPINN",
         side="SELL",
         quantity=50,
         price=Decimal("105.40"),
         portfolio_id="164580",
         commission_pct=Decimal("0.5"),
+        dry_run=True,
     )
     assert receipt_sell["success"] is True
     assert receipt_sell["status"] == "ACKNOWLEDGED"

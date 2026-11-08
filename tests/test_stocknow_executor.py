@@ -331,3 +331,49 @@ def test_session_logout_action_logs_out_both_transports(test_app_and_db, auth_he
         assert data["status"] == "ok"
         assert data["browser"]["status"] == "LOGGED_OUT"
         assert data["api"]["status"] == "LOGGED_OUT"
+
+
+# -----------------------------------------------------------------------------
+# Test 7: Architectural Isolation Guard - No Direct StockNow Buy/Sell Calls
+# -----------------------------------------------------------------------------
+
+def test_architectural_order_executor_isolation():
+    """Verify stocknow_order_executor is retired and no module outside stocknow_executor dispatches orders."""
+    import re
+    from pathlib import Path
+
+    repo_root = Path(__file__).resolve().parent.parent
+
+    # 1. stocknow_order_executor.py must not exist on disk
+    legacy_file = repo_root / "backend" / "adapters" / "stocknow_order_executor.py"
+    assert not legacy_file.exists(), f"Legacy executor file {legacy_file} must be deleted."
+
+    # 2. No codebase file should import or reference stocknow_order_executor
+    code_dirs = [repo_root / "backend", repo_root / "frontend", repo_root / "plugins", repo_root / "scripts"]
+    for c_dir in code_dirs:
+        if not c_dir.exists():
+            continue
+        for file_path in c_dir.rglob("*"):
+            if file_path.is_file() and file_path.suffix in (".py", ".js", ".ts", ".html"):
+                content = file_path.read_text(encoding="utf-8", errors="ignore")
+                assert "stocknow_order_executor" not in content, (
+                    f"Forbidden reference to stocknow_order_executor found in {file_path}"
+                )
+
+    # 3. No module outside backend/adapters/stocknow_executor.py may call direct StockNow buy/sell endpoints
+    backend_dir = repo_root / "backend"
+    forbidden_patterns = [
+        re.compile(r"\bapi_client\.(buy|sell)\b"),
+        re.compile(r"\.post\([\"'][^\"']*/portfolios/[^\"']*/(buy|sell)"),
+    ]
+    for py_file in backend_dir.rglob("*.py"):
+        rel_posix = py_file.relative_to(repo_root).as_posix()
+        if rel_posix in ("backend/adapters/stocknow_executor.py", "backend/adapters/stocknow_api.py"):
+            continue
+        content = py_file.read_text(encoding="utf-8", errors="ignore")
+        for pat in forbidden_patterns:
+            match = pat.search(content)
+            assert not match, (
+                f"Direct StockNow buy/sell call found in {rel_posix}: '{match.group(0)}'. "
+                f"All order dispatches must flow strictly through StockNowExecutor."
+            )
