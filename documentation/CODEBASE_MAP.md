@@ -1,6 +1,8 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-08 08:24:48 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-08 09:15:20 UTC**.
+> **Excluded Paths:** `vendor/`, `node_modules/`, `.venv/`, `venv/`, `.git/`, `__pycache__/`, `backend/data/`, `.pytest_cache/`, `dist/`, `build/`, `scratch/`
+> **Pinned Vendor Commit (`vendor/hermes-agent`):** `b777adb7918713e5786cc9d95ad5b854074f2cb6`
 
 ---
 
@@ -8,207 +10,24 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 10818 | 2,670,256 | Python Core Kernel, Engine & Hermes Agent |
-| `.ts` | 3911 | 775,975 | Configuration / Asset |
-| `.md` | 1560 | 453,701 | Architecture & Strategy Documentation |
-| `.tsx` | 1548 | 384,054 | Configuration / Asset |
-| `.json` | 232 | 158,742 | Configuration / Asset |
-| `.yaml` | 1264 | 120,668 | Configuration / Asset |
-| `.mjs` | 282 | 58,247 | Configuration / Asset |
-| `.tiff` | 1 | 42,784 | Configuration / Asset |
-| `.icns` | 4 | 39,764 | Configuration / Asset |
-| `.woff2` | 13 | 22,964 | Configuration / Asset |
-| `.css` | 36 | 20,746 | Custom Dark / Light / Terminal Design System |
-| `.wav` | 1 | 16,257 | Configuration / Asset |
-| `.pdf` | 4 | 14,579 | Configuration / Asset |
-| `.h` | 3 | 14,533 | Configuration / Asset |
-| `.sh` | 79 | 13,746 | Configuration / Asset |
-| `.js` | 28 | 13,660 | Vanilla ES6+ Reactive Terminal Controller |
-| `.ps1` | 41 | 11,447 | Configuration / Asset |
-| `.lock` | 3 | 7,975 | Configuration / Asset |
-| `.rs` | 12 | 7,810 | Configuration / Asset |
-| `.bst` | 5 | 7,756 | Configuration / Asset |
-| `.sty` | 13 | 6,846 | Configuration / Asset |
-| `.log` | 1 | 6,598 | Configuration / Asset |
-| `.nix` | 23 | 6,155 | Configuration / Asset |
-| `.html` | 18 | 5,199 | Single Page Application DOM Structure |
-| `.txt` | 30 | 4,548 | Dependency Specifications |
-| `.tflite` | 1 | 4,542 | Configuration / Asset |
-| `.tex` | 11 | 4,062 | Configuration / Asset |
-| `.example` | 2 | 2,439 | Environment Configuration Template |
-| `.com` | 1838 | 2,381 | Configuration / Asset |
-| `.toml` | 6 | 1,896 | PyProject Configuration |
-| `.cjs` | 15 | 1,609 | Configuration / Asset |
-| `.db-shm` | 1 | 777 | Configuration / Asset |
-| `.mp4` | 1 | 687 | Configuration / Asset |
-| `.webp` | 4 | 680 | Configuration / Asset |
-| `Dockerfile` | 1 | 577 | Configuration / Asset |
-| `PKG-INFO` | 1 | 477 | Configuration / Asset |
-| `.c` | 3 | 474 | Configuration / Asset |
-| `.mts` | 9 | 434 | Configuration / Asset |
-| `LICENSE` | 11 | 422 | Configuration / Asset |
-| `.m` | 2 | 348 | Configuration / Asset |
-| `.mdx` | 5 | 348 | Configuration / Asset |
-| `.tmpl` | 3 | 308 | Configuration / Asset |
-| `.bib` | 5 | 291 | Configuration / Asset |
-| `check` | 1 | 290 | Configuration / Asset |
-| `.cs` | 2 | 243 | Configuration / Asset |
-| `.ahk` | 1 | 215 | Configuration / Asset |
-| `.tsv` | 1 | 200 | Configuration / Asset |
-| `.yml` | 4 | 197 | Configuration / Asset |
-| `.jsonl` | 4 | 183 | Configuration / Asset |
-| `activate` | 1 | 181 | Configuration / Asset |
-| `.dockerfile` | 2 | 136 | Configuration / Asset |
-| `.fish` | 1 | 111 | Configuration / Asset |
-| `run` | 3 | 103 | Configuration / Asset |
-| `.local` | 78 | 94 | Configuration / Asset |
-| `.manifest` | 1 | 75 | Configuration / Asset |
-| `015-supervise-perms` | 1 | 75 | Configuration / Asset |
-| `.cts` | 3 | 68 | Configuration / Asset |
-| `.plist` | 4 | 62 | Configuration / Asset |
-| `.xml` | 1 | 62 | Configuration / Asset |
-| `.ai` | 45 | 54 | Configuration / Asset |
-| `.sha256` | 1 | 49 | Configuration / Asset |
-| `.patch` | 2 | 46 | Configuration / Asset |
-| `.me` | 30 | 40 | Configuration / Asset |
-| `justfile` | 1 | 38 | Configuration / Asset |
-| `02-reconcile-profiles` | 1 | 37 | Configuration / Asset |
-| `Makefile` | 1 | 36 | Configuration / Asset |
-| `.service` | 1 | 32 | Configuration / Asset |
-| `run-in-hermes-env` | 1 | 32 | Configuration / Asset |
-| `.net` | 26 | 31 | Configuration / Asset |
-| `finish` | 1 | 30 | Configuration / Asset |
-| `NOTICE` | 1 | 30 | Configuration / Asset |
-| `.cmd` | 1 | 28 | Configuration / Asset |
-| `.dev` | 19 | 24 | Configuration / Asset |
-| `.org` | 19 | 22 | Configuration / Asset |
-| `.cn` | 16 | 19 | Configuration / Asset |
-| `.de` | 16 | 19 | Configuration / Asset |
-| `.io` | 11 | 15 | Configuration / Asset |
-| `.agentignore` | 1 | 14 | Configuration / Asset |
-| `.edu` | 10 | 13 | Configuration / Asset |
-| `hermes-gateway` | 1 | 13 | Configuration / Asset |
-| `.cursorignore` | 1 | 12 | Configuration / Asset |
-| `.opencodeignore` | 1 | 12 | Configuration / Asset |
-| `.co` | 9 | 11 | Configuration / Asset |
-| `.au` | 9 | 11 | Configuration / Asset |
-| `hermes` | 1 | 11 | Configuration / Asset |
-| `.uk` | 8 | 10 | Configuration / Asset |
-| `.xyz` | 6 | 9 | Configuration / Asset |
-| `.tech` | 6 | 9 | Configuration / Asset |
-| `.bat` | 1 | 8 | Configuration / Asset |
-| `.in` | 5 | 8 | Configuration / Asset |
-| `.ru` | 5 | 8 | Configuration / Asset |
-| `.fr` | 6 | 7 | Configuration / Asset |
-| `.ca` | 5 | 7 | Configuration / Asset |
-| `.br` | 5 | 6 | Configuration / Asset |
-| `.cz` | 3 | 6 | Configuration / Asset |
-| `.jp` | 4 | 6 | Configuration / Asset |
-| `.ch` | 4 | 6 | Configuration / Asset |
-| `.cloud` | 4 | 5 | Configuration / Asset |
-| `.se` | 3 | 5 | Configuration / Asset |
-| `.it` | 4 | 5 | Configuration / Asset |
-| `.eu` | 5 | 5 | Configuration / Asset |
-| `.ini` | 1 | 5 | Configuration / Asset |
-| `.invalid` | 2 | 4 | Configuration / Asset |
-| `.to` | 4 | 4 | Configuration / Asset |
-| `.lan` | 4 | 4 | Configuration / Asset |
-| `.inc` | 2 | 4 | Configuration / Asset |
-| `.so` | 2 | 4 | Configuration / Asset |
-| `.tr` | 3 | 3 | Configuration / Asset |
-| `.systems` | 2 | 3 | Configuration / Asset |
-| `.tw` | 2 | 3 | Configuration / Asset |
-| `.ltd` | 2 | 3 | Configuration / Asset |
-| `.cc` | 3 | 3 | Configuration / Asset |
-| `.pl` | 2 | 3 | Configuration / Asset |
-| `.nl` | 2 | 3 | Configuration / Asset |
-| `.sg` | 2 | 3 | Configuration / Asset |
-| `.kitchen` | 1 | 3 | Configuration / Asset |
-| `type` | 3 | 3 | Configuration / Asset |
-| `.id` | 2 | 2 | Configuration / Asset |
-| `a@l` | 1 | 2 | Configuration / Asset |
-| `.best` | 1 | 2 | Configuration / Asset |
-| `alberto@localhost` | 1 | 2 | Configuration / Asset |
-| `.fi` | 2 | 2 | Configuration / Asset |
-| `.es` | 1 | 2 | Configuration / Asset |
-| `.no` | 2 | 2 | Configuration / Asset |
-| `.win` | 2 | 2 | Configuration / Asset |
-| `.be` | 1 | 2 | Configuration / Asset |
-| `.vip` | 1 | 2 | Configuration / Asset |
-| `.agent` | 1 | 2 | Configuration / Asset |
-| `hermes-agent@localhost` | 1 | 2 | Configuration / Asset |
-| `.info` | 1 | 2 | Configuration / Asset |
-| `.dk` | 2 | 2 | Configuration / Asset |
-| `.family` | 1 | 2 | Configuration / Asset |
-| `.ar` | 1 | 2 | Configuration / Asset |
-| `.vn` | 1 | 2 | Configuration / Asset |
-| `satoshi@local` | 1 | 2 | Configuration / Asset |
-| `[email protected]` | 1 | 1 | Configuration / Asset |
-| `.pt` | 1 | 1 | Configuration / Asset |
-| `.il` | 1 | 1 | Configuration / Asset |
-| `.zone` | 1 | 1 | Configuration / Asset |
-| `.pro` | 1 | 1 | Configuration / Asset |
-| `BonesGit@local` | 1 | 1 | Configuration / Asset |
-| `.lol` | 1 | 1 | Configuration / Asset |
-| `.is` | 1 | 1 | Configuration / Asset |
-| `.ooo` | 1 | 1 | Configuration / Asset |
-| `.ventures` | 1 | 1 | Configuration / Asset |
-| `.rocks` | 1 | 1 | Configuration / Asset |
-| `.us` | 1 | 1 | Configuration / Asset |
-| `dev@local` | 1 | 1 | Configuration / Asset |
-| `.group` | 1 | 1 | Configuration / Asset |
-| `.test` | 1 | 1 | Configuration / Asset |
-| `.gg` | 1 | 1 | Configuration / Asset |
-| `.mesh` | 1 | 1 | Configuration / Asset |
-| `.za` | 1 | 1 | Configuration / Asset |
-| `.bio` | 1 | 1 | Configuration / Asset |
-| `.ae` | 1 | 1 | Configuration / Asset |
-| `.tv` | 1 | 1 | Configuration / Asset |
-| `hermes-fleet-fix@localhost` | 1 | 1 | Configuration / Asset |
-| `hermes-macair@local` | 1 | 1 | Configuration / Asset |
-| `hermes@local` | 1 | 1 | Configuration / Asset |
-| `.app` | 1 | 1 | Configuration / Asset |
-| `.industries` | 1 | 1 | Configuration / Asset |
-| `.computer` | 1 | 1 | Configuration / Asset |
-| `kiosha@local` | 1 | 1 | Configuration / Asset |
-| `laura@localhost` | 1 | 1 | Configuration / Asset |
-| `lavie@local` | 1 | 1 | Configuration / Asset |
-| `.team` | 1 | 1 | Configuration / Asset |
-| `.video` | 1 | 1 | Configuration / Asset |
-| `ljubomir@macbook2` | 1 | 1 | Configuration / Asset |
-| `.cl` | 1 | 1 | Configuration / Asset |
-| `.kr` | 1 | 1 | Configuration / Asset |
-| `.uy` | 1 | 1 | Configuration / Asset |
-| `.pw` | 1 | 1 | Configuration / Asset |
-| `.at` | 1 | 1 | Configuration / Asset |
-| `nyaruko@hermes` | 1 | 1 | Configuration / Asset |
-| `.ad` | 1 | 1 | Configuration / Asset |
-| `.pet` | 1 | 1 | Configuration / Asset |
-| `probe@local` | 1 | 1 | Configuration / Asset |
-| `.club` | 1 | 1 | Configuration / Asset |
-| `.email` | 1 | 1 | Configuration / Asset |
-| `.online` | 1 | 1 | Configuration / Asset |
-| `.works` | 1 | 1 | Configuration / Asset |
-| `.nu` | 1 | 1 | Configuration / Asset |
-| `stanislav@local` | 1 | 1 | Configuration / Asset |
-| `sysadmin@local` | 1 | 1 | Configuration / Asset |
-| `t@t` | 1 | 1 | Configuration / Asset |
-| `tangyi@DESKTOP-2U4MD8Q` | 1 | 1 | Configuration / Asset |
-| `trading-monitoring@localhost` | 1 | 1 | Configuration / Asset |
-| `vega33@localhost` | 1 | 1 | Configuration / Asset |
-| `vega38@localhost` | 1 | 1 | Configuration / Asset |
-| `.localdomain` | 1 | 1 | Configuration / Asset |
-| `.top` | 1 | 1 | Configuration / Asset |
-| `.db-wal` | 1 | 0 | Configuration / Asset |
-| `base` | 3 | 0 | Configuration / Asset |
-| `dashboard` | 1 | 0 | Configuration / Asset |
-| `main-hermes` | 1 | 0 | Configuration / Asset |
-| `profile-gateways` | 1 | 0 | Configuration / Asset |
-| **TOTAL** | **22380** | **4,910,993** | *Entire Humming Bird Repository* |
+| `.py` | 78 | 22,998 | Python Core Kernel, Engine, Tests & Plugins |
+| `.css` | 2 | 9,339 | Custom Dark / Light / Terminal Design System |
+| `.json` | 13 | 5,659 | Fixtures & Configuration |
+| `.js` | 3 | 5,256 | Vanilla ES6+ Reactive Terminal Controller & UI |
+| `.md` | 10 | 3,916 | Architecture & Strategy Documentation |
+| `.html` | 1 | 1,103 | Single Page Application DOM Structure |
+| `.ps1` | 2 | 199 | Windows PowerShell Automation |
+| `.yaml` | 1 | 32 | Manifest & Plugin Configuration |
+| `.toml` | 1 | 13 | PyProject Configuration |
+| `.txt` | 2 | 11 | Dependency Specifications |
+| `.sh` | 1 | 9 | Shell Scripts |
+| `.bat` | 1 | 8 | Batch Launchers |
+| *other* | 9 | 43,383 | Other Configuration, Assets & Dotfiles |
+| **TOTAL** | **124** | **91,926** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
-Shows intra-repo module dependencies within `backend/` and `scripts/`:
+Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts/`:
 
 | Module File | Imported Internal Dependencies |
 | :--- | :--- |
@@ -246,14 +65,18 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | [`backend/portfolio.py`](/backend/portfolio.py) | `backend.adapters.stocknow_adapter.StockNowAdapter`, `backend.adapters.stocknow_market_sync._ALL_DSE_SHARES_CACHE`, `backend.config.DHAKA`, `backend.config.Settings`, `backend.config.VERSION`, `backend.config.get_active_target_portfolio`, `backend.config.get_allowed_portfolios`, `backend.config.get_portfolio_name`, `backend.database.AutomationCycle`, `backend.database.CanaryThesis`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.DecisionLog`, `backend.database.KernelStateCheckpoint`, `backend.database.RuleAudit`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.database.portfolio_state`, `backend.engine.money.HUNDRED`, `backend.engine.money.ZERO`, `backend.engine.money.decimal`, `backend.engine.money.money`, `backend.engine.money.sale_amount`, `backend.engine.signals.assess_company`, `backend.engine.t2_ledger.TradingCalendar`, `backend.engine.t2_ledger.bucket_balances`, `backend.hermes_bridge.read_hermes_state`, `backend.market_map.build_market_map_payload` |
 | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py) | `backend.config.DHAKA`, `backend.config.Settings`, `backend.database.Database`, `backend.database.portfolio_state`, `backend.engine.checkpoint.CheckpointManager` |
 | [`backend/routes_hermes.py`](/backend/routes_hermes.py) | `backend.config.Settings`, `backend.database.Database`, `backend.database.KernelStateCheckpoint`, `backend.database.RuleAudit`, `backend.engine.checkpoint.CheckpointManager`, `backend.hermes_bridge.get_hermes_bin`, `backend.hermes_bridge.get_hermes_dir`, `backend.hermes_bridge.read_hermes_state`, `backend.portfolio.portfolio_state` |
-| [`backend/routes_stocknow.py`](/backend/routes_stocknow.py) | `backend.adapters.stocknow_api.StockNowError`, `backend.adapters.stocknow_client.StockNowLiveClient`, `backend.adapters.stocknow_market_sync.extract_quotes_from_stocknow`, `backend.adapters.stocknow_market_sync.fetch_stocknow_live_market_data`, `backend.adapters.stocknow_market_sync.get_or_fetch_all_dse_shares`, `backend.adapters.stocknow_market_sync.sync_live_market_to_db`, `backend.adapters.stocknow_portfolio_sync.extract_hummingbird_portfolio`, `backend.adapters.stocknow_portfolio_sync.extract_hummingbird_portfolio_from_browser`, `backend.adapters.stocknow_portfolio_sync.reconcile_portfolio_to_db`, `backend.adapters.stocknow_portfolio_sync.sync_stocknow_portfolio_via_api`, `backend.config.Settings`, `backend.config.get_active_target_portfolio`, `backend.database.CompanyProfile`, `backend.database.Database`, `backend.database.PortfolioState`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.engine.agent_actions.execute_agentic_buy`, `backend.engine.agent_actions.execute_agentic_sell`, `backend.engine.checkpoint.CheckpointManager`, `backend.engine.scheduler.DSEMarketScheduler`, `backend.engine.scheduler.get_active_scheduler`, `backend.portfolio.build_snapshot` |
+| [`backend/routes_stocknow.py`](/backend/routes_stocknow.py) | `backend.adapters.stocknow_api.StockNowError`, `backend.adapters.stocknow_client.StockNowLiveClient`, `backend.adapters.stocknow_market_sync.extract_quotes_from_stocknow`, `backend.adapters.stocknow_market_sync.fetch_stocknow_live_market_data`, `backend.adapters.stocknow_market_sync.get_or_fetch_all_dse_shares`, `backend.adapters.stocknow_market_sync.sync_live_market_to_db`, `backend.adapters.stocknow_portfolio_sync.extract_hummingbird_portfolio`, `backend.adapters.stocknow_portfolio_sync.extract_hummingbird_portfolio_from_browser`, `backend.adapters.stocknow_portfolio_sync.reconcile_portfolio_to_db`, `backend.adapters.stocknow_portfolio_sync.sync_stocknow_portfolio_via_api`, `backend.config.Settings`, `backend.config.get_active_target_portfolio`, `backend.database.CompanyProfile`, `backend.database.Database`, `backend.database.PortfolioState`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.engine.scheduler.DSEMarketScheduler`, `backend.engine.scheduler.get_active_scheduler`, `backend.kernel_api.OrderRequest`, `backend.kernel_api.post_order`, `backend.portfolio.build_snapshot` |
 | [`backend/secret_guard.py`](/backend/secret_guard.py) | *Independent Core Module* |
 | [`backend/seed.py`](/backend/seed.py) | `backend.config.DHAKA`, `backend.config.Settings`, `backend.config.utc_now_iso`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.DecisionLog`, `backend.database.PortfolioState`, `backend.database.PreflightCheckLog`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.engine.money.decimal`, `backend.engine.money.money`, `backend.engine.money.price`, `backend.engine.money.purchase_amount`, `backend.engine.t2_ledger.TradingCalendar`, `backend.engine.t2_ledger.assert_ledger`, `backend.engine.t2_ledger.bucket_balances` |
+| [`plugins/humming_bird/__init__.py`](/plugins/humming_bird/__init__.py) | *Independent Core Module* |
+| [`plugins/humming_bird/hooks.py`](/plugins/humming_bird/hooks.py) | `plugins.humming_bird.tools._kernel_get` |
+| [`plugins/humming_bird/schemas.py`](/plugins/humming_bird/schemas.py) | *Independent Core Module* |
+| [`plugins/humming_bird/tools.py`](/plugins/humming_bird/tools.py) | *Independent Core Module* |
 | [`scripts/backup_db.py`](/scripts/backup_db.py) | *Independent Core Module* |
 | [`scripts/check_dse_market_open.py`](/scripts/check_dse_market_open.py) | *Independent Core Module* |
 | [`scripts/check_heartbeat.py`](/scripts/check_heartbeat.py) | `backend.config.DEFAULT_DATABASE_URL`, `backend.config.Settings`, `backend.database.Database`, `backend.engine.heartbeat.check_dead_man_switch`, `backend.engine.heartbeat.record_system_heartbeat` |
 | [`scripts/generate_code_map.py`](/scripts/generate_code_map.py) | *Independent Core Module* |
-| [`scripts/preflight.py`](/scripts/preflight.py) | `backend.adapters.stocknow_client.get_safe_profile_dir`, `backend.config.DEFAULT_DATABASE_URL`, `backend.config.Settings`, `backend.database.Database`, `backend.database.PortfolioState`, `backend.database.TaxLot`, `backend.engine.t2_ledger.assert_ledger`, `backend.engine.t2_ledger.bucket_balances`, `backend.hermes_bridge.get_hermes_dir`, `backend.hermes_bridge.read_hermes_state`, `scripts.backup_db.backup_database`, `scripts.backup_db.get_default_backup_dir`, `scripts.backup_db.get_default_db_path` |
+| [`scripts/preflight.py`](/scripts/preflight.py) | `backend.adapters.stocknow_client.get_safe_profile_dir`, `backend.config.DEFAULT_DATABASE_URL`, `backend.config.Settings`, `backend.database.Database`, `backend.database.PortfolioState`, `backend.database.TaxLot`, `backend.engine.t2_ledger.assert_ledger`, `backend.engine.t2_ledger.bucket_balances`, `backend.hermes_bridge.get_hermes_dir`, `backend.hermes_bridge.read_hermes_state`, `plugins.humming_bird._TOOLS`, `scripts.backup_db.backup_database`, `scripts.backup_db.get_default_backup_dir`, `scripts.backup_db.get_default_db_path` |
 | [`scripts/restore_db.py`](/scripts/restore_db.py) | `scripts.backup_db.backup_database`, `scripts.backup_db.get_default_backup_dir`, `scripts.backup_db.get_default_db_path` |
 | [`scripts/verify_chat_card.py`](/scripts/verify_chat_card.py) | *Independent Core Module* |
 | [`scripts/verify_step10_ui.py`](/scripts/verify_step10_ui.py) | *Independent Core Module* |
@@ -279,8 +102,8 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | `QuoteError` | `L15–L16` | `ValueError` | — | 0 |
 | `LiveIntegrationNotImplemented` | `L19–L20` | `RuntimeError` | — | 0 |
 | `DemoQuote` | `L24–L29` | `object` | — | 0 |
-| `StockNowAdapter` | `L32–L160` | `object` | Sprint 1's explicitly synthetic data/paper-fill boundary. | 6 |
-| `StockNowBrowserSession` | `L163–L189` | `object` | Opt-in persistent browser foundation, not a login or order implementation. | 2 |
+| `StockNowAdapter` | `L32–L161` | `object` | Sprint 1's explicitly synthetic data/paper-fill boundary. | 6 |
+| `StockNowBrowserSession` | `L164–L190` | `object` | Opt-in persistent browser foundation, not a login or order implementation. | 2 |
 
 
 **Methods in `StockNowAdapter`:**
@@ -291,16 +114,16 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | `quote` | `L39–L53` | `(self, company: CompanyProfile, as_o...)` | `DemoQuote` | — | `DemoQuote`, `QuoteError`, `decimal`, `is_finite` |
 | `paper_fill` | `L55–L58` | `(self, quote: DemoQuote, quantity: i...)` | `Decimal` | — | `ValueError` |
 | `read_virtual_portfolio` | `L60–L61` | `(self...)` | — | — | `LiveIntegrationNotImplemented` |
-| `execute_order` | `L63–L123` | `(self, symbol: str, side: str, quant...)` | `dict` | — | `Decimal`, `execute_order`, `float`, `get_stocknow_executor` |
-| `get_adapter_status` | `L125–L160` | `(self, ingestion_mode: str='BACKGROU...)` | `dict` | — | `get`, `get_safe_profile_dir`, `get_status`, `getattr` |
+| `execute_order` | `L63–L124` | `(self, symbol: str, side: str, quant...)` | `dict` | — | `Decimal`, `execute_order`, `float`, `get_stocknow_executor` |
+| `get_adapter_status` | `L126–L161` | `(self, ingestion_mode: str='BACKGROU...)` | `dict` | — | `get`, `get_safe_profile_dir`, `get_status`, `getattr` |
 
 
 **Methods in `StockNowBrowserSession`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__init__` | `L171–L172` | `(self, profile_directory: Path...)` | — | — | — |
-| `open` | `L175–L189` | `(self...)` | — | — | `async_playwright`, `close`, `launch_persistent_context`, `mkdir` |
+| `__init__` | `L172–L173` | `(self, profile_directory: Path...)` | — | — | — |
+| `open` | `L176–L190` | `(self...)` | — | — | `async_playwright`, `close`, `launch_persistent_context`, `mkdir` |
 
 
 ---
@@ -311,43 +134,43 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `StockNowError` | `L29–L31` | `Exception` | Base exception for StockNow API errors. | 0 |
-| `NotAuthenticatedError` | `L34–L36` | `StockNowError` | Raised on missing credentials, failed login, or persistent 401. | 0 |
-| `RateLimitedError` | `L39–L41` | `StockNowError` | Raised on 429 Too Many Requests. | 0 |
-| `SchemaChangedError` | `L44–L46` | `StockNowError` | Raised when an API response misses expected fields. Must stop trading. | 0 |
-| `NetworkError` | `L49–L51` | `StockNowError` | Raised on transport failures, DNS errors, or timeouts after retries. | 0 |
-| `_RateLimiter` | `L61–L77` | `object` | Async token bucket / interval limiter ensuring max 1 req/sec per host. | 2 |
-| `StockNowAPI` | `L80–L609` | `object` | Async HTTP client for StockNow REST endpoints. | 16 |
+| `StockNowError` | `L28–L30` | `Exception` | Base exception for StockNow API errors. | 0 |
+| `NotAuthenticatedError` | `L33–L35` | `StockNowError` | Raised on missing credentials, failed login, or persistent 401. | 0 |
+| `RateLimitedError` | `L38–L40` | `StockNowError` | Raised on 429 Too Many Requests. | 0 |
+| `SchemaChangedError` | `L43–L45` | `StockNowError` | Raised when an API response misses expected fields. Must stop trading. | 0 |
+| `NetworkError` | `L48–L50` | `StockNowError` | Raised on transport failures, DNS errors, or timeouts after retries. | 0 |
+| `_RateLimiter` | `L60–L76` | `object` | Async token bucket / interval limiter ensuring max 1 req/sec per host. | 2 |
+| `StockNowAPI` | `L79–L608` | `object` | Async HTTP client for StockNow REST endpoints. | 16 |
 
 
 **Methods in `_RateLimiter`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__init__` | `L64–L67` | `(self, interval: float=1.0...)` | `None` | — | `Lock`, `float`, `max` |
-| `acquire` | `L69–L77` | `(self...)` | `None` | — | `get_event_loop`, `sleep`, `time` |
+| `__init__` | `L63–L66` | `(self, interval: float=1.0...)` | `None` | — | `Lock`, `float`, `max` |
+| `acquire` | `L68–L76` | `(self...)` | `None` | — | `get_event_loop`, `sleep`, `time` |
 
 
 **Methods in `StockNowAPI`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__init__` | `L83–L117` | `(self, base_url: str='https://stockn...)` | `None` | — | `AsyncClient`, `_RateLimiter`, `rstrip` |
-| `__aenter__` | `L119–L120` | `(self...)` | `StockNowAPI` | — | — |
-| `__aexit__` | `L122–L123` | `(self, exc_type: Any, exc_val: Any, ...)` | `None` | — | `aclose` |
-| `aclose` | `L125–L129` | `(self...)` | `None` | Close underlying HTTP client and wipe token from memory. | `aclose` |
-| `login` | `L135–L196` | `(self...)` | `str` | Authenticate using credentials from environment (or constructor). | `NetworkError`, `NotAuthenticatedError`, `RateLimitedError`, `SchemaChangedError` |
-| `logout` | `L198–L215` | `(self...)` | `None` | Terminate active session on server and clear token from memory. | `acquire`, `post`, `warning` |
-| `ensure_authenticated` | `L217–L222` | `(self...)` | `str` | Ensure a valid, non-expired in-memory JWT token exists. | `login`, `time` |
-| `_request` | `L228–L340` | `(self, method: str, path: str, *, pa...)` | `Any` | — | `NetworkError`, `NotAuthenticatedError`, `RateLimitedError`, `SchemaChangedError` |
-| `_check_ledger_for_trade` | `L342–L381` | `(self, portfolio_id: str | int, expe...)` | `dict[str, Any] | None` | Read ledger to verify if an unconfirmed mutation was executed on the server. | `get`, `get_ledger`, `info`, `int` |
-| `get_instruments` | `L387–L416` | `(self...)` | `dict[str, Any]` | Fetch complete DSE instruments catalog. | `SchemaChangedError`, `_request`, `any`, `isinstance` |
-| `get_lists` | `L418–L433` | `(self...)` | `list[dict[str, Any]]` | Fetch operator watchlists (GSC, L1, L2). Validates expected schema. | `SchemaChangedError`, `_request`, `get`, `isinstance` |
-| `get_history` | `L435–L472` | `(self, symbol: str, sessions: int=15...)` | `list[list[Any]]` | Fetch daily OHLCV candles for symbol sliced to requested sessions count. | `SchemaChangedError`, `_request`, `all`, `append` |
-| `get_portfolio` | `L474–L491` | `(self, id: str | int...)` | `dict[str, Any]` | Fetch portfolio holdings and cash balance. Validates expected schema. | `SchemaChangedError`, `_request`, `isinstance`, `keys` |
-| `get_ledger` | `L493–L511` | `(self, id: str | int...)` | `dict[str, Any]` | Fetch portfolio ledger transactions. Validates expected schema. | `SchemaChangedError`, `_request`, `get`, `isinstance` |
-| `buy` | `L517–L562` | `(self, id: str | int, items: list[di...)` | `dict[str, Any]` | Execute Buy orders on StockNow portfolio. | `SchemaChangedError`, `ValueError`, `_request`, `float` |
-| `sell` | `L564–L609` | `(self, id: str | int, items: list[di...)` | `dict[str, Any]` | Execute Sell orders on StockNow portfolio. | `SchemaChangedError`, `ValueError`, `_request`, `float` |
+| `__init__` | `L82–L116` | `(self, base_url: str='https://stockn...)` | `None` | — | `AsyncClient`, `_RateLimiter`, `rstrip` |
+| `__aenter__` | `L118–L119` | `(self...)` | `StockNowAPI` | — | — |
+| `__aexit__` | `L121–L122` | `(self, exc_type: Any, exc_val: Any, ...)` | `None` | — | `aclose` |
+| `aclose` | `L124–L128` | `(self...)` | `None` | Close underlying HTTP client and wipe token from memory. | `aclose` |
+| `login` | `L134–L195` | `(self...)` | `str` | Authenticate using credentials from environment (or constructor). | `NetworkError`, `NotAuthenticatedError`, `RateLimitedError`, `SchemaChangedError` |
+| `logout` | `L197–L214` | `(self...)` | `None` | Terminate active session on server and clear token from memory. | `acquire`, `post`, `warning` |
+| `ensure_authenticated` | `L216–L221` | `(self...)` | `str` | Ensure a valid, non-expired in-memory JWT token exists. | `login`, `time` |
+| `_request` | `L227–L339` | `(self, method: str, path: str, *, pa...)` | `Any` | — | `NetworkError`, `NotAuthenticatedError`, `RateLimitedError`, `SchemaChangedError` |
+| `_check_ledger_for_trade` | `L341–L380` | `(self, portfolio_id: str | int, expe...)` | `dict[str, Any] | None` | Read ledger to verify if an unconfirmed mutation was executed on the server. | `get`, `get_ledger`, `info`, `int` |
+| `get_instruments` | `L386–L415` | `(self...)` | `dict[str, Any]` | Fetch complete DSE instruments catalog. | `SchemaChangedError`, `_request`, `any`, `isinstance` |
+| `get_lists` | `L417–L432` | `(self...)` | `list[dict[str, Any]]` | Fetch operator watchlists (GSC, L1, L2). Validates expected schema. | `SchemaChangedError`, `_request`, `get`, `isinstance` |
+| `get_history` | `L434–L471` | `(self, symbol: str, sessions: int=15...)` | `list[list[Any]]` | Fetch daily OHLCV candles for symbol sliced to requested sessions count. | `SchemaChangedError`, `_request`, `all`, `append` |
+| `get_portfolio` | `L473–L490` | `(self, id: str | int...)` | `dict[str, Any]` | Fetch portfolio holdings and cash balance. Validates expected schema. | `SchemaChangedError`, `_request`, `isinstance`, `keys` |
+| `get_ledger` | `L492–L510` | `(self, id: str | int...)` | `dict[str, Any]` | Fetch portfolio ledger transactions. Validates expected schema. | `SchemaChangedError`, `_request`, `get`, `isinstance` |
+| `buy` | `L516–L561` | `(self, id: str | int, items: list[di...)` | `dict[str, Any]` | Execute Buy orders on StockNow portfolio. | `SchemaChangedError`, `ValueError`, `_request`, `float` |
+| `sell` | `L563–L608` | `(self, id: str | int, items: list[di...)` | `dict[str, Any]` | Execute Sell orders on StockNow portfolio. | `SchemaChangedError`, `ValueError`, `_request`, `float` |
 
 
 ---
@@ -407,8 +230,8 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | `NoReceiptExecutionError` | `L73–L75` | `StockNowExecutionError` | — | 1 |
 | `StockNowExecutor` | `L154–L198` | `ABC` | Abstract contract for StockNow order execution and ledger verification. | 5 |
 | `ApiTransport` | `L205–L375` | `StockNowExecutor` | Executes orders via direct StockNow REST API (httpx async). | 6 |
-| `BrowserTransport` | `L382–L613` | `StockNowExecutor` | Executes orders via live Playwright browser session. | 8 |
-| `DemoPaperExecutor` | `L620–L676` | `StockNowExecutor` | Explicit DEMO paper fill. Only invoked when data source is strictly DEMO. | 5 |
+| `BrowserTransport` | `L382–L635` | `StockNowExecutor` | Executes orders via live Playwright browser session. | 8 |
+| `DemoPaperExecutor` | `L642–L698` | `StockNowExecutor` | Explicit DEMO paper fill. Only invoked when data source is strictly DEMO. | 5 |
 
 
 **Methods in `StockNowExecutionError`:**
@@ -486,19 +309,19 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | `is_authenticated` | `L418–L429` | `(self...)` | `bool` | — | `bool`, `evaluate`, `getattr` |
 | `get_ledger` | `L431–L454` | `(self, portfolio_id: str | int...)` | `dict[str, Any]` | — | `NotAuthenticatedExecutionError`, `StockNowExecutionError`, `evaluate`, `get` |
 | `verify_fill` | `L456–L475` | `(self, portfolio_id: str | int, trad...)` | `dict[str, Any] | None` | — | `get`, `get_ledger`, `match_ledger_entry`, `warning` |
-| `execute_order` | `L477–L607` | `(self, symbol: str, side: str, quant...)` | `dict[str, Any]` | — | `Decimal`, `NoReceiptExecutionError`, `NotAuthenticatedExecutionError`, `SelectorMissingExecutionError` |
-| `logout` | `L609–L613` | `(self...)` | `dict[str, Any]` | Log out of StockNow session in browser. | `hasattr`, `logout` |
+| `execute_order` | `L477–L629` | `(self, symbol: str, side: str, quant...)` | `dict[str, Any]` | — | `Decimal`, `NoReceiptExecutionError`, `NotAuthenticatedExecutionError`, `SelectorMissingExecutionError` |
+| `logout` | `L631–L635` | `(self...)` | `dict[str, Any]` | Log out of StockNow session in browser. | `hasattr`, `logout` |
 
 
 **Methods in `DemoPaperExecutor`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `is_authenticated` | `L623–L624` | `(self...)` | `bool` | — | — |
-| `get_ledger` | `L626–L627` | `(self, portfolio_id: str | int...)` | `dict[str, Any]` | — | — |
-| `verify_fill` | `L629–L645` | `(self, portfolio_id: str | int, trad...)` | `dict[str, Any] | None` | — | `float`, `int`, `str`, `time` |
-| `execute_order` | `L647–L673` | `(self, symbol: str, side: str, quant...)` | `dict[str, Any]` | — | `Decimal`, `float`, `hasattr`, `isoformat` |
-| `logout` | `L675–L676` | `(self...)` | `dict[str, Any]` | — | — |
+| `is_authenticated` | `L645–L646` | `(self...)` | `bool` | — | — |
+| `get_ledger` | `L648–L649` | `(self, portfolio_id: str | int...)` | `dict[str, Any]` | — | — |
+| `verify_fill` | `L651–L667` | `(self, portfolio_id: str | int, trad...)` | `dict[str, Any] | None` | — | `float`, `int`, `str`, `time` |
+| `execute_order` | `L669–L695` | `(self, symbol: str, side: str, quant...)` | `dict[str, Any]` | — | `Decimal`, `float`, `hasattr`, `isoformat` |
+| `logout` | `L697–L698` | `(self...)` | `dict[str, Any]` | — | — |
 
 
 #### Standalone Functions
@@ -506,8 +329,8 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `match_ledger_entry` | `L90–L147` | `(entry: dict[str, Any], trade_date: ...)` | `bool` | Verify if a ledger row strictly matches trade date, side, symbol, qty, price. | `abs`, `float`, `get`, `hasattr` |
-| `get_stocknow_executor` | `L683–L715` | `(mode: str, stocknow_client: Any | N...)` | `StockNowExecutor` | Factory selecting the concrete transport based on the active run mode. | `ApiTransport`, `BrowserTransport`, `DemoPaperExecutor`, `NotAuthenticatedExecutionError` |
-| `notify_order_failure` | `L722–L809` | `(session: Any, state: Any, settings:...)` | `None` | Record failure in DB audit, broadcast UI toast, and dispatch Telegram alert. | `AsyncClient`, `DecisionLog`, `KernelAuditLog`, `add` |
+| `get_stocknow_executor` | `L705–L737` | `(mode: str, stocknow_client: Any | N...)` | `StockNowExecutor` | Factory selecting the concrete transport based on the active run mode. | `ApiTransport`, `BrowserTransport`, `DemoPaperExecutor`, `NotAuthenticatedExecutionError` |
+| `notify_order_failure` | `L744–L831` | `(session: Any, state: Any, settings:...)` | `None` | Record failure in DB audit, broadcast UI toast, and dispatch Telegram alert. | `AsyncClient`, `DecisionLog`, `KernelAuditLog`, `add` |
 
 
 ---
@@ -1219,30 +1042,37 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `StockNowSessionActionRequest` | `L34–L37` | `BaseModel` | — | 0 |
-| `StockNowMarketSyncRequest` | `L40–L42` | `BaseModel` | — | 0 |
-| `StockNowPortfolioSyncRequest` | `L45–L47` | `BaseModel` | — | 0 |
-| `StockNowExecuteOrderRequest` | `L50–L56` | `BaseModel` | — | 0 |
-| `StockNowSchedulerActionRequest` | `L59–L62` | `BaseModel` | — | 0 |
+| `StockNowSessionActionRequest` | `L36–L39` | `BaseModel` | — | 0 |
+| `StockNowMarketSyncRequest` | `L42–L44` | `BaseModel` | — | 0 |
+| `StockNowPortfolioSyncRequest` | `L47–L49` | `BaseModel` | — | 0 |
+| `StockNowExecuteOrderRequest` | `L52–L71` | `BaseModel` | — | 1 |
+| `StockNowSchedulerActionRequest` | `L74–L77` | `BaseModel` | — | 0 |
+
+
+**Methods in `StockNowExecuteOrderRequest`:**
+
+| Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `handle_confirm_alias` | `L67–L71` | `(cls, data: Any...)` | `Any` | — | `bool`, `get`, `isinstance`, `model_validator` |
 
 
 #### Standalone Functions
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `build_stocknow_router` | `L65–L331` | `(database: Database, settings: Setti...)` | `APIRouter` | — | `APIRouter`, `DSEMarketScheduler`, `StockNowLiveClient`, `get_active_scheduler` |
-| `get_stocknow_status` | `L84–L85` | `(...)` | — | — | `get`, `get_status` |
-| `get_stocknow_page` | `L88–L99` | `(...)` | — | — | `_get_info`, `_run_in_proactor`, `get`, `getattr` |
-| `_get_info` | `L91–L96` | `(...)` | — | — | `evaluate`, `getattr`, `hasattr`, `title` |
-| `post_stocknow_session` | `L102–L158` | `(body: StockNowSessionActionRequest...)` | — | — | `HTTPException`, `_background_auth`, `close`, `create_task` |
-| `_background_auth` | `L119–L126` | `(...)` | — | — | `ensure_authenticated`, `get_status`, `publish`, `warning` |
-| `post_stocknow_sync_market` | `L161–L173` | `(body: StockNowMarketSyncRequest | N...)` | — | — | `build_snapshot`, `extract_quotes_from_stocknow`, `fetch_stocknow_live_market_data`, `post` |
-| `get_all_dse_shares` | `L176–L178` | `(...)` | — | Returns the full 470+ DSE shares catalog with live LTP, +/- %, and sparkline curves. | `get`, `get_or_fetch_all_dse_shares` |
-| `get_stocknow_symbol_history` | `L181–L194` | `(symbol: str...)` | — | Returns real 400-candle daily history for any DSE company directly from StockNow. | `AsyncClient`, `HTTPException`, `get`, `json` |
-| `post_stocknow_sync_portfolio` | `L197–L232` | `(body: StockNowPortfolioSyncRequest ...)` | — | — | `HTTPException`, `build_snapshot`, `error`, `extract_hummingbird_portfolio` |
-| `post_stocknow_execute_order` | `L235–L314` | `(body: StockNowExecuteOrderRequest...)` | — | — | `HTTPException`, `all`, `build_snapshot`, `create_checkpoint` |
-| `get_stocknow_scheduler` | `L317–L318` | `(...)` | — | — | `get`, `get_status` |
-| `post_stocknow_scheduler` | `L321–L329` | `(body: StockNowSchedulerActionReques...)` | — | — | `HTTPException`, `post`, `run_scheduled_tick`, `start` |
+| `build_stocknow_router` | `L80–L302` | `(database: Database, settings: Setti...)` | `APIRouter` | — | `APIRouter`, `DSEMarketScheduler`, `StockNowLiveClient`, `get_active_scheduler` |
+| `get_stocknow_status` | `L99–L100` | `(...)` | — | — | `get`, `get_status` |
+| `get_stocknow_page` | `L103–L114` | `(...)` | — | — | `_get_info`, `_run_in_proactor`, `get`, `getattr` |
+| `_get_info` | `L106–L111` | `(...)` | — | — | `evaluate`, `getattr`, `hasattr`, `title` |
+| `post_stocknow_session` | `L117–L173` | `(body: StockNowSessionActionRequest...)` | — | — | `HTTPException`, `_background_auth`, `close`, `create_task` |
+| `_background_auth` | `L134–L141` | `(...)` | — | — | `ensure_authenticated`, `get_status`, `publish`, `warning` |
+| `post_stocknow_sync_market` | `L176–L188` | `(body: StockNowMarketSyncRequest | N...)` | — | — | `build_snapshot`, `extract_quotes_from_stocknow`, `fetch_stocknow_live_market_data`, `post` |
+| `get_all_dse_shares` | `L191–L193` | `(...)` | — | Returns the full 470+ DSE shares catalog with live LTP, +/- %, and sparkline curves. | `get`, `get_or_fetch_all_dse_shares` |
+| `get_stocknow_symbol_history` | `L196–L209` | `(symbol: str...)` | — | Returns real 400-candle daily history for any DSE company directly from StockNow. | `AsyncClient`, `HTTPException`, `get`, `json` |
+| `post_stocknow_sync_portfolio` | `L212–L247` | `(body: StockNowPortfolioSyncRequest ...)` | — | — | `HTTPException`, `build_snapshot`, `error`, `extract_hummingbird_portfolio` |
+| `post_stocknow_execute_order` | `L250–L285` | `(body: StockNowExecuteOrderRequest, ...)` | — | — | `OrderRequest`, `build_snapshot`, `get`, `post` |
+| `get_stocknow_scheduler` | `L288–L289` | `(...)` | — | — | `get`, `get_status` |
+| `post_stocknow_scheduler` | `L292–L300` | `(body: StockNowSchedulerActionReques...)` | — | — | `HTTPException`, `post`, `run_scheduled_tick`, `start` |
 
 
 ---
@@ -1282,6 +1112,68 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `seed_demo` | `L35–L139` | `(session: Session, settings: Setting...)` | `None` | — | `CompanyProfile`, `CustomRule`, `Decimal`, `PortfolioState` |
 | `migrate_real_stocknow_market` | `L159–L306` | `(session: Session, settings: Setting...)` | `None` | Migrates existing SQLite database on boot to real StockNow #164580 portfolio and watchlist. | `CompanyProfile`, `CustomRule`, `Decimal`, `TaxLot` |
+
+
+---
+
+### 📄 [`plugins/humming_bird/__init__.py`](/plugins/humming_bird/__init__.py)
+
+#### Standalone Functions
+
+| Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `register` | `L83–L121` | `(ctx...)` | `None` | Register Humming Bird trading kernel tools and lifecycle hooks with Hermes. | `Path`, `exists`, `get`, `is_file` |
+
+
+---
+
+### 📄 [`plugins/humming_bird/hooks.py`](/plugins/humming_bird/hooks.py)
+
+#### Standalone Functions
+
+| Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `check_dse_trading_hours` | `L13–L41` | `(dt: datetime | None=None...)` | `tuple[bool, str]` | Check if time falls within DSE trading hours (Sun-Thu 10:00 to 14:30 Asia/Dhaka). | `ZoneInfo`, `astimezone`, `now`, `replace` |
+| `on_pre_tool_call` | `L44–L92` | `(tool_name: str, args: dict[str, Any...)` | `dict[str, Any] | None` | Pre-tool-call lifecycle hook. | `_kernel_get`, `check_dse_trading_hours`, `get`, `getenv` |
+
+
+---
+
+### 📄 [`plugins/humming_bird/schemas.py`](/plugins/humming_bird/schemas.py)
+
+---
+
+### 📄 [`plugins/humming_bird/tools.py`](/plugins/humming_bird/tools.py)
+
+#### Standalone Functions
+
+| Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `_kernel_get` | `L17–L50` | `(endpoint: str, params: dict[str, An...)` | `str` | Perform authenticated GET request to local Humming Bird kernel API. | `Request`, `decode`, `dumps`, `get` |
+| `_kernel_post` | `L53–L85` | `(endpoint: str, data: dict[str, Any]...)` | `str` | Perform authenticated POST request to local Humming Bird kernel API. | `Request`, `decode`, `dumps`, `encode` |
+| `hb_portfolio` | `L90–L124` | `(args: dict[str, Any] | None=None, *...)` | `str` | Fetch current portfolio state from kernel API. | `_kernel_get`, `append`, `dumps`, `get` |
+| `hb_watchlist` | `L127–L133` | `(args: dict[str, Any] | None=None, *...)` | `str` | Fetch watchlist filtered optionally by tier from kernel API. | `_kernel_get`, `dict`, `get`, `update` |
+| `hb_inspect_curve` | `L136–L144` | `(args: dict[str, Any] | None=None, *...)` | `str` | Inspect price curve and support/resistance analysis for a symbol. | `_kernel_get`, `dict`, `dumps`, `get` |
+| `hb_market_open` | `L147–L149` | `(args: dict[str, Any] | None=None, *...)` | `str` | Check if DSE market is currently open. | `_kernel_get` |
+| `hb_canaries` | `L152–L154` | `(args: dict[str, Any] | None=None, *...)` | `str` | Retrieve active canary theses from kernel API. | `_kernel_get` |
+| `hb_lots` | `L157–L163` | `(args: dict[str, Any] | None=None, *...)` | `str` | Fetch tax lots and T+2 maturity status. | `_kernel_get`, `dict`, `get`, `str` |
+| `hb_set_tier` | `L168–L179` | `(args: dict[str, Any] | None=None, *...)` | `str` | Set watchlist tier for a company. | `_kernel_post`, `dict`, `dumps`, `get` |
+| `hb_set_allocation` | `L182–L205` | `(args: dict[str, Any] | None=None, *...)` | `str` | Set buy allocation percentage for a symbol. | `_kernel_post`, `bool`, `dict`, `dumps` |
+| `hb_quarantine_canary` | `L208–L221` | `(args: dict[str, Any] | None=None, *...)` | `str` | Trigger emergency crash quarantine (90% liquidation, 10% canary probe). | `_kernel_post`, `dict`, `dumps`, `get` |
+| `hb_restore_quarantine` | `L224–L237` | `(args: dict[str, Any] | None=None, *...)` | `str` | Restore a company from crash quarantine back into active status. | `_kernel_post`, `dict`, `dumps`, `get` |
+| `hb_sync` | `L240–L248` | `(args: dict[str, Any] | None=None, *...)` | `str` | Trigger sync with StockNow market data. | `_kernel_post`, `dict`, `dumps`, `get` |
+| `_get_allowed_portfolios` | `L251–L254` | `(...)` | `tuple[str, ...]` | — | `getenv`, `strip` |
+| `hb_place_order` | `L257–L336` | `(args: dict[str, Any] | None=None, *...)` | `str` | Submit virtual BUY or SELL order enforcing constraints and authorization. | `_get_allowed_portfolios`, `_kernel_post`, `bool`, `dict` |
+| `hb_rollback_last` | `L339–L341` | `(args: dict[str, Any] | None=None, *...)` | `str` | Roll back the last state checkpoint atomically. | `_kernel_post` |
+| `hb_automation_get` | `L344–L346` | `(args: dict[str, Any] | None=None, *...)` | `str` | Fetch current automation settings from the trading kernel. | `_kernel_get` |
+| `hb_automation_set` | `L349–L378` | `(args: dict[str, Any] | None=None, *...)` | `str` | Configure trading automation switches, ingestion mode, or polling cadence. | `_kernel_post`, `dict`, `dumps`, `int` |
+| `hb_scheduler` | `L381–L390` | `(args: dict[str, Any] | None=None, *...)` | `str` | Control or inspect the market scheduler background loop. | `_kernel_post`, `dict`, `dumps`, `get` |
+| `hb_run_cycle` | `L393–L406` | `(args: dict[str, Any] | None=None, *...)` | `str` | Trigger an immediate AutoTrader cycle. | `_kernel_post`, `dict`, `get`, `isinstance` |
+| `hb_stocknow_session` | `L409–L422` | `(args: dict[str, Any] | None=None, *...)` | `str` | Manage live Playwright session for StockNow integration. | `_kernel_post`, `dict`, `dumps`, `get` |
+| `hb_mode_get` | `L425–L427` | `(args: dict[str, Any] | None=None, *...)` | `str` | Get active trading mode from kernel. | `_kernel_get` |
+| `hb_mode_set` | `L430–L446` | `(args: dict[str, Any] | None=None, *...)` | `str` | Set trading mode in kernel (TEST_OFFHOURS or LIVE_HOURS). | `_kernel_post`, `bool`, `dict`, `dumps` |
+| `hb_caps_get` | `L449–L451` | `(args: dict[str, Any] | None=None, *...)` | `str` | Get active risk caps and daily limits from kernel. | `_kernel_get` |
+| `hb_caps_set` | `L454–L491` | `(args: dict[str, Any] | None=None, *...)` | `str` | Set or lower risk limits in kernel. Raising a limit requires confirm=true. | `_kernel_post`, `bool`, `dict`, `dumps` |
 
 
 ---
@@ -1331,36 +1223,39 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `AstVisitor` | `L53–L148` | `ast.NodeVisitor` | — | 9 |
+| `AstVisitor` | `L216–L311` | `ast.NodeVisitor` | — | 9 |
 
 
 **Methods in `AstVisitor`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__init__` | `L54–L61` | `(self, filepath: Path, code_lines: l...)` | — | — | — |
-| `visit_Import` | `L63–L66` | `(self, node: ast.Import...)` | — | — | `append`, `generic_visit` |
-| `visit_ImportFrom` | `L68–L72` | `(self, node: ast.ImportFrom...)` | — | — | `append`, `generic_visit` |
-| `visit_ClassDef` | `L74–L89` | `(self, node: ast.ClassDef...)` | — | — | `append`, `generic_visit`, `get_docstring`, `getattr` |
-| `visit_FunctionDef` | `L91–L92` | `(self, node: ast.FunctionDef...)` | — | — | `_record_func` |
-| `visit_AsyncFunctionDef` | `L94–L95` | `(self, node: ast.AsyncFunctionDef...)` | — | — | `_record_func` |
-| `_record_func` | `L97–L124` | `(self, node: ast.FunctionDef | ast.A...)` | — | — | `_compute_depth`, `append`, `generic_visit`, `get_docstring` |
-| `visit_Call` | `L126–L135` | `(self, node: ast.Call...)` | — | — | `add`, `generic_visit`, `isinstance` |
-| `_compute_depth` | `L137–L148` | `(self, node: ast.AST, current_depth:...)` | `int` | — | `_compute_depth`, `isinstance`, `iter_child_nodes` |
+| `__init__` | `L217–L224` | `(self, filepath: Path, code_lines: l...)` | — | — | — |
+| `visit_Import` | `L226–L229` | `(self, node: ast.Import...)` | — | — | `append`, `generic_visit` |
+| `visit_ImportFrom` | `L231–L235` | `(self, node: ast.ImportFrom...)` | — | — | `append`, `generic_visit` |
+| `visit_ClassDef` | `L237–L252` | `(self, node: ast.ClassDef...)` | — | — | `append`, `generic_visit`, `get_docstring`, `getattr` |
+| `visit_FunctionDef` | `L254–L255` | `(self, node: ast.FunctionDef...)` | — | — | `_record_func` |
+| `visit_AsyncFunctionDef` | `L257–L258` | `(self, node: ast.AsyncFunctionDef...)` | — | — | `_record_func` |
+| `_record_func` | `L260–L287` | `(self, node: ast.FunctionDef | ast.A...)` | — | — | `_compute_depth`, `append`, `generic_visit`, `get_docstring` |
+| `visit_Call` | `L289–L298` | `(self, node: ast.Call...)` | — | — | `add`, `generic_visit`, `isinstance` |
+| `_compute_depth` | `L300–L311` | `(self, node: ast.AST, current_depth:...)` | `int` | — | `_compute_depth`, `isinstance`, `iter_child_nodes` |
 
 
 #### Standalone Functions
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `is_ignored` | `L26–L33` | `(path: Path...)` | `bool` | — | `lower`, `startswith` |
-| `collect_file_metrics` | `L36–L50` | `(...)` | — | — | `append`, `defaultdict`, `is_file`, `is_ignored` |
-| `parse_python_files` | `L151–L167` | `(...)` | — | — | `AstVisitor`, `as_posix`, `is_ignored`, `list` |
-| `parse_fastapi_routes` | `L170–L207` | `(router_paths: list[Path]...)` | — | — | `append`, `as_posix`, `exists`, `get_docstring` |
-| `parse_css_design` | `L210–L312` | `(styles_file: Path, light_file: Path...)` | — | — | `append`, `exists`, `get`, `group` |
-| `scan_file` | `L258–L307` | `(css_text: str, filename: str...)` | — | — | `any`, `append`, `escape`, `get` |
-| `parse_frontend` | `L315–L340` | `(...)` | — | — | `add`, `append`, `enumerate`, `exists` |
-| `generate_markdown` | `L343–L531` | `(...)` | — | — | `append`, `collect_file_metrics`, `get`, `items` |
+| `is_excluded` | `L80–L112` | `(path: Path | str, repo_root: Path=R...)` | `bool` | Check if a path should be excluded based on directory rules. | `Path`, `as_posix`, `is_absolute`, `len` |
+| `get_pinned_vendor_commit` | `L115–L145` | `(repo_root: Path=REPO_ROOT...)` | `str` | Retrieve pinned submodule commit for vendor/hermes-agent from git. | `len`, `run`, `str`, `strip` |
+| `discover_files` | `L148–L184` | `(repo_root: Path=REPO_ROOT...)` | `list[Path]` | Discover files using git ls-files + untracked non-ignored files, | `Path`, `append`, `is_excluded`, `is_file` |
+| `collect_file_metrics` | `L187–L213` | `(discovered_files: list[Path], repo_...)` | — | Collect file counts and LOC grouped by extension, grouping long-tail as 'other'. | `append`, `defaultdict`, `is_file`, `len` |
+| `parse_python_files` | `L314–L332` | `(discovered_files: list[Path], repo_...)` | `dict[str, AstVisitor]` | Parse all discovered Python files in backend/, plugins/, scripts/ using AST. | `AstVisitor`, `as_posix`, `lower`, `parse` |
+| `parse_fastapi_routes` | `L335–L373` | `(router_paths: list[Path], repo_root...)` | — | Parse route handlers from FastAPI router modules. | `append`, `as_posix`, `exists`, `get_docstring` |
+| `parse_css_design` | `L376–L483` | `(styles_file: Path, light_file: Path...)` | — | — | `append`, `exists`, `get`, `group` |
+| `scan_file` | `L429–L478` | `(css_text: str, filename: str...)` | — | — | `any`, `append`, `escape`, `get` |
+| `parse_frontend` | `L486–L577` | `(repo_root: Path=REPO_ROOT...)` | — | Index frontend HTML IDs, JS functions, API invocations, and CSS stylesheets. | `add`, `any`, `append`, `compile` |
+| `parse_plugin_tools` | `L580–L615` | `(repo_root: Path=REPO_ROOT...)` | `list[dict[str, Any]]` | Parse tools registered in plugins/humming_bird/tools.py using AST. | `append`, `exists`, `get_docstring`, `getattr` |
+| `generate_markdown` | `L618–L833` | `(repo_root: Path=REPO_ROOT, output_f...)` | — | — | `append`, `collect_file_metrics`, `discover_files`, `get` |
 
 
 ---
@@ -1432,7 +1327,7 @@ Shows intra-repo module dependencies within `backend/` and `scripts/`:
 
 ## 4. Database Schema X-Ray (`backend/database.py`)
 
-SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
+SQLAlchemy ORM Entities backing the deterministic ledger and state store:
 
 | Model Entity | Line Range | Base | Purpose & Managed Ledger State |
 | :--- | :--- | :--- | :--- |
@@ -1489,22 +1384,48 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 | `GET` | `/api/auth/session` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L68) | `L68` | `auth_session()` | Route endpoint |
 | `GET` | `/api/settings/keys` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L83) | `L83` | `get_api_keys()` | Route endpoint |
 | `POST` | `/api/settings/keys` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L125) | `L125` | `update_api_keys()` | Route endpoint |
-| `GET` | `/api/stocknow/status` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L84) | `L84` | `get_stocknow_status()` | Route endpoint |
-| `GET` | `/api/stocknow/page` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L88) | `L88` | `get_stocknow_page()` | Route endpoint |
-| `POST` | `/api/stocknow/session` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L102) | `L102` | `post_stocknow_session()` | Route endpoint |
-| `POST` | `/api/stocknow/sync-market` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L161) | `L161` | `post_stocknow_sync_market()` | Route endpoint |
-| `GET` | `/api/stocknow/all-shares` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L176) | `L176` | `get_all_dse_shares()` | Returns the full 470+ DSE shares catalog with live LTP, +/- %, and sparkline curves. |
-| `GET` | `/api/stocknow/history/{symbol}` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L181) | `L181` | `get_stocknow_symbol_history()` | Returns real 400-candle daily history for any DSE company directly from StockNow. |
-| `POST` | `/api/stocknow/sync-portfolio` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L197) | `L197` | `post_stocknow_sync_portfolio()` | Route endpoint |
-| `POST` | `/api/stocknow/execute-order` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L235) | `L235` | `post_stocknow_execute_order()` | Route endpoint |
-| `GET` | `/api/stocknow/scheduler` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L317) | `L317` | `get_stocknow_scheduler()` | Route endpoint |
-| `POST` | `/api/stocknow/scheduler` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L321) | `L321` | `post_stocknow_scheduler()` | Route endpoint |
+| `GET` | `/api/stocknow/status` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L99) | `L99` | `get_stocknow_status()` | Route endpoint |
+| `GET` | `/api/stocknow/page` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L103) | `L103` | `get_stocknow_page()` | Route endpoint |
+| `POST` | `/api/stocknow/session` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L117) | `L117` | `post_stocknow_session()` | Route endpoint |
+| `POST` | `/api/stocknow/sync-market` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L176) | `L176` | `post_stocknow_sync_market()` | Route endpoint |
+| `GET` | `/api/stocknow/all-shares` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L191) | `L191` | `get_all_dse_shares()` | Returns the full 470+ DSE shares catalog with live LTP, +/- %, and sparkline curves. |
+| `GET` | `/api/stocknow/history/{symbol}` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L196) | `L196` | `get_stocknow_symbol_history()` | Returns real 400-candle daily history for any DSE company directly from StockNow. |
+| `POST` | `/api/stocknow/sync-portfolio` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L212) | `L212` | `post_stocknow_sync_portfolio()` | Route endpoint |
+| `POST` | `/api/stocknow/execute-order` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L250) | `L250` | `post_stocknow_execute_order()` | Route endpoint |
+| `GET` | `/api/stocknow/scheduler` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L288) | `L288` | `get_stocknow_scheduler()` | Route endpoint |
+| `POST` | `/api/stocknow/scheduler` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L292) | `L292` | `post_stocknow_scheduler()` | Route endpoint |
+| `GET` | `/k/portfolio` | [`backend/kernel_api.py`](/backend/kernel_api.py#L149) | `L149` | `get_portfolio()` | Returns full portfolio snapshot with holdings, cash, and rolling buckets. |
+| `GET` | `/k/watchlist` | [`backend/kernel_api.py`](/backend/kernel_api.py#L160) | `L160` | `get_watchlist()` | Returns watchlist companies, optionally filtered by tier. |
+| `GET` | `/k/curve/{symbol}` | [`backend/kernel_api.py`](/backend/kernel_api.py#L190) | `L190` | `get_curve()` | Returns price curve analysis, support floor, resistance ceiling, and sparkline points. |
+| `GET` | `/k/market-open` | [`backend/kernel_api.py`](/backend/kernel_api.py#L226) | `L226` | `get_market_open()` | Returns real DSE trading hours and session status in Asia/Dhaka time. |
+| `GET` | `/k/canaries` | [`backend/kernel_api.py`](/backend/kernel_api.py#L232) | `L232` | `get_canaries()` | Returns active and past 10% canary probe theses. |
+| `GET` | `/k/lots` | [`backend/kernel_api.py`](/backend/kernel_api.py#L254) | `L254` | `get_lots()` | Returns T+2 rolling tax lots with maturity status. |
+| `POST` | `/k/tier` | [`backend/kernel_api.py`](/backend/kernel_api.py#L296) | `L296` | `post_tier()` | Updates a company's watchlist tier (GSC, GSC_L1, GSC_L2). |
+| `POST` | `/k/allocation` | [`backend/kernel_api.py`](/backend/kernel_api.py#L357) | `L357` | `post_allocation()` | Updates buying allocation percentage for a company rule. |
+| `POST` | `/k/quarantine` | [`backend/kernel_api.py`](/backend/kernel_api.py#L426) | `L426` | `post_quarantine()` | Places stock in 90% profit-lock + 10% canary quarantine, or restores it. |
+| `POST` | `/k/canary/evaluate` | [`backend/kernel_api.py`](/backend/kernel_api.py#L481) | `L481` | `post_canary_evaluate()` | Evaluates observing canary probe theses against recent price movements. |
+| `POST` | `/k/sync` | [`backend/kernel_api.py`](/backend/kernel_api.py#L524) | `L524` | `post_sync()` | Syncs market prices, all-shares board, or virtual portfolio holdings. |
+| `POST` | `/k/order` | [`backend/kernel_api.py`](/backend/kernel_api.py#L731) | `L731` | `post_order()` | Submits a virtual BUY or SELL order enforcing T+2 maturity, strict no-loss, and 0.5% fees. |
+| `POST` | `/k/rollback` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1195) | `L1195` | `post_rollback()` | Rolls back the last state checkpoint atomically. |
+| `GET` | `/k/mode` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1234) | `L1234` | `get_trading_mode()` | Returns current trading mode (TEST_OFFHOURS or LIVE_HOURS). |
+| `POST` | `/k/mode` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1246) | `L1246` | `post_trading_mode()` | Sets trading mode to TEST_OFFHOURS or LIVE_HOURS with snapshot and audit log. |
+| `GET` | `/k/automation` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1300) | `L1300` | `get_automation_config()` | Returns master buy/sell automation switch, paused state, ingestion mode, and polling interval. |
+| `POST` | `/k/automation` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1313) | `L1313` | `post_automation_config()` | Updates master automation switch, paused state, ingestion mode, or polling interval with snapshot & audit. |
+| `POST` | `/k/automation/handoff` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1401) | `L1401` | `post_automation_handoff()` | Single-writer run mode handoff: finishes current cycle under lock, then switches mode. |
+| `POST` | `/k/automation/circuit-breaker/reset` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1457) | `L1457` | `post_reset_circuit_breaker()` | Manually resets the tripped circuit breaker and clears consecutive failure count. |
+| `POST` | `/k/automation/preflight` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1467) | `L1467` | `post_run_preflight()` | Executes the preflight check suite and returns the readiness audit. |
+| `GET` | `/k/scheduler` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1481) | `L1481` | `get_scheduler_status()` | Returns current scheduler operational status and telemetry. |
+| `POST` | `/k/scheduler` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1496) | `L1496` | `post_scheduler_control()` | Controls background market scheduler (start, stop, status). |
+| `POST` | `/k/cycle` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1555) | `L1555` | `post_run_cycle()` | Executes an automation trading cycle via AutoTrader under the single-writer trading lock. |
+| `POST` | `/k/stocknow/session` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1605) | `L1605` | `post_stocknow_session()` | Controls live StockNow session (launch, status, login, logout). |
+| `GET` | `/k/caps` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1693) | `L1693` | `get_caps()` | Fetch current risk limits, kill switch status, and today's usage scoped by active portfolio. |
+| `POST` | `/k/caps` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1730) | `L1730` | `set_caps()` | Update risk limits in the kernel. May only lower limits by itself; raising a limit requires confirmation. |
 
 ---
 
-## 6. Frontend DOM, JS Controller & CSS Design X-Ray
+## 6. Frontend DOM, JS Controller, CSS Design & UI Tool Integration
 
-### Theme Color & Layout Tokens Table (`:root` Dark vs Light Mode)
+### 6.1 Theme Color & Layout Tokens Table (`:root` Dark vs Light Mode)
 
 | CSS Custom Property | Category | Dark Mode (`:root`) | Light Mode (`[data-theme="light"]`) |
 | :--- | :--- | :--- | :--- |
@@ -1551,7 +1472,7 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 | `--tile-neutral` | Color | `#334155` | `#cbd5e1` |
 
 
-### Component CSS Selector Map
+### 6.2 Component CSS Selector Map
 
 | Component Selector | Stylesheet File | Line | Display | Grid / Layout | Position | Background / Color | Flex Wrap |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -1585,14 +1506,461 @@ SQLAlchemy ORM Entities backing the deterministic ledger and Hermes state store:
 | `.skills-drawer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L2154) | `L2154` | — | — | — | `#ffffff !important` | — |
 
 
-### Key DOM Identifiers (`frontend/index.html`)
+### 6.3 DOM Identifiers Index (`frontend/index.html`)
 
-Identified **300** distinct element IDs in the UI shell. Key controller anchors:
+Complete catalog of all **300** distinct element IDs in `frontend/index.html` for UI element location:
 
-`#overview`, `#watchlist`, `#market-map`, `#master-automation-toggle`, `#mode-btn-polling`, `#mode-btn-live`, `#polling-interval-pills`, `#main-chart`, `#bucket-stack`, `#what-if-slider`, `#theme-toggle-btn`, `#topbar-clock-widget`
+| DOM Element ID (`id="..."`) | HTML Tag | Line Number |
+| :--- | :--- | :--- |
+| `#nav-system-control` | `<a>` | [`frontend/index.html#L28`](/frontend/index.html#L28) |
+| `#user-avatar-btn` | `<button>` | [`frontend/index.html#L30`](/frontend/index.html#L30) |
+| `#topbar-clock-widget` | `<button>` | [`frontend/index.html#L38`](/frontend/index.html#L38) |
+| `#market-status-dot` | `<span>` | [`frontend/index.html#L39`](/frontend/index.html#L39) |
+| `#market-status-text` | `<span>` | [`frontend/index.html#L40`](/frontend/index.html#L40) |
+| `#market-countdown-text` | `<span>` | [`frontend/index.html#L42`](/frontend/index.html#L42) |
+| `#topbar-tmode-badge` | `<span>` | [`frontend/index.html#L43`](/frontend/index.html#L43) |
+| `#topbar-run-mode-switch` | `<div>` | [`frontend/index.html#L48`](/frontend/index.html#L48) |
+| `#topbar-mode-btn-background` | `<button>` | [`frontend/index.html#L49`](/frontend/index.html#L49) |
+| `#topbar-mode-btn-onscreen` | `<button>` | [`frontend/index.html#L50`](/frontend/index.html#L50) |
+| `#topbar-switching-state` | `<span>` | [`frontend/index.html#L52`](/frontend/index.html#L52) |
+| `#topbar-automation-control` | `<div>` | [`frontend/index.html#L56`](/frontend/index.html#L56) |
+| `#topbar-automation-toggle-input` | `<input>` | [`frontend/index.html#L59`](/frontend/index.html#L59) |
+| `#topbar-automation-state` | `<span>` | [`frontend/index.html#L62`](/frontend/index.html#L62) |
+| `#run-cycle` | `<button>` | [`frontend/index.html#L66`](/frontend/index.html#L66) |
+| `#run-label` | `<span>` | [`frontend/index.html#L66`](/frontend/index.html#L66) |
+| `#theme-toggle-btn` | `<button>` | [`frontend/index.html#L69`](/frontend/index.html#L69) |
+| `#theme-name` | `<span>` | [`frontend/index.html#L70`](/frontend/index.html#L70) |
+| `#topbar-kill-btn` | `<button>` | [`frontend/index.html#L77`](/frontend/index.html#L77) |
+| `#topbar-handoff-btn` | `<button>` | [`frontend/index.html#L78`](/frontend/index.html#L78) |
+| `#trading-mode-toggle` | `<div>` | [`frontend/index.html#L79`](/frontend/index.html#L79) |
+| `#header-mode-slider` | `<div>` | [`frontend/index.html#L80`](/frontend/index.html#L80) |
+| `#topbar-master-label` | `<span>` | [`frontend/index.html#L81`](/frontend/index.html#L81) |
+| `#error-banner` | `<div>` | [`frontend/index.html#L84`](/frontend/index.html#L84) |
+| `#error-text` | `<span>` | [`frontend/index.html#L84`](/frontend/index.html#L84) |
+| `#dismiss-error` | `<button>` | [`frontend/index.html#L84`](/frontend/index.html#L84) |
+| `#view-dashboard` | `<div>` | [`frontend/index.html#L87`](/frontend/index.html#L87) |
+| `#overview` | `<section>` | [`frontend/index.html#L88`](/frontend/index.html#L88) |
+| `#portfolio-header-badge` | `<span>` | [`frontend/index.html#L95`](/frontend/index.html#L95) |
+| `#portfolio-header-badge-dot` | `<span>` | [`frontend/index.html#L96`](/frontend/index.html#L96) |
+| `#portfolio-header-badge-text` | `<span>` | [`frontend/index.html#L97`](/frontend/index.html#L97) |
+| `#demo-date` | `<strong>` | [`frontend/index.html#L109`](/frontend/index.html#L109) |
+| `#engine-state` | `<span>` | [`frontend/index.html#L111`](/frontend/index.html#L111) |
+| `#snapshot-label` | `<span>` | [`frontend/index.html#L112`](/frontend/index.html#L112) |
+| `#overview-sys-link` | `<a>` | [`frontend/index.html#L113`](/frontend/index.html#L113) |
+| `#overview-sys-dot` | `<span>` | [`frontend/index.html#L114`](/frontend/index.html#L114) |
+| `#overview-sys-text` | `<span>` | [`frontend/index.html#L115`](/frontend/index.html#L115) |
+| `#scenario` | `<select>` | [`frontend/index.html#L119`](/frontend/index.html#L119) |
+| `#next-session` | `<button>` | [`frontend/index.html#L119`](/frontend/index.html#L119) |
+| `#equity-sparkline` | `<div>` | [`frontend/index.html#L126`](/frontend/index.html#L126) |
+| `#metric-equity` | `<div>` | [`frontend/index.html#L128`](/frontend/index.html#L128) |
+| `#metric-total-gain` | `<span>` | [`frontend/index.html#L129`](/frontend/index.html#L129) |
+| `#metric-cash` | `<div>` | [`frontend/index.html#L131`](/frontend/index.html#L131) |
+| `#metric-unsettled` | `<span>` | [`frontend/index.html#L131`](/frontend/index.html#L131) |
+| `#metric-realized` | `<div>` | [`frontend/index.html#L132`](/frontend/index.html#L132) |
+| `#metric-unrealized` | `<div>` | [`frontend/index.html#L133`](/frontend/index.html#L133) |
+| `#active-holdings-card` | `<article>` | [`frontend/index.html#L137`](/frontend/index.html#L137) |
+| `#holdings-settled-cash` | `<strong>` | [`frontend/index.html#L144`](/frontend/index.html#L144) |
+| `#holdings-buy-cost` | `<strong>` | [`frontend/index.html#L145`](/frontend/index.html#L145) |
+| `#holdings-sell-value` | `<strong>` | [`frontend/index.html#L146`](/frontend/index.html#L146) |
+| `#holdings-unrealized-gain` | `<strong>` | [`frontend/index.html#L147`](/frontend/index.html#L147) |
+| `#active-holdings-body` | `<tbody>` | [`frontend/index.html#L164`](/frontend/index.html#L164) |
+| `#active-holdings-foot` | `<tfoot>` | [`frontend/index.html#L165`](/frontend/index.html#L165) |
+| `#mature-shares` | `<strong>` | [`frontend/index.html#L170`](/frontend/index.html#L170) |
+| `#locked-shares` | `<strong>` | [`frontend/index.html#L170`](/frontend/index.html#L170) |
+| `#quarantined-count` | `<strong>` | [`frontend/index.html#L170`](/frontend/index.html#L170) |
+| `#fees-paid` | `<strong>` | [`frontend/index.html#L170`](/frontend/index.html#L170) |
+| `#ledger-status` | `<span>` | [`frontend/index.html#L170`](/frontend/index.html#L170) |
+| `#curve-sessions` | `<span>` | [`frontend/index.html#L174`](/frontend/index.html#L174) |
+| `#index-value` | `<strong>` | [`frontend/index.html#L175`](/frontend/index.html#L175) |
+| `#index-change` | `<span>` | [`frontend/index.html#L175`](/frontend/index.html#L175) |
+| `#pulse-support-val` | `<strong>` | [`frontend/index.html#L185`](/frontend/index.html#L185) |
+| `#pulse-resistance-val` | `<strong>` | [`frontend/index.html#L186`](/frontend/index.html#L186) |
+| `#main-chart` | `<div>` | [`frontend/index.html#L190`](/frontend/index.html#L190) |
+| `#main-chart-tooltip` | `<div>` | [`frontend/index.html#L191`](/frontend/index.html#L191) |
+| `#bucket-stack` | `<div>` | [`frontend/index.html#L195`](/frontend/index.html#L195) |
+| `#cycle-badge` | `<span>` | [`frontend/index.html#L209`](/frontend/index.html#L209) |
+| `#decision-feed` | `<div>` | [`frontend/index.html#L211`](/frontend/index.html#L211) |
+| `#watchlist-header` | `<div>` | [`frontend/index.html#L215`](/frontend/index.html#L215) |
+| `#watchlist` | `<section>` | [`frontend/index.html#L221`](/frontend/index.html#L221) |
+| `#company-count` | `<span>` | [`frontend/index.html#L223`](/frontend/index.html#L223) |
+| `#watchlist-source-label` | `<span>` | [`frontend/index.html#L223`](/frontend/index.html#L223) |
+| `#category-tabs` | `<div>` | [`frontend/index.html#L224`](/frontend/index.html#L224) |
+| `#cat-all-count` | `<span>` | [`frontend/index.html#L225`](/frontend/index.html#L225) |
+| `#cat-gsc-count` | `<span>` | [`frontend/index.html#L226`](/frontend/index.html#L226) |
+| `#cat-l1-count` | `<span>` | [`frontend/index.html#L227`](/frontend/index.html#L227) |
+| `#cat-l2-count` | `<span>` | [`frontend/index.html#L228`](/frontend/index.html#L228) |
+| `#cat-dse-count` | `<span>` | [`frontend/index.html#L229`](/frontend/index.html#L229) |
+| `#company-search` | `<input>` | [`frontend/index.html#L231`](/frontend/index.html#L231) |
+| `#watchlist-thead` | `<thead>` | [`frontend/index.html#L233`](/frontend/index.html#L233) |
+| `#col-curve-signal` | `<th>` | [`frontend/index.html#L233`](/frontend/index.html#L233) |
+| `#col-held-mature` | `<th>` | [`frontend/index.html#L233`](/frontend/index.html#L233) |
+| `#col-buy-cap` | `<th>` | [`frontend/index.html#L233`](/frontend/index.html#L233) |
+| `#watchlist-body` | `<tbody>` | [`frontend/index.html#L233`](/frontend/index.html#L233) |
+| `#watchlist-pagination` | `<div>` | [`frontend/index.html#L234`](/frontend/index.html#L234) |
+| `#watchlist-prev-page` | `<button>` | [`frontend/index.html#L235`](/frontend/index.html#L235) |
+| `#watchlist-page-info` | `<span>` | [`frontend/index.html#L236`](/frontend/index.html#L236) |
+| `#watchlist-next-page` | `<button>` | [`frontend/index.html#L237`](/frontend/index.html#L237) |
+| `#execution` | `<section>` | [`frontend/index.html#L243`](/frontend/index.html#L243) |
+| `#inspector-symbol` | `<h2>` | [`frontend/index.html#L245`](/frontend/index.html#L245) |
+| `#open-deep-trend` | `<button>` | [`frontend/index.html#L247`](/frontend/index.html#L247) |
+| `#inspector-sector` | `<span>` | [`frontend/index.html#L250`](/frontend/index.html#L250) |
+| `#inspector-basis` | `<strong>` | [`frontend/index.html#L253`](/frontend/index.html#L253) |
+| `#inspector-pnl` | `<strong>` | [`frontend/index.html#L253`](/frontend/index.html#L253) |
+| `#inspector-return` | `<strong>` | [`frontend/index.html#L253`](/frontend/index.html#L253) |
+| `#inspector-reason` | `<p>` | [`frontend/index.html#L254`](/frontend/index.html#L254) |
+| `#lots-body` | `<tbody>` | [`frontend/index.html#L255`](/frontend/index.html#L255) |
+| `#market-map` | `<section>` | [`frontend/index.html#L259`](/frontend/index.html#L259) |
+| `#treemap-sector-select` | `<select>` | [`frontend/index.html#L266`](/frontend/index.html#L266) |
+| `#treemap-back-btn` | `<button>` | [`frontend/index.html#L276`](/frontend/index.html#L276) |
+| `#treemap-active-view` | `<span>` | [`frontend/index.html#L279`](/frontend/index.html#L279) |
+| `#treemap-turnover-badge` | `<span>` | [`frontend/index.html#L280`](/frontend/index.html#L280) |
+| `#treemap-container` | `<div>` | [`frontend/index.html#L285`](/frontend/index.html#L285) |
+| `#treemap-tooltip` | `<div>` | [`frontend/index.html#L288`](/frontend/index.html#L288) |
+| `#sector-gainer-chart-wrap` | `<div>` | [`frontend/index.html#L307`](/frontend/index.html#L307) |
+| `#sector-gainer-chart` | `<svg>` | [`frontend/index.html#L308`](/frontend/index.html#L308) |
+| `#rules` | `<section>` | [`frontend/index.html#L314`](/frontend/index.html#L314) |
+| `#what-if-card` | `<article>` | [`frontend/index.html#L323`](/frontend/index.html#L323) |
+| `#sim-symbol-badge` | `<span>` | [`frontend/index.html#L329`](/frontend/index.html#L329) |
+| `#what-if-target-price` | `<strong>` | [`frontend/index.html#L333`](/frontend/index.html#L333) |
+| `#what-if-target-pct` | `<span>` | [`frontend/index.html#L334`](/frontend/index.html#L334) |
+| `#what-if-slider` | `<input>` | [`frontend/index.html#L337`](/frontend/index.html#L337) |
+| `#what-if-gross` | `<strong>` | [`frontend/index.html#L346`](/frontend/index.html#L346) |
+| `#what-if-fee` | `<strong>` | [`frontend/index.html#L347`](/frontend/index.html#L347) |
+| `#what-if-net-pnl` | `<strong>` | [`frontend/index.html#L348`](/frontend/index.html#L348) |
+| `#what-if-return-pct` | `<strong>` | [`frontend/index.html#L349`](/frontend/index.html#L349) |
+| `#profit-tiers` | `<div>` | [`frontend/index.html#L361`](/frontend/index.html#L361) |
+| `#pullback-setting` | `<span>` | [`frontend/index.html#L361`](/frontend/index.html#L361) |
+| `#allocation-form` | `<form>` | [`frontend/index.html#L362`](/frontend/index.html#L362) |
+| `#buy-allocation` | `<input>` | [`frontend/index.html#L366`](/frontend/index.html#L366) |
+| `#company-enabled` | `<input>` | [`frontend/index.html#L372`](/frontend/index.html#L372) |
+| `#save-allocation` | `<button>` | [`frontend/index.html#L377`](/frontend/index.html#L377) |
+| `#canary-section` | `<section>` | [`frontend/index.html#L383`](/frontend/index.html#L383) |
+| `#canary-count` | `<span>` | [`frontend/index.html#L384`](/frontend/index.html#L384) |
+| `#canary-feed` | `<div>` | [`frontend/index.html#L385`](/frontend/index.html#L385) |
+| `#ledger` | `<section>` | [`frontend/index.html#L390`](/frontend/index.html#L390) |
+| `#period-pnl` | `<strong>` | [`frontend/index.html#L399`](/frontend/index.html#L399) |
+| `#period-buy` | `<strong>` | [`frontend/index.html#L399`](/frontend/index.html#L399) |
+| `#period-sell` | `<strong>` | [`frontend/index.html#L399`](/frontend/index.html#L399) |
+| `#period-trades` | `<strong>` | [`frontend/index.html#L399`](/frontend/index.html#L399) |
+| `#trades-body` | `<tbody>` | [`frontend/index.html#L400`](/frontend/index.html#L400) |
+| `#ledger-range` | `<span>` | [`frontend/index.html#L401`](/frontend/index.html#L401) |
+| `#view-settings` | `<div>` | [`frontend/index.html#L407`](/frontend/index.html#L407) |
+| `#system-control` | `<div>` | [`frontend/index.html#L412`](/frontend/index.html#L412) |
+| `#automation-settings-card` | `<article>` | [`frontend/index.html#L414`](/frontend/index.html#L414) |
+| `#circuit-state` | `<span>` | [`frontend/index.html#L427`](/frontend/index.html#L427) |
+| `#master-automation-toggle-input` | `<input>` | [`frontend/index.html#L431`](/frontend/index.html#L431) |
+| `#master-automation-status-text` | `<span>` | [`frontend/index.html#L434`](/frontend/index.html#L434) |
+| `#master-automation-toggle` | `<button>` | [`frontend/index.html#L437`](/frontend/index.html#L437) |
+| `#current-mode-pill` | `<span>` | [`frontend/index.html#L446`](/frontend/index.html#L446) |
+| `#ingestion-mode-switch` | `<div>` | [`frontend/index.html#L448`](/frontend/index.html#L448) |
+| `#mode-btn-polling` | `<button>` | [`frontend/index.html#L449`](/frontend/index.html#L449) |
+| `#mode-btn-live` | `<button>` | [`frontend/index.html#L459`](/frontend/index.html#L459) |
+| `#settings-runmode-status-line` | `<div>` | [`frontend/index.html#L470`](/frontend/index.html#L470) |
+| `#settings-active-mode-text` | `<span>` | [`frontend/index.html#L471`](/frontend/index.html#L471) |
+| `#settings-pending-handoff-state` | `<span>` | [`frontend/index.html#L472`](/frontend/index.html#L472) |
+| `#settings-trading-mode-wrap` | `<div>` | [`frontend/index.html#L476`](/frontend/index.html#L476) |
+| `#settings-trading-mode-pill` | `<span>` | [`frontend/index.html#L482`](/frontend/index.html#L482) |
+| `#settings-trading-mode-toggle` | `<div>` | [`frontend/index.html#L484`](/frontend/index.html#L484) |
+| `#settings-tmode-live` | `<button>` | [`frontend/index.html#L485`](/frontend/index.html#L485) |
+| `#settings-tmode-test` | `<button>` | [`frontend/index.html#L495`](/frontend/index.html#L495) |
+| `#polling-interval-wrap` | `<div>` | [`frontend/index.html#L508`](/frontend/index.html#L508) |
+| `#polling-interval-display` | `<strong>` | [`frontend/index.html#L514`](/frontend/index.html#L514) |
+| `#polling-range-slider` | `<input>` | [`frontend/index.html#L517`](/frontend/index.html#L517) |
+| `#polling-interval-pills` | `<div>` | [`frontend/index.html#L526`](/frontend/index.html#L526) |
+| `#polling-disabled-hint` | `<div>` | [`frontend/index.html#L532`](/frontend/index.html#L532) |
+| `#stocknow-connection-card` | `<article>` | [`frontend/index.html#L537`](/frontend/index.html#L537) |
+| `#stocknow-api-status` | `<strong>` | [`frontend/index.html#L547`](/frontend/index.html#L547) |
+| `#stocknow-browser-status` | `<strong>` | [`frontend/index.html#L551`](/frontend/index.html#L551) |
+| `#stocknow-prices-synced` | `<strong>` | [`frontend/index.html#L555`](/frontend/index.html#L555) |
+| `#stocknow-portfolio-synced` | `<strong>` | [`frontend/index.html#L559`](/frontend/index.html#L559) |
+| `#stocknow-active-portfolio` | `<strong>` | [`frontend/index.html#L563`](/frontend/index.html#L563) |
+| `#btn-stocknow-launch` | `<button>` | [`frontend/index.html#L568`](/frontend/index.html#L568) |
+| `#btn-stocknow-auth` | `<button>` | [`frontend/index.html#L569`](/frontend/index.html#L569) |
+| `#btn-stocknow-sync` | `<button>` | [`frontend/index.html#L570`](/frontend/index.html#L570) |
+| `#btn-stocknow-logout` | `<button>` | [`frontend/index.html#L571`](/frontend/index.html#L571) |
+| `#btn-stocknow-sync-portfolio` | `<button>` | [`frontend/index.html#L573`](/frontend/index.html#L573) |
+| `#risk-caps-card` | `<article>` | [`frontend/index.html#L578`](/frontend/index.html#L578) |
+| `#risk-caps-form` | `<form>` | [`frontend/index.html#L585`](/frontend/index.html#L585) |
+| `#caps-kill-switch` | `<input>` | [`frontend/index.html#L593`](/frontend/index.html#L593) |
+| `#caps-kill-switch-status` | `<span>` | [`frontend/index.html#L594`](/frontend/index.html#L594) |
+| `#caps-max-order` | `<input>` | [`frontend/index.html#L602`](/frontend/index.html#L602) |
+| `#caps-max-symbol` | `<input>` | [`frontend/index.html#L606`](/frontend/index.html#L606) |
+| `#caps-daily-budget` | `<input>` | [`frontend/index.html#L610`](/frontend/index.html#L610) |
+| `#caps-max-orders` | `<input>` | [`frontend/index.html#L614`](/frontend/index.html#L614) |
+| `#btn-save-caps` | `<button>` | [`frontend/index.html#L619`](/frontend/index.html#L619) |
+| `#caps-save-status` | `<span>` | [`frontend/index.html#L622`](/frontend/index.html#L622) |
+| `#hermes-brain-card` | `<article>` | [`frontend/index.html#L628`](/frontend/index.html#L628) |
+| `#brain-primary-model` | `<strong>` | [`frontend/index.html#L640`](/frontend/index.html#L640) |
+| `#brain-primary-provider` | `<span>` | [`frontend/index.html#L641`](/frontend/index.html#L641) |
+| `#brain-profile-tag` | `<span>` | [`frontend/index.html#L641`](/frontend/index.html#L641) |
+| `#brain-primary-status` | `<span>` | [`frontend/index.html#L643`](/frontend/index.html#L643) |
+| `#brain-fallbacks-list` | `<div>` | [`frontend/index.html#L650`](/frontend/index.html#L650) |
+| `#brain-fallbacks-empty` | `<div>` | [`frontend/index.html#L651`](/frontend/index.html#L651) |
+| `#brain-last-turn-provider` | `<strong>` | [`frontend/index.html#L662`](/frontend/index.html#L662) |
+| `#brain-last-turn-model` | `<span>` | [`frontend/index.html#L663`](/frontend/index.html#L663) |
+| `#brain-last-turn-time` | `<span>` | [`frontend/index.html#L665`](/frontend/index.html#L665) |
+| `#advanced-settings-card` | `<details>` | [`frontend/index.html#L675`](/frontend/index.html#L675) |
+| `#api-keys-card` | `<div>` | [`frontend/index.html#L686`](/frontend/index.html#L686) |
+| `#api-keys-form` | `<form>` | [`frontend/index.html#L692`](/frontend/index.html#L692) |
+| `#key-telegram-token` | `<input>` | [`frontend/index.html#L697`](/frontend/index.html#L697) |
+| `#key-telegram-chat` | `<input>` | [`frontend/index.html#L704`](/frontend/index.html#L704) |
+| `#btn-save-api-keys` | `<button>` | [`frontend/index.html#L708`](/frontend/index.html#L708) |
+| `#keys-save-status` | `<span>` | [`frontend/index.html#L711`](/frontend/index.html#L711) |
+| `#fees-card` | `<div>` | [`frontend/index.html#L717`](/frontend/index.html#L717) |
+| `#bridge-ctrl-card` | `<div>` | [`frontend/index.html#L733`](/frontend/index.html#L733) |
+| `#adp-mode-text` | `<strong>` | [`frontend/index.html#L740`](/frontend/index.html#L740) |
+| `#sse-status-badge` | `<span>` | [`frontend/index.html#L746`](/frontend/index.html#L746) |
+| `#live-dot` | `<span>` | [`frontend/index.html#L746`](/frontend/index.html#L746) |
+| `#source-badge` | `<span>` | [`frontend/index.html#L747`](/frontend/index.html#L747) |
+| `#token-button` | `<button>` | [`frontend/index.html#L748`](/frontend/index.html#L748) |
+| `#footer-mode-tag` | `<span>` | [`frontend/index.html#L757`](/frontend/index.html#L757) |
+| `#footer-synthetic-desc` | `<p>` | [`frontend/index.html#L757`](/frontend/index.html#L757) |
+| `#dhaka-clock` | `<span>` | [`frontend/index.html#L757`](/frontend/index.html#L757) |
+| `#hermes-sidebar` | `<aside>` | [`frontend/index.html#L760`](/frontend/index.html#L760) |
+| `#hermes-resizer` | `<div>` | [`frontend/index.html#L761`](/frontend/index.html#L761) |
+| `#hermes-collapse-btn` | `<button>` | [`frontend/index.html#L768`](/frontend/index.html#L768) |
+| `#active-conv-title` | `<span>` | [`frontend/index.html#L774`](/frontend/index.html#L774) |
+| `#tab-hermes-chat` | `<button>` | [`frontend/index.html#L779`](/frontend/index.html#L779) |
+| `#tab-hermes-conversations` | `<button>` | [`frontend/index.html#L780`](/frontend/index.html#L780) |
+| `#conversations-badge` | `<span>` | [`frontend/index.html#L780`](/frontend/index.html#L780) |
+| `#tab-hermes-changes` | `<button>` | [`frontend/index.html#L781`](/frontend/index.html#L781) |
+| `#changes-badge` | `<span>` | [`frontend/index.html#L781`](/frontend/index.html#L781) |
+| `#tab-hermes-skills` | `<button>` | [`frontend/index.html#L782`](/frontend/index.html#L782) |
+| `#skills-badge` | `<span>` | [`frontend/index.html#L782`](/frontend/index.html#L782) |
+| `#pane-hermes-chat` | `<div>` | [`frontend/index.html#L786`](/frontend/index.html#L786) |
+| `#chat-messages` | `<div>` | [`frontend/index.html#L787`](/frontend/index.html#L787) |
+| `#hermes-welcome-message` | `<article>` | [`frontend/index.html#L788`](/frontend/index.html#L788) |
+| `#welcome-chips-slot` | `<div>` | [`frontend/index.html#L794`](/frontend/index.html#L794) |
+| `#bottom-chips-slot` | `<div>` | [`frontend/index.html#L799`](/frontend/index.html#L799) |
+| `#chat-quick-prompts` | `<div>` | [`frontend/index.html#L800`](/frontend/index.html#L800) |
+| `#hermes-model-trigger` | `<button>` | [`frontend/index.html#L809`](/frontend/index.html#L809) |
+| `#provider-prefix-label` | `<span>` | [`frontend/index.html#L810`](/frontend/index.html#L810) |
+| `#hermes-active-model-name` | `<strong>` | [`frontend/index.html#L811`](/frontend/index.html#L811) |
+| `#model-dropup-menu` | `<div>` | [`frontend/index.html#L814`](/frontend/index.html#L814) |
+| `#model-dropdown-list` | `<div>` | [`frontend/index.html#L816`](/frontend/index.html#L816) |
+| `#chat-form` | `<form>` | [`frontend/index.html#L822`](/frontend/index.html#L822) |
+| `#chat-input` | `<textarea>` | [`frontend/index.html#L824`](/frontend/index.html#L824) |
+| `#chat-send` | `<button>` | [`frontend/index.html#L827`](/frontend/index.html#L827) |
+| `#chat-footer-note` | `<p>` | [`frontend/index.html#L832`](/frontend/index.html#L832) |
+| `#pane-hermes-conversations` | `<div>` | [`frontend/index.html#L837`](/frontend/index.html#L837) |
+| `#new-conversation-btn` | `<button>` | [`frontend/index.html#L839`](/frontend/index.html#L839) |
+| `#conversations-list` | `<div>` | [`frontend/index.html#L844`](/frontend/index.html#L844) |
+| `#pane-hermes-changes` | `<div>` | [`frontend/index.html#L850`](/frontend/index.html#L850) |
+| `#changes-badge-count` | `<span>` | [`frontend/index.html#L854`](/frontend/index.html#L854) |
+| `#rollback-pane-btn` | `<button>` | [`frontend/index.html#L857`](/frontend/index.html#L857) |
+| `#refresh-changes-btn` | `<button>` | [`frontend/index.html#L860`](/frontend/index.html#L860) |
+| `#changes-diff-list` | `<div>` | [`frontend/index.html#L864`](/frontend/index.html#L864) |
+| `#files-changed-list` | `<div>` | [`frontend/index.html#L868`](/frontend/index.html#L868) |
+| `#changes-checkpoints-list` | `<div>` | [`frontend/index.html#L869`](/frontend/index.html#L869) |
+| `#pane-hermes-skills` | `<div>` | [`frontend/index.html#L873`](/frontend/index.html#L873) |
+| `#rollback-skills-btn` | `<button>` | [`frontend/index.html#L876`](/frontend/index.html#L876) |
+| `#skills-list` | `<div>` | [`frontend/index.html#L883`](/frontend/index.html#L883) |
+| `#btn-add-cron` | `<button>` | [`frontend/index.html#L888`](/frontend/index.html#L888) |
+| `#crons-list` | `<div>` | [`frontend/index.html#L890`](/frontend/index.html#L890) |
+| `#hermes-memory-preview` | `<div>` | [`frontend/index.html#L896`](/frontend/index.html#L896) |
+| `#user-md-preview` | `<div>` | [`frontend/index.html#L901`](/frontend/index.html#L901) |
+| `#memory-md-preview` | `<div>` | [`frontend/index.html#L907`](/frontend/index.html#L907) |
+| `#durable-facts-list` | `<div>` | [`frontend/index.html#L913`](/frontend/index.html#L913) |
+| `#checkpoints-list` | `<div>` | [`frontend/index.html#L917`](/frontend/index.html#L917) |
+| `#floating-hermes-open` | `<button>` | [`frontend/index.html#L924`](/frontend/index.html#L924) |
+| `#deep-trend-modal` | `<dialog>` | [`frontend/index.html#L928`](/frontend/index.html#L928) |
+| `#modal-backdrop` | `<div>` | [`frontend/index.html#L929`](/frontend/index.html#L929) |
+| `#modal-company-sector` | `<span>` | [`frontend/index.html#L933`](/frontend/index.html#L933) |
+| `#modal-company-category` | `<span>` | [`frontend/index.html#L933`](/frontend/index.html#L933) |
+| `#modal-company-title` | `<h2>` | [`frontend/index.html#L934`](/frontend/index.html#L934) |
+| `#modal-company-sub` | `<span>` | [`frontend/index.html#L934`](/frontend/index.html#L934) |
+| `#modal-price` | `<span>` | [`frontend/index.html#L936`](/frontend/index.html#L936) |
+| `#modal-change` | `<span>` | [`frontend/index.html#L937`](/frontend/index.html#L937) |
+| `#modal-signal-tag` | `<span>` | [`frontend/index.html#L938`](/frontend/index.html#L938) |
+| `#deep-timeframe-tabs` | `<div>` | [`frontend/index.html#L942`](/frontend/index.html#L942) |
+| `#modal-close-btn` | `<button>` | [`frontend/index.html#L948`](/frontend/index.html#L948) |
+| `#deep-support-val` | `<strong>` | [`frontend/index.html#L964`](/frontend/index.html#L964) |
+| `#deep-resistance-val` | `<strong>` | [`frontend/index.html#L965`](/frontend/index.html#L965) |
+| `#deep-chart-container` | `<div>` | [`frontend/index.html#L968`](/frontend/index.html#L968) |
+| `#deep-trend-chart-mount` | `<div>` | [`frontend/index.html#L969`](/frontend/index.html#L969) |
+| `#deep-chart-tooltip` | `<div>` | [`frontend/index.html#L970`](/frontend/index.html#L970) |
+| `#fundamentals-grid` | `<div>` | [`frontend/index.html#L983`](/frontend/index.html#L983) |
+| `#fund-pe` | `<strong>` | [`frontend/index.html#L984`](/frontend/index.html#L984) |
+| `#fund-eps` | `<strong>` | [`frontend/index.html#L985`](/frontend/index.html#L985) |
+| `#fund-nav` | `<strong>` | [`frontend/index.html#L986`](/frontend/index.html#L986) |
+| `#fund-mcap` | `<strong>` | [`frontend/index.html#L987`](/frontend/index.html#L987) |
+| `#fund-div` | `<strong>` | [`frontend/index.html#L988`](/frontend/index.html#L988) |
+| `#fund-paidup` | `<strong>` | [`frontend/index.html#L989`](/frontend/index.html#L989) |
+| `#fund-52w` | `<strong>` | [`frontend/index.html#L990`](/frontend/index.html#L990) |
+| `#fund-cat` | `<strong>` | [`frontend/index.html#L991`](/frontend/index.html#L991) |
+| `#modal-sim-name` | `<span>` | [`frontend/index.html#L1001`](/frontend/index.html#L1001) |
+| `#modal-sim-target-price` | `<strong>` | [`frontend/index.html#L1006`](/frontend/index.html#L1006) |
+| `#modal-sim-target-pct` | `<span>` | [`frontend/index.html#L1007`](/frontend/index.html#L1007) |
+| `#modal-sim-slider` | `<input>` | [`frontend/index.html#L1010`](/frontend/index.html#L1010) |
+| `#modal-sim-gross` | `<strong>` | [`frontend/index.html#L1019`](/frontend/index.html#L1019) |
+| `#modal-sim-fee` | `<strong>` | [`frontend/index.html#L1020`](/frontend/index.html#L1020) |
+| `#modal-sim-net-pnl` | `<strong>` | [`frontend/index.html#L1021`](/frontend/index.html#L1021) |
+| `#modal-sim-return-pct` | `<strong>` | [`frontend/index.html#L1022`](/frontend/index.html#L1022) |
+| `#operator-modal` | `<dialog>` | [`frontend/index.html#L1031`](/frontend/index.html#L1031) |
+| `#op-title` | `<h2>` | [`frontend/index.html#L1036`](/frontend/index.html#L1036) |
+| `#op-close-btn` | `<button>` | [`frontend/index.html#L1038`](/frontend/index.html#L1038) |
+| `#op-name` | `<strong>` | [`frontend/index.html#L1044`](/frontend/index.html#L1044) |
+| `#op-username` | `<span>` | [`frontend/index.html#L1045`](/frontend/index.html#L1045) |
+| `#op-portfolio` | `<span>` | [`frontend/index.html#L1046`](/frontend/index.html#L1046) |
+| `#lock-cockpit-btn` | `<button>` | [`frontend/index.html#L1064`](/frontend/index.html#L1064) |
+| `#login-gate-overlay` | `<dialog>` | [`frontend/index.html#L1073`](/frontend/index.html#L1073) |
+| `#login-title` | `<h2>` | [`frontend/index.html#L1077`](/frontend/index.html#L1077) |
+| `#login-form` | `<form>` | [`frontend/index.html#L1080`](/frontend/index.html#L1080) |
+| `#login-username` | `<input>` | [`frontend/index.html#L1083`](/frontend/index.html#L1083) |
+| `#login-password` | `<input>` | [`frontend/index.html#L1087`](/frontend/index.html#L1087) |
+| `#login-error-msg` | `<div>` | [`frontend/index.html#L1089`](/frontend/index.html#L1089) |
+| `#login-submit-btn` | `<button>` | [`frontend/index.html#L1091`](/frontend/index.html#L1091) |
+| `#login-autofill-btn` | `<button>` | [`frontend/index.html#L1092`](/frontend/index.html#L1092) |
+| `#toast` | `<div>` | [`frontend/index.html#L1101`](/frontend/index.html#L1101) |
 
 
-### Frontend Stylesheets (`frontend/*.css`)
+### 6.4 JavaScript Controllers & UI Functions (`frontend/app.js`, `charts.js`, `hermes_ui.js`)
+
+Complete index of all **108** JavaScript controller and rendering functions:
+
+| Function | Module File | Line | Role / Category |
+| :--- | :--- | :--- | :--- |
+| `$()` | [`frontend/app.js`](/frontend/app.js#L11) | `L11` | UI Controller |
+| `formatTimestamp()` | [`frontend/app.js`](/frontend/app.js#L18) | `L18` | Formatter / Utility |
+| `element()` | [`frontend/app.js`](/frontend/app.js#L57) | `L57` | UI Controller |
+| `svgElement()` | [`frontend/app.js`](/frontend/app.js#L64) | `L64` | UI Controller |
+| `currency()` | [`frontend/app.js`](/frontend/app.js#L70) | `L70` | UI Controller |
+| `percentage()` | [`frontend/app.js`](/frontend/app.js#L77) | `L77` | UI Controller |
+| `sessionDate()` | [`frontend/app.js`](/frontend/app.js#L82) | `L82` | UI Controller |
+| `setText()` | [`frontend/app.js`](/frontend/app.js#L86) | `L86` | DOM Updater / State Sync |
+| `setPnl()` | [`frontend/app.js`](/frontend/app.js#L91) | `L91` | DOM Updater / State Sync |
+| `tone()` | [`frontend/app.js`](/frontend/app.js#L99) | `L99` | UI Controller |
+| `badge()` | [`frontend/app.js`](/frontend/app.js#L109) | `L109` | UI Controller |
+| `notify()` | [`frontend/app.js`](/frontend/app.js#L137) | `L137` | UI Controller |
+| `showError()` | [`frontend/app.js`](/frontend/app.js#L147) | `L147` | UI Controller |
+| `api()` | [`frontend/app.js`](/frontend/app.js#L154) | `L154` | API Client / Ingestion |
+| `updateControls()` | [`frontend/app.js`](/frontend/app.js#L191) | `L191` | DOM Updater / State Sync |
+| `refresh()` | [`frontend/app.js`](/frontend/app.js#L231) | `L231` | UI Controller |
+| `mutate()` | [`frontend/app.js`](/frontend/app.js#L247) | `L247` | UI Controller |
+| `renderPortfolioHeaderBadge()` | [`frontend/app.js`](/frontend/app.js#L256) | `L256` | DOM Renderer |
+| `renderSnapshot()` | [`frontend/app.js`](/frontend/app.js#L325) | `L325` | DOM Renderer |
+| `renderEquitySparkline()` | [`frontend/app.js`](/frontend/app.js#L372) | `L372` | DOM Renderer |
+| `renderActiveHoldings()` | [`frontend/app.js`](/frontend/app.js#L386) | `L386` | DOM Renderer |
+| `renderBuckets()` | [`frontend/app.js`](/frontend/app.js#L569) | `L569` | DOM Renderer |
+| `cell()` | [`frontend/app.js`](/frontend/app.js#L601) | `L601` | UI Controller |
+| `selectCompany()` | [`frontend/app.js`](/frontend/app.js#L603) | `L603` | Event Handler / State Transition |
+| `formatCompactNumber()` | [`frontend/app.js`](/frontend/app.js#L610) | `L610` | Formatter / Utility |
+| `renderWatchlist()` | [`frontend/app.js`](/frontend/app.js#L618) | `L618` | DOM Renderer |
+| `renderCanaryTheses()` | [`frontend/app.js`](/frontend/app.js#L875) | `L875` | DOM Renderer |
+| `renderInspector()` | [`frontend/app.js`](/frontend/app.js#L909) | `L909` | DOM Renderer |
+| `renderDecisions()` | [`frontend/app.js`](/frontend/app.js#L944) | `L944` | DOM Renderer |
+| `renderLedger()` | [`frontend/app.js`](/frontend/app.js#L989) | `L989` | DOM Renderer |
+| `initMarketMapResizeObserver()` | [`frontend/app.js`](/frontend/app.js#L1169) | `L1169` | UI Controller |
+| `initTheme()` | [`frontend/app.js`](/frontend/app.js#L1195) | `L1195` | UI Controller |
+| `setTheme()` | [`frontend/app.js`](/frontend/app.js#L1201) | `L1201` | DOM Updater / State Sync |
+| `toggleTheme()` | [`frontend/app.js`](/frontend/app.js#L1212) | `L1212` | Event Handler / State Transition |
+| `tickMarketClock()` | [`frontend/app.js`](/frontend/app.js#L1218) | `L1218` | UI Controller |
+| `tickClock()` | [`frontend/app.js`](/frontend/app.js#L1300) | `L1300` | UI Controller |
+| `renderAutomationControlBar()` | [`frontend/app.js`](/frontend/app.js#L1309) | `L1309` | DOM Renderer |
+| `setAutomationConfig()` | [`frontend/app.js`](/frontend/app.js#L1650) | `L1650` | DOM Updater / State Sync |
+| `setHandoffPendingState()` | [`frontend/app.js`](/frontend/app.js#L1773) | `L1773` | DOM Updater / State Sync |
+| `executeRunModeHandoff()` | [`frontend/app.js`](/frontend/app.js#L1791) | `L1791` | UI Controller |
+| `executeHandoff()` | [`frontend/app.js`](/frontend/app.js#L1816) | `L1816` | UI Controller |
+| `switchToLiveHours()` | [`frontend/app.js`](/frontend/app.js#L1917) | `L1917` | Event Handler / State Transition |
+| `switchToTestMode()` | [`frontend/app.js`](/frontend/app.js#L1926) | `L1926` | Event Handler / State Transition |
+| `initRealtimeStream()` | [`frontend/app.js`](/frontend/app.js#L1978) | `L1978` | UI Controller |
+| `switchView()` | [`frontend/app.js`](/frontend/app.js#L2004) | `L2004` | Event Handler / State Transition |
+| `initViewRouter()` | [`frontend/app.js`](/frontend/app.js#L2062) | `L2062` | UI Controller |
+| `initScrollSpy()` | [`frontend/app.js`](/frontend/app.js#L2099) | `L2099` | UI Controller |
+| `updateActiveNav()` | [`frontend/app.js`](/frontend/app.js#L2112) | `L2112` | DOM Updater / State Sync |
+| `smoothCurvePath()` | [`frontend/charts.js`](/frontend/charts.js#L8) | `L8` | Canvas / Chart Geometry |
+| `getBezierPointAtContinuousIndex()` | [`frontend/charts.js`](/frontend/charts.js#L31) | `L31` | Canvas / Chart Geometry |
+| `renderMainChart()` | [`frontend/charts.js`](/frontend/charts.js#L63) | `L63` | DOM Renderer |
+| `x()` | [`frontend/charts.js`](/frontend/charts.js#L93) | `L93` | UI Controller |
+| `y()` | [`frontend/charts.js`](/frontend/charts.js#L94) | `L94` | UI Controller |
+| `sparkline()` | [`frontend/charts.js`](/frontend/charts.js#L350) | `L350` | Canvas / Chart Geometry |
+| `squarify()` | [`frontend/charts.js`](/frontend/charts.js#L366) | `L366` | Canvas / Chart Geometry |
+| `layoutRow()` | [`frontend/charts.js`](/frontend/charts.js#L376) | `L376` | UI Controller |
+| `worst()` | [`frontend/charts.js`](/frontend/charts.js#L423) | `L423` | UI Controller |
+| `showTreemapTooltip()` | [`frontend/charts.js`](/frontend/charts.js#L460) | `L460` | Canvas / Chart Geometry |
+| `hideTreemapTooltip()` | [`frontend/charts.js`](/frontend/charts.js#L473) | `L473` | Canvas / Chart Geometry |
+| `renderMarketMap()` | [`frontend/charts.js`](/frontend/charts.js#L478) | `L478` | DOM Renderer |
+| `renderTopSectorsChart()` | [`frontend/charts.js`](/frontend/charts.js#L657) | `L657` | DOM Renderer |
+| `renderGainerChart()` | [`frontend/charts.js`](/frontend/charts.js#L817) | `L817` | DOM Renderer |
+| `updateWhatIfSimulator()` | [`frontend/charts.js`](/frontend/charts.js#L822) | `L822` | DOM Updater / State Sync |
+| `updateModalSimulator()` | [`frontend/charts.js`](/frontend/charts.js#L866) | `L866` | DOM Updater / State Sync |
+| `openDeepTrendModal()` | [`frontend/charts.js`](/frontend/charts.js#L905) | `L905` | UI Controller |
+| `closeDeepTrendModal()` | [`frontend/charts.js`](/frontend/charts.js#L1014) | `L1014` | UI Controller |
+| `renderDeepTrendChart()` | [`frontend/charts.js`](/frontend/charts.js#L1024) | `L1024` | DOM Renderer |
+| `x()` | [`frontend/charts.js`](/frontend/charts.js#L1052) | `L1052` | UI Controller |
+| `y()` | [`frontend/charts.js`](/frontend/charts.js#L1053) | `L1053` | UI Controller |
+| `initCharts()` | [`frontend/charts.js`](/frontend/charts.js#L1308) | `L1308` | Canvas / Chart Geometry |
+| `renderHermesSkills()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L8) | `L8` | DOM Renderer |
+| `loadHermesOSState()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L55) | `L55` | API Client / Ingestion |
+| `renderHermesBrainCard()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L126) | `L126` | DOM Renderer |
+| `renderHermesCronJobs()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L176) | `L176` | DOM Renderer |
+| `formatChatMarkdown()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L244) | `L244` | Formatter / Utility |
+| `syncQuickPromptsPlacement()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L285) | `L285` | Event Handler / State Transition |
+| `addMessage()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L305) | `L305` | Hermes Copilot / Chat UI |
+| `isOrderPreview()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L326) | `L326` | Hermes Copilot / Chat UI |
+| `renderOrderPreviewCard()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L336) | `L336` | DOM Renderer |
+| `sendChat()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L555) | `L555` | Hermes Copilot / Chat UI |
+| `initHermesSidebar()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L790) | `L790` | Hermes Copilot / Chat UI |
+| `applyWidth()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L798) | `L798` | UI Controller |
+| `onMouseMove()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L832) | `L832` | UI Controller |
+| `onMouseUp()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L838) | `L838` | UI Controller |
+| `loadConversations()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L935) | `L935` | API Client / Ingestion |
+| `switchConversation()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L969) | `L969` | Event Handler / State Transition |
+| `createNewConversation()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L998) | `L998` | UI Controller |
+| `formatRelativeTime()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1025) | `L1025` | Formatter / Utility |
+| `escapeHtml()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1039) | `L1039` | UI Controller |
+| `executeRollback()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1049) | `L1049` | UI Controller |
+| `loadHermesModels()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1100) | `L1100` | API Client / Ingestion |
+| `switchHermesModel()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1139) | `L1139` | Hermes Copilot / Chat UI |
+| `loadRiskCapsSettings()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1163) | `L1163` | API Client / Ingestion |
+| `saveRiskCapsSettings()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1197) | `L1197` | DOM Updater / State Sync |
+| `loadApiKeysSettings()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1264) | `L1264` | API Client / Ingestion |
+| `saveApiKeysSettings()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1289) | `L1289` | API Client / Ingestion |
+| `checkAuthSession()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1328) | `L1328` | UI Controller |
+| `openOperatorProfile()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1346) | `L1346` | UI Controller |
+| `closeOperatorProfile()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1351) | `L1351` | UI Controller |
+| `handleOperatorLogin()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1356) | `L1356` | Event Handler / State Transition |
+| `handleOperatorLogout()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1385) | `L1385` | Event Handler / State Transition |
+| `markKeysDirty()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1395) | `L1395` | UI Controller |
+| `initAuthAndSettings()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1405) | `L1405` | DOM Updater / State Sync |
+| `loadSystemChanges()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1503) | `L1503` | API Client / Ingestion |
+| `initHermesChatListeners()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1592) | `L1592` | Hermes Copilot / Chat UI |
+| `setStockNowBusy()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1638) | `L1638` | DOM Updater / State Sync |
+| `updateSourceBadgeToLive()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1643) | `L1643` | DOM Updater / State Sync |
+| `runBridgeAction()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1651) | `L1651` | UI Controller |
+
+
+### 6.5 Hermes Agent Plugin Tool Registry (`plugins/humming_bird/tools.py`)
+
+Complete catalog of all **22** registered Hermes tools powering chat commands and UI interactions:
+
+| Tool Name | Category | Line Range | Purpose / Description |
+| :--- | :--- | :--- | :--- |
+| `hb_portfolio` | Read Tool | [`plugins/humming_bird/tools.py#L90`](/plugins/humming_bird/tools.py#L90-L124) | Fetch current portfolio state from kernel API. |
+| `hb_watchlist` | Read Tool | [`plugins/humming_bird/tools.py#L127`](/plugins/humming_bird/tools.py#L127-L133) | Fetch watchlist filtered optionally by tier from kernel API. |
+| `hb_inspect_curve` | Read Tool | [`plugins/humming_bird/tools.py#L136`](/plugins/humming_bird/tools.py#L136-L144) | Inspect price curve and support/resistance analysis for a symbol. |
+| `hb_market_open` | Read Tool | [`plugins/humming_bird/tools.py#L147`](/plugins/humming_bird/tools.py#L147-L149) | Check if DSE market is currently open. |
+| `hb_canaries` | Read Tool | [`plugins/humming_bird/tools.py#L152`](/plugins/humming_bird/tools.py#L152-L154) | Retrieve active canary theses from kernel API. |
+| `hb_lots` | Read Tool | [`plugins/humming_bird/tools.py#L157`](/plugins/humming_bird/tools.py#L157-L163) | Fetch tax lots and T+2 maturity status. |
+| `hb_set_tier` | Write / Order Tool | [`plugins/humming_bird/tools.py#L168`](/plugins/humming_bird/tools.py#L168-L179) | Set watchlist tier for a company. |
+| `hb_set_allocation` | Write / Order Tool | [`plugins/humming_bird/tools.py#L182`](/plugins/humming_bird/tools.py#L182-L205) | Set buy allocation percentage for a symbol. |
+| `hb_quarantine_canary` | Write / Order Tool | [`plugins/humming_bird/tools.py#L208`](/plugins/humming_bird/tools.py#L208-L221) | Trigger emergency crash quarantine (90% liquidation, 10% canary probe). |
+| `hb_restore_quarantine` | Write / Order Tool | [`plugins/humming_bird/tools.py#L224`](/plugins/humming_bird/tools.py#L224-L237) | Restore a company from crash quarantine back into active status. |
+| `hb_sync` | Broker Session & Sync Tool | [`plugins/humming_bird/tools.py#L240`](/plugins/humming_bird/tools.py#L240-L248) | Trigger sync with StockNow market data. |
+| `hb_place_order` | Write / Order Tool | [`plugins/humming_bird/tools.py#L257`](/plugins/humming_bird/tools.py#L257-L336) | Submit virtual BUY or SELL order enforcing constraints and authorization. |
+| `hb_rollback_last` | Write / Order Tool | [`plugins/humming_bird/tools.py#L339`](/plugins/humming_bird/tools.py#L339-L341) | Roll back the last state checkpoint atomically. |
+| `hb_automation_get` | Engine / Automation Tool | [`plugins/humming_bird/tools.py#L344`](/plugins/humming_bird/tools.py#L344-L346) | Fetch current automation settings from the trading kernel. |
+| `hb_automation_set` | Engine / Automation Tool | [`plugins/humming_bird/tools.py#L349`](/plugins/humming_bird/tools.py#L349-L378) | Configure trading automation switches, ingestion mode, or polling cadence. |
+| `hb_scheduler` | Engine / Automation Tool | [`plugins/humming_bird/tools.py#L381`](/plugins/humming_bird/tools.py#L381-L390) | Control or inspect the market scheduler background loop. |
+| `hb_run_cycle` | Engine / Automation Tool | [`plugins/humming_bird/tools.py#L393`](/plugins/humming_bird/tools.py#L393-L406) | Trigger an immediate AutoTrader cycle. |
+| `hb_stocknow_session` | Broker Session & Sync Tool | [`plugins/humming_bird/tools.py#L409`](/plugins/humming_bird/tools.py#L409-L422) | Manage live Playwright session for StockNow integration. |
+| `hb_mode_get` | Mode & Risk Caps Tool | [`plugins/humming_bird/tools.py#L425`](/plugins/humming_bird/tools.py#L425-L427) | Get active trading mode from kernel. |
+| `hb_mode_set` | Mode & Risk Caps Tool | [`plugins/humming_bird/tools.py#L430`](/plugins/humming_bird/tools.py#L430-L446) | Set trading mode in kernel (TEST_OFFHOURS or LIVE_HOURS). |
+| `hb_caps_get` | Mode & Risk Caps Tool | [`plugins/humming_bird/tools.py#L449`](/plugins/humming_bird/tools.py#L449-L451) | Get active risk caps and daily limits from kernel. |
+| `hb_caps_set` | Mode & Risk Caps Tool | [`plugins/humming_bird/tools.py#L454`](/plugins/humming_bird/tools.py#L454-L491) | Set or lower risk limits in kernel. Raising a limit requires confirm=true. |
+
+
+### 6.6 Frontend Stylesheets (`frontend/*.css`)
 
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
@@ -1600,7 +1968,7 @@ Identified **300** distinct element IDs in the UI shell. Key controller anchors:
 | `theme_light_hermes.css` | 2881 | Daylight overrides & Hermes IDE sidebar |
 
 
-### Frontend API Contract Invocations (`frontend/*.js`)
+### 6.7 Frontend API Contract Invocations (`frontend/*.js`)
 
 | Endpoint Invocated | Direction | Purpose |
 | :--- | :--- | :--- |
@@ -1629,109 +1997,6 @@ Identified **300** distinct element IDs in the UI shell. Key controller anchors:
 | `/api/system/changes` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
 | `/k/order` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |
 
-
-### Core JavaScript Controllers (`frontend/*.js`)
-
-| Function | Module File | Line | Role |
-| :--- | :--- | :--- | :--- |
-| `formatTimestamp()` | `app.js` | `L18` | Reactive DOM rendering / event controller |
-| `element()` | `app.js` | `L57` | Reactive DOM rendering / event controller |
-| `svgElement()` | `app.js` | `L64` | Reactive DOM rendering / event controller |
-| `currency()` | `app.js` | `L70` | Reactive DOM rendering / event controller |
-| `percentage()` | `app.js` | `L77` | Reactive DOM rendering / event controller |
-| `sessionDate()` | `app.js` | `L82` | Reactive DOM rendering / event controller |
-| `setText()` | `app.js` | `L86` | Reactive DOM rendering / event controller |
-| `setPnl()` | `app.js` | `L91` | Reactive DOM rendering / event controller |
-| `tone()` | `app.js` | `L99` | Reactive DOM rendering / event controller |
-| `badge()` | `app.js` | `L109` | Reactive DOM rendering / event controller |
-| `notify()` | `app.js` | `L137` | Reactive DOM rendering / event controller |
-| `showError()` | `app.js` | `L147` | Reactive DOM rendering / event controller |
-| `api()` | `app.js` | `L154` | Reactive DOM rendering / event controller |
-| `updateControls()` | `app.js` | `L191` | Reactive DOM rendering / event controller |
-| `refresh()` | `app.js` | `L231` | Reactive DOM rendering / event controller |
-| `mutate()` | `app.js` | `L247` | Reactive DOM rendering / event controller |
-| `renderPortfolioHeaderBadge()` | `app.js` | `L256` | Reactive DOM rendering / event controller |
-| `renderSnapshot()` | `app.js` | `L325` | Reactive DOM rendering / event controller |
-| `renderEquitySparkline()` | `app.js` | `L372` | Reactive DOM rendering / event controller |
-| `renderActiveHoldings()` | `app.js` | `L386` | Reactive DOM rendering / event controller |
-| `renderBuckets()` | `app.js` | `L539` | Reactive DOM rendering / event controller |
-| `cell()` | `app.js` | `L571` | Reactive DOM rendering / event controller |
-| `selectCompany()` | `app.js` | `L573` | Reactive DOM rendering / event controller |
-| `formatCompactNumber()` | `app.js` | `L580` | Reactive DOM rendering / event controller |
-| `renderWatchlist()` | `app.js` | `L588` | Reactive DOM rendering / event controller |
-| `renderCanaryTheses()` | `app.js` | `L845` | Reactive DOM rendering / event controller |
-| `renderInspector()` | `app.js` | `L879` | Reactive DOM rendering / event controller |
-| `renderDecisions()` | `app.js` | `L914` | Reactive DOM rendering / event controller |
-| `renderLedger()` | `app.js` | `L959` | Reactive DOM rendering / event controller |
-| `initMarketMapResizeObserver()` | `app.js` | `L1139` | Reactive DOM rendering / event controller |
-| `initTheme()` | `app.js` | `L1165` | Reactive DOM rendering / event controller |
-| `setTheme()` | `app.js` | `L1171` | Reactive DOM rendering / event controller |
-| `toggleTheme()` | `app.js` | `L1182` | Reactive DOM rendering / event controller |
-| `tickMarketClock()` | `app.js` | `L1188` | Reactive DOM rendering / event controller |
-| `tickClock()` | `app.js` | `L1270` | Reactive DOM rendering / event controller |
-| `renderAutomationControlBar()` | `app.js` | `L1279` | Reactive DOM rendering / event controller |
-| `setAutomationConfig()` | `app.js` | `L1620` | Reactive DOM rendering / event controller |
-| `setHandoffPendingState()` | `app.js` | `L1743` | Reactive DOM rendering / event controller |
-| `executeRunModeHandoff()` | `app.js` | `L1761` | Reactive DOM rendering / event controller |
-| `executeHandoff()` | `app.js` | `L1786` | Reactive DOM rendering / event controller |
-| `switchToLiveHours()` | `app.js` | `L1887` | Reactive DOM rendering / event controller |
-| `switchToTestMode()` | `app.js` | `L1896` | Reactive DOM rendering / event controller |
-| `initRealtimeStream()` | `app.js` | `L1948` | Reactive DOM rendering / event controller |
-| `switchView()` | `app.js` | `L1974` | Reactive DOM rendering / event controller |
-| `initViewRouter()` | `app.js` | `L2032` | Reactive DOM rendering / event controller |
-| `initScrollSpy()` | `app.js` | `L2069` | Reactive DOM rendering / event controller |
-| `updateActiveNav()` | `app.js` | `L2082` | Reactive DOM rendering / event controller |
-| `smoothCurvePath()` | `charts.js` | `L8` | Reactive DOM rendering / event controller |
-| `getBezierPointAtContinuousIndex()` | `charts.js` | `L31` | Reactive DOM rendering / event controller |
-| `renderMainChart()` | `charts.js` | `L63` | Reactive DOM rendering / event controller |
-| `sparkline()` | `charts.js` | `L350` | Reactive DOM rendering / event controller |
-| `squarify()` | `charts.js` | `L366` | Reactive DOM rendering / event controller |
-| `layoutRow()` | `charts.js` | `L376` | Reactive DOM rendering / event controller |
-| `worst()` | `charts.js` | `L423` | Reactive DOM rendering / event controller |
-| `showTreemapTooltip()` | `charts.js` | `L460` | Reactive DOM rendering / event controller |
-| `hideTreemapTooltip()` | `charts.js` | `L473` | Reactive DOM rendering / event controller |
-| `renderMarketMap()` | `charts.js` | `L478` | Reactive DOM rendering / event controller |
-| `renderTopSectorsChart()` | `charts.js` | `L657` | Reactive DOM rendering / event controller |
-| `renderGainerChart()` | `charts.js` | `L817` | Reactive DOM rendering / event controller |
-| `updateWhatIfSimulator()` | `charts.js` | `L822` | Reactive DOM rendering / event controller |
-| `updateModalSimulator()` | `charts.js` | `L866` | Reactive DOM rendering / event controller |
-| `openDeepTrendModal()` | `charts.js` | `L905` | Reactive DOM rendering / event controller |
-| `closeDeepTrendModal()` | `charts.js` | `L1014` | Reactive DOM rendering / event controller |
-| `renderDeepTrendChart()` | `charts.js` | `L1024` | Reactive DOM rendering / event controller |
-| `initCharts()` | `charts.js` | `L1308` | Reactive DOM rendering / event controller |
-| `renderHermesSkills()` | `hermes_ui.js` | `L8` | Reactive DOM rendering / event controller |
-| `loadHermesOSState()` | `hermes_ui.js` | `L55` | Reactive DOM rendering / event controller |
-| `renderHermesBrainCard()` | `hermes_ui.js` | `L126` | Reactive DOM rendering / event controller |
-| `renderHermesCronJobs()` | `hermes_ui.js` | `L176` | Reactive DOM rendering / event controller |
-| `formatChatMarkdown()` | `hermes_ui.js` | `L244` | Reactive DOM rendering / event controller |
-| `syncQuickPromptsPlacement()` | `hermes_ui.js` | `L285` | Reactive DOM rendering / event controller |
-| `addMessage()` | `hermes_ui.js` | `L305` | Reactive DOM rendering / event controller |
-| `isOrderPreview()` | `hermes_ui.js` | `L326` | Reactive DOM rendering / event controller |
-| `renderOrderPreviewCard()` | `hermes_ui.js` | `L336` | Reactive DOM rendering / event controller |
-| `sendChat()` | `hermes_ui.js` | `L555` | Reactive DOM rendering / event controller |
-| `initHermesSidebar()` | `hermes_ui.js` | `L790` | Reactive DOM rendering / event controller |
-| `loadConversations()` | `hermes_ui.js` | `L935` | Reactive DOM rendering / event controller |
-| `switchConversation()` | `hermes_ui.js` | `L969` | Reactive DOM rendering / event controller |
-| `createNewConversation()` | `hermes_ui.js` | `L998` | Reactive DOM rendering / event controller |
-| `formatRelativeTime()` | `hermes_ui.js` | `L1025` | Reactive DOM rendering / event controller |
-| `escapeHtml()` | `hermes_ui.js` | `L1039` | Reactive DOM rendering / event controller |
-| `executeRollback()` | `hermes_ui.js` | `L1049` | Reactive DOM rendering / event controller |
-| `loadHermesModels()` | `hermes_ui.js` | `L1100` | Reactive DOM rendering / event controller |
-| `switchHermesModel()` | `hermes_ui.js` | `L1139` | Reactive DOM rendering / event controller |
-| `loadRiskCapsSettings()` | `hermes_ui.js` | `L1163` | Reactive DOM rendering / event controller |
-| `saveRiskCapsSettings()` | `hermes_ui.js` | `L1197` | Reactive DOM rendering / event controller |
-| `loadApiKeysSettings()` | `hermes_ui.js` | `L1264` | Reactive DOM rendering / event controller |
-| `saveApiKeysSettings()` | `hermes_ui.js` | `L1289` | Reactive DOM rendering / event controller |
-| `checkAuthSession()` | `hermes_ui.js` | `L1328` | Reactive DOM rendering / event controller |
-| `openOperatorProfile()` | `hermes_ui.js` | `L1346` | Reactive DOM rendering / event controller |
-| `closeOperatorProfile()` | `hermes_ui.js` | `L1351` | Reactive DOM rendering / event controller |
-| `handleOperatorLogin()` | `hermes_ui.js` | `L1356` | Reactive DOM rendering / event controller |
-| `handleOperatorLogout()` | `hermes_ui.js` | `L1385` | Reactive DOM rendering / event controller |
-| `markKeysDirty()` | `hermes_ui.js` | `L1395` | Reactive DOM rendering / event controller |
-| `initAuthAndSettings()` | `hermes_ui.js` | `L1405` | Reactive DOM rendering / event controller |
-| `loadSystemChanges()` | `hermes_ui.js` | `L1503` | Reactive DOM rendering / event controller |
-| `initHermesChatListeners()` | `hermes_ui.js` | `L1592` | Reactive DOM rendering / event controller |
-
 ---
 
 ## 7. Code Health & Complexity Radar
@@ -1752,7 +2017,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/adapters/stocknow_executor.py` | `execute_order` | 116 | 3 | Decompose into sub-functions |
 | `backend/adapters/stocknow_executor.py` | `_ensure_dialog_handler` | 28 | 5 | Acceptable; well-scoped logic |
 | `backend/adapters/stocknow_executor.py` | `_on_dialog` | 19 | 4 | Acceptable; well-scoped logic |
-| `backend/adapters/stocknow_executor.py` | `execute_order` | 131 | 3 | Decompose into sub-functions |
+| `backend/adapters/stocknow_executor.py` | `execute_order` | 153 | 3 | Decompose into sub-functions |
 | `backend/adapters/stocknow_market_sync.py` | `_normalize_history_series` | 16 | 6 | Acceptable; well-scoped logic |
 | `backend/adapters/stocknow_market_sync.py` | `extract_quotes_from_payload` | 88 | 6 | Acceptable; well-scoped logic |
 | `backend/adapters/stocknow_market_sync.py` | `fetch_stocknow_live_market_data` | 278 | 6 | Decompose into sub-functions |
@@ -1817,23 +2082,25 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/routes_hermes.py` | `build_hermes_router` | 175 | 5 | Decompose into sub-functions |
 | `backend/routes_hermes.py` | `system_changes` | 73 | 5 | Acceptable; well-scoped logic |
 | `backend/routes_hermes.py` | `switch_hermes_model` | 59 | 5 | Acceptable; well-scoped logic |
-| `backend/routes_stocknow.py` | `build_stocknow_router` | 267 | 6 | Decompose into sub-functions |
+| `backend/routes_stocknow.py` | `build_stocknow_router` | 223 | 6 | Decompose into sub-functions |
 | `backend/routes_stocknow.py` | `post_stocknow_session` | 57 | 6 | Acceptable; well-scoped logic |
-| `backend/routes_stocknow.py` | `post_stocknow_execute_order` | 80 | 4 | Acceptable; well-scoped logic |
 | `backend/routes_stocknow.py` | `post_stocknow_scheduler` | 9 | 4 | Acceptable; well-scoped logic |
 | `backend/secret_guard.py` | `redact_secrets` | 11 | 4 | Acceptable; well-scoped logic |
 | `backend/seed.py` | `seed_demo` | 105 | 3 | Decompose into sub-functions |
 | `backend/seed.py` | `migrate_real_stocknow_market` | 148 | 7 | Decompose into sub-functions |
+| `plugins/humming_bird/__init__.py` | `register` | 39 | 9 | Acceptable; well-scoped logic |
+| `plugins/humming_bird/tools.py` | `hb_portfolio` | 35 | 4 | Acceptable; well-scoped logic |
+| `plugins/humming_bird/tools.py` | `hb_place_order` | 80 | 3 | Acceptable; well-scoped logic |
 | `scripts/backup_db.py` | `backup_database` | 53 | 4 | Acceptable; well-scoped logic |
 | `scripts/backup_db.py` | `prune_backups` | 32 | 5 | Acceptable; well-scoped logic |
 | `scripts/check_dse_market_open.py` | `check_kernel_market_open` | 19 | 4 | Acceptable; well-scoped logic |
-| `scripts/generate_code_map.py` | `is_ignored` | 8 | 4 | Acceptable; well-scoped logic |
-| `scripts/generate_code_map.py` | `collect_file_metrics` | 15 | 4 | Acceptable; well-scoped logic |
-| `scripts/generate_code_map.py` | `parse_fastapi_routes` | 38 | 10 | Acceptable; well-scoped logic |
-| `scripts/generate_code_map.py` | `parse_css_design` | 103 | 8 | Decompose into sub-functions |
+| `scripts/generate_code_map.py` | `discover_files` | 37 | 5 | Acceptable; well-scoped logic |
+| `scripts/generate_code_map.py` | `parse_fastapi_routes` | 39 | 10 | Acceptable; well-scoped logic |
+| `scripts/generate_code_map.py` | `parse_css_design` | 108 | 8 | Decompose into sub-functions |
 | `scripts/generate_code_map.py` | `scan_file` | 50 | 8 | Acceptable; well-scoped logic |
-| `scripts/generate_code_map.py` | `parse_frontend` | 26 | 4 | Acceptable; well-scoped logic |
-| `scripts/generate_code_map.py` | `generate_markdown` | 189 | 6 | Decompose into sub-functions |
+| `scripts/generate_code_map.py` | `parse_frontend` | 92 | 11 | Acceptable; well-scoped logic |
+| `scripts/generate_code_map.py` | `parse_plugin_tools` | 36 | 7 | Acceptable; well-scoped logic |
+| `scripts/generate_code_map.py` | `generate_markdown` | 216 | 6 | Decompose into sub-functions |
 | `scripts/generate_code_map.py` | `visit_Call` | 10 | 4 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 | `scripts/preflight.py` | `check_gateway` | 18 | 5 | Acceptable; well-scoped logic |
@@ -1845,4 +2112,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/verify_chat_card.py` | `main` | 121 | 3 | Decompose into sub-functions |
 
 
-> **Audit Summary:** 46 Python modules inspected, 39 FastAPI endpoints registered, 4,910,993 total LOC indexed.
+> **Audit Summary:** 49 Python modules inspected, 65 FastAPI endpoints registered, 108 JS functions mapped, 300 DOM IDs indexed, 22 Hermes tools registered, 91,926 total LOC indexed across 124 repository files.
