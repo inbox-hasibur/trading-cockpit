@@ -303,6 +303,13 @@ def rule_view(rule: CustomRule) -> dict:
 
 
 def trade_view(trade: TradeLog) -> dict:
+    source_val = getattr(trade, "source", None)
+    if not source_val:
+        source_val = (
+            "STOCKNOW_RECEIPT"
+            if getattr(trade, "receipt_id", None) or getattr(trade, "broker_trade_id", None)
+            else "DEMO_PAPER"
+        )
     return {
         "id": trade.id,
         "cycle_id": trade.cycle_id,
@@ -319,7 +326,10 @@ def trade_view(trade: TradeLog) -> dict:
         "date": trade.trade_on.isoformat(),
         "settles_on": trade.settles_on.isoformat(),
         "reason": trade.reason,
-        "source": trade.source,
+        "source": source_val,
+        "receipt_id": getattr(trade, "receipt_id", None),
+        "broker_trade_id": getattr(trade, "broker_trade_id", None),
+        "portfolio_id": getattr(trade, "portfolio_id", None),
         "created_at": trade.created_at,
     }
 
@@ -625,6 +635,7 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             "quarantined_count": sum(company["quarantined"] for company in company_views),
             "book_reconciled": money(cash + unsettled + total_basis) == money(state.initial_capital + realized),
             "equity_reconciled": money(net_equity - state.initial_capital) == money(realized + unrealized),
+            "drift": float(getattr(state, "drift_bdt", ZERO) or abs(money(cash + unsettled + total_basis) - money(state.initial_capital + realized))),
         },
         "periods": periods,
         "companies": company_views,

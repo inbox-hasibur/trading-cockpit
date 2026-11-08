@@ -15,6 +15,17 @@ const sessionFormat = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: 
 const shortDateFormat = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", timeZone: "Asia/Dhaka" });
 const clockFormat = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "Asia/Dhaka" });
 
+function formatTimestamp(isoOrDate) {
+  if (!isoOrDate) return "Just now";
+  try {
+    const d = new Date(isoOrDate);
+    if (isNaN(d.getTime())) return String(isoOrDate);
+    return clockFormat.format(d);
+  } catch {
+    return "Just now";
+  }
+}
+
 const catLabels = {
   GSC: "Big Giant Stable",
   GSC_L1: "Upper Trends L1",
@@ -86,11 +97,11 @@ function setPnl(id, value, asPercentage = false) {
 }
 
 function tone(action) {
-  if (/CRASH|BLOCKED|INVALID|STALE|NO_DATA|KILL_SWITCH|NOT_AUTHENTICATED|SCHEMA_CHANGED/.test(action)) return "negative";
-  if (/PREVIEW_BUY|PREVIEW_SELL|PREVIEW|MASTER_OFF|CAPS|LOCK|LOSS|DISABLED|ODD/.test(action)) return "amber";
-  if (/BUY_ZONE|^BUY$/.test(action)) return "buy";
+  if (/CRASH|BLOCKED|INVALID|KILL_SWITCH|NOT_AUTHENTICATED|SCHEMA_CHANGED/.test(action)) return "negative";
+  if (/PREVIEW_BUY|PREVIEW_SELL|PREVIEW|MASTER_OFF|CAPS|LOCK|LOSS|DISABLED|ODD|STALE/.test(action)) return "amber";
+  if (/BUY_ZONE|^BUY$|LIVE/.test(action)) return "buy";
   if (/SELL_ZONE|^SELL$|SELL_TIER|RECOVERY|PULLBACK|RUNNER/.test(action)) return "sell";
-  if (/WAIT|MID_RANGE|NO_CHURN|BUDGET|MARKET_CLOSED|NO_SESSION/.test(action)) return "neutral";
+  if (/WAIT|MID_RANGE|NO_CHURN|BUDGET|MARKET_CLOSED|NO_SESSION|NO_DATA|LAST_CLOSE/.test(action)) return "neutral";
   if (/MATURE/.test(action)) return "positive";
   return "neutral";
 }
@@ -101,7 +112,12 @@ function badge(action, label) {
     BUY_ZONE: "BUY ZONE",
     SELL_ZONE: "SELL ZONE",
     MID_RANGE: "MID RANGE",
+    LIVE: "LIVE",
+    LAST_CLOSE: "LAST CLOSE",
+    STALE: "STALE",
+    STALE_DATA: "STALE",
     NO_DATA: "NO DATA",
+    WAIT_DATA: "NO DATA",
     MASTER_OFF: "MASTER OFF",
     KILL_SWITCH: "KILL SWITCH",
     MARKET_CLOSED: "MARKET CLOSED",
@@ -230,9 +246,91 @@ async function mutate(action) {
   finally { state.busy = false; updateControls(); }
 }
 
+function renderPortfolioHeaderBadge() {
+  const badgeEl = $("portfolio-header-badge");
+  const badgeText = $("portfolio-header-badge-text");
+  const badgeDot = $("portfolio-header-badge-dot");
+  if (!badgeEl || !badgeText) return;
+
+  const app = (state.snapshot && state.snapshot.app) || {};
+  const adapter = (state.snapshot && state.snapshot.adapter) || {};
+  const metrics = (state.snapshot && state.snapshot.metrics) || {};
+  const summary = (state.snapshot && state.snapshot.summary) || {};
+
+  const isLive = Boolean(
+    adapter.connected ||
+    app.source === "STOCKNOW_LIVE" ||
+    adapter.source === "STOCKNOW_LIVE" ||
+    (app.trading_mode === "LIVE_HOURS" && (adapter.ready || adapter.has_token))
+  );
+
+  if (!isLive) {
+    badgeEl.className = "portfolio-header-badge is-demo";
+    badgeText.textContent = "DEMO / PAPER";
+    if (badgeDot) badgeDot.className = "status-dot amber";
+    badgeEl.title = "Demo Simulation · Synthetic data";
+    return;
+  }
+
+  const name = state.snapshot.portfolio_name || app.target_portfolio_name || adapter.bound_portfolio_name || "Humming Bird";
+  const id = state.snapshot.portfolio_id || app.target_portfolio_id || adapter.bound_portfolio_id || "164580";
+
+  let syncedTime = "Just now";
+  const syncIso = adapter.last_portfolio_sync_at || adapter.last_sync_at || (state.snapshot && state.snapshot.last_market_sync);
+  if (syncIso) {
+    syncedTime = formatTimestamp(syncIso);
+  }
+
+  let driftNum = 0.0;
+  if (metrics.drift !== undefined && metrics.drift !== null) {
+    driftNum = Number(metrics.drift);
+  } else if (summary.drift !== undefined && summary.drift !== null) {
+    driftNum = Number(summary.drift);
+  } else if (metrics.book_reconciled && metrics.equity_reconciled) {
+    driftNum = 0.0;
+  } else {
+    driftNum = 1.0;
+  }
+  const driftStr = (Math.abs(driftNum) < 0.0001 ? 0 : driftNum).toFixed(2);
+  const isDriftNonZero = Math.abs(driftNum) > 0.005;
+
+  let isStale = Boolean(adapter.stale || adapter.last_sync_error);
+  if (syncIso) {
+    const syncTime = new Date(syncIso).getTime();
+    if (!isNaN(syncTime) && Date.now() - syncTime > 15 * 60 * 1000) {
+      isStale = true;
+    }
+  }
+
+  const isRed = isStale || isDriftNonZero;
+  badgeEl.className = `portfolio-header-badge ${isRed ? "is-stale-drift" : "is-live"}`;
+  if (badgeDot) {
+    badgeDot.className = `status-dot ${isRed ? "red active" : "live-dot active"}`;
+  }
+  badgeText.textContent = `LIVE STOCKNOW ${name} #${id} (${syncedTime}, drift ${driftStr})`;
+
+  let tooltipReason = `Portfolio #${id} (${name}) synced from StockNow virtual broker at ${syncedTime}.`;
+  if (isDriftNonZero) tooltipReason += ` Drift detected: ${driftStr} BDT.`;
+  if (isStale) tooltipReason += ` Warning: Sync data is stale.`;
+  badgeEl.title = tooltipReason;
+}
+
 function renderSnapshot() {
   document.querySelectorAll(".skeleton-placeholder").forEach((el) => { el.classList.remove("skeleton-placeholder"); });
   const { app, metrics } = state.snapshot;
+  const adapter = state.snapshot.adapter || {};
+  renderPortfolioHeaderBadge();
+
+  // Footer EXPERIMENTAL · DEMO ONLY shown only in DEMO
+  const isDemo = Boolean(
+    (!adapter.connected && app.source === "SYNTHETIC" && app.mode === "DEMO") ||
+    app.mode === "DEMO_FALLBACK"
+  );
+  const footerTag = $("footer-mode-tag");
+  if (footerTag) {
+    footerTag.style.display = isDemo ? "inline-flex" : "none";
+  }
+
   setText("demo-date", sessionDate(app.date));
   setText("snapshot-label", `Snapshot ${app.revision} · Rules ${app.rules_revision}`);
   setText("metric-equity", currency(metrics.net_liquidation_equity));
@@ -641,20 +739,81 @@ function renderWatchlist() {
     const day = cell(percentage(company.curve.day_change_pct), `align-right ${company.curve.day_change_pct >= 0 ? "positive" : "negative"}`);
     const chart = cell(); chart.append(sparkline(company.history));
     const signal = cell();
-    const sigBadge = badge(company.curve.signal);
-    if (company.quarantined || company.curve.signal === "CRASH_QUARANTINE") {
+
+    // Check Dhaka trading session hours (Sun-Thu 10:00–14:30)
+    const now = new Date();
+    const dhakaStr = now.toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
+    const dhakaDate = new Date(dhakaStr);
+    const dayOfWeek = dhakaDate.getDay();
+    const totalMinutes = dhakaDate.getHours() * 60 + dhakaDate.getMinutes();
+    const isTradingHours = (dayOfWeek >= 0 && dayOfWeek <= 4) && (totalMinutes >= 600 && totalMinutes < 870);
+
+    let displaySignal = company.curve.signal;
+    let tooltipReason = company.curve.reason || "";
+    let isDataFallback = false;
+
+    // Replace red INVALID DATA with LIVE, LAST CLOSE, STALE, NO DATA
+    if (displaySignal === "INVALID_DATA" || /INVALID/i.test(displaySignal)) {
+      isDataFallback = true;
+      if (!isTradingHours) {
+        displaySignal = "LAST_CLOSE";
+        tooltipReason = `Market closed (Trading hours: Sun–Thu 10:00–14:30) · Showing last close ৳${numberFormat.format(company.price)}`;
+      } else if (!company.history || company.history.length === 0) {
+        displaySignal = "NO_DATA";
+        tooltipReason = "No historical candle data available from StockNow API";
+      } else if (company.curve.reason && /stale/i.test(company.curve.reason)) {
+        displaySignal = "STALE";
+        tooltipReason = "Quote timestamp is from a prior session; awaiting live trade update";
+      } else {
+        displaySignal = "LIVE";
+        tooltipReason = `Live intraday quote verified (৳${numberFormat.format(company.price)}) · Range analysis requires 7 sessions`;
+      }
+    } else if (displaySignal === "NO_DATA" || displaySignal === "WAIT_DATA") {
+      isDataFallback = true;
+      displaySignal = "NO_DATA";
+      tooltipReason = tooltipReason || "Historical candles pending from StockNow API";
+    } else if (displaySignal === "STALE_DATA" || displaySignal === "STALE") {
+      isDataFallback = true;
+      displaySignal = "STALE";
+      tooltipReason = tooltipReason || "Market quote delayed or from prior session";
+    }
+
+    const sigBadge = badge(displaySignal);
+    if (company.quarantined || displaySignal === "CRASH_QUARANTINE") {
       let dropVal = company.curve.drawdown_pct ? company.curve.drawdown_pct.toFixed(2) : "0.00";
       if (company.quarantine_reason) {
         const match = company.quarantine_reason.match(/(\d+(?:\.\d+)?)%/);
         if (match) dropVal = parseFloat(match[1]).toFixed(2);
       }
       const nSessions = company.curve.drawdown_sessions || 5;
-      sigBadge.title = `Quarantined: ${dropVal}% drawdown over ${nSessions} sessions`;
-      signal.title = sigBadge.title;
-    } else {
-      signal.title = company.curve.reason;
+      tooltipReason = `Quarantined: ${dropVal}% drawdown over ${nSessions} sessions`;
     }
-    signal.append(sigBadge);
+    sigBadge.title = tooltipReason;
+    signal.title = tooltipReason;
+
+    const signalWrap = element("div", "signal-cell-wrap");
+    signalWrap.append(sigBadge);
+
+    // Provide a retry link for any data-fallback state (NO DATA, LAST CLOSE, STALE, LIVE when recovering)
+    if (isDataFallback || displaySignal === "NO_DATA" || displaySignal === "STALE" || displaySignal === "LAST_CLOSE") {
+      const retryLink = element("a", "retry-sync-link", "Retry");
+      retryLink.href = "#";
+      retryLink.title = `Retry live quote sync for ${company.symbol} from StockNow`;
+      retryLink.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+          notify(`Syncing market quotes for ${company.symbol}…`);
+          await api("/api/stocknow/sync-market", { method: "POST" });
+          await refresh(true);
+          notify(`Market sync complete for ${company.symbol}.`);
+        } catch (err) {
+          notify(`Sync failed: ${err.message}`, true);
+        }
+      });
+      signalWrap.append(retryLink);
+    }
+    signal.append(signalWrap);
     const position = cell(undefined, "align-right position-count");
     position.append(element("span", "", company.holding_qty), element("span", "muted", `/ ${company.mature_qty}`));
     const allocation = cell(`${company.rule.buy_allocation_pct}%`, "align-right allocation-value");
@@ -812,7 +971,17 @@ document.querySelectorAll("[data-period]").forEach((button) => {
     const row = element("tr");
     row.title = trade.reason;
     const company = cell(); company.append(element("span", "trade-symbol", trade.symbol));
-    company.append(element("div", "trade-source", trade.source === "DEMO_SEED" ? "DEMO SEED" : "PAPER FILL"));
+    const isStockNow =
+      trade.source === "STOCKNOW_RECEIPT" ||
+      trade.source === "STOCKNOW_SYNC" ||
+      trade.source === "STOCKNOW" ||
+      Boolean(trade.receipt_id) ||
+      Boolean(trade.broker_trade_id) ||
+      (trade.reason && (trade.reason.includes("StockNow") || trade.reason.includes("receipt")));
+
+    const tagText = isStockNow ? "STOCKNOW RECEIPT" : "PAPER FILL";
+    const tagClass = isStockNow ? "trade-source receipt-tag" : "trade-source paper-tag";
+    company.append(element("div", tagClass, tagText));
     const side = cell(); side.append(badge(trade.side));
     const settlement = cell(`${trade.bucket} · ${sessionDate(trade.settles_on, true)}`);
     row.append(cell(sessionDate(trade.date, true)), company, side, cell(trade.quantity, "align-right"), cell(numberFormat.format(trade.price), "align-right"), cell(numberFormat.format(trade.fee), "align-right"), cell(trade.side === "SELL" ? `${trade.realized_pnl >= 0 ? "+" : ""}${numberFormat.format(trade.realized_pnl)}` : "-", `align-right ${trade.side === "SELL" ? (trade.realized_pnl >= 0 ? "positive" : "negative") : "muted"}`), settlement);
@@ -1732,9 +1901,14 @@ function switchView(viewName) {
       viewDashboard.hidden = false;
     }
     const targetId = viewName || "overview";
-    const targetEl = document.getElementById(targetId);
-    if (targetEl) {
-      targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (targetId === "overview") {
+      const workspace = document.querySelector(".workspace");
+      if (workspace) workspace.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      const targetEl = document.getElementById(targetId);
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }
     // Render treemap and gainers if scrolling to or past watchlist
     setTimeout(() => {

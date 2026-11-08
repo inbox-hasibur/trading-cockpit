@@ -324,14 +324,16 @@ def test_pre_tool_call_hook():
 
     # Block real orders off-hours (e.g. on Saturday)
     saturday_time = datetime(2026, 11, 7, 12, 0, tzinfo=ZoneInfo("Asia/Dhaka"))
-    with patch("plugins.humming_bird.hooks.check_dse_trading_hours", return_value=(False, "Weekend")):
+    with patch("plugins.humming_bird.hooks.check_dse_trading_hours", return_value=(False, "Weekend")), \
+         patch("plugins.humming_bird.tools._kernel_get", return_value='{"trading_mode": "LIVE_HOURS"}'):
         res_blocked = on_pre_tool_call("hb_place_order", {"symbol": "BANKASIA", "side": "BUY", "quantity": 10, "dry_run": False})
         assert res_blocked is not None
         assert res_blocked["action"] == "block"
         assert "Order blocked" in res_blocked["message"]
 
     # When inside market hours, real submit triggers Hermes built-in approval gate
-    with patch("plugins.humming_bird.hooks.check_dse_trading_hours", return_value=(True, "Open")):
+    with patch("plugins.humming_bird.hooks.check_dse_trading_hours", return_value=(True, "Open")), \
+         patch("plugins.humming_bird.tools._kernel_get", return_value='{"trading_mode": "LIVE_HOURS"}'):
         res_approved = on_pre_tool_call("hb_place_order", {"symbol": "BANKASIA", "side": "BUY", "quantity": 10, "dry_run": False})
         assert res_approved is not None
         assert res_approved["action"] == "approve"

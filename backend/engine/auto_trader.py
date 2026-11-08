@@ -454,6 +454,7 @@ class AutoTrader:
                     bucket=lot.bucket, trade_on=state.clock_date,
                     settles_on=self.calendar.add_sessions(state.clock_date, company.settlement_days),
                     reason=plan.reason,
+                    source="STOCKNOW_RECEIPT" if getattr(self.adapter, "mode", "DEMO") != "DEMO" else "DEMO_PAPER",
                     portfolio_id=active_pid or "164580",
                 )
                 session.add(trade)
@@ -656,6 +657,7 @@ class AutoTrader:
                 net_cash_change=-cost, realized_pnl=ZERO, bucket=active_name,
                 trade_on=state.clock_date, settles_on=lot.matures_on,
                 reason=f"{analysis.reason} Within company exposure and bucket cash limits.",
+                source="STOCKNOW_RECEIPT" if getattr(self.adapter, "mode", "DEMO") != "DEMO" else "DEMO_PAPER",
                 portfolio_id=active_pid or "164580",
             )
             session.add(trade)

@@ -1057,10 +1057,11 @@ async def post_order(
                     raise NoReceiptExecutionError(f"StockNow virtual order rejected or unacknowledged: {receipt.get('status') if receipt else 'NONE'}")
 
                 # Update local ledger ONLY after receipt matches and is verified
+                trade_source = "DEMO_PAPER" if is_demo_source else "STOCKNOW_RECEIPT"
                 if side == "BUY":
-                    order_res = execute_agentic_buy(session, state, settings, sym, requested_qty=body.quantity, portfolio_id=target_pid, trade_date=state.clock_date)
+                    order_res = execute_agentic_buy(session, state, settings, sym, requested_qty=body.quantity, portfolio_id=target_pid, trade_date=state.clock_date, source=trade_source)
                 else:
-                    order_res = execute_agentic_sell(session, state, settings, sym, requested_qty=body.quantity, portfolio_id=target_pid, trade_date=state.clock_date)
+                    order_res = execute_agentic_sell(session, state, settings, sym, requested_qty=body.quantity, portfolio_id=target_pid, trade_date=state.clock_date, source=trade_source)
 
             except StockNowExecutionError as exc:
                 logger.error("StockNow execution failure [%s] for %s %s: %s. Rolling back checkpoint %s.", exc.error_code, side, sym, exc.message, cp.id)

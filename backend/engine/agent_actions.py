@@ -208,6 +208,7 @@ def execute_agentic_buy(
     requested_qty: int | None = None,
     portfolio_id: str | None = None,
     trade_date: date | None = None,
+    source: str | None = None,
 ) -> dict:
     from backend.config import get_active_target_portfolio
     if portfolio_id is None:
@@ -276,7 +277,7 @@ def execute_agentic_buy(
         trade_on=eff_date,
         settles_on=lot.matures_on,
         reason=f"Hermes Agentic buy execution requested by user/assistant.",
-        source="HERMES_AGENTIC",
+        source=source or "HERMES_AGENTIC",
         portfolio_id=portfolio_id,
     )
     session.add(trade)
@@ -302,6 +303,7 @@ def execute_agentic_sell(
     requested_qty: int,
     portfolio_id: str | None = None,
     trade_date: date | None = None,
+    source: str | None = None,
 ) -> dict:
     if requested_qty <= 0:
         raise ValueError(f"Requested sell quantity must be positive, got {requested_qty}.")
@@ -387,7 +389,7 @@ def execute_agentic_sell(
             trade_on=eff_date,
             settles_on=calendar.add_sessions(eff_date, company.settlement_days),
             reason=f"Hermes Agentic sell execution requested by user/assistant.",
-            source="HERMES_AGENTIC",
+            source=source or "HERMES_AGENTIC",
             portfolio_id=portfolio_id,
         )
         session.add(trade)
