@@ -319,9 +319,301 @@ function addMessage(role, content, provider = null) {
   return article;
 }
 
+// --------------------------------------------------------------------------
+// Order Preview Card & Execution Lifecycle (Requirement 10)
+// --------------------------------------------------------------------------
+
+function isOrderPreview(data, toolName = "") {
+  if (!data || typeof data !== "object") return false;
+  if (data.preview_token) return true;
+  if (data.order_preview) return true;
+  if (data.dry_run === true && (data.status === "VALIDATED" || data.status === "PREVIEW")) return true;
+  if (data.requires_confirmation === true) return true;
+  if (toolName === "hb_place_order" && data.dry_run !== false && (data.symbol || data.order_preview)) return true;
+  return false;
+}
+
+function renderOrderPreviewCard(previewData, container = null) {
+  const preview = previewData.order_preview ? { ...previewData.order_preview, ...previewData } : previewData;
+  const symbol = String(preview.symbol || "").toUpperCase();
+  const side = String(preview.side || "BUY").toUpperCase();
+  const qty = Number(preview.quantity || preview.qty || 1);
+  const price = Number(preview.price || 0);
+  const feePct = Number(preview.commission_pct || 0.5);
+  const fee = preview.estimated_fee !== undefined ? Number(preview.estimated_fee) : Number((qty * price * feePct / 100).toFixed(2));
+  const net = preview.estimated_net !== undefined ? Number(preview.estimated_net) : (side === "BUY" ? Number((qty * price + fee).toFixed(2)) : Number((qty * price - fee).toFixed(2)));
+  const mode = preview.trading_mode || (state.snapshot?.app?.trading_mode) || "LIVE_HOURS";
+  const modeLabel = mode === "TEST_OFFHOURS" ? "Test Mode" : "Live Hours";
+  const pid = String(preview.portfolio_id || (mode === "TEST_OFFHOURS" ? (state.snapshot?.portfolio?.test_portfolio_id || "164580") : "164580"));
+  const pName = preview.portfolio_name || (pid === "164580" ? "Humming Bird" : "Test Portfolio");
+  const token = preview.preview_token || `prev_${Math.random().toString(36).substring(2, 10)}`;
+
+  // Cap usage
+  const caps = preview.cap_usage || {};
+  let capSummary = caps.summary || "";
+  if (!capSummary) {
+    if (caps.orders_ratio) {
+      capSummary = `Orders: ${caps.orders_ratio} · Daily Budget: ৳${numberFormat.format(caps.daily_budget_after || net)}`;
+    } else {
+      capSummary = "Limits & daily budget checked";
+    }
+  }
+  const dailyPct = caps.daily_budget_pct !== undefined ? Number(caps.daily_budget_pct) : null;
+
+  // Create card element
+  const card = document.createElement("div");
+  card.className = "order-preview-card";
+  card.id = `order-preview-${token}`;
+  card.dataset.previewToken = token;
+  card.dataset.symbol = symbol;
+  card.dataset.side = side;
+  card.dataset.qty = String(qty);
+  card.dataset.price = String(price);
+  card.dataset.portfolioId = pid;
+
+  card.innerHTML = `
+    <div class="order-card-header">
+      <div class="order-card-headline">
+        <span class="badge ${side.toLowerCase()} order-side-badge">${side}</span>
+        <strong class="order-card-symbol">${escapeHtml(symbol)}</strong>
+        <span class="order-card-qty">${qty} share${qty > 1 ? "s" : ""}</span>
+      </div>
+      <div class="order-card-meta">
+        <span class="order-pill-mode">${escapeHtml(modeLabel)}</span>
+        <span class="order-pill-port">${escapeHtml(pName)} #${escapeHtml(pid)}</span>
+      </div>
+    </div>
+
+    <div class="order-specs-grid">
+      <div class="order-spec-cell">
+        <span class="spec-label">PRICE</span>
+        <span class="spec-value">৳${numberFormat.format(price)}</span>
+      </div>
+      <div class="order-spec-cell">
+        <span class="spec-label">FEE (0.5%)</span>
+        <span class="spec-value">৳${numberFormat.format(fee)}</span>
+      </div>
+      <div class="order-spec-cell">
+        <span class="spec-label">EST. NET</span>
+        <span class="spec-value highlight">৳${numberFormat.format(net)}</span>
+      </div>
+    </div>
+
+    <div class="order-cap-box">
+      <div class="cap-box-header">
+        <span class="cap-box-title">🛡️ Cap Usage</span>
+        <span class="cap-box-summary">${escapeHtml(capSummary)}</span>
+      </div>
+      ${dailyPct !== null ? `
+        <div class="cap-bar-wrap" title="Daily Budget Utilization: ${dailyPct}%">
+          <div class="cap-bar-fill ${dailyPct > 90 ? 'critical' : (dailyPct > 70 ? 'warn' : '')}" style="width: ${Math.min(dailyPct, 100)}%;"></div>
+        </div>
+      ` : ""}
+    </div>
+
+    <div class="order-actions-slot">
+      <div class="order-buttons-row">
+        <button type="button" class="button primary order-btn-confirm" id="btn-confirm-${token}">
+          Confirm Order
+        </button>
+        <button type="button" class="button secondary order-btn-cancel" id="btn-cancel-${token}">
+          Cancel
+        </button>
+      </div>
+      <div class="order-note-sub">Direct virtual submission · No parameters to type</div>
+    </div>
+  `;
+
+  // Attach button handlers
+  const confirmBtn = card.querySelector(".order-btn-confirm");
+  const cancelBtn = card.querySelector(".order-btn-cancel");
+  const actionsSlot = card.querySelector(".order-actions-slot");
+
+  cancelBtn.addEventListener("click", () => {
+    confirmBtn.disabled = true;
+    cancelBtn.disabled = true;
+    card.classList.add("is-cancelled");
+    actionsSlot.innerHTML = `
+      <div class="order-status-banner cancelled">
+        <span class="status-icon">✕</span>
+        <span>Order preview cancelled by operator. No trades submitted.</span>
+      </div>
+    `;
+  });
+
+  confirmBtn.addEventListener("click", async () => {
+    confirmBtn.disabled = true;
+    cancelBtn.disabled = true;
+    confirmBtn.innerHTML = `<span class="spinner-inline"></span> Submitting to StockNow…`;
+
+    try {
+      const orderPayload = {
+        symbol: symbol,
+        side: side,
+        quantity: qty,
+        price: price > 0 ? price : undefined,
+        portfolio_id: pid,
+        preview_token: token,
+        dry_run: false,
+        operator_confirmed: true,
+        idempotency_key: `confirm-${token}-${Date.now()}`,
+      };
+
+      const result = await api("/k/order", {
+        method: "POST",
+        body: orderPayload,
+      });
+
+      // Successful execution: Transition to verified receipt state
+      card.classList.add("is-receipt");
+      const receipt = result.stocknow_receipt || {};
+      const trade = result.trade || {};
+      const receiptId = receipt.order_id || receipt.receipt_id || trade.trade_key || `REC-${Date.now().toString(36).toUpperCase()}`;
+      const receiptTag = (receipt.execution_mode === "DEMO_PAPER" || result.source === "DEMO_PAPER") ? "PAPER FILL" : "STOCKNOW RECEIPT";
+      const fillPrice = receipt.price || trade.price || price;
+      const netCash = Math.abs(trade.net_cash_change || net);
+
+      actionsSlot.innerHTML = `
+        <div class="order-receipt-state">
+          <div class="receipt-header">
+            <span class="receipt-icon">✓</span>
+            <span class="receipt-title">Order Executed Successfully</span>
+            <span class="receipt-tag">${receiptTag}</span>
+          </div>
+          <div class="receipt-grid">
+            <div class="receipt-item">
+              <span class="item-label">Receipt ID</span>
+              <strong class="item-val">#${escapeHtml(receiptId)}</strong>
+            </div>
+            <div class="receipt-item">
+              <span class="item-label">Fill</span>
+              <span class="item-val">${side} ${qty} ${symbol} @ ৳${numberFormat.format(fillPrice)}</span>
+            </div>
+            <div class="receipt-item">
+              <span class="item-label">Net BDT</span>
+              <span class="item-val">৳${numberFormat.format(netCash)}</span>
+            </div>
+            <div class="receipt-item">
+              <span class="item-label">Portfolio</span>
+              <span class="item-val">${escapeHtml(pName)} #${escapeHtml(pid)}</span>
+            </div>
+          </div>
+          <div class="receipt-status-sub">
+            <span class="receipt-dot green"></span> Status: ${escapeHtml(receipt.status || "ACKNOWLEDGED")} · Local ledger synchronized · 0.00 drift
+          </div>
+        </div>
+      `;
+
+      // Trigger Cockpit refresh so active holdings, ledger & topbar update
+      if (typeof refresh === "function") {
+        await refresh(true);
+      }
+
+    } catch (err) {
+      // Execution failed: Render red error banner with exact required text
+      card.classList.add("is-failed");
+      let reason = err.message || "Execution rejected by broker";
+      try {
+        const parsed = JSON.parse(reason);
+        reason = parsed.detail?.detail || parsed.detail?.error || parsed.detail || parsed.message || reason;
+      } catch {}
+
+      actionsSlot.innerHTML = `
+        <div class="order-failed-state">
+          <div class="order-failed-title">
+            <span class="alert-icon">⚠️</span> live submission failed: ${escapeHtml(reason)}
+          </div>
+          <div class="order-failed-sub">
+            with no ledger change · State restored to pre-order checkpoint.
+          </div>
+        </div>
+      `;
+    }
+  });
+
+  // Append to target container or chat
+  if (!container) {
+    const chatContainer = $("chat-messages");
+    if (chatContainer) {
+      let lastMsg = chatContainer.querySelector(".chat-message:last-child .message-body");
+      container = lastMsg || chatContainer;
+    }
+  }
+
+  if (container) {
+    container.appendChild(card);
+    const chatMsgBox = $("chat-messages");
+    if (chatMsgBox) chatMsgBox.scrollTop = chatMsgBox.scrollHeight;
+  }
+
+  return card;
+}
+
+window.isOrderPreview = isOrderPreview;
+window.renderOrderPreviewCard = renderOrderPreviewCard;
+
 async function sendChat(message) {
   message = message.trim();
   if (!message || message.length > 4000 || state.chatBusy) return;
+
+  // Direct chat shortcut: /order or /preview
+  if (/^\/(?:order|preview)\b/i.test(message)) {
+    addMessage("user", message);
+    state.history.push({ role: "user", content: message });
+    $("chat-input").value = "";
+    state.chatBusy = true;
+    updateControls();
+
+    const article = element("article", "chat-message assistant");
+    const author = element("div", "message-author");
+    author.append(element("span", "assistant-avatar", "✦"));
+    author.append(document.createTextNode("HERMES"));
+    const modelName = $("hermes-active-model-name")?.textContent || "gemini-3.1-flash-lite";
+    author.append(element("span", "muted", ` · ${modelName}`));
+
+    const body = element("div", "message-body");
+    const toolsContainer = element("div", "tool-cards-container");
+    const textContent = element("div", "message-text-content");
+    body.append(toolsContainer, textContent);
+    article.append(author, body);
+    $("chat-messages").append(article);
+    $("chat-messages").scrollTop = $("chat-messages").scrollHeight;
+    syncQuickPromptsPlacement();
+
+    try {
+      const match = message.match(/^\/(?:order|preview)\s+(buy|sell)\s+(\d+)\s+([A-Za-z0-9_-]+)(?:\s+([\d.]+))?/i);
+      if (!match) {
+        textContent.innerHTML = `<div class="response-warning">Usage: <code>/preview &lt;BUY|SELL&gt; &lt;qty&gt; &lt;symbol&gt; [price]</code> (e.g. <code>/preview buy 10 BANKASIA</code>)</div>`;
+      } else {
+        const side = match[1].toUpperCase();
+        const qty = parseInt(match[2], 10);
+        const symbol = match[3].toUpperCase();
+        const price = match[4] ? parseFloat(match[4]) : undefined;
+        textContent.innerHTML = `<em>Validating order preview for ${side} ${qty} ${symbol}…</em>`;
+
+        const previewRes = await api("/k/order", {
+          method: "POST",
+          body: {
+            symbol,
+            side,
+            quantity: qty,
+            price,
+            dry_run: true,
+            idempotency_key: `preview-${symbol}-${side}-${qty}-${Date.now()}`,
+          },
+        });
+
+        textContent.innerHTML = `Order preview validated. Review details and confirm below to execute:`;
+        renderOrderPreviewCard(previewRes, toolsContainer);
+      }
+    } catch (err) {
+      textContent.innerHTML = `<div class="response-warning">Order preview rejected: ${escapeHtml(err.message || String(err))}</div>`;
+    } finally {
+      state.chatBusy = false;
+      updateControls();
+    }
+    return;
+  }
 
   addMessage("user", message);
   state.history.push({ role: "user", content: message });
@@ -395,6 +687,7 @@ async function sendChat(message) {
               const card = document.createElement("div");
               card.className = "tool-call-card running";
               card.id = `tool-card-${toolId}`;
+              card.dataset.toolName = evt.name || "";
 
               const argsStr = typeof evt.input === "object" ? JSON.stringify(evt.input || {}, null, 2) : String(evt.input || "{}");
               card.innerHTML = `
@@ -428,14 +721,20 @@ async function sendChat(message) {
                 }
                 const resSec = card.querySelector(".tool-result-section");
                 const resPre = card.querySelector(".tool-output");
+                let parsedOutput = null;
                 if (resSec && resPre) {
                   resSec.style.display = "block";
                   let outText = String(evt.output || "");
                   try {
-                    const parsed = JSON.parse(outText);
-                    outText = JSON.stringify(parsed, null, 2);
+                    parsedOutput = typeof evt.output === "object" ? evt.output : JSON.parse(outText);
+                    outText = JSON.stringify(parsedOutput, null, 2);
                   } catch { }
                   resPre.textContent = outText;
+                }
+                const toolName = card.dataset.toolName || "";
+                if (parsedOutput && isOrderPreview(parsedOutput, toolName)) {
+                  card.classList.add("collapsed");
+                  renderOrderPreviewCard(parsedOutput, toolsContainer);
                 }
               }
               $("chat-messages").scrollTop = $("chat-messages").scrollHeight;

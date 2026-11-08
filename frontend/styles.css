@@ -5989,3 +5989,369 @@ button.local-avatar:hover {
   background: rgba(239, 68, 68, 0.2);
 }
 
+/* ==========================================================================
+   Hermes Order Preview Card & Receipt / Failure States
+   ========================================================================== */
+.order-preview-card {
+  margin: 10px 0;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.order-preview-card.is-receipt {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(6, 78, 59, 0.15);
+}
+
+.order-preview-card.is-failed {
+  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(127, 29, 29, 0.15);
+}
+
+.order-preview-card.is-cancelled {
+  opacity: 0.7;
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+.order-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.order-card-headline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.order-side-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  line-height: 1.2;
+  display: inline-block;
+}
+
+.order-side-badge.buy {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.order-side-badge.sell {
+  background: rgba(244, 63, 94, 0.2);
+  color: #f43f5e;
+  border: 1px solid rgba(244, 63, 94, 0.4);
+}
+
+.order-card-symbol {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #f8fafc;
+  white-space: nowrap;
+}
+
+.order-card-qty {
+  font-size: 12px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.order-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  flex-wrap: wrap;
+}
+
+.order-pill-mode {
+  padding: 2px 6px;
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 4px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.order-pill-port {
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-family: var(--font-mono, monospace);
+  white-space: nowrap;
+}
+
+.order-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.order-spec-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.order-spec-cell .spec-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.order-spec-cell .spec-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e2e8f0;
+  font-family: var(--font-mono, monospace);
+}
+
+.order-spec-cell .spec-value.highlight {
+  color: #38bdf8;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.order-cap-box {
+  padding: 8px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cap-box-header {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cap-box-title {
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.cap-box-summary {
+  color: #cbd5e1;
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  word-break: break-word;
+}
+
+.cap-bar-wrap {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.cap-bar-fill {
+  height: 100%;
+  background: #38bdf8;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.cap-bar-fill.warn {
+  background: #f59e0b;
+}
+
+.cap-bar-fill.critical {
+  background: #f43f5e;
+}
+
+.order-actions-slot {
+  padding: 10px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.order-buttons-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.order-btn-confirm {
+  font-weight: 600;
+  padding: 6px 14px;
+}
+
+.order-btn-cancel {
+  padding: 6px 12px;
+}
+
+.order-note-sub {
+  font-size: 10px;
+  color: #64748b;
+  font-style: italic;
+}
+
+/* Receipt State */
+.order-receipt-state {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 6px;
+}
+
+.receipt-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.receipt-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #10b981;
+  color: #042f2e;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.receipt-title {
+  font-weight: 700;
+  color: #10b981;
+  font-size: 12px;
+}
+
+.receipt-tag {
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.receipt-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.receipt-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.receipt-item .item-label {
+  font-size: 9px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.receipt-item .item-val {
+  color: #e2e8f0;
+  font-family: var(--font-mono, monospace);
+}
+
+.receipt-status-sub {
+  font-size: 10px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.receipt-dot.green {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  flex-shrink: 0;
+}
+
+/* Failure State */
+.order-failed-state {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 6px;
+}
+
+.order-failed-title {
+  color: #f43f5e;
+  font-weight: 700;
+  font-size: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  line-height: 1.3;
+}
+
+.order-failed-title .alert-icon {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.order-failed-sub {
+  color: #cbd5e1;
+  font-size: 11px;
+  padding-left: 20px;
+  line-height: 1.3;
+}
+
+.order-status-banner.cancelled {
+  color: #94a3b8;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-style: italic;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+
+

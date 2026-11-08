@@ -252,3 +252,76 @@ Following Sprint 2.8, the system was decoupled from the custom imitation agent s
    - Retained isolated `SecretGuard` in `backend/secret_guard.py` for adapter credential protection.
    - Updated documentation (`About_Project.md`, `Backlog.md`, `CODEBASE_MAP.md`, `REAL_HERMES_MIGRATION.md`).
    - Full test suite passing (74 green tests).
+
+---
+
+# Sprint 3: Production Hardening, Dual Transport & UI Refinements (Steps 1–10)
+
+Comprehensive delivery of all 10 architectural and UI milestones:
+
+### 1. Target Portfolio Configuration (Step 1)
+- Configurable environment keys `STOCKNOW_LIVE_PORTFOLIO_ID=164580` and `STOCKNOW_TEST_PORTFOLIO_ID`.
+- Strict allowlist enforcement: only these two IDs are permitted; unknown IDs are immediately rejected.
+- Strict operational scoping: `LIVE_HOURS` directs orders and syncs exclusively to 164580; `TEST_OFFHOURS` directs exclusively to test portfolio.
+- Scoped SQLite database models (`TaxLot`, `TradeLog`, `KernelStateCheckpoint`, caps usage, and daily budget) by `portfolio_id` so test trades never mix with live holdings.
+
+### 2. Write Contract Specification & Fixtures (Step 2)
+- Added hard write guard refusing any POST unless portfolio id equals test id (`test_stocknow_write_guard.py`).
+- Inspected StockNow virtual broker write APIs (`/buy`, `/sell`) under HAR capture; recorded request/response schemas, commission math, and error behaviors for zero quantity, missing price, and duplicate submit.
+- Documented complete write contract and fixtures in `documentation/STOCKNOW_SITE_MAP.md`.
+
+### 3. Direct Async StockNow API Client (Step 3)
+- Implemented `backend/adapters/stocknow_api.py` (`httpx.AsyncClient`) per `STOCKNOW_SITE_MAP.md`.
+- Token kept in memory only; automatic re-login before expiration minus margin; single re-login on 401.
+- Implemented `get_instruments`, `get_lists`, `get_history`, `get_portfolio`, `get_ledger`, `buy`, `sell`, and `logout`.
+- Bounded retries with jitter; ledger inspection before re-order; public GET ETag caching; typed errors (`NOT_AUTHENTICATED`, `RATE_LIMITED`, `SCHEMA_CHANGED`, `NETWORK`).
+
+### 4. StockNow Executor & Dual Transports (Step 4)
+- Unified interface `StockNowExecutor` dynamically selecting `ApiTransport` (Background) or `BrowserTransport` (Onscreen).
+- Zero paper fallback in live mode; paper fills allowed strictly when data source is explicitly `DEMO`.
+- Execution flow: cross-process concurrency lock, pre-execution checkpoint, preflight verification, explicit trade date submission with 0.5% commission, and receipt verification before local ledger update.
+- Failure path: automatic checkpoint rollback restoring previous state with audit log, UI toast, and Telegram alert.
+
+### 5. Direct API Market & Portfolio Sync (Step 5)
+- Direct API market data synchronization via `GET /instruments` for all DSE shares with timestamp, source, and `LAST CLOSE` during market close.
+- 3-list favorites extraction via `GET /user/lists` mapped to `GSC`, `GSC_L1`, `GSC_L2`.
+- Historical candle fetching for 7–15 sessions per watched symbol.
+- Portfolio reconciliation via `GET /portfolios/{id}/show` and `/ledger` with exact diff tracking. DOM sync preserved as Onscreen cross-check.
+
+### 6. Single-Writer Master Switch & Run Modes (Step 6)
+- Master automation switch with clear `ON / OFF` states and separate Emergency Kill switch.
+- Single-writer run modes: "Onscreen Live" (headed browser, visible) vs "Background 24/7" (headless `ApiTransport`, unattended).
+- Added `Go Background` and `Go Onscreen` handoff controls.
+- Renamed "Run automation cycle" to "Run cycle now": when master switch is OFF, runs a labeled `PREVIEW` (decisions only).
+- Every run and skip writes a Decision stream entry with structured reason (`MASTER_OFF`, `MARKET_CLOSED`, `KILL_SWITCH`, `CAPS`, etc.).
+
+### 7. Autonomous Reliability, Circuit Breaker & Autostart (Step 7)
+- Windows Task Scheduler autostart script (`scripts/install_autostart.ps1`) starting gateway and cockpit at logon with restart on failure.
+- SQLite minute heartbeat engine with Telegram dead-man alerts during trading sessions.
+- Daily summary alert dispatched at 14:45 Asia/Dhaka reporting total orders, skips, drift, and errors.
+- Circuit breaker: after 3 consecutive failures (auth, schema, network, ledger mismatch), sets automation OFF and notifies operator.
+- Rotating logs without secrets; persisted idempotency keys. Added `.stocknow_profile` to `.gitignore` and `.agentignore`.
+
+### 8. UI Alignment & 4 Balanced Settings Cards (Step 8)
+- Aligned terminology to "Live Hours" and "Test Mode".
+- Topbar navigation: live DSE market status, countdown, unified status chip (e.g. `ON · Background · Live Hours`), "Run cycle now", and theme toggle.
+- Settings organized into 4 balanced cards:
+  1. Automation (master toggle, run mode with handoff buttons, trading mode, interval slider).
+  2. StockNow Connection (API session, browser session, price sync, portfolio diff, action buttons).
+  3. Safety Caps with Emergency Kill Switch.
+  4. Hermes Brain.
+- Collapsed Advanced card for Notifications, Fees, and Security.
+
+### 9. Portfolio Header Badge & Watchlist Status (Step 9)
+- `#portfolio-header-badge` dynamically showing `LIVE STOCKNOW <name> #<id>` with sync timestamp and drift 0.00; turns red `is-stale-drift` on drift or staleness.
+- Watchlist status pills: replaced `INVALID DATA` with `LIVE`, `LAST CLOSE`, `STALE`, `NO DATA` with tooltip explanation and direct retry link.
+- Gated `EXPERIMENTAL · DEMO ONLY` in footer strictly to DEMO data mode.
+- Trade ledger rows tagged with `STOCKNOW RECEIPT` or `PAPER FILL`.
+
+### 10. Hermes Order Preview Chat Card & Execution Lifecycle (Step 10)
+- Interactive `.order-preview-card` rendered in chat when `hb_place_order` returns a dry-run preview.
+- Displays symbol, side badge (`BUY` / `SELL`), quantity, price, 0.5% fee, mode (`Live Hours` / `Test Mode`), portfolio name & ID, and cap usage breakdown with visual progress bar.
+- Interactive `Confirm Order` and `Cancel` buttons: operator never types parameters.
+- Verified Receipt State: on successful execution, transitions into green verified receipt card showing receipt ID, fill price, net BDT, and synced ledger status.
+- Failed State: on failure, transitions into red banner displaying `live submission failed: <reason>` with explicit subtext `with no ledger change · State restored to pre-order checkpoint`.
+- Automated test coverage in `tests/test_chat_order_preview_card.py` (203 passed, 1 skipped).

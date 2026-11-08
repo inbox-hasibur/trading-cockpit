@@ -156,7 +156,11 @@ async function api(path, { method = "GET", body, headers = {}, timeout = 35000 }
   const timer = setTimeout(() => controller.abort(), timeout);
   const requestHeaders = { Accept: "application/json", ...headers };
   if (body !== undefined) requestHeaders["Content-Type"] = "application/json";
-  if (state.token) requestHeaders.Authorization = `Bearer ${state.token}`;
+  const activeToken = state.token || state.snapshot?.app?.kernel_token;
+  if (activeToken) {
+    requestHeaders.Authorization = `Bearer ${activeToken}`;
+    requestHeaders["X-Kernel-Token"] = activeToken;
+  }
   try {
     const response = await fetch(path, {
       method, headers: requestHeaders, body: body === undefined ? undefined : (typeof body === "string" ? body : JSON.stringify(body)),
@@ -230,6 +234,9 @@ async function refresh(quiet = false) {
     const snapshot = await api("/api/portfolio");
     if (sequence !== state.fetchSequence) return;
     state.snapshot = snapshot;
+    if (!state.token && snapshot?.app?.kernel_token) {
+      state.token = snapshot.app.kernel_token;
+    }
     $("error-banner").hidden = true;
     renderSnapshot();
   } catch (error) {

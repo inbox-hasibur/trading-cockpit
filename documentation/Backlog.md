@@ -284,7 +284,46 @@
 
 ---
 
-### 🎛️ Sprint 3: Custom Rule Builder UI, Conversational Control & Telegram Bot
+### ✅ Sprint 3: Production Hardening, Dual Transport & UI Refinements (Steps 1–10)
+
+- [x] **Step 1: Configurable Target Portfolios:**
+  - `.env` keys `STOCKNOW_LIVE_PORTFOLIO_ID=164580` and `STOCKNOW_TEST_PORTFOLIO_ID` with hard two-member allowlist.
+  - Test Mode sends orders/syncs strictly to test portfolio; Live Hours strictly to 164580.
+  - Scoped SQLite ledger, lots, cap usage, and daily budget by `portfolio_id`.
+- [x] **Step 2: Write Contract Specification & Capture on TEST Portfolio:**
+  - Hard guard refusing any POST unless portfolio id equals test id (`test_stocknow_write_guard.py`).
+  - Recorded write contract (`/buy`, `/sell`) and error behaviors in `documentation/STOCKNOW_SITE_MAP.md`.
+- [x] **Step 3: Direct Async StockNow API Client (`backend/adapters/stocknow_api.py`):**
+  - High-performance `httpx.AsyncClient` with in-memory tokens, exp margin re-login, ETag caching, typed error handling.
+- [x] **Step 4: StockNow Executor & Dual Transports (`backend/adapters/stocknow_executor.py`):**
+  - Dynamic transport selection (`ApiTransport` Background vs `BrowserTransport` Onscreen). Zero paper fallback in live mode.
+  - State checkpoints, explicit trade dates, and rollback on broker rejection.
+- [x] **Step 5: Direct API Market & Portfolio Sync:**
+  - Fast API sync for `/instruments`, `/user/lists`, 7–15 session candles, and portfolio reconciliation diffs.
+- [x] **Step 6: Master Automation Switch & Run Modes:**
+  - Master OFF/ON switch with separate Emergency Kill switch.
+  - Run modes: "Onscreen Live" vs "Background 24/7" with `Go Background` / `Go Onscreen` handoffs.
+  - Labeled `PREVIEW` execution when OFF with Decision stream audit logs.
+- [x] **Step 7: Autonomous Reliability, Circuit Breaker & Autostart:**
+  - Windows Task Scheduler autostart (`scripts/install_autostart.ps1`) with failure restart.
+  - SQLite minute heartbeat, Telegram dead-man alerts, 14:45 daily summary, and 3-failure circuit breaker.
+- [x] **Step 8: UI Alignment & 4 Balanced Settings Cards:**
+  - Standardized terminology "Live Hours" and "Test Mode".
+  - Topbar single status chip (e.g. `ON · Background · Live Hours`).
+  - 4 balanced cards in Settings (Automation, StockNow Connection, Safety Caps, Hermes Brain) plus collapsed Advanced card.
+- [x] **Step 9: Portfolio Header Badge & Watchlist Status:**
+  - `#portfolio-header-badge` displaying `LIVE STOCKNOW <name> #<id>` with drift warning.
+  - Watchlist status pills (`LIVE`, `LAST CLOSE`, `STALE`, `NO DATA`) with direct retry link.
+  - Trade ledger tagged with `STOCKNOW RECEIPT` or `PAPER FILL`.
+- [x] **Step 10: Hermes Order Preview Chat Card & Execution Lifecycle:**
+  - Chat preview cards for `hb_place_order` with symbol, side badge, qty, price, 0.5% fee, mode, portfolio, and cap usage.
+  - Interactive Confirm / Cancel buttons (operator never types parameters).
+  - Transition to verified receipt state or red `live submission failed: <reason>` with guaranteed no ledger change.
+  - 203 automated test suites passing.
+
+---
+
+### 🎛️ Sprint 4: Custom Rule Builder UI, Conversational Control & Telegram Bot
 
 - [ ] **Interactive Custom Rule Builder UI:**
   - Visual sliders and inputs per company and per sector: customize Tier 1/2/3 profit percentages, slice percentages (e.g., 20% / 30% / 50%), pullback drop threshold, and per-company `Buy %` limits.

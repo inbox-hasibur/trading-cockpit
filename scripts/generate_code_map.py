@@ -24,6 +24,8 @@ IGNORE_DIRS = {
 
 
 def is_ignored(path: Path) -> bool:
+    if path.suffix.lower() in {".har", ".png", ".jpg", ".jpeg", ".ico", ".svg", ".zip", ".tar", ".gz"}:
+        return True
     for part in path.parts:
         if part in IGNORE_DIRS or part.startswith("."):
             if part not in {".agentignore", ".cursorignore", ".opencodeignore"}:

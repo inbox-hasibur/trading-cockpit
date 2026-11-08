@@ -111,11 +111,22 @@ async def stream_hermes_chat(message: str, session_id: Optional[str] = None) -> 
                         break
                     try:
                         parsed = json.loads(chunk_str)
-                        delta = parsed.get("choices", [{}])[0].get("delta", {})
+                        if "type" in parsed and parsed["type"] in ("tool_use", "tool_result", "text", "done", "error"):
+                            yield f"data: {json.dumps(parsed)}\n\n"
+                            continue
+
+                        choice = parsed.get("choices", [{}])[0] if parsed.get("choices") else {}
+                        delta = choice.get("delta", {})
                         content = delta.get("content", "")
                         if content:
                             full_reply.append(content)
                             yield f"data: {json.dumps({'type': 'text', 'text': content})}\n\n"
+
+                        tool_calls = delta.get("tool_calls") or choice.get("message", {}).get("tool_calls")
+                        if tool_calls:
+                            for tc in tool_calls:
+                                fn = tc.get("function", {})
+                                yield f"data: {json.dumps({'type': 'tool_use', 'id': tc.get('id'), 'name': fn.get('name'), 'input': fn.get('arguments')})}\n\n"
                     except Exception:
                         continue
                 yield f"data: {json.dumps({'type': 'done', 'text': ''.join(full_reply)})}\n\n"

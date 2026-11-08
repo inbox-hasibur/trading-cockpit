@@ -608,6 +608,7 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             "polling_interval_sec": getattr(state, "polling_interval_sec", 120),
             "active_model": getattr(state, "active_model", settings.openrouter_model),
             "active_bucket": active, "created_at": state.created_at,
+            "kernel_token": getattr(settings, "kernel_token", None) or os.getenv("KERNEL_TOKEN", ""),
         },
         "market_clock": {
             "now": now.isoformat(), "timezone": "Asia/Dhaka",

@@ -85,8 +85,9 @@ def clear_order_idempotency_cache() -> None:
 def verify_kernel_auth(
     request: Request,
     x_kernel_token: str | None = Header(None, alias="X-Kernel-Token"),
+    authorization: str | None = Header(None, alias="Authorization"),
 ) -> None:
-    """Enforces 127.0.0.1 localhost binding and X-Kernel-Token authentication."""
+    """Enforces 127.0.0.1 localhost binding and X-Kernel-Token / Bearer authentication."""
     # 1. Localhost bind check
     client_host = request.client.host if request.client else "127.0.0.1"
     if client_host not in ("127.0.0.1", "localhost", "testclient", "::1"):
@@ -95,14 +96,16 @@ def verify_kernel_auth(
             detail="Forbidden: Kernel API binds to 127.0.0.1 only.",
         )
 
-    # 2. X-Kernel-Token check
+    # 2. X-Kernel-Token / Authorization check
     expected = os.getenv("KERNEL_TOKEN")
     if not expected:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Unauthorized: KERNEL_TOKEN is not configured.",
         )
-    if not x_kernel_token or x_kernel_token != expected:
+    bearer = authorization.replace("Bearer ", "").strip() if authorization and authorization.startswith("Bearer ") else None
+    token = x_kernel_token or bearer
+    if not token or token != expected:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Unauthorized: Invalid or missing X-Kernel-Token header.",
@@ -935,9 +938,44 @@ async def post_order(
                     "side": side,
                     "quantity": body.quantity,
                     "price": float(unit_price),
+                    "portfolio_id": target_pid,
                     "created_at": time.time(),
                     "expires_at": time.time() + 300,
                 }
+
+                if side == "BUY":
+                    daily_limit = float(daily_budget_bdt) if daily_budget_bdt is not None else 4000.0
+                    spent_before = float(today_buys_spend)
+                    spent_after = float(today_buys_spend + cost)
+                    daily_pct = round((spent_after / daily_limit) * 100, 1) if daily_limit > 0 else 0.0
+                    cap_usage = {
+                        "side": "BUY",
+                        "today_orders": today_orders_count,
+                        "max_orders": max_orders,
+                        "orders_ratio": f"{today_orders_count + 1}/{max_orders}",
+                        "order_gross": float(order_gross),
+                        "max_order_bdt": float(max_order_bdt) if max_order_bdt is not None else None,
+                        "daily_budget_spent": spent_before,
+                        "daily_budget_after": spent_after,
+                        "daily_budget_limit": daily_limit,
+                        "daily_budget_pct": daily_pct,
+                        "symbol_exposure": float(new_symbol_exposure),
+                        "max_symbol_bdt": float(max_symbol_bdt) if max_symbol_bdt is not None else None,
+                        "summary": f"Daily budget: ৳{spent_after:,.2f} / ৳{daily_limit:,.2f} ({daily_pct}%) · Orders: {today_orders_count + 1}/{max_orders}",
+                    }
+                else:
+                    cap_usage = {
+                        "side": "SELL",
+                        "today_orders": today_orders_count,
+                        "max_orders": max_orders,
+                        "orders_ratio": f"{today_orders_count + 1}/{max_orders}",
+                        "order_gross": float(order_gross),
+                        "max_order_bdt": float(max_order_bdt) if max_order_bdt is not None else None,
+                        "mature_shares_available": int(mature_qty),
+                        "shares_to_sell": int(body.quantity),
+                        "summary": f"Orders: {today_orders_count + 1}/{max_orders} · Selling {body.quantity} of {mature_qty} mature shares",
+                    }
+
                 return {
                     "dry_run": True,
                     "status": "VALIDATED",
@@ -953,6 +991,7 @@ async def post_order(
                     "estimated_fee": fee_est,
                     "estimated_net": net_est,
                     "trading_mode": trading_mode,
+                    "cap_usage": cap_usage,
                     "note": "Dry run execution validated all constraints (T+2 maturity, strict no-loss, 0.5% fee). Preview token generated for operator confirmation.",
                 }
 
@@ -982,6 +1021,7 @@ async def post_order(
                     token_data["symbol"] != sym
                     or token_data["side"] != side
                     or token_data["quantity"] != body.quantity
+                    or (token_data.get("portfolio_id") and token_data["portfolio_id"] != target_pid)
                 ):
                     raise HTTPException(
                         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

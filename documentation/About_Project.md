@@ -236,6 +236,17 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
       - Order execution forms (`/buy` and `/sell`): automated field selection under Item 1 with `0.5%` commission, clearing auto-filled quantities on SELL to submit precise slice sizes.
       - Active Holdings quick actions: 1-click 25% slice sell on profitable matured holdings (`BANKASIA`, `MATINSPINN`) and locked `No-Loss Hold Guard` on underwater holdings (`IBNSINA`).
       - AutoTrader integration: dispatches every automated Buy and Sequential Tier Sell through `adapter.execute_order` with `0.5%` commission.
+    - **Step 2.9 (Steps 1–10 Production Architecture & Autonomous Resiliency Foundation):**
+      - **Target Portfolio Configuration (Step 1):** Configurable `STOCKNOW_LIVE_PORTFOLIO_ID=164580` and `STOCKNOW_TEST_PORTFOLIO_ID` with hard allowlist enforcement, isolated SQLite ledgers, tax lots, and independent daily budgets.
+      - **Write Contract Specification (Step 2):** HAR inspection of StockNow virtual broker write APIs (`/buy`, `/sell`), documented in `STOCKNOW_SITE_MAP.md` with hard test-only write guards.
+      - **Async StockNowAPI Transport (Step 3):** High-performance `httpx.AsyncClient` adapter (`stocknow_api.py`) with memory-only token storage, margin-based auto-relogin, ETag caching, and typed schema errors.
+      - **Unified Executor & Dual Transports (Step 4):** `StockNowExecutor` dynamically selecting `ApiTransport` (Background) or `BrowserTransport` (Onscreen), zero fallback to paper, checkpoint state rollbacks, and explicit trade date T+2 calculations.
+      - **Direct API Market Sync (Step 5):** Direct API sync for `/instruments`, `/user/lists`, 7–15 session candles, and portfolio reconciliation, with DOM sync retained as an Onscreen cross-check.
+      - **Single-Writer Master Switch & Run Modes (Step 6):** Master `ON / OFF` control, separate Emergency Kill switch, run modes `Onscreen Live` vs `Background 24/7` with `Go Background` / `Go Onscreen` handoffs, and labeled `PREVIEW` execution when OFF.
+      - **Autonomous Reliability & Safety (Step 7):** Windows Task Scheduler autostart (`scripts/install_autostart.ps1`), SQLite minute heartbeat, Telegram dead-man alerts & daily summary (14:45), 3-failure circuit breaker, and rotating secret-free logs.
+      - **UI Alignment & 4 Balanced Settings Cards (Step 8):** Clean labels `Live Hours` and `Test Mode`, topbar unified status chip, 4 balanced cards in Settings (Automation, StockNow Connection, Safety Caps, Hermes Brain) plus collapsed Advanced card.
+      - **Portfolio Header Badge & Watchlist Status (Step 9):** `LIVE STOCKNOW <name> #<id>` badge with drift warning, watchlist status pills (`LIVE`, `LAST CLOSE`, `STALE`, `NO DATA`) with direct retry link, and ledger tags (`STOCKNOW RECEIPT` vs `PAPER FILL`).
+      - **Hermes Chat Order Preview Card (Step 10):** Interactive chat cards rendered on `hb_place_order` previews displaying symbol, side badge, quantity, price, 0.5% fee, mode, portfolio, and cap usage breakdown with Confirm / Cancel buttons (zero typed parameters), verified receipt state, and red `live submission failed: <reason>` with guaranteed no ledger change.
 
 ---
 
@@ -437,7 +448,7 @@ trading-cockpit/
 │   ├── __init__.py                          # Backend package initializer
 │   ├── config.py                            # Application configuration & environment loader
 │   ├── database.py                          # SQLite schema (WAL mode) & SQLAlchemy ORM models
-│   ├── hermes_bridge.py                     # Streaming SSE bridge & CLI fallback to official Hermes
+│   ├── hermes_bridge.py                     # Streaming SSE bridge to official Hermes Gateway API
 │   ├── kernel_api.py                        # Standalone local Trading Kernel API (X-Kernel-Token protected)
 │   ├── main.py                              # FastAPI entrypoint, middleware & route mounter
 │   ├── market_map.py                        # DSE sector tree, market capitalization & categorization
@@ -453,10 +464,12 @@ trading-cockpit/
 │   ├── adapters/                            # External Exchange & Brokerage Adapters
 │   │   ├── __init__.py                      # Adapters package initializer
 │   │   ├── stocknow_adapter.py              # High-level StockNow client adapter & state synchronizer
+│   │   ├── stocknow_api.py                  # Direct async httpx StockNow API client (ETag, retry, memory token)
 │   │   ├── stocknow_client.py               # Direct HTTP API client with auth & payload parsing
+│   │   ├── stocknow_executor.py             # StockNowExecutor with ApiTransport and BrowserTransport
 │   │   ├── stocknow_market_sync.py          # Real-time market prices, indices & quotes sync
 │   │   ├── stocknow_order_executor.py       # Virtual/live order placement executor for StockNow
-│   │   └── stocknow_portfolio_sync.py       # Portfolio #164580 holdings & cash synchronization
+│   │   └── stocknow_portfolio_sync.py       # Portfolio holdings & cash synchronization
 │   │
 │   ├── data/                                # Local persistent database & backup stores
 │   │   ├── hermes_tables_backup.json        # Exported backup rows from dropped legacy Hermes tables
@@ -467,12 +480,16 @@ trading-cockpit/
 │       ├── agent_actions.py                 # Deterministic action dispatcher & rule executor
 │       ├── auto_trader.py                   # Automated evaluation cycle runner & signal executor
 │       ├── checkpoint.py                    # Atomic state snapshot & rollback manager (KernelStateCheckpoint)
+│       ├── circuit_breaker.py               # 3-failure circuit breaker with automatic shutoff & manual re-enable
 │       ├── curve_analyzer.py                # 7-30 day trend slope, support/resistance, & crash detection
+│       ├── heartbeat.py                     # Minute SQLite heartbeat, dead-man alert & daily summary (14:45)
 │       ├── money.py                         # Strict decimal brokerage fee math (1.00% round trip)
 │       ├── scheduler.py                     # Market calendar engine & session status evaluator
 │       ├── sequential_seller.py             # Multi-tier profit locking & 50/50 pullback seller
 │       ├── signals.py                       # Quantitative trading signal generators & indicators
-│       └── t2_ledger.py                     # DSE T+2 settlement rolling 3-bucket ledger (A, B, C)
+│       ├── t2_ledger.py                     # DSE T+2 settlement rolling 3-bucket ledger (A, B, C)
+│       ├── telegram_bot.py                  # Telegram daemon for alerts, summaries & remote kill switch
+│       └── trading_lock.py                  # Single-writer cross-process trading concurrency lock
 │
 ├── plugins/                                 # Official Hermes Agent Plugins
 │   └── humming_bird/                        # Humming Bird Trading Engine Hermes Plugin
@@ -480,7 +497,7 @@ trading-cockpit/
 │       ├── hooks.py                         # Pre-tool execution hooks (DSE market hours enforcement)
 │       ├── plugin.yaml                      # Official Hermes plugin manifest & environment declarations
 │       ├── schemas.py                       # Type definitions & Pydantic validation schemas
-│       ├── tools.py                         # 13 Hermes tools (6 Read-only, 7 Write/Order execution)
+│       ├── tools.py                         # 22 Hermes tools (Read, Write, Modes, Caps, Sync, Orders)
 │       └── skills/                          # Official Procedural Skills (agentskills standard)
 │           ├── canary_90_10/
 │           │   └── SKILL.md                 # 90/10 emergency profit lock & canary observation probe
@@ -497,35 +514,59 @@ trading-cockpit/
 │   ├── app.js                               # Reactive state manager, DOM updater & telemetry polling
 │   ├── charts.js                            # Canvas chart renderer (trend curves, sparklines, treemap)
 │   ├── favicon.svg                          # Humming Bird brand icon
-│   ├── hermes_ui.js                         # Hermes SSE chat stream, tool cards, skills drawer & cron controls
-│   ├── index.html                           # Single-page cockpit dashboard layout & DOM structure
-│   ├── styles.css                           # Dark theme styling, terminal aesthetic & design system
+│   ├── hermes_ui.js                         # Hermes SSE chat stream, order preview cards, skills & crons
+│   ├── index.html                           # Single-page cockpit dashboard layout & 4 balanced settings cards
+│   ├── styles.css                           # Dark theme styling, terminal aesthetic, card layout & design system
 │   └── theme_light_hermes.css               # WCAG AA compliant light theme design system
 │
-├── scripts/                                 # Administrative & Migration Automation Scripts
+├── scripts/                                 # Administrative & Automation Scripts
+│   ├── backup_db.py                         # Atomic SQLite database backup utility
+│   ├── check_dse_market_open.py             # DSE trading hours & session validator
+│   ├── check_heartbeat.py                   # Heartbeat verification & dead-man alert probe
 │   ├── generate_code_map.py                 # Zero-dependency AST inspection & Codebase Map generator
+│   ├── install_autostart.ps1                # Windows Task Scheduler logon autostart installer with restart
 │   ├── install_plugin.ps1                   # Hermes plugin installation & linking script
-│   └── migrate_drop_hermes_tables.py        # Legacy Hermes tables data backup & schema drop migration
+│   ├── migrate_drop_hermes_tables.py        # Legacy Hermes tables data backup & schema drop migration
+│   ├── preflight.py                         # Pre-flight environment, auth, ledger & safety check suite
+│   ├── restore_db.py                        # Atomic database restore utility
+│   └── verify_chat_card.py                  # Playwright visual card renderer & screenshot capture probe
 │
-├── tests/                                   # Pytest Automated Test Suite
+├── tests/                                   # Pytest Automated Test Suite (204 Tests)
 │   ├── conftest.py                          # Shared test fixtures, mock client & test database setup
 │   ├── test_api.py                          # REST API endpoint tests
+│   ├── test_chat_order_preview_card.py      # Chat order preview card, execution & failure rollback tests
 │   ├── test_engine.py                       # Quantitative engine unit tests (T2 ledger, fee math, curves)
 │   ├── test_humming_bird_plugin.py          # Hermes plugin tool handler tests with mock kernel
+│   ├── test_ingestion_switch.py             # Ingestion mode toggle & handoff tests
 │   ├── test_kernel_api.py                   # Local kernel service endpoint, auth & checkpoint tests
+│   ├── test_kernel_caps.py                  # Kernel safety caps, daily budget & operator confirmation tests
+│   ├── test_mvp_rules.py                    # Core MVP trading rules, no-loss & 50/50 pullback tests
+│   ├── test_order_path.py                   # Two-step order preview token & execution path tests
+│   ├── test_portfolio_badge_and_watchlist.py # Portfolio header badge, drift & watchlist status pill tests
+│   ├── test_portfolio_config.py             # Target portfolio configuration, allowlist & budget tests
+│   ├── test_preflight_and_backups.py        # Preflight verification and backup/restore tests
+│   ├── test_reliability_and_safety.py       # Reliability, circuit breaker, heartbeat & dead-man tests
+│   ├── test_run_modes_decisions.py          # Onscreen vs Background run modes & decision stream tests
 │   ├── test_secret_guard.py                 # Secret isolation & credential redaction tests
+│   ├── test_stocknow_api.py                 # Async httpx StockNow API client contract tests
+│   ├── test_stocknow_api_sync.py            # API-based market data, list & portfolio sync tests
+│   ├── test_stocknow_executor.py            # Transport selection (ApiTransport vs BrowserTransport) tests
 │   ├── test_stocknow_portfolio_164580.py    # Portfolio #164580 constraints & skill validation tests
 │   ├── test_stocknow_step2_1.py             # StockNow adapter authentication tests
 │   ├── test_stocknow_step2_2.py             # StockNow portfolio sync & holdings ingestion tests
 │   ├── test_stocknow_step2_3.py             # StockNow order placement & validation tests
 │   ├── test_stocknow_step2_4.py             # StockNow market data sync & quotes ingestion tests
-│   └── test_stocknow_step2_5.py             # StockNow scheduler & automated cycle runner tests
+│   ├── test_stocknow_step2_5.py             # StockNow scheduler & automated cycle runner tests
+│   ├── test_stocknow_write_guard.py         # Hard test-only write contract guards
+│   └── test_trading_mode.py                 # Live Hours vs Test Mode operational gate tests
 │
 └── documentation/                           # System Architecture & Strategy Documentation
     ├── About_Project.md                     # Core architecture, system philosophy & repo topology
     ├── Backlog.md                           # Implementation roadmap, sprint plans & backlog items
     ├── CODEBASE_MAP.md                      # Auto-generated AST map, LOC metrics & endpoint radar
     ├── REAL_HERMES_MIGRATION.md             # Verified Hermes extension points, runtime docs & evidence
-    └── Recent.md                            # Recent change logs, UI polish passes & migration logs
+    ├── Recent.md                            # Recent change logs, UI polish passes & sprint accomplishments
+    ├── STOCKNOW_CURL_AUDIT.md               # Raw curl verification & endpoint response audits
+    └── STOCKNOW_SITE_MAP.md                 # StockNow site map, write contracts & sanitized fixtures
 ```
 
