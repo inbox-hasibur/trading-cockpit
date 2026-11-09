@@ -14,10 +14,21 @@ Tracking document for end-to-end verification of the core trading system and Her
     - SSE stream `/api/stream` connected with HTTP 200.
     - Portfolio endpoint `/api/portfolio` returned HTTP 200.
     - Bridge state `/api/hermes/bridge/state` returned HTTP 200.
-- [ ] **Test 1.2: Live StockNow Data Sync**
+- [x] **Test 1.2: Live StockNow Data Sync**
   - **Description:** Verify live LTP prices, 470+ All DSE shares catalog, and watchlists (GSC, L1, L2) populate from StockNow feed.
-- [ ] **Test 1.3: Adapter Connection Status**
+  - **Status:** PASSED (2026-11-09)
+  - **Proof:**
+    - Live DSE catalog loaded (475 shares).
+    - Watchlists synchronized (11 core tier symbols across GSC, GSC_L1, GSC_L2).
+    - Day change % verified against live StockNow: MATINSPINN at ৳127.40 (+9.92%), BANKASIA at ৳17.40 (+0.00%), ACI at ৳179.80 (+0.62%), FUWANGCER at ৳11.80 (+2.61%).
+    - Fixed SQLite clock_date and StockNow live quote source reconciliation so curve analysis generates accurate day change and signals without demo date mismatch errors.
+- [x] **Test 1.3: Adapter Connection Status**
   - **Description:** Check topbar badge displays `LIVE STOCKNOW` with synced time/drift and session cookies are active.
+  - **Status:** PASSED (2026-11-09)
+  - **Proof:**
+    - Topbar shows `LIVE STOCKNOW HUMMING BIRD (STOCKNOW) #164580 (DRIFT 0.00)`.
+    - DSE market session countdown accurately reports `DSE CLOSED` with time until opening session.
+    - Hermes Portfolio Copilot actively connected and answering in Banglish/English.
 
 ---
 
@@ -48,3 +59,4 @@ Tracking document for end-to-end verification of the core trading system and Her
   - **Description:** Instruct Hermes to buy shares. Verify it renders a two-step preview card and executes only on operator confirmation.
 - [ ] **Test 4.3: Dynamic Rule / Cap Adjustment**
   - **Description:** Instruct Hermes to adjust risk caps or strategy parameters (e.g. daily budget, L2 pullback). Verify rule checkpoint creation.
+

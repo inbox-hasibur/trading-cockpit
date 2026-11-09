@@ -709,7 +709,8 @@ def _sync_in_session(
     skipped_count = 0
 
     state = portfolio_state(session)
-    as_of = session_date or state.clock_date or date.today()
+    quote_dates = [q.get("as_of_date") for q in quotes if q.get("as_of_date")]
+    as_of = session_date or (max(quote_dates) if quote_dates else None) or date.today()
 
     for q in quotes:
         symbol = q["symbol"].upper()
@@ -782,6 +783,8 @@ def _sync_in_session(
         synced_symbols.append(symbol)
 
     if synced_symbols:
+        if as_of and as_of > state.clock_date:
+            state.clock_date = as_of
         state.revision += 1
 
     return {

@@ -25,9 +25,10 @@ def assess_company(
         err_msg = str(exc)
         sig = "NO_DATA" if ("no data" in err_msg.lower() or not company.price_history) else "INVALID_DATA"
         return CurveAnalysis(sig, err_msg), None
+    effective_as_of = max(as_of, quote.as_of) if (quote and quote.as_of) else as_of
     analysis = analyze_curve(
         quote.history,
-        as_of=as_of,
+        as_of=effective_as_of,
         buy_fee_rate=settings.buy_fee_rate,
         sell_fee_rate=settings.sell_fee_rate,
         buy_zone_fraction=rule.buy_zone_fraction,
