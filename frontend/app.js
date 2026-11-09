@@ -2279,6 +2279,14 @@ function initScrollSpy() {
   }, { passive: true });
 }
 
+// Preload 475+ DSE catalog in background on boot
+api("/api/stocknow/all-shares")
+  .then((res) => {
+    state.allDseShares = res.shares || [];
+    if ($("cat-dse-count")) setText("cat-dse-count", state.allDseShares.length);
+  })
+  .catch(() => {});
+
 // Initialize view router and scroll spy first so navigation works immediately
 initViewRouter();
 initScrollSpy();
