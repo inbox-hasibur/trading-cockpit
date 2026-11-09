@@ -206,8 +206,8 @@ class StockNowLiveClient:
 
                 self.playwright = await async_playwright().start()
 
-                # Robust channel fallback for Windows environments: bundled Chromium -> Google Chrome -> Microsoft Edge
-                channels_to_try = [None, "chrome", "msedge"]
+                # Robust channel fallback for Windows environments: Google Chrome -> Microsoft Edge -> bundled Chromium
+                channels_to_try = ["chrome", "msedge", None]
                 last_launch_err = None
                 self.context = None
 

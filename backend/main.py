@@ -266,12 +266,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
                 "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
                 "img-src 'self' data: https://fastapi.tiangolo.com; "
-                "connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+                "connect-src 'self' http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:*; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
             )
         else:
             policy = (
                 "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
-                "connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+                "connect-src 'self' http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:*; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
             )
         response.headers["Content-Security-Policy"] = policy
         if is_api:
