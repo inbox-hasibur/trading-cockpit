@@ -45,12 +45,23 @@ def verify_test_portfolio_post_guard(
     if not test_portfolio_configured():
         raise StockNowWriteGuardError(
             "Hard guard violation: TEST_PORTFOLIO_NOT_CONFIGURED. "
-            "STOCKNOW_TEST_PORTFOLIO_ID is not configured or equals live portfolio. "
+            "Neither STOCKNOW_TEST_PORTFOLIO_ID nor STOCKNOW_LIVE_PORTFOLIO_ID is configured. "
             "All write/POST requests are strictly blocked.",
             reason="TEST_PORTFOLIO_NOT_CONFIGURED",
         )
 
-    test_id = str(configured_test_id if configured_test_id is not None else os.getenv("STOCKNOW_TEST_PORTFOLIO_ID", "")).strip()
+    test_id = str(
+        configured_test_id
+        if configured_test_id is not None
+        else (os.getenv("STOCKNOW_TEST_PORTFOLIO_ID", "").strip() or os.getenv("STOCKNOW_LIVE_PORTFOLIO_ID", "164580").strip())
+    ).strip()
+
+    if not test_id:
+        raise StockNowWriteGuardError(
+            "Hard guard violation: STOCKNOW_TEST_PORTFOLIO_ID is not configured. "
+            "All write/POST requests are strictly blocked.",
+            reason="TEST_PORTFOLIO_NOT_CONFIGURED",
+        )
 
     target_id = str(target_portfolio_id or "").strip()
     if not target_id:

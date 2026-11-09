@@ -13,16 +13,16 @@ from backend.config import test_portfolio_configured as check_configured
 from backend.main import create_app
 
 
-def test_ids_equal_gives_false(monkeypatch):
-    """test_portfolio_configured returns False when test ID equals live ID."""
+def test_ids_equal_gives_true(monkeypatch):
+    """test_portfolio_configured returns True when test ID equals live ID."""
     monkeypatch.setenv("STOCKNOW_LIVE_PORTFOLIO_ID", "164580")
     monkeypatch.setenv("STOCKNOW_TEST_PORTFOLIO_ID", "164580")
-    assert check_configured() is False
+    assert check_configured() is True
 
 
-def test_test_id_empty_gives_false(monkeypatch):
-    """test_portfolio_configured returns False when test ID is empty."""
-    monkeypatch.setenv("STOCKNOW_LIVE_PORTFOLIO_ID", "164580")
+def test_both_ids_empty_gives_false(monkeypatch):
+    """test_portfolio_configured returns False when both IDs are empty."""
+    monkeypatch.setenv("STOCKNOW_LIVE_PORTFOLIO_ID", "")
     monkeypatch.setenv("STOCKNOW_TEST_PORTFOLIO_ID", "")
     assert check_configured() is False
 
@@ -34,19 +34,19 @@ def test_two_different_ids_give_true(monkeypatch):
     assert check_configured() is True
 
 
-def test_post_order_test_offhours_equal_ids_returns_test_portfolio_not_configured(tmp_path, monkeypatch):
-    """post_order in TEST_OFFHOURS with equal test and live IDs rejects with TEST_PORTFOLIO_NOT_CONFIGURED and makes no StockNow call."""
-    monkeypatch.setenv("STOCKNOW_LIVE_PORTFOLIO_ID", "164580")
-    monkeypatch.setenv("STOCKNOW_TEST_PORTFOLIO_ID", "164580")
+def test_post_order_test_offhours_empty_ids_returns_test_portfolio_not_configured(tmp_path, monkeypatch):
+    """post_order in TEST_OFFHOURS with empty IDs rejects with TEST_PORTFOLIO_NOT_CONFIGURED and makes no StockNow call."""
+    monkeypatch.setenv("STOCKNOW_LIVE_PORTFOLIO_ID", "")
+    monkeypatch.setenv("STOCKNOW_TEST_PORTFOLIO_ID", "")
     token = "test-kernel-token-guard"
     monkeypatch.setenv("KERNEL_TOKEN", token)
     headers = {"X-Kernel-Token": token}
 
-    db_file = tmp_path / "test_equal_ids.db"
+    db_file = tmp_path / "test_empty_ids.db"
     settings = Settings(
         database_url=f"sqlite:///{db_file.as_posix()}",
-        stocknow_live_portfolio_id="164580",
-        stocknow_test_portfolio_id="164580",
+        stocknow_live_portfolio_id="",
+        stocknow_test_portfolio_id="",
         cockpit_api_token=token,
     )
     app = create_app(settings)

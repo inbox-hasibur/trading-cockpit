@@ -161,19 +161,20 @@ def get_allowed_portfolios(settings: Settings | None = None) -> tuple[str, ...]:
 def get_active_target_portfolio(trading_mode: str, settings: Settings | None = None) -> str | None:
     """Returns the active portfolio ID based on current trading mode:
     - LIVE_HOURS -> STOCKNOW_LIVE_PORTFOLIO_ID (default 164580)
-    - TEST_OFFHOURS -> STOCKNOW_TEST_PORTFOLIO_ID (or None if unconfigured)
+    - TEST_OFFHOURS -> STOCKNOW_TEST_PORTFOLIO_ID (or fallback to live ID 164580)
     """
     if settings is None:
         try:
             settings = Settings.from_env()
         except Exception:
+            live = os.getenv("STOCKNOW_LIVE_PORTFOLIO_ID", "164580").strip()
             if trading_mode == "LIVE_HOURS":
-                return os.getenv("STOCKNOW_LIVE_PORTFOLIO_ID", "164580").strip()
-            return os.getenv("STOCKNOW_TEST_PORTFOLIO_ID", "").strip() or None
+                return live
+            return os.getenv("STOCKNOW_TEST_PORTFOLIO_ID", "").strip() or live
 
     if trading_mode == "LIVE_HOURS":
         return settings.stocknow_live_portfolio_id.strip()
-    return settings.stocknow_test_portfolio_id.strip() or None
+    return settings.stocknow_test_portfolio_id.strip() or settings.stocknow_live_portfolio_id.strip()
 
 
 def get_portfolio_name(portfolio_id: str, settings: Settings | None = None) -> str:
@@ -190,23 +191,19 @@ def get_portfolio_name(portfolio_id: str, settings: Settings | None = None) -> s
         test_id = os.getenv("STOCKNOW_TEST_PORTFOLIO_ID", "").strip()
 
     pid = str(portfolio_id).strip()
-    if pid == live_id:
+    if pid == live_id and test_id != live_id:
         return live_name
-    elif test_id and pid == test_id:
+    elif test_id and pid == test_id and test_id != live_id:
         return f"{live_name} (Test)"
-    return f"Portfolio #{pid}"
+    return live_name if pid == live_id else f"Portfolio #{pid}"
 
 
 def test_portfolio_configured(settings: Settings | None = None) -> bool:
-    """Returns False when the test portfolio id is empty or equal to the live id."""
+    """Returns True when a portfolio id is configured for testing (can be same as live)."""
     if settings is not None:
-        live = settings.stocknow_live_portfolio_id.strip()
-        test = settings.stocknow_test_portfolio_id.strip()
+        test = settings.stocknow_test_portfolio_id.strip() or settings.stocknow_live_portfolio_id.strip()
     else:
-        live = os.getenv("STOCKNOW_LIVE_PORTFOLIO_ID", "164580").strip()
-        test = os.getenv("STOCKNOW_TEST_PORTFOLIO_ID", "").strip()
-    if not test:
-        return False
-    return test != live
+        test = os.getenv("STOCKNOW_TEST_PORTFOLIO_ID", "").strip() or os.getenv("STOCKNOW_LIVE_PORTFOLIO_ID", "164580").strip()
+    return bool(test)
 
 

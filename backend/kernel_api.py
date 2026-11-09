@@ -750,7 +750,7 @@ async def post_order(
 
             # Block Test Mode if test portfolio is not configured (Requirement: TEST_PORTFOLIO_NOT_CONFIGURED)
             if trading_mode == "TEST_OFFHOURS" and not test_portfolio_configured(settings):
-                reason = "Order execution rejected in Test Mode: TEST_PORTFOLIO_NOT_CONFIGURED. STOCKNOW_TEST_PORTFOLIO_ID is not configured or equals live portfolio. Set STOCKNOW_TEST_PORTFOLIO_ID in .env or switch to LIVE_HOURS."
+                reason = "Order execution rejected in Test Mode: TEST_PORTFOLIO_NOT_CONFIGURED. STOCKNOW_TEST_PORTFOLIO_ID or STOCKNOW_LIVE_PORTFOLIO_ID is not configured."
                 _record_order_rejection(session, state, sym, "TEST_PORTFOLIO_NOT_CONFIGURED", reason, trading_mode, body.model_dump(mode="json"))
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
