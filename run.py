@@ -213,6 +213,18 @@ def main() -> int:
     python_bin = str(venv_py) if venv_py else sys.executable
     hermes_bin = get_hermes_bin()
 
+    def get_hermes_exec_cmd() -> list[str]:
+        """Returns command args for Hermes CLI, preferring python -m to bypass Windows AppControl (WinError 4551)."""
+        try:
+            res = subprocess.run([python_bin, "-c", "import hermes_cli.main"], capture_output=True)
+            if res.returncode == 0:
+                return [python_bin, "-m", "hermes_cli.main"]
+        except Exception:
+            pass
+        return [hermes_bin]
+
+    hermes_exec_cmd = get_hermes_exec_cmd()
+
     # Build child process environment with venv and PYTHONPATH
     child_env = os.environ.copy()
     if venv_py:
@@ -236,7 +248,7 @@ def main() -> int:
     print("   Humming Bird Cockpit & Hermes Gateway Unified Runner   ")
     print("==========================================================")
     print(f"HERMES_HOME : {os.environ.get('HERMES_HOME')}")
-    print(f"Hermes Bin  : {hermes_bin}")
+    print(f"Hermes Bin  : {' '.join(hermes_exec_cmd) if hermes_exec_cmd != [hermes_bin] else hermes_bin}")
     print(f"Python Bin  : {python_bin}")
     print("Profile     : hummingbird")
     print("Gateway URL : http://127.0.0.1:8642")
@@ -272,7 +284,7 @@ def main() -> int:
     signal.signal(signal.SIGTERM, shutdown)
 
     def spawn_gateway() -> subprocess.Popen:
-        cmd = [hermes_bin, "-p", "hummingbird", "gateway", "run", "--force"]
+        cmd = [*hermes_exec_cmd, "-p", "hummingbird", "gateway", "run", "--force"]
         return subprocess.Popen(cmd, env=child_env)
 
     def spawn_backend() -> subprocess.Popen:

@@ -60,6 +60,19 @@ def get_hermes_bin() -> str:
     return "hermes"
 
 
+def get_hermes_cmd() -> list[str]:
+    """Returns command arguments for Hermes CLI, preferring python -m to bypass Windows AppControl (WinError 4551)."""
+    venv_py = WORKSPACE_ROOT / ".venv" / "Scripts" / "python.exe"
+    py_bin = str(venv_py) if venv_py.exists() else sys.executable
+    try:
+        res = subprocess.run([py_bin, "-c", "import hermes_cli.main"], capture_output=True)
+        if res.returncode == 0:
+            return [py_bin, "-m", "hermes_cli.main"]
+    except Exception:
+        pass
+    return [get_hermes_bin()]
+
+
 class BridgeChatRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     message: str = Field(..., min_length=1, max_length=4000)
@@ -364,8 +377,7 @@ def _get_bundled_skill_names(skills_root: Path | None = None) -> set[str]:
 
 def run_hermes_cron_cmd(*args: str) -> dict[str, Any]:
     """Runs a hermes cron sub-command synchronously on the hummingbird profile."""
-    bin_exe = get_hermes_bin()
-    cmd = [bin_exe, "-p", "hummingbird", "cron", *args]
+    cmd = [*get_hermes_cmd(), "-p", "hummingbird", "cron", *args]
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
         return {

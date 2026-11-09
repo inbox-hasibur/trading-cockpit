@@ -221,14 +221,14 @@ def build_hermes_router(database: Database, settings: Settings, *args: Any, **kw
             else:
                 provider_id = "openrouter"
 
-        from backend.hermes_bridge import get_hermes_bin, get_hermes_dir
-        hermes_bin = get_hermes_bin()
+        from backend.hermes_bridge import get_hermes_cmd, get_hermes_dir
+        hermes_cmd = get_hermes_cmd()
         h_dir = get_hermes_dir()
 
         # Update Hermes config
         try:
-            cmd1 = [hermes_bin, "-p", "hummingbird", "config", "set", "model.default", model_id]
-            cmd2 = [hermes_bin, "-p", "hummingbird", "config", "set", "model.provider", provider_id]
+            cmd1 = [*hermes_cmd, "-p", "hummingbird", "config", "set", "model.default", model_id]
+            cmd2 = [*hermes_cmd, "-p", "hummingbird", "config", "set", "model.provider", provider_id]
             subprocess.run(cmd1, capture_output=True, text=True, timeout=5)
             subprocess.run(cmd2, capture_output=True, text=True, timeout=5)
         except Exception:
