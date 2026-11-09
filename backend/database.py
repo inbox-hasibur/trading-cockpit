@@ -370,10 +370,36 @@ class Database:
                 conn.commit()
 
             result = conn.execute(text("PRAGMA table_info(decision_logs)"))
-            dl_cols = [row[1] for row in result.fetchall()]
+            dl_info = result.fetchall()
+            dl_cols = [row[1] for row in dl_info]
             if dl_cols and "trading_mode" not in dl_cols:
                 conn.execute(text("ALTER TABLE decision_logs ADD COLUMN trading_mode VARCHAR(32) DEFAULT 'LIVE_HOURS'"))
                 conn.commit()
+            for row in dl_info:
+                if row[1] == "cycle_id" and row[3] == 1:
+                    conn.execute(text("PRAGMA foreign_keys=OFF;"))
+                    conn.execute(text("""
+                        CREATE TABLE decision_logs_null_cycle_new (
+                            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                            cycle_id VARCHAR(36),
+                            symbol VARCHAR(32) NOT NULL,
+                            lot_id INTEGER,
+                            action VARCHAR(40) NOT NULL,
+                            quantity INTEGER NOT NULL,
+                            reason VARCHAR(600) NOT NULL,
+                            created_at VARCHAR(40) NOT NULL,
+                            trading_mode VARCHAR(32) DEFAULT 'LIVE_HOURS',
+                            FOREIGN KEY(cycle_id) REFERENCES automation_cycles (id),
+                            FOREIGN KEY(lot_id) REFERENCES tax_lots (id)
+                        );
+                    """))
+                    conn.execute(text("INSERT INTO decision_logs_null_cycle_new (id, cycle_id, symbol, lot_id, action, quantity, reason, created_at, trading_mode) SELECT id, cycle_id, symbol, lot_id, action, quantity, reason, created_at, trading_mode FROM decision_logs;"))
+                    conn.execute(text("DROP TABLE decision_logs;"))
+                    conn.execute(text("ALTER TABLE decision_logs_null_cycle_new RENAME TO decision_logs;"))
+                    conn.execute(text("CREATE INDEX IF NOT EXISTS ix_decision_logs_cycle_id ON decision_logs (cycle_id);"))
+                    conn.execute(text("CREATE INDEX IF NOT EXISTS ix_decision_logs_symbol ON decision_logs (symbol);"))
+                    conn.commit()
+                    break
 
             result = conn.execute(text("PRAGMA table_info(kernel_audit_logs)"))
             kal_cols = [row[1] for row in result.fetchall()]

@@ -126,7 +126,7 @@ def get_settings(request: Request) -> Settings:
     """Extract settings from app state or fallback to default."""
     if hasattr(request.app.state, "settings"):
         return request.app.state.settings
-    return Settings()
+    return Settings.from_env()
 
 
 def get_stocknow_client(request: Request) -> Any | None:
