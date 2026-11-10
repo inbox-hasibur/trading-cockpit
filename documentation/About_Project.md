@@ -516,6 +516,7 @@ trading-cockpit/
 │       ├── heartbeat.py                     # Minute SQLite heartbeat, dead-man alert & daily summary (14:45)
 │       ├── money.py                         # Strict decimal brokerage fee math (1.00% round trip)
 │       ├── preflight_service.py             # Reusable preflight health audit service
+│       ├── price_guard.py                   # Preflight price sanity guard (blocks orders deviating > 1.5% from LTP)
 │       ├── scheduler.py                     # Market calendar engine & session status evaluator
 │       ├── sequential_seller.py             # Multi-tier profit locking & 50/50 pullback seller
 │       ├── signals.py                       # Quantitative trading signal generators & indicators
@@ -527,6 +528,7 @@ trading-cockpit/
 │   ├── About_Project.md                     # Core architecture, system philosophy & repo topology
 │   ├── Backlog.md                           # Implementation roadmap, sprint plans & backlog items
 │   ├── CODEBASE_MAP.md                      # Auto-generated AST map, LOC metrics & endpoint radar
+│   ├── MVP_VERIFICATION.md                  # Structured end-to-end MVP verification plan & test results
 │   └── STOCKNOW_SITE_MAP.md                 # StockNow site map, write contracts & unauthenticated curl audit
 │
 ├── frontend/                                # Cockpit Single-Page Interface

@@ -326,6 +326,14 @@
   - Suffix-only parsing with long-tail grouping into `*other*`, zero `.png`, exact 10 `.md`, and low-hundreds `.py`.
   - Mapped 108 JS controller functions (`app.js`, `charts.js`, `hermes_ui.js`), 300 HTML element IDs, and all 22 registered `hb_*` plugin tools with line references.
   - 211 automated test suites passing (including `tests/test_code_map.py`).
+- [x] **Step 12: Live Reconciliation, Anti-Typo Guard, Native Chrome & MVP Verification:**
+  - `Native Google Chrome Launch`: Prioritized user-installed Google Chrome over sandboxed "Chrome for Testing" (`channels_to_try = ["chrome", "msedge", None]`), preserving extensions, logins, and standard web compatibility.
+  - `Anti-Typo Price Sanity Guard`: Built `check_price_sanity` enforcing preflight validation blocking orders deviating > 1.5% from market LTP (`PRICE_OUT_OF_RANGE`).
+  - `Shared/Single Portfolio ID Support`: Removed strict mismatch constraint between test and live IDs, allowing single-portfolio accounts (`#164580`) to test safely without `TEST_PORTFOLIO_NOT_CONFIGURED` rejections.
+  - `SQLite Nullable Decision Log`: Migrated `decision_logs.cycle_id` to nullable and removed invalid `FOREIGN KEY(symbol)` constraints, preventing SQLite `IntegrityError` during manual/Hermes order logging.
+  - `Live Quote Sync Reconciliation`: Synced SQLite `state.clock_date` with latest quote date (`quote_on`), ensuring live daily changes (+9.92% for MATINSPINN) match StockNow real-time data instead of defaulting to +0.00%.
+  - `Preloaded 475+ DSE Catalog`: Background catalog preloading on boot for instant symbol search, heatmap breadth, and ticker lookup without requiring manual tab interaction.
+  - `MVP Verification Tracking`: Established and executed structured end-to-end MVP verification plan in `documentation/MVP_VERIFICATION.md`.
 
 ---
 

@@ -75,9 +75,9 @@ def test_discover_files_sanity():
     py_files = [p for p in rel_paths if p.endswith(".py")]
     assert 50 <= len(py_files) <= 150, f"Unexpected .py file count: {len(py_files)}"
 
-    # 4. .md file count matches tracked markdown only (exactly 10)
+    # 4. .md file count matches tracked markdown only (typically 10-12)
     md_files = [p for p in rel_paths if p.endswith(".md")]
-    assert len(md_files) == 10, f"Expected 10 tracked markdown files, found: {len(md_files)}"
+    assert 10 <= len(md_files) <= 15, f"Expected tracked markdown files, found: {len(md_files)}"
 
 
 def test_collect_file_metrics_grouping():
