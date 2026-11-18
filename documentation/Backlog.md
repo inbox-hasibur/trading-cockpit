@@ -350,7 +350,7 @@ Reconciliation of all audit findings and architectural items from historical MVP
 | **5. Unauthenticated StockNow DOM failure silently defaults to Paper mode** | MEDIUM | **FIXED** | Zero paper fallback in live mode. `BrowserTransport` and `ApiTransport` in `backend/adapters/stocknow_executor.py` raise `NotAuthenticatedExecutionError` on missing or expired tokens, triggering checkpoint rollback. Verified by `tests/test_stocknow_executor.py:test_logged_out_order_fails_on_browser_transport`. |
 | **6. Stale `--yolo` mention in documentation** | LOW | **FIXED** | All mentions of `--yolo` and subprocess CLI fallback purged from `hermes_bridge.py`, tests, and documentation. |
 | **7. Telegram Bot push notifications for trade alerts** | MEDIUM | **OPEN** | Autonomous real-time push alerts on automated Buy, Sequential Tier Sell, 50/50 Pullback Split, or Crash Quarantine events queued for Sprint 4. |
-| **8. Multi-Broker Live Adapters (LankaBangla / Shanta)** | LOW | **OPEN** | Plug-and-play live brokerage portal adapters queued for Version 0.3. |
+| **8. Multi-Broker Live Adapters (LankaBangla / Shanta)** | MEDIUM | **IN PROGRESS** | Captured live verified site map & execution blueprint in [`documentation/TRADEXPRESS_SITE_MAP.md`](TRADEXPRESS_SITE_MAP.md) after first real DSE execution (LankaBangla Client `H9210`: `Buy BANKASIA'PB : 9 @ 17.90 : Filled` at `14:01:35`). Passive Playwright adapter architecture drafted for Version 0.3. |
 
 ---
 
@@ -382,11 +382,17 @@ Reconciliation of all audit findings and architectural items from historical MVP
 
 ---
 
-## 🏦 Version 0.3 — Live Brokerage Portal Adapters (LankaBangla / Shanta)
+## 🏦 Version 0.3 — Live Brokerage Portal Adapters (LankaBangla TradeXpress & iBroker / Shanta)
 
-- [ ] **Plug-and-Play Broker Adapter Interface:**
-  - Build dedicated Playwright / API adapters for real DSE brokerage portals (e.g., **LankaBangla TradeXpress**, **Shanta EasyTrade**) using the exact same `base_adapter.py` contract.
-- [ ] **Live BO Account & Settled Balance Reconciliation:**
-  - Sync real BO account balances, mature saleable quantities, and exact broker commission schedules.
+- [x] **TradeXpress 2.0 & iBroker Site Map & Automated Execution Blueprint:**
+  - Completed exact DOM topology, WebSocket frame ingestion blueprint, and 2-step execution rules in [`documentation/TRADEXPRESS_SITE_MAP.md`](TRADEXPRESS_SITE_MAP.md).
+  - First real live DSE trade verified and filled: **`Buy BANKASIA'PB : 9 @ 17.90 : Filled`** at `14:01:35` (Post-Closing session) on LankaBangla Client Code **`H9210`**.
+  - Documented manual 09:55 AM login requirement (zero brute-forcing, single active session lock) and 100% passive WebSocket/DOM ingestion rules.
+- [ ] **Plug-and-Play Broker Adapter Interface (`backend/adapters/tradexpress_adapter.py`):**
+  - Build passive Playwright CDP adapter attaching to the operator's active TradeXpress session (`playwright.chromium.connect_over_cdp("http://localhost:9222")`).
+  - Automated 2-step execution harness (`New Order - <SYMBOL>'PB` -> verify `Order Value` & depth -> click `Buy @ price` -> verify `Confirm Order` modal -> click `Confirm Order`).
+  - Safety preflight: strict `PUBLIC` settlement (never `SPOT`), Category `A`/`B` only (never `Z`), `Limit` order only, `TIF == DAY`.
+- [ ] **Live BO Account & Settled Balance Reconciliation (`ibroker.lbsbd.com`):**
+  - Daily reconciliation between iBroker `Portfolio Live` (`Total Qty`, `Saleable Qty`, `AVG Price`, `Unrealized Gain/Loss`) and Humming Bird SQLite ledger.
 - [ ] **Human-in-the-Loop Execution Guardrails:**
-  - Optional 1-tap Telegram/Cockpit approval gate before submitting real-money orders, daily max-spend caps, and instant kill-switch.
+  - Mandatory 2-step Hermes preview cards, daily max-spend caps (`daily_budget_bdt`), anti-typo price guard (±1.5% LTP), and instant global kill-switch.

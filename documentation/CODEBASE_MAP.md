@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-10 03:50:01 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-18 08:16:58 UTC**.
 > **Excluded Paths:** `vendor/`, `node_modules/`, `.venv/`, `venv/`, `.git/`, `__pycache__/`, `backend/data/`, `.pytest_cache/`, `dist/`, `build/`, `scratch/`
 > **Pinned Vendor Commit (`vendor/hermes-agent`):** `b777adb7918713e5786cc9d95ad5b854074f2cb6`
 
@@ -14,7 +14,7 @@
 | `.css` | 2 | 9,568 | Custom Dark / Light / Terminal Design System |
 | `.json` | 13 | 5,659 | Fixtures & Configuration |
 | `.js` | 3 | 5,452 | Vanilla ES6+ Reactive Terminal Controller & UI |
-| `.md` | 11 | 4,034 | Architecture & Strategy Documentation |
+| `.md` | 12 | 4,393 | Architecture & Strategy Documentation |
 | `.html` | 1 | 1,103 | Single Page Application DOM Structure |
 | `.ps1` | 2 | 199 | Windows PowerShell Automation |
 | `.yaml` | 1 | 32 | Manifest & Plugin Configuration |
@@ -23,7 +23,7 @@
 | `.sh` | 1 | 9 | Shell Scripts |
 | `.bat` | 1 | 8 | Batch Launchers |
 | *other* | 9 | 43,383 | Other Configuration, Assets & Dotfiles |
-| **TOTAL** | **129** | **93,180** | *Entire Humming Bird Repository* |
+| **TOTAL** | **130** | **93,539** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -2151,4 +2151,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/verify_chat_card.py` | `main` | 121 | 3 | Decompose into sub-functions |
 
 
-> **Audit Summary:** 50 Python modules inspected, 65 FastAPI endpoints registered, 115 JS functions mapped, 301 DOM IDs indexed, 22 Hermes tools registered, 93,180 total LOC indexed across 129 repository files.
+> **Audit Summary:** 50 Python modules inspected, 65 FastAPI endpoints registered, 115 JS functions mapped, 301 DOM IDs indexed, 22 Hermes tools registered, 93,539 total LOC indexed across 130 repository files.

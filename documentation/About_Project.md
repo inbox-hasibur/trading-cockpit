@@ -243,6 +243,14 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
       - **Portfolio Header Badge & Watchlist Status (Step 9):** `LIVE STOCKNOW <name> #<id>` badge with drift warning, watchlist status pills (`LIVE`, `LAST CLOSE`, `STALE`, `NO DATA`) with direct retry link, and ledger tags (`STOCKNOW RECEIPT` vs `PAPER FILL`).
       - **Hermes Chat Order Preview Card (Step 10):** Interactive chat cards rendered on `hb_place_order` previews displaying symbol, side badge, quantity, price, 0.5% fee, mode, portfolio, and cap usage breakdown with Confirm / Cancel buttons (zero typed parameters), verified receipt state, and red `live submission failed: <reason>` with guaranteed no ledger change.
 
+13. **Version 0.3 (Live Brokerage Portal Adapters — LankaBangla TradeXpress 2.0 & iBroker):**
+    - **Live Execution Milestone (First DSE Real Trade):** Executed first live DSE order on LankaBangla TradeXpress 2.0 (`https://itrade.lbsbd.com`) for Client Code **`H9210`**: `Buy BANKASIA'PB : 9 @ 17.90 : Filled` at `14:01:35` (Post-Closing session).
+    - **Verified Automation Blueprint:** Complete site map, DOM hierarchy, and passive Playwright adapter architecture documented in [`documentation/TRADEXPRESS_SITE_MAP.md`](TRADEXPRESS_SITE_MAP.md).
+    - **Single-Session Anti-Ban & Auth Rule:** Manual login strictly at 09:55 AM by operator (TradeXpress locks after 3-5 failed attempts and permits only 1 active session). Zero brute-force login automation.
+    - **Passive WebSocket Ingestion:** Zero active polling or HTTP scraping on `itrade.lbsbd.com`. Attach to active operator session over CDP (`http://localhost:9222`) and passively sniff `page.on("websocket")` frames and DOM updates.
+    - **Mandatory 2-Step Execution Flow:** Form entry (`New Order - <SYMBOL>'PB`) -> Click `Buy @ <price>` -> Verification modal (`Confirm Order <SYMBOL>'PB`) -> Click green `Confirm Order` button to dispatch to DSE.
+    - **Purchasing Power & Brokerage Math:** Upfront purchasing power deducts gross order value (`350.00 -> 188.90` for 161.10 BDT). Broker commission + VAT settle via clearing into `iBroker` (`https://ibroker.lbsbd.com/Home`).
+
 ---
 
 ## 5. System Architecture & Tech Stack
@@ -529,7 +537,8 @@ trading-cockpit/
 │   ├── Backlog.md                           # Implementation roadmap, sprint plans & backlog items
 │   ├── CODEBASE_MAP.md                      # Auto-generated AST map, LOC metrics & endpoint radar
 │   ├── MVP_VERIFICATION.md                  # Structured end-to-end MVP verification plan & test results
-│   └── STOCKNOW_SITE_MAP.md                 # StockNow site map, write contracts & unauthenticated curl audit
+│   ├── STOCKNOW_SITE_MAP.md                 # StockNow site map, write contracts & unauthenticated curl audit
+│   └── TRADEXPRESS_SITE_MAP.md              # LankaBangla TradeXpress 2.0 & iBroker site map & execution blueprint
 │
 ├── frontend/                                # Cockpit Single-Page Interface
 │   ├── app.js                               # Reactive state manager, DOM updater & telemetry polling
