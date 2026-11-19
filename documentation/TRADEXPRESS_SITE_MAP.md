@@ -173,17 +173,21 @@ flowchart TD
 ```
 
 ### 5.1 Step 1: Input Panel (`New Order - <SYMBOL>'PB (DSE)`)
-1. **Side Selection:** Select `Buy` (Green) or `Sell` (Red) sub-tab.
+1. **Side Toggle Switch:** Uses a prominent `Buy` (Green) / `Sell` (Red) toggle switch located at the top-left of the order ticket.
 2. **Buying Power Verification:** Extract `Buying Power: ৳ XXX.XX`. Ensure `Order Value <= Buying Power`.
-3. **Market Depth Check:** Read top 5 Bid/Offer rows. Verify quote is within ±1.5% of LTP (Anti-Typo Price Sanity Guard).
+3. **Market Depth & Circuit Limits:**
+   - Displays exchange `Min / Max` price limits (circuit breaker floor & ceiling).
+   - Read top 5 Bid/Offer rows (Order Book depth). Verify quote is within acceptable range and within ±1.5% of LTP (Anti-Typo Price Sanity Guard).
 4. **Parameter Entry:**
    - `Quantity`: Enter integer share count (e.g. `9`).
    - `Price`: Enter decimal price (e.g. `17.90`).
 5. **Real-time Calculations Displayed:**
    - `Order Value` = `Quantity × Price` (`9 × 17.90 = ৳161.10`)
-   - `Commission + VAT` = Estimated broker fee (~0.40% to 0.50% + 15% VAT on fee)
-   - `Net Value` = Estimated total debit/credit
-6. **Submit Trigger:** Click primary action button labeled `Buy @ 17.90` (or `Sell @ 17.90`).
+   - `Commission + VAT` = Calculated broker fee and 15% VAT on commission
+   - `Net Value` = Final estimated total debit (Buy) or credit (Sell)
+6. **Bottom-Right Navigation Tabs:**
+   - The workspace bottom-right region contains 4 operational tabs: `Order List` | `Portfolio` | `Account Summary` | `Order Search`.
+7. **Submit Trigger:** Click primary action button labeled `Buy @ 17.90` (or `Sell @ 17.90`).
 
 ### 5.2 Step 2: Confirmation Panel (`Confirm Order <SYMBOL>'PB`)
 Clicking `Buy @ <price>` dynamically updates the order widget into the **`Confirm Order`** review overlay:
@@ -274,18 +278,24 @@ The DirectFN NetPlus HTML5 interface uses a component-based layout. Key stable s
 | Market Status Badge | Top header session indicator | `div:has-text("DSE") >> text=/(OPEN|CLOSED)/i` |
 | Operator Cash A/C | Header account indicator | `text="H9210"` |
 | Buying Power Display | Real-time cash available | `xpath=//*[contains(text(), 'Buying Power')]/following-sibling::*` |
-| Order Widget Tab Buy | Switch to Buy side | `button:has-text("Buy"), div[role="tab"]:has-text("Buy")` |
-| Order Widget Tab Sell | Switch to Sell side | `button:has-text("Sell"), div[role="tab"]:has-text("Sell")` |
+| Order Toggle Buy / Sell | Top-left Side toggle switch | `button:has-text("Buy"), div[role="tab"]:has-text("Buy"), input[type="radio"][value*="buy"]` |
+| Circuit Limits (Min/Max)| Floor / ceiling price limits | `xpath=//*[contains(text(), 'Min') or contains(text(), 'Max')]` |
+| Bid / Offer Depth | Top 5 bids / offers table | `table:has-text("Bid"), table:has-text("Offer")` |
 | Symbol Input Field | Instrument code input | `input[placeholder*="Symbol"], input[name*="symbol"]` |
 | Quantity Input Field | Share volume input | `input[placeholder*="Qty"], input[name*="quantity"]` |
 | Price Input Field | Limit price input | `input[placeholder*="Price"], input[name*="price"]` |
 | Order Value Summary | Calculated gross value | `xpath=//*[contains(text(), 'Order Value')]/following-sibling::*` |
+| Commission + VAT | Calculated broker fee & tax | `xpath=//*[contains(text(), 'Commission')]/following-sibling::*` |
+| Net Value Summary | Final calculated net amount | `xpath=//*[contains(text(), 'Net Value')]/following-sibling::*` |
 | Initial Buy Button | Step 1 commit button | `button:has-text("Buy @")` |
 | Confirm Order View | Step 2 modal container | `div:has-text("Confirm Order")` |
 | Confirm Order Button| Final execution dispatch | `button:has-text("Confirm Order"), button.btn-confirm` |
 | Cancel Order Button | Abort confirmation | `button:has-text("Cancel")` |
 | Success Toast | Execution confirmation | `div[class*="toast"], div[class*="notification"]:has-text("Filled")` |
+| Bottom-Right Tabs | Operational switchers | `div[role="tablist"]:has-text("Order List"), text=/(Order List|Portfolio|Account Summary|Order Search)/` |
 | Order List Table | Bottom-right executions | `table:has-text("Order Id"), div[role="grid"]:has-text("Filled")` |
+| `S2` Badge & Tooltip | Market Watch category flag | `span:has-text("S2"), [title*="S2"], [data-tooltip*="S2"]` *(must be inspected passively via DOM tooltip before hardcoding its meaning)* |
+
 
 ---
 

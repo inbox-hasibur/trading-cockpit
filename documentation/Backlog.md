@@ -354,45 +354,55 @@ Reconciliation of all audit findings and architectural items from historical MVP
 
 ---
 
-### 🎛️ Sprint 4: Custom Rule Builder UI, Conversational Control & Telegram Bot
+### 🛡️ Sprint 4 (Active): TradeXpress Passive CDP Sniffer, Decoupled Broker Interface & DSE Schedule Lock
 
-- [ ] **Interactive Custom Rule Builder UI:**
-  - Visual sliders and inputs per company and per sector: customize Tier 1/2/3 profit percentages, slice percentages (e.g., 20% / 30% / 50%), pullback drop threshold, and per-company `Buy %` limits.
-  - Favorite company selector & Quarantine review/release toggle from the Cockpit UI.
-- [ ] **Sector Profile Customization:**
-  - Dedicated stability settings for `BANK`, `INSURANCE`, and `MUTUAL_FUND` vs. custom renowned stocks.
-- [ ] **Telegram Bot Command Center (`telegram_bot.py`):**
-  - Real-time push alerts on every automated Buy, Sequential Tier Sell, 50/50 Pullback Split, or Crash Quarantine event.
-  - Interactive Telegram commands (`/status`, `/buckets`, `/today`, `/pause`, `/resume`, and natural language Bangla/English chat).
-- [ ] **Hermes Agent Action Proposals:**
-  - Allow the user to tell the Side-Chat or Telegram Bot (e.g., *"GP-er buy % 25% kore dao"* or *"Ajke bank sector pause rakho"*) with a 1-click confirmation preview.
+- [x] **Exact GSC / L1 / L2 Definitions Lock:**
+  - Updated `plugins/humming_bird/skills/gsc_tiers/SKILL.md` (v1.2.0) with explicit tier profiles:
+    - **GSC:** Giant Stable Companies master observation pool (survival guarantee, not current profit; `WAIT_OBSERVATION_ONLY`, no blind auto-buy).
+    - **L1 (`GSC_L1`):** Safe primary active buy list (Priority #1), subset of GSC with multi-week upward profitability curves.
+    - **L2 (`GSC_L2`):** Risky short-term swing/scalp list (Priority #2), **NOT necessarily GSC** — vetted non-Z Category A/B stocks with early green momentum. Smaller position caps and tighter risk guards.
+    - **Hard Exclusions:** Strictly blacklist `Z`-category and `SPOT` settlement stocks.
+- [x] **TradeXpress Passive Security Skill (`tradexpress_passive_safety/SKILL.md`):**
+  - Enforced 100% passive network sniffing via CDP (`connect_over_cdp("http://127.0.0.1:9222")`).
+  - Zero automated login, zero HTTP scraping, zero page reloads on LankaBangla portals.
+  - Two-Stage Graduation Gate: Stage 1 (`SHADOW_DUMMY`) with 0 real BDT risk vs Stage 2 (`TRADEXPRESS_LIVE`) with mandatory 2-step Limit confirmation.
+  - Verified DSE Schedule: `10:00–14:00` Continuous, `14:00–14:10` Post-Closing exact LTP only, `14:10` Market Close.
+  - Self-learning boundary protecting immutable kernel invariants (No-Loss, T+2, Z/SPOT, Daily Caps, Kill Switch).
+- [x] **Agent Operating Guidelines (`AGENTS.md`):**
+  - Added dedicated TradeXpress Passive-Only & Strategy Lock section for all coding agents.
+- [x] **Read-Only Passive CDP Inspector Script (`scripts/inspect_tradexpress_passive.py`):**
+  - Non-intrusive probe attaching to active `itrade.lbsbd.com` tab over CDP (port 9222).
+  - Passive WebSocket frame listener (`page.on("websocket")`) with secret redaction (`SecretGuard.redact_secrets`).
+  - Read-only DOM snapshot of Market Watch headers, watchlist tabs, order controls, and `S2` badge tooltips.
+- [ ] **Decoupled Broker Adapter Interface (`backend/adapters/`):**
+  - Modular broker abstraction allowing plug-and-play switching between StockNow virtual and TradeXpress live/shadow.
+- [ ] **DSE Schedule & Commission Math Realignment:**
+  - Align market scheduler to official DSE hours (`10:00–14:10`) and incorporate round-trip Commission + 15% VAT into net profit calculations.
+- [ ] **Strict `PUBLIC` + Category `A`/`B` Order Filter:**
+  - In-kernel preflight rejection of `SPOT` settlement and `Z`-category instruments.
 
 ---
 
-## 🧠 Version 0.2 — Company-Specific Models, Auto-Scanner & Full Cockpit Telemetry
+### 🧪 Sprint 5: Live-Data Dummy Mirror Simulator & Post-Market Self-Learning Loop
 
-- [ ] **Per-Company Statistical / ML Curve Models:**
-  - Train lightweight company-specific models (Support/Resistance bands, Z-score mean reversion, Linear Regression slope) tailored to the historical price character of each renowned DSE company (`BANKASIA`, `BXPHARMA`, `SQURPHARMA`, `GP`, `EXIM1STMF`, etc.).
-- [ ] **Automated DSE Curve-Stability Scanner:**
-  - Scan DSE stocks to automatically discover and rank companies showing smooth, repeatable, low-crash oscillation curves for watchlist expansion.
-- [ ] **Full Cockpit Accounting & BO Telemetry:**
-  - Historical daily equity curve snapshots, deposits/withdrawals tracking, dividend adjustments, and BO account annual charge / brokerage commission analytics across Today, Weekly, Monthly, and Yearly views.
-- [ ] **Cloud / Always-On Deployment Pack:**
-  - Docker + Systemd setup for $0 Oracle Always-Free VM or ultra-cheap Linux VPS deployment.
+- [ ] **Live-Data Dummy Mirror Simulator (`SHADOW_DUMMY` Mode):**
+  - Ingest live passively sniffed TradeXpress quotes and Level-2 Bid/Offer order depth.
+  - Simulate realistic limit fills against real exchange depth with 0 real BDT capital risk.
+- [ ] **Dual Manual & Hermes Control Harness:**
+  - Support operator manual order tickets and conversational Hermes order preview cards executing in the mirror simulator.
+- [ ] **Post-Market Hermes Reflection Loop:**
+  - Automated post-14:10 reflection cycle analyzing daily signal performance, execution slippage, and canary theses.
+  - Self-learning memory updates in `memories/MEMORY.md` and proposed allocation refinements.
 
 ---
 
-## 🏦 Version 0.3 — Live Brokerage Portal Adapters (LankaBangla TradeXpress & iBroker / Shanta)
+### 🏦 Sprint 6: Production Graduation to Live TradeXpress 2-Step Execution & iBroker EOD Audit
 
-- [x] **TradeXpress 2.0 & iBroker Site Map & Automated Execution Blueprint:**
-  - Completed exact DOM topology, WebSocket frame ingestion blueprint, and 2-step execution rules in [`documentation/TRADEXPRESS_SITE_MAP.md`](TRADEXPRESS_SITE_MAP.md).
-  - First real live DSE trade verified and filled: **`Buy BANKASIA'PB : 9 @ 17.90 : Filled`** at `14:01:35` (Post-Closing session) on LankaBangla Client Code **`H9210`**.
-  - Documented manual 09:55 AM login requirement (zero brute-forcing, single active session lock) and 100% passive WebSocket/DOM ingestion rules.
-- [ ] **Plug-and-Play Broker Adapter Interface (`backend/adapters/tradexpress_adapter.py`):**
-  - Build passive Playwright CDP adapter attaching to the operator's active TradeXpress session (`playwright.chromium.connect_over_cdp("http://localhost:9222")`).
-  - Automated 2-step execution harness (`New Order - <SYMBOL>'PB` -> verify `Order Value` & depth -> click `Buy @ price` -> verify `Confirm Order` modal -> click `Confirm Order`).
-  - Safety preflight: strict `PUBLIC` settlement (never `SPOT`), Category `A`/`B` only (never `Z`), `Limit` order only, `TIF == DAY`.
-- [ ] **Live BO Account & Settled Balance Reconciliation (`ibroker.lbsbd.com`):**
-  - Daily reconciliation between iBroker `Portfolio Live` (`Total Qty`, `Saleable Qty`, `AVG Price`, `Unrealized Gain/Loss`) and Humming Bird SQLite ledger.
-- [ ] **Human-in-the-Loop Execution Guardrails:**
-  - Mandatory 2-step Hermes preview cards, daily max-spend caps (`daily_budget_bdt`), anti-typo price guard (±1.5% LTP), and instant global kill-switch.
+- [ ] **Production TradeXpress 2-Step Executor (`TRADEXPRESS_LIVE` Mode):**
+  - Operator-permissioned graduation gate enabling live order dispatch to DSE.
+  - Automated 2-step execution: `New Order - <SYMBOL>'PB` -> read-back verification -> `Confirm Order` modal click.
+  - High-priority fill verification from top toast (`Filled`) and `Order List` table.
+- [ ] **iBroker (`ibroker.lbsbd.com`) EOD Reconciliation:**
+  - Daily reconciliation sync between iBroker `Portfolio Live` (`Total Qty`, `Saleable Qty`, `AVG Price`, `Unrealized Gain/Loss`) and local SQLite ledger.
+- [ ] **Operator Guardrails & Fail-Safe Circuit Breaker:**
+  - Enforce per-order and daily BDT budget caps, anti-typo price sanity guard (±1.5% LTP), and instant kill switch.

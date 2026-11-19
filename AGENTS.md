@@ -21,4 +21,14 @@
 - Advisory Rules Boundary: Rules taught in chat are advisory until applied through hb_caps_set / hb_set_allocation.
 - Enforced Risk Limits: max_order_bdt, max_symbol_bdt, daily_budget_bdt (default 4000), max_orders_per_day, and global kill switch are strictly enforced in the kernel across AutoTrader and Hermes.
 
+## TradeXpress Passive-Only & Strategy Lock
+- Passive Network Sniffing Only: Capture live quotes and market depth strictly passively via local CDP (`connect_over_cdp("http://127.0.0.1:9222")`) from operator's manually logged-in session. NEVER automate login, password submission, or send active HTTP/scraping/reload requests to `itrade.lbsbd.com` or `ibroker.lbsbd.com`.
+- GSC / L1 / L2 Strategy Hierarchy:
+  - GSC: Master observation pool of old, massive, stable companies (survival guarantee, not current profit; observation only, do not auto-buy without promotion).
+  - GSC_L1: Safe primary active buy list (Priority #1), subset of GSC with multi-week upward profitability curves.
+  - GSC_L2: Risky short-term swing/scalp list (Priority #2), vetted non-Z Category A/B companies with early green momentum. Enforce smaller position caps and tighter risk guards.
+- Hard Exchange Filters: NEVER buy Z-category or SPOT settlement stocks.
+- Verified DSE Schedule: Sunday–Thursday (`10:00–14:00` Continuous, `14:00–14:10` Post-Closing exact LTP only, `14:10` Market Close).
+- Two-Stage Graduation: Stage 1 (`SHADOW_DUMMY`) feeds local simulator with 0 real BDT risk; Stage 2 (`TRADEXPRESS_LIVE`) requires explicit operator graduation with mandatory 2-step limit order confirmation (`New Order` -> read-back verify -> `Confirm Order`).
+
 

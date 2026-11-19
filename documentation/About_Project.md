@@ -25,7 +25,7 @@ Humming Bird solves this by replicating the intuition of a disciplined human tra
 | Parameter | DSE Rule / Constraint | Humming Bird Engineering Solution |
 | :--- | :--- | :--- |
 | **Timezone & Calendar** | `Asia/Dhaka` (UTC+6). Trading days: **Sunday – Thursday** (Friday & Saturday closed). | Working-session calendar engine that skips weekends and configured DSE holidays. |
-| **Trading Hours** | **10:00 AM – 2:30 PM** BD Time. | Automated scheduler and tick engine scoped to active DSE market hours (with a manual/demo clock override for off-hours testing). |
+| **Trading Hours** | **10:00 AM – 02:00 PM** (Continuous Trading) + **02:00 PM – 02:10 PM** (Post-Closing Session, exact closing price only). Market closes at **02:10 PM** BD Time (`Asia/Dhaka`). | Automated scheduler and tick engine scoped strictly to active DSE market hours (`10:00–14:10`) with verified post-closing limit execution rules. |
 | **Settlement Lock** | **T+2 Working Sessions**. Shares bought on Day $T$ cannot be sold until Day $T+2$. | **3-Bucket Rolling Capital Pipeline (Buckets A, B, C)** so matured inventory becomes available for sale on a rolling daily basis. |
 | **Brokerage Hurdle** | **~1.00% Total Fee** (~0.5% on Buy + ~0.5% on Sell). | Exact decimal cost-basis math: break-even requires $\ge 1.005\%$ gross price gain. All profit tiers evaluate **True Net Profit %** after deducting both buy and sell fees. |
 | **API Availability** | No official retail REST API for DSE order execution. | **Modular Adapter Architecture** using Async **Playwright** (Persistent Context + Network/XHR Interception + DOM Automation) instead of brittle legacy Selenium. |
@@ -45,21 +45,25 @@ A cheap price is dangerous if the company itself is collapsing.
 - The stock is immediately flagged as **`CRASH_QUARANTINE`**, and **all new buying is strictly blocked** until the curve stabilizes and is reviewed.
 
 ### 3.3 Sector Intelligence & 3-Tier Watchlist Classification
-Not all DSE companies behave the same way. Humming Bird groups stocks into three structured tiers based on the operator's real StockNow workflow:
+Not all DSE companies behave the same way. Humming Bird groups stocks into three structured tiers based on the operator's real trading workflow:
 
 1. **Big Giant Stable Companies (GSC — Master Observation Pool):**
-   - Historically established market leaders with solid fundamentals, decades of operational history, and strong institutional backing (`ACI`, `BANKASIA`, `DHAKABANK`, `FUWANGCER`, `IFIC`, `NPOLYMER`, `PRIMEBANK`, `PUBALIBANK`, `SPCERAMICS`).
+   - Historically established market leaders with solid fundamentals, decades of operational history, and strong institutional backing (`WALTONHIL`, `GP`, `ROBI`, `BANKASIA`, `SQURPHARMA`, `ACI`, `DHAKABANK`, `IFIC`, `PUBALIBANK`).
    - *Key Concept:* Long-term survival stability, NOT that the stock is currently on a profit curve. Being in `GSC` means the risk of vanishing overnight is virtually non-existent.
    - *Trading Rule:* Hermes continuously monitors and analyzes all `GSC` companies to learn their curve character, but `AutoTrader` **skips auto-buying** from base `GSC` (`WAIT_OBSERVATION_ONLY`) unless the stock is promoted to `GSC_L1` or `GSC_L2`.
-2. **GSC Upper Trends L1 (GSC_L1 — Primary Active Trading List):**
-   - GSC companies that were previously in a downward curve and are now visibly turning upward on their genuine company recovery curve (`BANKASIA`, `MATINSPINN`).
-   - *Key Concept:* Filters out 1-day market noise (red today, green tomorrow). Focuses on genuine multi-week/multi-month comeback recovery waves.
+2. **GSC Upper Trends L1 (GSC_L1 — Safe Primary Active Buy List, Priority #1):**
+   - Subset of **GSC** companies whose multi-week and long-term macro curve is visibly turning upward into a genuine company recovery wave (`BANKASIA`, `MATINSPINN`).
+   - *Key Concept:* Filters out 1-day market noise (red today, green tomorrow). Short 1-day fluctuations may dip temporarily, but recovery into net profit within T+2 or a few market sessions is high-confidence.
    - *Trading Rule:* Given **Priority #1** by `AutoTrader` when allocating available buying capital.
-3. **GSC Upper Trends L2 (GSC_L2 — Secondary Active Trading List / Fluctuation Scalp):**
-   - GSC companies whose macro curve is not yet fully stable, but are turning green in short-term fluctuation (`DHAKABANK`).
-   - *Key Concept:* Traded like HFT/swing scalps: enter as green momentum starts and sell while still green to profit from short-term market oscillation waves.
+3. **GSC Upper Trends L2 (GSC_L2 — Risky Short-Term Swing / Fluctuation Scalp List, Priority #2):**
+   - **NOT necessarily GSC** — vetted non-Z (`PUBLIC`, Category A/B) companies emerging from red into early green fluctuation momentum (`DHAKABANK`).
+   - *Key Concept:* Traded like high-frequency / swing fluctuation scalps: enter early on initial green momentum coming out of support, and sell in tiered slices on average or modest green gain before momentum fades.
+   - *Risk Posture:* Inherently higher risk than L1 due to shorter holding horizon and less macro stability. Strictly governed by a smaller position cap and tighter preflight risk guard.
    - *Trading Rule:* Given **Priority #2** by `AutoTrader` when evaluating buy candidates.
-4. **Custom Per-Company Capital Allocation (`Buy %`):**
+4. **Hard Exchange Exclusions (Non-Negotiable):**
+   - **NEVER BUY Z-CATEGORY:** Distressed, non-compliant, non-dividend junk companies strictly blacklisted.
+   - **NEVER BUY SPOT SETTLEMENT:** Only `PUBLIC` settlement permitted (no T+0 immediate cash freezes).
+5. **Custom Per-Company Capital Allocation (`Buy %`):**
    - The user assigns exact capital allocation percentages (e.g., `GP: 25%`, `SQURPHARMA: 25%`, `BANKASIA: 20%`) directly from the Cockpit UI or by instructing Hermes.
 
 ### 3.4 Three-Bucket Rolling T+2 Pipeline (`t2_ledger.py`)
@@ -250,6 +254,12 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
     - **Passive WebSocket Ingestion:** Zero active polling or HTTP scraping on `itrade.lbsbd.com`. Attach to active operator session over CDP (`http://localhost:9222`) and passively sniff `page.on("websocket")` frames and DOM updates.
     - **Mandatory 2-Step Execution Flow:** Form entry (`New Order - <SYMBOL>'PB`) -> Click `Buy @ <price>` -> Verification modal (`Confirm Order <SYMBOL>'PB`) -> Click green `Confirm Order` button to dispatch to DSE.
     - **Purchasing Power & Brokerage Math:** Upfront purchasing power deducts gross order value (`350.00 -> 188.90` for 161.10 BDT). Broker commission + VAT settle via clearing into `iBroker` (`https://ibroker.lbsbd.com/Home`).
+
+14. **The LankaBangla TradeXpress Architectural Pivot:**
+    - **Architecture Flow:** `TradeXpress Passive Feed (itrade.lbsbd.com)` -> `Local Dummy Cockpit Simulator (AutoTrader + Hermes Self-Learning + Manual Control)` -> `Live TradeXpress 2-Step Execution`.
+    - **Stage 1 (Passive Ingestion to Local Simulator):** Instead of executing immediately against real broker capital, live market prices and Level-2 Bid/Offer order depth are passively tapped via CDP WebSocket listeners from the operator's manually logged-in session (`connect_over_cdp("http://127.0.0.1:9222")`). This real-time market reality feeds our local Humming Bird Dummy Cockpit simulator.
+    - **Simulator Orchestration:** AutoTrader, Hermes assistant, and operator manual controls test and refine signals, sequential sells, and 50/50 pullbacks in the local simulator with zero BDT risk, while Hermes continuously learns from outcomes and operator interventions in post-market reflection loops.
+    - **Stage 2 (Graduation to 2-Step Real Execution):** Once the operator graduates the strategy, validated orders execute against LankaBangla TradeXpress via strict 2-step Limit confirmation (`New Order` -> read-back verify -> `Confirm Order`) on DSE Public Board (`'PB`) with Commission + VAT net profit verification.
 
 ---
 
@@ -563,14 +573,17 @@ trading-cockpit/
 │           │   └── SKILL.md                 # GSC master observation, L1 turnaround, L2 swing rally tiers
 │           ├── sequential_no_regret/
 │           │   └── SKILL.md                 # Multi-tier profit locking, 50/50 pullback & T+2 capital rolling
-│           └── stocknow_dse_quirks/
-│               └── SKILL.md                 # Virtual portfolio #164580 constraints & DSE session rules
+│           ├── stocknow_dse_quirks/
+│           │   └── SKILL.md                 # Virtual portfolio #164580 constraints & DSE session rules
+│           └── tradexpress_passive_safety/
+│               └── SKILL.md                 # Passive-only CDP anti-ban security & two-stage graduation gate
 │
 ├── scripts/                                 # Administrative & Automation Scripts
 │   ├── backup_db.py                         # Atomic SQLite database backup utility (auto-prune to 5)
 │   ├── check_dse_market_open.py             # DSE trading hours & session validator
 │   ├── check_heartbeat.py                   # Heartbeat verification & dead-man alert probe
 │   ├── generate_code_map.py                 # Zero-dependency AST inspection & Codebase Map generator
+│   ├── inspect_tradexpress_passive.py       # Read-only passive CDP inspector for itrade.lbsbd.com
 │   ├── install_autostart.ps1                # Windows Task Scheduler logon autostart installer with restart
 │   ├── install_plugin.ps1                   # Hermes plugin installation & linking script
 │   ├── preflight.py                         # Pre-flight environment, auth, ledger & safety check suite

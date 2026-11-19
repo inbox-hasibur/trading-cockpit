@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-18 08:16:58 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-19 17:10:31 UTC**.
 > **Excluded Paths:** `vendor/`, `node_modules/`, `.venv/`, `venv/`, `.git/`, `__pycache__/`, `backend/data/`, `.pytest_cache/`, `dist/`, `build/`, `scratch/`
 > **Pinned Vendor Commit (`vendor/hermes-agent`):** `b777adb7918713e5786cc9d95ad5b854074f2cb6`
 
@@ -10,11 +10,11 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 82 | 23,709 | Python Core Kernel, Engine, Tests & Plugins |
+| `.py` | 83 | 24,002 | Python Core Kernel, Engine, Tests & Plugins |
 | `.css` | 2 | 9,568 | Custom Dark / Light / Terminal Design System |
 | `.json` | 13 | 5,659 | Fixtures & Configuration |
 | `.js` | 3 | 5,452 | Vanilla ES6+ Reactive Terminal Controller & UI |
-| `.md` | 12 | 4,393 | Architecture & Strategy Documentation |
+| `.md` | 13 | 4,512 | Architecture & Strategy Documentation |
 | `.html` | 1 | 1,103 | Single Page Application DOM Structure |
 | `.ps1` | 2 | 199 | Windows PowerShell Automation |
 | `.yaml` | 1 | 32 | Manifest & Plugin Configuration |
@@ -23,7 +23,7 @@
 | `.sh` | 1 | 9 | Shell Scripts |
 | `.bat` | 1 | 8 | Batch Launchers |
 | *other* | 9 | 43,383 | Other Configuration, Assets & Dotfiles |
-| **TOTAL** | **130** | **93,539** | *Entire Humming Bird Repository* |
+| **TOTAL** | **132** | **93,951** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -77,6 +77,7 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 | [`scripts/check_dse_market_open.py`](/scripts/check_dse_market_open.py) | *Independent Core Module* |
 | [`scripts/check_heartbeat.py`](/scripts/check_heartbeat.py) | `backend.config.DEFAULT_DATABASE_URL`, `backend.config.Settings`, `backend.database.Database`, `backend.engine.heartbeat.check_dead_man_switch`, `backend.engine.heartbeat.record_system_heartbeat` |
 | [`scripts/generate_code_map.py`](/scripts/generate_code_map.py) | *Independent Core Module* |
+| [`scripts/inspect_tradexpress_passive.py`](/scripts/inspect_tradexpress_passive.py) | `backend.secret_guard.SecretGuard` |
 | [`scripts/preflight.py`](/scripts/preflight.py) | `backend.adapters.stocknow_client.get_safe_profile_dir`, `backend.config.DEFAULT_DATABASE_URL`, `backend.config.Settings`, `backend.config.test_portfolio_configured`, `backend.database.Database`, `backend.database.PortfolioState`, `backend.database.TaxLot`, `backend.engine.t2_ledger.assert_ledger`, `backend.engine.t2_ledger.bucket_balances`, `backend.hermes_bridge.get_hermes_dir`, `backend.hermes_bridge.read_hermes_state`, `plugins.humming_bird._TOOLS`, `scripts.backup_db.backup_database`, `scripts.backup_db.get_default_backup_dir`, `scripts.backup_db.get_default_db_path` |
 | [`scripts/restore_db.py`](/scripts/restore_db.py) | `scripts.backup_db.backup_database`, `scripts.backup_db.get_default_backup_dir`, `scripts.backup_db.get_default_db_path` |
 | [`scripts/verify_chat_card.py`](/scripts/verify_chat_card.py) | *Independent Core Module* |
@@ -1285,6 +1286,21 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 
 ---
 
+### 📄 [`scripts/inspect_tradexpress_passive.py`](/scripts/inspect_tradexpress_passive.py)
+
+#### Standalone Functions
+
+| Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `run_passive_probe` | `L29–L247` | `(cdp_url: str, duration: int, output...)` | `dict` | Connect to existing browser over CDP and passively sniff TradeXpress. | `ZoneInfo`, `append`, `async_playwright`, `connect_over_cdp` |
+| `on_web_socket` | `L80–L104` | `(ws...)` | — | — | `on`, `redact_secrets` |
+| `on_frame_received` | `L83–L102` | `(payload...)` | — | — | `ZoneInfo`, `append`, `b64encode`, `decode` |
+| `on_cdp_ws_frame` | `L113–L130` | `(params: dict...)` | — | — | `ZoneInfo`, `append`, `get`, `isoformat` |
+| `main` | `L250–L273` | `(...)` | — | — | `ArgumentParser`, `Path`, `add_argument`, `parse_args` |
+
+
+---
+
 ### 📄 [`scripts/preflight.py`](/scripts/preflight.py)
 
 #### Classes & Methods
@@ -2142,6 +2158,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `generate_markdown` | 216 | 6 | Decompose into sub-functions |
 | `scripts/generate_code_map.py` | `visit_Call` | 10 | 4 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
+| `scripts/inspect_tradexpress_passive.py` | `run_passive_probe` | 219 | 4 | Decompose into sub-functions |
 | `scripts/preflight.py` | `check_gateway` | 18 | 5 | Acceptable; well-scoped logic |
 | `scripts/preflight.py` | `check_kernel_token` | 20 | 5 | Acceptable; well-scoped logic |
 | `scripts/preflight.py` | `check_stocknow_session` | 69 | 5 | Acceptable; well-scoped logic |
@@ -2151,4 +2168,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/verify_chat_card.py` | `main` | 121 | 3 | Decompose into sub-functions |
 
 
-> **Audit Summary:** 50 Python modules inspected, 65 FastAPI endpoints registered, 115 JS functions mapped, 301 DOM IDs indexed, 22 Hermes tools registered, 93,539 total LOC indexed across 130 repository files.
+> **Audit Summary:** 51 Python modules inspected, 65 FastAPI endpoints registered, 115 JS functions mapped, 301 DOM IDs indexed, 22 Hermes tools registered, 93,951 total LOC indexed across 132 repository files.

@@ -116,6 +116,22 @@ def test_plugin_registration():
     ctx.register_hook.assert_called_once_with("pre_tool_call", on_pre_tool_call)
 
 
+def test_skills_registration():
+    """register(ctx) discovers and registers all 5 procedural skills."""
+    ctx = MagicMock()
+    register(ctx)
+    registered_skills = [call.kwargs["name"] for call in ctx.register_skill.call_args_list]
+    expected_skills = [
+        "canary_90_10",
+        "gsc_tiers",
+        "sequential_no_regret",
+        "stocknow_dse_quirks",
+        "tradexpress_passive_safety",
+    ]
+    for skill in expected_skills:
+        assert skill in registered_skills
+
+
 def test_schemas_structure():
     """All 18 schemas conform to JSON Schema parameter specifications."""
     schemas = [
