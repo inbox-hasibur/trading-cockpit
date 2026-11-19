@@ -43,7 +43,16 @@ async def run_passive_probe(cdp_url: str, duration: int, output_path: Path) -> d
                 "  chrome.exe --remote-debugging-port=9222 --user-data-dir=\"<path_to_profile>\"\n"
                 "Then manually log in to https://itrade.lbsbd.com and re-run this probe."
             )
-            return {"error": "CDP_CONNECTION_FAILED", "detail": str(exc)}
+            err_result = {
+                "probe_completed_at": datetime.now(ZoneInfo("Asia/Dhaka")).isoformat(),
+                "error": "CDP_CONNECTION_FAILED",
+                "detail": str(exc),
+                "instruction": "Launch Chrome with: chrome.exe --remote-debugging-port=9222 --user-data-dir=\"<path_to_profile>\"",
+            }
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(err_result, f, indent=2, ensure_ascii=False)
+            return err_result
 
         # Scan open pages across all contexts
         target_page = None
@@ -65,11 +74,17 @@ async def run_passive_probe(cdp_url: str, duration: int, output_path: Path) -> d
                 f"  Open URLs: {open_urls}\n"
                 "Please navigate and log in to https://itrade.lbsbd.com in the debugging browser window."
             )
-            return {
+            not_found_result = {
+                "probe_completed_at": datetime.now(ZoneInfo("Asia/Dhaka")).isoformat(),
                 "error": "TRADEXPRESS_TAB_NOT_FOUND",
                 "open_tabs_count": len(open_urls),
                 "open_urls": [SecretGuard.redact_secrets(u) for u in open_urls],
+                "instruction": "Open https://itrade.lbsbd.com in the CDP browser tab and log in.",
             }
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(not_found_result, f, indent=2, ensure_ascii=False)
+            return not_found_result
 
         print(f"[CDP Probe] Found active TradeXpress tab: {SecretGuard.redact_secrets(target_page.url)}")
         print(f"[CDP Probe] Listening passively to WebSocket frames for {duration} seconds (0 active requests)...")
