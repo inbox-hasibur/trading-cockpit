@@ -350,7 +350,7 @@ Reconciliation of all audit findings and architectural items from historical MVP
 | **5. Unauthenticated StockNow DOM failure silently defaults to Paper mode** | MEDIUM | **FIXED** | Zero paper fallback in live mode. `BrowserTransport` and `ApiTransport` in `backend/adapters/stocknow_executor.py` raise `NotAuthenticatedExecutionError` on missing or expired tokens, triggering checkpoint rollback. Verified by `tests/test_stocknow_executor.py:test_logged_out_order_fails_on_browser_transport`. |
 | **6. Stale `--yolo` mention in documentation** | LOW | **FIXED** | All mentions of `--yolo` and subprocess CLI fallback purged from `hermes_bridge.py`, tests, and documentation. |
 | **7. Telegram Bot push notifications for trade alerts** | MEDIUM | **OPEN** | Autonomous real-time push alerts on automated Buy, Sequential Tier Sell, 50/50 Pullback Split, or Crash Quarantine events queued for Sprint 4. |
-| **8. Multi-Broker Live Adapters (LankaBangla / Shanta)** | MEDIUM | **IN PROGRESS** | Captured live verified site map & execution blueprint in [`documentation/TRADEXPRESS_SITE_MAP.md`](TRADEXPRESS_SITE_MAP.md) after first real DSE execution (LankaBangla Client `H9210`: `Buy BANKASIA'PB : 9 @ 17.90 : Filled` at `14:01:35`). Passive Playwright adapter architecture drafted for Version 0.3. |
+| **8. Multi-Broker Live Adapters (LankaBangla / Shanta)** | MEDIUM | **IN PROGRESS** | Captured live verified site map & execution blueprint in [`documentation/TRADEXPRESS_CONTEXT.md`](TRADEXPRESS_CONTEXT.md) after first real DSE execution (LankaBangla Client `H9210`: `Buy BANKASIA'PB : 9 @ 17.90 : Filled` at `14:01:35`). Passive Playwright adapter architecture drafted for Version 0.3. |
 
 ---
 

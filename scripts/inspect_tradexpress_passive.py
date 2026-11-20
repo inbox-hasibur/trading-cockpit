@@ -39,20 +39,14 @@ async def run_passive_probe(cdp_url: str, duration: int, output_path: Path) -> d
             print(
                 f"[CDP Probe] ERROR: Could not connect to Chrome DevTools Protocol at {cdp_url}.\n"
                 f"  Details: {exc}\n\n"
-                "To enable CDP, launch Google Chrome / Edge with remote debugging:\n"
-                "  chrome.exe --remote-debugging-port=9222 --user-data-dir=\"<path_to_profile>\"\n"
+                "To enable CDP, launch Google Chrome or Edge with an explicit non-default user-data-dir:\n"
+                "  msedge.exe --remote-debugging-port=9222 --user-data-dir=\"%LOCALAPPDATA%\\Microsoft\\Edge\\TradeXpressDebug\"\n"
+                "  chrome.exe --remote-debugging-port=9222 --user-data-dir=\"%LOCALAPPDATA%\\Google\\Chrome\\TradeXpressDebug\"\n\n"
+                "IMPORTANT (Chromium v136+ Rule): Chromium explicitly ignores --remote-debugging-port on\n"
+                "default profiles for security. Always specify an isolated --user-data-dir outside OneDrive.\n"
                 "Then manually log in to https://itrade.lbsbd.com and re-run this probe."
             )
-            err_result = {
-                "probe_completed_at": datetime.now(ZoneInfo("Asia/Dhaka")).isoformat(),
-                "error": "CDP_CONNECTION_FAILED",
-                "detail": str(exc),
-                "instruction": "Launch Chrome with: chrome.exe --remote-debugging-port=9222 --user-data-dir=\"<path_to_profile>\"",
-            }
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(output_path, "w", encoding="utf-8") as f:
-                json.dump(err_result, f, indent=2, ensure_ascii=False)
-            return err_result
+            return {"error": "CDP_CONNECTION_FAILED", "detail": str(exc)}
 
         # Scan open pages across all contexts
         target_page = None
@@ -74,17 +68,11 @@ async def run_passive_probe(cdp_url: str, duration: int, output_path: Path) -> d
                 f"  Open URLs: {open_urls}\n"
                 "Please navigate and log in to https://itrade.lbsbd.com in the debugging browser window."
             )
-            not_found_result = {
-                "probe_completed_at": datetime.now(ZoneInfo("Asia/Dhaka")).isoformat(),
+            return {
                 "error": "TRADEXPRESS_TAB_NOT_FOUND",
                 "open_tabs_count": len(open_urls),
                 "open_urls": [SecretGuard.redact_secrets(u) for u in open_urls],
-                "instruction": "Open https://itrade.lbsbd.com in the CDP browser tab and log in.",
             }
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(output_path, "w", encoding="utf-8") as f:
-                json.dump(not_found_result, f, indent=2, ensure_ascii=False)
-            return not_found_result
 
         print(f"[CDP Probe] Found active TradeXpress tab: {SecretGuard.redact_secrets(target_page.url)}")
         print(f"[CDP Probe] Listening passively to WebSocket frames for {duration} seconds (0 active requests)...")
@@ -148,8 +136,8 @@ async def run_passive_probe(cdp_url: str, duration: int, output_path: Path) -> d
         except Exception as cdp_err:
             print(f"[CDP Probe] Note: Direct CDP Network session attachment skipped ({cdp_err}). Using Playwright listener.")
 
-        # 3. Capture ONE read-only DOM snapshot (zero clicks, zero typing)
-        print("[CDP Probe] Capturing read-only DOM snapshot...")
+        # 3. Capture ONE read-only DOM snapshot (zero clicks, zero typing, verified Ember.js selectors)
+        print("[CDP Probe] Capturing read-only DOM snapshot (Ember.js stable attributes)...")
         dom_snapshot: dict = {}
         try:
             dom_snapshot = await target_page.evaluate(
@@ -159,12 +147,15 @@ async def run_passive_probe(cdp_url: str, duration: int, output_path: Path) -> d
                         marketWatchHeaders: [],
                         first5Rows: [],
                         watchlistTabs: [],
-                        newOrderControls: [],
-                        s2BadgeDetails: []
+                        orderTicketControls: [],
+                        portfolioSample: [],
+                        badgeDetails: []
                     };
 
-                    // Headers
-                    const headers = document.querySelectorAll('th, [role="columnheader"]');
+                    // 1. Market Watch Headers (Stable cell-id and header text)
+                    const headers = document.querySelectorAll(
+                        '#watchListContainer-8-1-1-2-cached th, [container-id="watchList"] [role="columnheader"]'
+                    );
                     headers.forEach(h => {
                         const txt = (h.innerText || '').trim();
                         if (txt && !snap.marketWatchHeaders.includes(txt)) {
@@ -172,19 +163,36 @@ async def run_passive_probe(cdp_url: str, duration: int, output_path: Path) -> d
                         }
                     });
 
-                    // First 5 table / grid rows
-                    const rows = document.querySelectorAll('tbody tr, [role="row"]');
+                    // 2. Market Watch First 5 Rows (Extracting via cell-id="dataObj.*")
+                    const rowContainers = document.querySelectorAll(
+                        '#table-8-1-1-2-cached .lazy-list-container > div, [container-id="watchList"] tbody tr'
+                    );
                     let count = 0;
-                    for (const r of rows) {
-                        const txt = (r.innerText || '').replace(/\\s+/g, ' ').trim();
-                        if (txt && count < 5) {
-                            snap.first5Rows.push(txt);
+                    for (const r of rowContainers) {
+                        const symbolEl = r.querySelector('[cell-id="dataObj.sDes"], .symbol-fore-color');
+                        const ltpEl = r.querySelector('[cell-id="dataObj.ltp"]');
+                        const chgEl = r.querySelector('[cell-id="dataObj.chg"]');
+                        const volEl = r.querySelector('[cell-id="dataObj.vol"]');
+                        const bbpEl = r.querySelector('[cell-id="dataObj.bbp"]');
+                        const bapEl = r.querySelector('[cell-id="dataObj.bap"]');
+
+                        if (symbolEl && count < 5) {
+                            snap.first5Rows.push({
+                                symbol: (symbolEl.innerText || '').trim(),
+                                ltp: ltpEl ? (ltpEl.innerText || '').trim() : '',
+                                chg: chgEl ? (chgEl.innerText || '').trim() : '',
+                                vol: volEl ? (volEl.innerText || '').trim() : '',
+                                bbp: bbpEl ? (bbpEl.innerText || '').trim() : '',
+                                bap: bapEl ? (bapEl.innerText || '').trim() : '',
+                            });
                             count++;
                         }
                     }
 
-                    // Watchlist Tabs
-                    const tabs = document.querySelectorAll('[role="tab"], .nav-tabs li, .tab-btn');
+                    // 3. Watchlist Tabs
+                    const tabs = document.querySelectorAll(
+                        '#widget-header-8-1-1-2-cached a[role="tab"], [container-id="watchList"] [role="tab"]'
+                    );
                     tabs.forEach(t => {
                         const txt = (t.innerText || '').trim();
                         if (txt && !snap.watchlistTabs.includes(txt)) {
@@ -192,35 +200,56 @@ async def run_passive_probe(cdp_url: str, duration: int, output_path: Path) -> d
                         }
                     });
 
-                    // New Order Form Controls (read-only attribute inspection)
+                    // 4. Order Ticket Controls (#order-ticket-landscape-id, read-only attributes)
                     const controls = document.querySelectorAll(
-                        'input, select, button, [role="tab"], [role="switch"]'
+                        '#order-ticket-landscape-id input, #order-ticket-landscape-id select, #order-ticket-landscape-id button'
                     );
                     controls.forEach(c => {
                         const tag = c.tagName.toLowerCase();
-                        const role = c.getAttribute('role') || '';
+                        const id = c.id || '';
                         const name = c.getAttribute('name') || '';
                         const placeholder = c.getAttribute('placeholder') || '';
-                        const text = (c.innerText || '').trim();
-                        const type = c.getAttribute('type') || '';
-                        if (placeholder || name || text) {
-                            snap.newOrderControls.push({
-                                tag, role, type, name, placeholder, text: text.slice(0, 50)
+                        const cls = c.className || '';
+                        const txt = (c.innerText || '').trim();
+                        if (id || name || placeholder || txt) {
+                            snap.orderTicketControls.push({
+                                tag, id, name, placeholder, className: cls, text: txt.slice(0, 40)
                             });
                         }
                     });
 
-                    // S2 Badge & Tooltip
-                    const s2Elements = Array.from(document.querySelectorAll('*')).filter(el => {
-                        return (el.innerText || '').trim() === 'S2' || (el.className && String(el.className).includes('s2'));
-                    });
-                    s2Elements.slice(0, 5).forEach(el => {
-                        snap.s2BadgeDetails.push({
+                    // 5. Portfolio Grid Sample (Native T+2 attributes: avaiQtyDSE, penHolding)
+                    const portRows = document.querySelectorAll(
+                        '#portfolioContainer-8-1-2-3 tbody tr, [container-tab-id="portfolio"] tbody tr'
+                    );
+                    let portCount = 0;
+                    for (const pr of portRows) {
+                        const symEl = pr.querySelector('[cell-id="symbolInfo.dSym"]');
+                        const totalEl = pr.querySelector('[cell-id="profLossQty"]');
+                        const availDseEl = pr.querySelector('[cell-id="avaiQtyDSE"]');
+                        const pendingEl = pr.querySelector('[cell-id="penHolding"]');
+                        const avgCostEl = pr.querySelector('[cell-id="avgCst"]');
+                        if (symEl && portCount < 5) {
+                            snap.portfolioSample.push({
+                                symbol: (symEl.innerText || '').trim(),
+                                totalQty: totalEl ? (totalEl.innerText || '').trim() : '',
+                                availableDseMatured: availDseEl ? (availDseEl.innerText || '').trim() : '',
+                                pendingHolding: pendingEl ? (pendingEl.innerText || '').trim() : '',
+                                avgCost: avgCostEl ? (avgCostEl.innerText || '').trim() : ''
+                            });
+                            portCount++;
+                        }
+                    }
+
+                    // 6. Badges: 52Wk High & Jump-Up Circuit Ceilings
+                    const badgeElements = document.querySelectorAll(
+                        'span.wk52-up-icon, i.icon-high-low-52, i.icon-jump-up'
+                    );
+                    badgeElements.forEach(el => {
+                        snap.badgeDetails.push({
                             tagName: el.tagName.toLowerCase(),
-                            text: (el.innerText || '').trim(),
-                            title: el.getAttribute('title') || '',
-                            tooltip: el.getAttribute('data-tooltip') || el.getAttribute('aria-label') || '',
-                            className: String(el.className || '')
+                            className: String(el.className || ''),
+                            title: el.getAttribute('title') || el.parentElement.getAttribute('title') || '',
                         });
                     });
 
@@ -242,11 +271,12 @@ async def run_passive_probe(cdp_url: str, duration: int, output_path: Path) -> d
             "websocket_frames": ws_frames[:200],  # Bound payload size
             "dom_snapshot": {
                 "market_watch_headers": dom_snapshot.get("marketWatchHeaders", []),
-                "first_5_rows": [SecretGuard.redact_secrets(r) for r in dom_snapshot.get("first5Rows", [])],
+                "first_5_rows": dom_snapshot.get("first5Rows", []),
                 "watchlist_tabs": dom_snapshot.get("watchlistTabs", []),
-                "new_order_controls_count": len(dom_snapshot.get("newOrderControls", [])),
-                "new_order_controls_sample": dom_snapshot.get("newOrderControls", [])[:30],
-                "s2_badge_details": dom_snapshot.get("s2BadgeDetails", []),
+                "order_ticket_controls_count": len(dom_snapshot.get("orderTicketControls", [])),
+                "order_ticket_controls_sample": dom_snapshot.get("orderTicketControls", [])[:30],
+                "portfolio_sample": dom_snapshot.get("portfolioSample", []),
+                "badge_details": dom_snapshot.get("badgeDetails", []),
             },
         }
 

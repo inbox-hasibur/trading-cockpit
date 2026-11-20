@@ -33,10 +33,10 @@ def check_dse_trading_hours(dt: datetime | None = None) -> tuple[bool, str]:
 
     current_time = dt.time()
     open_time = time(10, 0)
-    close_time = time(14, 30)
+    close_time = time(14, 10)
 
     if not (open_time <= current_time <= close_time):
-        return False, f"Current Dhaka time {dt.strftime('%H:%M')} is outside trading hours (10:00 to 14:30 Asia/Dhaka)."
+        return False, f"Current Dhaka time {dt.strftime('%H:%M')} is outside trading hours (10:00 to 14:10 Asia/Dhaka)."
 
     return True, "DSE market is open."
 
@@ -74,7 +74,7 @@ def on_pre_tool_call(tool_name: str, args: dict[str, Any] | None = None, **kwarg
         if not dry_run or not allow_dry_run_off_hours:
             return {
                 "action": "block",
-                "message": f"Order blocked: DSE market is closed ({reason}). Orders are strictly limited to Sun-Thu 10:00 to 14:30 Asia/Dhaka in LIVE_HOURS mode.",
+                "message": f"Order blocked: DSE market is closed ({reason}). Orders are strictly limited to Sun-Thu 10:00 to 14:10 Asia/Dhaka in LIVE_HOURS mode.",
             }
 
     # If real submit (dry_run=False), invoke Hermes built-in approval gate

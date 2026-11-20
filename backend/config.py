@@ -34,7 +34,10 @@ class Settings:
     min_buy_notional: Decimal = Decimal("100.00")
     holidays: frozenset[date] = frozenset()
     market_open: time = time(10, 0)
-    market_close: time = time(14, 30)
+    market_close: time = time(14, 10)
+    broker_commission_rate: Decimal = Decimal("0.0040")
+    broker_vat_rate: Decimal = Decimal("0.15")
+    broker_exchange_fee_rate: Decimal = Decimal("0.0005")
     bucket_anchor: date = date(2024, 1, 7)  # Fixed Sunday; not a resettable weekday.
     openrouter_api_key: str = ""
     openrouter_model: str = "xiaomi/mimo-v2.6-pro"
@@ -114,7 +117,10 @@ class Settings:
             min_buy_notional=Decimal(os.getenv("MIN_BUY_NOTIONAL", "100")),
             holidays=holidays,
             market_open=time.fromisoformat(os.getenv("MARKET_OPEN", "10:00")),
-            market_close=time.fromisoformat(os.getenv("MARKET_CLOSE", "14:30")),
+            market_close=time.fromisoformat(os.getenv("MARKET_CLOSE", "14:10")),
+            broker_commission_rate=Decimal(os.getenv("BROKER_COMMISSION_RATE", "0.0040")),
+            broker_vat_rate=Decimal(os.getenv("BROKER_VAT_RATE", "0.15")),
+            broker_exchange_fee_rate=Decimal(os.getenv("BROKER_EXCHANGE_FEE_RATE", "0.0005")),
             openrouter_api_key=os.getenv("OPENROUTER_API_KEY", "").strip(),
             openrouter_model=os.getenv("OPENROUTER_MODEL", "xiaomi/mimo-v2.6-pro").strip(),
             gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip() or os.getenv("GOOGLE_API_KEY", "").strip(),

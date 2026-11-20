@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Map & System Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-19 17:10:31 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-20 05:51:58 UTC**.
 > **Excluded Paths:** `vendor/`, `node_modules/`, `.venv/`, `venv/`, `.git/`, `__pycache__/`, `backend/data/`, `.pytest_cache/`, `dist/`, `build/`, `scratch/`
 > **Pinned Vendor Commit (`vendor/hermes-agent`):** `b777adb7918713e5786cc9d95ad5b854074f2cb6`
 
@@ -10,11 +10,11 @@
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 83 | 24,002 | Python Core Kernel, Engine, Tests & Plugins |
+| `.py` | 85 | 24,569 | Python Core Kernel, Engine, Tests & Plugins |
 | `.css` | 2 | 9,568 | Custom Dark / Light / Terminal Design System |
 | `.json` | 13 | 5,659 | Fixtures & Configuration |
 | `.js` | 3 | 5,452 | Vanilla ES6+ Reactive Terminal Controller & UI |
-| `.md` | 13 | 4,512 | Architecture & Strategy Documentation |
+| `.md` | 13 | 4,637 | Architecture & Strategy Documentation |
 | `.html` | 1 | 1,103 | Single Page Application DOM Structure |
 | `.ps1` | 2 | 199 | Windows PowerShell Automation |
 | `.yaml` | 1 | 32 | Manifest & Plugin Configuration |
@@ -23,7 +23,7 @@
 | `.sh` | 1 | 9 | Shell Scripts |
 | `.bat` | 1 | 8 | Batch Launchers |
 | *other* | 9 | 43,383 | Other Configuration, Assets & Dotfiles |
-| **TOTAL** | **132** | **93,951** | *Entire Humming Bird Repository* |
+| **TOTAL** | **134** | **94,643** | *Entire Humming Bird Repository* |
 
 ## 2. Internal Dependency & Import Graph
 
@@ -33,6 +33,7 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 | :--- | :--- |
 | [`backend/__init__.py`](/backend/__init__.py) | *Independent Core Module* |
 | [`backend/adapters/__init__.py`](/backend/adapters/__init__.py) | `backend.adapters.stocknow_adapter.StockNowAdapter`, `backend.adapters.stocknow_client.StockNowLiveClient`, `backend.adapters.stocknow_client.get_safe_profile_dir`, `backend.adapters.stocknow_market_sync.extract_quotes_from_payload`, `backend.adapters.stocknow_market_sync.extract_quotes_from_stocknow`, `backend.adapters.stocknow_market_sync.sync_live_market_to_db` |
+| [`backend/adapters/base.py`](/backend/adapters/base.py) | *Independent Core Module* |
 | [`backend/adapters/stocknow_adapter.py`](/backend/adapters/stocknow_adapter.py) | `backend.adapters.stocknow_client.get_safe_profile_dir`, `backend.adapters.stocknow_executor.get_stocknow_executor`, `backend.database.CompanyProfile`, `backend.engine.money.ZERO`, `backend.engine.money.decimal` |
 | [`backend/adapters/stocknow_api.py`](/backend/adapters/stocknow_api.py) | `backend.adapters.stocknow_write_guard.StockNowWriteGuardError`, `backend.adapters.stocknow_write_guard.verify_test_portfolio_post_guard` |
 | [`backend/adapters/stocknow_client.py`](/backend/adapters/stocknow_client.py) | `backend.secret_guard.SecretGuard`, `backend.secret_guard.redact_secrets` |
@@ -92,6 +93,45 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 ---
 
 ### 📄 [`backend/adapters/__init__.py`](/backend/adapters/__init__.py)
+
+---
+
+### 📄 [`backend/adapters/base.py`](/backend/adapters/base.py)
+
+#### Classes & Methods
+
+| Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
+| :--- | :--- | :--- | :--- | :--- |
+| `OrderBookLevel` | `L18–L20` | `object` | — | 0 |
+| `MarketQuote` | `L24–L44` | `object` | — | 0 |
+| `PortfolioHolding` | `L48–L56` | `object` | — | 0 |
+| `MarketFeedAdapter` | `L59–L70` | `ABC` | Abstract base interface for real-time market quote feeds. | 2 |
+| `BrokerOrderExecutor` | `L73–L87` | `ABC` | Abstract base interface for executing orders against a brokerage. | 1 |
+
+
+**Methods in `MarketFeedAdapter`:**
+
+| Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `get_quote` | `L63–L65` | `(self, symbol: str...)` | `MarketQuote | None` | Fetch current quote for a single symbol. | — |
+| `get_quotes` | `L68–L70` | `(self, symbols: list[str]...)` | `dict[str, MarketQuote]` | Fetch current quotes for multiple symbols. | — |
+
+
+**Methods in `BrokerOrderExecutor`:**
+
+| Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `execute_order` | `L77–L87` | `(self, symbol: str, side: str, quant...)` | `dict[str, Any]` | Execute or simulate order placement. | — |
+
+
+#### Standalone Functions
+
+| Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `to_tradexpress_symbol` | `L90–L97` | `(symbol: str, board: str='PB'...)` | `str` | Normalize internal symbol to TradeXpress backtick board format (e.g. BANKASIA`PB). | `lstrip`, `strip`, `sub`, `upper` |
+| `from_tradexpress_symbol` | `L100–L106` | `(raw_symbol: str...)` | `str` | Normalize raw TradeXpress symbol by stripping backtick or apostrophe board suffix. | `strip`, `sub`, `upper` |
+| `validate_tradexpress_order_safety` | `L109–L201` | `(*, symbol: str, side: str, quantity...)` | `tuple[bool, list[str]]` | Strict preflight safety validation for TradeXpress order execution. | `Decimal`, `append`, `len`, `strip` |
+
 
 ---
 
@@ -408,18 +448,18 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `Settings` | `L26–L138` | `object` | — | 5 |
+| `Settings` | `L26–L144` | `object` | — | 5 |
 
 
 **Methods in `Settings`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `operator_phone` | `L57–L58` | `(self...)` | `str` | — | — |
-| `stocknow_mobile` | `L61–L62` | `(self...)` | `str` | — | — |
-| `stocknow_password` | `L65–L66` | `(self...)` | `str` | — | — |
-| `__post_init__` | `L68–L92` | `(self...)` | `None` | — | `Decimal`, `ValueError`, `any`, `is_finite` |
-| `from_env` | `L95–L138` | `(cls...)` | `Settings` | — | `Decimal`, `cls`, `float`, `fromisoformat` |
+| `operator_phone` | `L60–L61` | `(self...)` | `str` | — | — |
+| `stocknow_mobile` | `L64–L65` | `(self...)` | `str` | — | — |
+| `stocknow_password` | `L68–L69` | `(self...)` | `str` | — | — |
+| `__post_init__` | `L71–L95` | `(self...)` | `None` | — | `Decimal`, `ValueError`, `any`, `is_finite` |
+| `from_env` | `L98–L144` | `(cls...)` | `Settings` | — | `Decimal`, `cls`, `float`, `fromisoformat` |
 
 
 #### Standalone Functions
@@ -427,10 +467,10 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `utc_now_iso` | `L21–L22` | `(...)` | `str` | — | `isoformat`, `now` |
-| `get_allowed_portfolios` | `L141–L158` | `(settings: Settings | None=None...)` | `tuple[str, ...]` | Returns the allowlist of authorized StockNow portfolio IDs: [LIVE, TEST]. | `append`, `from_env`, `getenv`, `strip` |
-| `get_active_target_portfolio` | `L161–L177` | `(trading_mode: str, settings: Settin...)` | `str | None` | Returns the active portfolio ID based on current trading mode: | `from_env`, `getenv`, `strip` |
-| `get_portfolio_name` | `L180–L198` | `(portfolio_id: str, settings: Settin...)` | `str` | Returns human-readable portfolio name for a given portfolio ID. | `getattr`, `getenv`, `str`, `strip` |
-| `test_portfolio_configured` | `L201–L207` | `(settings: Settings | None=None...)` | `bool` | Returns True when a portfolio id is configured for testing (can be same as live). | `bool`, `getenv`, `strip` |
+| `get_allowed_portfolios` | `L147–L164` | `(settings: Settings | None=None...)` | `tuple[str, ...]` | Returns the allowlist of authorized StockNow portfolio IDs: [LIVE, TEST]. | `append`, `from_env`, `getenv`, `strip` |
+| `get_active_target_portfolio` | `L167–L183` | `(trading_mode: str, settings: Settin...)` | `str | None` | Returns the active portfolio ID based on current trading mode: | `from_env`, `getenv`, `strip` |
+| `get_portfolio_name` | `L186–L204` | `(portfolio_id: str, settings: Settin...)` | `str` | Returns human-readable portfolio name for a given portfolio ID. | `getattr`, `getenv`, `str`, `strip` |
+| `test_portfolio_configured` | `L207–L213` | `(settings: Settings | None=None...)` | `bool` | Returns True when a portfolio id is configured for testing (can be same as live). | `bool`, `getenv`, `strip` |
 
 
 ---
@@ -620,6 +660,8 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 | `purchase_amount` | `L27–L30` | `(quantity: int, unit_price: Decimal,...)` | `tuple[Decimal, Decimal]` | — | `money` |
 | `sale_amount` | `L33–L36` | `(quantity: int, unit_price: Decimal,...)` | `tuple[Decimal, Decimal]` | — | `money` |
 | `allocated_basis` | `L39–L44` | `(remaining_basis: Decimal, remaining...)` | `Decimal` | — | `ValueError`, `money` |
+| `calculate_broker_fee_breakdown` | `L47–L68` | `(gross_amount: Decimal, *, commissio...)` | `dict[str, Decimal]` | Calculate exact gross, broker commission, VAT on commission, and exchange fees. | `Decimal`, `money`, `quantize` |
+| `round_trip_breakeven_price` | `L71–L85` | `(buy_price: Decimal, *, buy_fee_rate...)` | `Decimal` | Computes exact minimum gross sell price required for net_profit >= 0 after both fees. | `Decimal`, `ValueError`, `money` |
 
 
 ---
@@ -658,21 +700,21 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `DSEMarketScheduler` | `L81–L320` | `object` | Async background scheduler enforcing DSE market hours and periodic trading cycles. | 8 |
+| `DSEMarketScheduler` | `L91–L330` | `object` | Async background scheduler enforcing DSE market hours and periodic trading cycles. | 8 |
 
 
 **Methods in `DSEMarketScheduler`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__init__` | `L84–L106` | `(self, database: Database, settings:...)` | — | — | `AutoTrader`, `hasattr` |
-| `get_status` | `L108–L129` | `(self...)` | `dict[str, Any]` | Returns scheduler operational status, telemetry, and DSE market gate. | `getattr`, `is_dse_market_open`, `portfolio_state`, `read` |
-| `run_scheduled_tick` | `L131–L215` | `(self, force: bool=False...)` | `dict[str, Any]` | Executes a single scheduler tick, enforcing gate & automation state unless force=True. | `DecisionLog`, `add`, `build_snapshot`, `debug` |
-| `run_scheduled_tick_sync` | `L217–L269` | `(self, force: bool=False, session: A...)` | `dict[str, Any]` | Synchronous version of tick execution (e.g. for Hermes chat turn). | `build_snapshot`, `debug`, `getattr`, `info` |
-| `start` | `L271–L284` | `(self...)` | `dict[str, Any]` | Starts background periodic polling loop idempotently. | `_loop`, `cancel`, `create_task`, `done` |
-| `stop_sync` | `L286–L294` | `(self...)` | `dict[str, Any]` | Stops background periodic polling loop gracefully (sync). | `cancel`, `done`, `get_status` |
-| `stop` | `L296–L298` | `(self...)` | `dict[str, Any]` | Stops background periodic polling loop gracefully. | `stop_sync` |
-| `_loop` | `L300–L320` | `(self...)` | `None` | Background periodic execution loop respecting configured polling interval. | `error`, `getattr`, `info`, `max` |
+| `__init__` | `L94–L116` | `(self, database: Database, settings:...)` | — | — | `AutoTrader`, `hasattr` |
+| `get_status` | `L118–L139` | `(self...)` | `dict[str, Any]` | Returns scheduler operational status, telemetry, and DSE market gate. | `getattr`, `is_dse_market_open`, `portfolio_state`, `read` |
+| `run_scheduled_tick` | `L141–L225` | `(self, force: bool=False...)` | `dict[str, Any]` | Executes a single scheduler tick, enforcing gate & automation state unless force=True. | `DecisionLog`, `add`, `build_snapshot`, `debug` |
+| `run_scheduled_tick_sync` | `L227–L279` | `(self, force: bool=False, session: A...)` | `dict[str, Any]` | Synchronous version of tick execution (e.g. for Hermes chat turn). | `build_snapshot`, `debug`, `getattr`, `info` |
+| `start` | `L281–L294` | `(self...)` | `dict[str, Any]` | Starts background periodic polling loop idempotently. | `_loop`, `cancel`, `create_task`, `done` |
+| `stop_sync` | `L296–L304` | `(self...)` | `dict[str, Any]` | Stops background periodic polling loop gracefully (sync). | `cancel`, `done`, `get_status` |
+| `stop` | `L306–L308` | `(self...)` | `dict[str, Any]` | Stops background periodic polling loop gracefully. | `stop_sync` |
+| `_loop` | `L310–L330` | `(self...)` | `None` | Background periodic execution loop respecting configured polling interval. | `error`, `getattr`, `info`, `max` |
 
 
 #### Standalone Functions
@@ -680,7 +722,7 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `get_active_scheduler` | `L30–L32` | `(...)` | `DSEMarketScheduler | None` | Returns the globally active scheduler singleton instance if registered. | — |
-| `is_dse_market_open` | `L35–L78` | `(now_dhaka: datetime | None=None, se...)` | `dict[str, Any]` | Evaluates whether DSE is currently open for trading in Asia/Dhaka time. | `Settings`, `TradingCalendar`, `astimezone`, `date` |
+| `is_dse_market_open` | `L35–L88` | `(now_dhaka: datetime | None=None, se...)` | `dict[str, Any]` | Evaluates whether DSE is currently open for trading in Asia/Dhaka time. | `Settings`, `TradingCalendar`, `astimezone`, `date` |
 
 
 ---
@@ -1292,11 +1334,11 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `run_passive_probe` | `L29–L247` | `(cdp_url: str, duration: int, output...)` | `dict` | Connect to existing browser over CDP and passively sniff TradeXpress. | `ZoneInfo`, `append`, `async_playwright`, `connect_over_cdp` |
-| `on_web_socket` | `L80–L104` | `(ws...)` | — | — | `on`, `redact_secrets` |
-| `on_frame_received` | `L83–L102` | `(payload...)` | — | — | `ZoneInfo`, `append`, `b64encode`, `decode` |
-| `on_cdp_ws_frame` | `L113–L130` | `(params: dict...)` | — | — | `ZoneInfo`, `append`, `get`, `isoformat` |
-| `main` | `L250–L273` | `(...)` | — | — | `ArgumentParser`, `Path`, `add_argument`, `parse_args` |
+| `run_passive_probe` | `L29–L292` | `(cdp_url: str, duration: int, output...)` | `dict` | Connect to existing browser over CDP and passively sniff TradeXpress. | `ZoneInfo`, `append`, `async_playwright`, `connect_over_cdp` |
+| `on_web_socket` | `L83–L107` | `(ws...)` | — | — | `on`, `redact_secrets` |
+| `on_frame_received` | `L86–L105` | `(payload...)` | — | — | `ZoneInfo`, `append`, `b64encode`, `decode` |
+| `on_cdp_ws_frame` | `L116–L133` | `(params: dict...)` | — | — | `ZoneInfo`, `append`, `get`, `isoformat` |
+| `main` | `L295–L318` | `(...)` | — | — | `ArgumentParser`, `Path`, `add_argument`, `parse_args` |
 
 
 ---
@@ -2057,6 +2099,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 
 | File | Function / Method | Length (Lines) | Max Nesting Depth | Recommendation |
 | :--- | :--- | :--- | :--- | :--- |
+| `backend/adapters/base.py` | `validate_tradexpress_order_safety` | 93 | 4 | Acceptable; well-scoped logic |
 | `backend/adapters/stocknow_adapter.py` | `quote` | 18 | 4 | Acceptable; well-scoped logic |
 | `backend/adapters/stocknow_api.py` | `login` | 62 | 4 | Acceptable; well-scoped logic |
 | `backend/adapters/stocknow_api.py` | `_request` | 113 | 5 | Decompose into sub-functions |
@@ -2098,7 +2141,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/engine/heartbeat.py` | `send_daily_summary_if_due` | 112 | 4 | Decompose into sub-functions |
 | `backend/engine/price_guard.py` | `get_market_quote` | 28 | 4 | Acceptable; well-scoped logic |
 | `backend/engine/price_guard.py` | `check_price_sanity` | 59 | 5 | Acceptable; well-scoped logic |
-| `backend/engine/scheduler.py` | `is_dse_market_open` | 44 | 4 | Acceptable; well-scoped logic |
+| `backend/engine/scheduler.py` | `is_dse_market_open` | 54 | 5 | Acceptable; well-scoped logic |
 | `backend/engine/scheduler.py` | `run_scheduled_tick` | 85 | 6 | Acceptable; well-scoped logic |
 | `backend/engine/scheduler.py` | `_loop` | 21 | 4 | Acceptable; well-scoped logic |
 | `backend/engine/sequential_seller.py` | `plan_sale` | 105 | 3 | Decompose into sub-functions |
@@ -2158,7 +2201,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `generate_markdown` | 216 | 6 | Decompose into sub-functions |
 | `scripts/generate_code_map.py` | `visit_Call` | 10 | 4 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
-| `scripts/inspect_tradexpress_passive.py` | `run_passive_probe` | 219 | 4 | Decompose into sub-functions |
+| `scripts/inspect_tradexpress_passive.py` | `run_passive_probe` | 264 | 4 | Decompose into sub-functions |
 | `scripts/preflight.py` | `check_gateway` | 18 | 5 | Acceptable; well-scoped logic |
 | `scripts/preflight.py` | `check_kernel_token` | 20 | 5 | Acceptable; well-scoped logic |
 | `scripts/preflight.py` | `check_stocknow_session` | 69 | 5 | Acceptable; well-scoped logic |
@@ -2168,4 +2211,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/verify_chat_card.py` | `main` | 121 | 3 | Decompose into sub-functions |
 
 
-> **Audit Summary:** 51 Python modules inspected, 65 FastAPI endpoints registered, 115 JS functions mapped, 301 DOM IDs indexed, 22 Hermes tools registered, 93,951 total LOC indexed across 132 repository files.
+> **Audit Summary:** 52 Python modules inspected, 65 FastAPI endpoints registered, 115 JS functions mapped, 301 DOM IDs indexed, 22 Hermes tools registered, 94,643 total LOC indexed across 134 repository files.

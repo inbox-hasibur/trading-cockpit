@@ -131,6 +131,9 @@ def test_saturday_order_blocked_in_live_hours_passes_in_test_offhours(client, au
                     quote_on=datetime.date(2026, 11, 3),
                 )
             )
+        else:
+            profile.last_price = Decimal("250.00")
+            profile.price_history = [{"date": "2026-11-03", "close": "250.00"}]
 
     # Mock Saturday 11:00 AM Asia/Dhaka (DSE closed on Saturday)
     saturday_dt = datetime.datetime(2026, 11, 7, 11, 0, 0, tzinfo=ZoneInfo("Asia/Dhaka"))

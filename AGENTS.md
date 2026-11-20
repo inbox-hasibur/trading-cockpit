@@ -30,5 +30,6 @@
 - Hard Exchange Filters: NEVER buy Z-category or SPOT settlement stocks.
 - Verified DSE Schedule: Sunday–Thursday (`10:00–14:00` Continuous, `14:00–14:10` Post-Closing exact LTP only, `14:10` Market Close).
 - Two-Stage Graduation: Stage 1 (`SHADOW_DUMMY`) feeds local simulator with 0 real BDT risk; Stage 2 (`TRADEXPRESS_LIVE`) requires explicit operator graduation with mandatory 2-step limit order confirmation (`New Order` -> read-back verify -> `Confirm Order`).
+- Master Blueprint: Refer to `documentation/TRADEXPRESS_CONTEXT.md` for verified Ember.js DOM selectors, dual WebSockets, and operational protocol.
 
 

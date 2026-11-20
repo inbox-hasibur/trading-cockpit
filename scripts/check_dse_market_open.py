@@ -50,12 +50,12 @@ def is_dse_time_open(now: datetime) -> tuple[bool, str]:
         return False, f"Today is {day_name} (DSE weekend; trading is Sun-Thu)"
 
     t = now.time()
-    # DSE trading session: 10:00 AM to 02:30 PM (14:30)
+    # DSE trading session: 10:00 AM to 02:10 PM (14:10)
     open_time = datetime.strptime("10:00:00", "%H:%M:%S").time()
-    close_time = datetime.strptime("14:30:00", "%H:%M:%S").time()
+    close_time = datetime.strptime("14:10:00", "%H:%M:%S").time()
 
-    if not (open_time <= t < close_time):
-        return False, f"Current Dhaka time {now.strftime('%H:%M:%S')} is outside trading hours (10:00-14:30)"
+    if not (open_time <= t <= close_time):
+        return False, f"Current Dhaka time {now.strftime('%H:%M:%S')} is outside trading hours (10:00-14:10)"
 
     return True, "Within regular DSE trading hours"
 

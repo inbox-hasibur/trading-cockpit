@@ -53,7 +53,10 @@ def is_dse_market_open(
     is_time_window = cfg.market_open <= cur_time <= cfg.market_close
     is_open = is_trading_day and is_time_window
 
+    continuous_close = time(14, 0)
+
     if not is_trading_day:
+        session_phase = "CLOSED"
         weekday_name = cur_date.strftime("%A")
         if cur_date in cfg.holidays:
             reason = f"DSE holiday ({cur_date.isoformat()})"
@@ -62,16 +65,23 @@ def is_dse_market_open(
         else:
             reason = f"Non-trading day ({weekday_name})"
     elif cur_time < cfg.market_open:
+        session_phase = "CLOSED"
         reason = f"Pre-market (opens at {cfg.market_open.strftime('%H:%M')})"
     elif cur_time > cfg.market_close:
+        session_phase = "CLOSED"
         reason = f"Post-market (closed at {cfg.market_close.strftime('%H:%M')})"
+    elif cur_time >= continuous_close:
+        session_phase = "POST_CLOSING"
+        reason = "Post-closing session (exact closing price orders only)"
     else:
+        session_phase = "CONTINUOUS"
         reason = "Market is open for live trading"
 
     window_str = f"{cfg.market_open.strftime('%H:%M')}-{cfg.market_close.strftime('%H:%M')}"
     return {
         "is_open": is_open,
         "is_trading_day": is_trading_day,
+        "session_phase": session_phase,
         "dhaka_time": now_dhaka.strftime("%Y-%m-%d %H:%M:%S %Z"),
         "window": window_str,
         "reason": reason,

@@ -42,3 +42,45 @@ def allocated_basis(remaining_basis: Decimal, remaining_qty: int, sold_qty: int)
     if sold_qty == remaining_qty:
         return remaining_basis
     return money(remaining_basis * sold_qty / remaining_qty)
+
+
+def calculate_broker_fee_breakdown(
+    gross_amount: Decimal,
+    *,
+    commission_rate: Decimal,
+    vat_rate: Decimal = Decimal("0.15"),
+    exchange_fee_rate: Decimal = Decimal("0"),
+) -> dict[str, Decimal]:
+    """Calculate exact gross, broker commission, VAT on commission, and exchange fees."""
+    gross = money(gross_amount)
+    comm = money(gross * commission_rate)
+    vat = money(comm * vat_rate)
+    exch = money(gross * exchange_fee_rate)
+    total_fee = comm + vat + exch
+    effective_rate = (total_fee / gross).quantize(PRICE_TICK, rounding=ROUND_HALF_UP) if gross > 0 else ZERO
+    return {
+        "gross": gross,
+        "commission": comm,
+        "vat": vat,
+        "exchange_fee": exch,
+        "total_fee": total_fee,
+        "effective_rate": effective_rate,
+    }
+
+
+def round_trip_breakeven_price(
+    buy_price: Decimal,
+    *,
+    buy_fee_rate: Decimal,
+    sell_fee_rate: Decimal,
+) -> Decimal:
+    """Computes exact minimum gross sell price required for net_profit >= 0 after both fees.
+
+    Break-even equation: sell_price * (1 - sell_fee_rate) >= buy_price * (1 + buy_fee_rate)
+    => sell_price >= buy_price * (1 + buy_fee_rate) / (1 - sell_fee_rate).
+    """
+    if sell_fee_rate >= Decimal("1"):
+        raise ValueError("Sell fee rate must be less than 1.0 (100%).")
+    min_sell = (buy_price * (Decimal("1") + buy_fee_rate)) / (Decimal("1") - sell_fee_rate)
+    return money(min_sell)
+
