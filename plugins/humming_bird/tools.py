@@ -491,3 +491,24 @@ def hb_caps_set(args: dict[str, Any] | None = None, **kwargs) -> str:
     return _kernel_post("/k/caps", payload)
 
 
+def hb_feed_status(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Check TradeXpress passive feed freshness and get step-by-step operator tab guidance."""
+    return _kernel_get("/k/feed-status")
+
+
+def hb_learning_review(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Review trade learning logs, win rates by tier (L1 vs L2), slippage, and post-market reflection metrics."""
+    merged = dict(args or {})
+    merged.update(kwargs)
+    params: dict[str, Any] = {}
+    if "tier" in merged and merged["tier"]:
+        params["tier"] = str(merged["tier"])
+    if "limit" in merged and merged["limit"] is not None:
+        try:
+            params["limit"] = int(merged["limit"])
+        except (ValueError, TypeError):
+            pass
+    return _kernel_get("/k/learning/summary", params=params)
+
+
+

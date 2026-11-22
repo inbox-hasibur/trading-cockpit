@@ -307,30 +307,27 @@ flowchart TD
 1. **Side Selection:**
    - Buy: Green `Buy` button / toggle.
    - Sell: Click sell button on position or toggle red `Sell`. Opens floating Order Ticket (`New Order - <SYMBOL>`PB (DSE)`).
-2. **Purchasing Power:** Verify `Order Value <= Buying Power` for Buys; verify `Quantity <= Saleable Qty (avaiQtyDSE)` for Sells.
-3. **Parameter Entry:** Fill `#qtyField-8-1-1-1` and `#orderPriceId-8-1-1-1`.
-4. **Intraday Fee Display Quirk:** Note that both the order ticket and confirmation modal display `Commission: 0.00` and `VAT: 0.00` intraday (`Net Value == Order Value`). Real clearing fees are deducted at EOD.
+2. **Purchasing Power & Holding Metrics:**
+   - For Buys: Verify `Order Value <= Buying Power`.
+   - For Sells: Displays top holding row: `Holding | Buy Pending | Sell Pending` directly above parameters. Verify `Quantity <= Saleable Qty (Holding)`.
+3. **Parameter Entry:** Fill `#qtyField-8-1-1-1` (Quantity) and `#orderPriceId-8-1-1-1` (Limit Price).
+4. **Calculated Value Summary:** Directly below inputs: `Order Value | Commission | VAT | Net Value`.
+   - **Intraday Fee Display Quirk:** Note that both the order ticket and confirmation modal display `Commission: 0.00` and `VAT: 0.00` intraday (`Net Value == Order Value`). Real clearing fees are deducted at EOD.
 5. **Submit:** Click `button.btn-buy` (for Buy) or `button.btn-sell` (for Sell) inside `#executeComp-8-1-1-1`.
 
 ### 7.2 Step 2: Confirmation Modal (Green for Buy, Red/Crimson for Sell)
 1. **Target:** `#confirmationPopup-8-1-1-1`.
-2. **Visual Differentiation:**
+2. **Visual Differentiation & Subtitle:**
+   - Subtitle header: Shows company full name, exchange, and board, e.g. `BANK ASIA PLC. | DSE | Main`.
    - Buy Modal: Header/accent is green/blue, confirm button is green `button.btn-confirm` / `Confirm Order`.
    - Sell Modal: Header/accent is red/crimson, confirm button is red `button.btn-confirm` / `Confirm Order`.
-3. **Read-back Verification:**
-   - `Exchange: Dhaka Stock Exchange`
-   - `Symbol: <SYMBOL>`PB`
-   - `Order Type: Limit`
-   - `Side: Buy` or `Side: Sell`
-   - `Quantity: <N>`
-   - `Price: <P>`
-   - `Order Value: <N * P>`
-   - `Commission: 0.00` (intraday display quirk)
-   - `VAT: 0.00` (intraday display quirk)
-   - `Net Value: <Order Value>`
+3. **Read-back Verification Grid:**
+   - Row 1: `Side | Order Type | TIF` (e.g. `SELL | LIMIT | DAY`)
+   - Row 2: `Price | Quantity | Commission (0.00)`
+   - Row 3: `VAT (0.00) | Order Value | Net Value`
 4. **Action:**
-   - If all parameters match engine intent 100%, click `button.btn-confirm` (or button labeled `Confirm Order`).
-   - If any discrepancy is detected, click `button:has-text("Cancel")` and abort immediately.
+   - If all parameters match engine intent 100%, click `button.btn-confirm` (or button labeled `Confirm Order` — green for Buy, red for Sell).
+   - If any discrepancy is detected, click `button:has-text("Cancel")` (or `Cancel`) and abort immediately.
 
 ---
 

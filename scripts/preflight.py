@@ -3,7 +3,7 @@
 Audits 10 mission-critical invariants before market operations:
 1. Gateway up
 2. Primary model and fallback present
-3. Plugin loaded with expected tool count (22 tools)
+3. Plugin loaded with expected tool count (24 tools)
 4. Kernel token set
 5. StockNow session logged in
 6. Portfolio drift 0.00
@@ -94,7 +94,7 @@ def check_model_and_fallback() -> CheckResult:
 
 def check_plugin_tools() -> CheckResult:
     """Verifies humming_bird plugin registration and expected tool count."""
-    expected_tool_count = 22
+    expected_tool_count = 24
     actual_count = len(_TOOLS)
 
     h_dir = get_hermes_dir()
@@ -363,6 +363,7 @@ def run_preflight(verbose: bool = False) -> tuple[list[CheckResult], bool]:
     db_path = get_default_db_path()
     settings = Settings(database_url=DEFAULT_DATABASE_URL)
     db = Database(settings.database_url)
+    db.create_schema()
 
     # 1. Gateway up
     res_gateway = check_gateway()

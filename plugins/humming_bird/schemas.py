@@ -416,3 +416,33 @@ HB_CAPS_SET_SCHEMA = {
     },
 }
 
+HB_FEED_STATUS_SCHEMA = {
+    "name": "hb_feed_status",
+    "description": "Check TradeXpress passive feed freshness and get step-by-step operator tab guidance.",
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": False,
+    },
+}
+
+HB_LEARNING_REVIEW_SCHEMA = {
+    "name": "hb_learning_review",
+    "description": "Review trade learning logs, win rates by tier (L1 vs L2), slippage, and post-market reflection metrics.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "tier": {
+                "type": "string",
+                "description": "Optional tier filter ('GSC_L1', 'GSC_L2', 'L1', 'L2').",
+            },
+            "limit": {
+                "type": "integer",
+                "description": "Maximum number of recent learning logs to retrieve (default 20).",
+            },
+        },
+        "additionalProperties": False,
+    },
+}
+
+

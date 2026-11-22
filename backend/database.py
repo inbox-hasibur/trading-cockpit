@@ -66,6 +66,8 @@ class PortfolioState(Base):
     startup_health_status: Mapped[str] = mapped_column(String(32), default="READY")
     calendar_holidays: Mapped[list[str]] = mapped_column(JSON, default=list)
     bucket_anchor: Mapped[date] = mapped_column(Date)
+    execution_venue: Mapped[str] = mapped_column(String(32), default="SHADOW_DUMMY")
+    unsettled_sales_bdt: Mapped[Decimal] = mapped_column(MONEY, default=Decimal("0.00"))
     created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
 
 
@@ -83,6 +85,17 @@ class CompanyProfile(Base):
     watchlist_category: Mapped[str] = mapped_column(String(32), default="GSC")  # GSC, GSC_L1, GSC_L2
     quarantined: Mapped[bool] = mapped_column(Boolean, default=False)
     quarantine_reason: Mapped[str] = mapped_column(String(500), default="")
+    bid: Mapped[Decimal] = mapped_column(PRICE, default=Decimal("0.0"))
+    bid_qty: Mapped[int] = mapped_column(Integer, default=0)
+    offer: Mapped[Decimal] = mapped_column(PRICE, default=Decimal("0.0"))
+    offer_qty: Mapped[int] = mapped_column(Integer, default=0)
+    min_limit: Mapped[Decimal | None] = mapped_column(PRICE, nullable=True, default=None)
+    max_limit: Mapped[Decimal | None] = mapped_column(PRICE, nullable=True, default=None)
+    settlement_type: Mapped[str] = mapped_column(String(16), default="PUBLIC")
+    symbol_category: Mapped[str] = mapped_column(String(8), default="A")
+    hit_52w_high: Mapped[bool] = mapped_column(Boolean, default=False)
+    hit_upper_circuit: Mapped[bool] = mapped_column(Boolean, default=False)
+    last_trade_time: Mapped[str] = mapped_column(String(32), default="")
 
 
 class CustomRule(Base):
@@ -254,6 +267,52 @@ class OrderIdempotencyKey(Base):
     created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
 
 
+class ShadowOrder(Base):
+    __tablename__ = "shadow_orders"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    order_ref: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    symbol: Mapped[str] = mapped_column(String(32), index=True)
+    side: Mapped[str] = mapped_column(String(4))  # BUY / SELL
+    order_type: Mapped[str] = mapped_column(String(16), default="LIMIT")
+    tif: Mapped[str] = mapped_column(String(8), default="DAY")
+    quantity: Mapped[int] = mapped_column(Integer)
+    filled_qty: Mapped[int] = mapped_column(Integer, default=0)
+    pending_qty: Mapped[int] = mapped_column(Integer)
+    limit_price: Mapped[Decimal] = mapped_column(PRICE)
+    avg_fill_price: Mapped[Decimal] = mapped_column(PRICE, default=Decimal("0.0"))
+    order_value: Mapped[Decimal] = mapped_column(MONEY)
+    estimated_fee: Mapped[Decimal] = mapped_column(MONEY)
+    status: Mapped[str] = mapped_column(String(24), default="QUEUED")  # QUEUED, FILLED, PARTIAL, CANCELLED, EXPIRED, REJECTED
+    actor: Mapped[str] = mapped_column(String(32), default="AUTOTRADER")  # AUTOTRADER, HERMES, OPERATOR_MANUAL
+    reason: Mapped[str] = mapped_column(String(500), default="")
+    session_on: Mapped[date] = mapped_column(Date)
+    portfolio_id: Mapped[str] = mapped_column(String(32), default="H9210_SHADOW")
+    created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
+    updated_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
+
+
+class TradeLearningLog(Base):
+    __tablename__ = "trade_learning_logs"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    symbol: Mapped[str] = mapped_column(String(32), index=True)
+    tier: Mapped[str] = mapped_column(String(16), default="L1")
+    side: Mapped[str] = mapped_column(String(8))
+    outcome_type: Mapped[str] = mapped_column(String(24))  # BUY_FILL, SELL_PROFIT, SKIP, PULLBACK_SPLIT, CANARY, OPERATOR_OVERRIDE
+    entry_price: Mapped[Decimal] = mapped_column(PRICE)
+    exit_price: Mapped[Decimal | None] = mapped_column(PRICE, nullable=True, default=None)
+    net_pnl_pct: Mapped[Decimal | None] = mapped_column(PERCENT, nullable=True, default=None)
+    bid_offer_spread_pct: Mapped[Decimal | None] = mapped_column(PERCENT, nullable=True, default=None)
+    support_distance_pct: Mapped[Decimal | None] = mapped_column(PERCENT, nullable=True, default=None)
+    hit_52w_high: Mapped[bool] = mapped_column(Boolean, default=False)
+    hold_sessions: Mapped[int] = mapped_column(Integer, default=0)
+    actor: Mapped[str] = mapped_column(String(32), default="AUTOTRADER")
+    operator_override: Mapped[bool] = mapped_column(Boolean, default=False)
+    context_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    lesson_summary: Mapped[str] = mapped_column(String(600), default="")
+    session_on: Mapped[date] = mapped_column(Date)
+    created_at: Mapped[str] = mapped_column(String(40), default=utc_now_iso)
+
+
 class ChatBudget(Base):
     __tablename__ = "chat_budget"
     day: Mapped[date] = mapped_column(Date, primary_key=True)
@@ -367,6 +426,37 @@ class Database:
                     conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN startup_health_passed BOOLEAN DEFAULT 1"))
                 if "startup_health_status" not in ps_cols:
                     conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN startup_health_status VARCHAR(32) DEFAULT 'READY'"))
+                if "execution_venue" not in ps_cols:
+                    conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN execution_venue VARCHAR(32) DEFAULT 'SHADOW_DUMMY'"))
+                if "unsettled_sales_bdt" not in ps_cols:
+                    conn.execute(text("ALTER TABLE portfolio_state ADD COLUMN unsettled_sales_bdt NUMERIC(18, 2) DEFAULT 0.00"))
+                conn.commit()
+
+            result = conn.execute(text("PRAGMA table_info(company_profiles)"))
+            cp_cols = [row[1] for row in result.fetchall()]
+            if cp_cols:
+                if "bid" not in cp_cols:
+                    conn.execute(text("ALTER TABLE company_profiles ADD COLUMN bid NUMERIC(18, 4) DEFAULT 0.0"))
+                if "bid_qty" not in cp_cols:
+                    conn.execute(text("ALTER TABLE company_profiles ADD COLUMN bid_qty INTEGER DEFAULT 0"))
+                if "offer" not in cp_cols:
+                    conn.execute(text("ALTER TABLE company_profiles ADD COLUMN offer NUMERIC(18, 4) DEFAULT 0.0"))
+                if "offer_qty" not in cp_cols:
+                    conn.execute(text("ALTER TABLE company_profiles ADD COLUMN offer_qty INTEGER DEFAULT 0"))
+                if "min_limit" not in cp_cols:
+                    conn.execute(text("ALTER TABLE company_profiles ADD COLUMN min_limit NUMERIC(18, 4) DEFAULT NULL"))
+                if "max_limit" not in cp_cols:
+                    conn.execute(text("ALTER TABLE company_profiles ADD COLUMN max_limit NUMERIC(18, 4) DEFAULT NULL"))
+                if "settlement_type" not in cp_cols:
+                    conn.execute(text("ALTER TABLE company_profiles ADD COLUMN settlement_type VARCHAR(16) DEFAULT 'PUBLIC'"))
+                if "symbol_category" not in cp_cols:
+                    conn.execute(text("ALTER TABLE company_profiles ADD COLUMN symbol_category VARCHAR(8) DEFAULT 'A'"))
+                if "hit_52w_high" not in cp_cols:
+                    conn.execute(text("ALTER TABLE company_profiles ADD COLUMN hit_52w_high BOOLEAN DEFAULT 0"))
+                if "hit_upper_circuit" not in cp_cols:
+                    conn.execute(text("ALTER TABLE company_profiles ADD COLUMN hit_upper_circuit BOOLEAN DEFAULT 0"))
+                if "last_trade_time" not in cp_cols:
+                    conn.execute(text("ALTER TABLE company_profiles ADD COLUMN last_trade_time VARCHAR(32) DEFAULT ''"))
                 conn.commit()
 
             result = conn.execute(text("PRAGMA table_info(decision_logs)"))

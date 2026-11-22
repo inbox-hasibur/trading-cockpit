@@ -1866,6 +1866,85 @@ def set_caps(
         }
 
 
+@router.get("/feed-status")
+def get_feed_status(
+    db: Database = Depends(get_db),
+):
+    """Returns TradeXpress passive feed status and operator guidance for Hermes."""
+    from backend.adapters.tradexpress.passive_feed import get_global_passive_feed
+
+    feed = get_global_passive_feed(db)
+    guidance = feed.get_health_and_guidance()
+    with db.read() as session:
+        state = portfolio_state(session)
+        venue = getattr(state, "execution_venue", "SHADOW_DUMMY")
+        unsettled = float(getattr(state, "unsettled_sales_bdt", ZERO) or ZERO)
+
+    acct = feed.get_account_summary()
+    return {
+        "status": "ONLINE" if guidance["is_healthy"] else "ATTENTION_REQUIRED",
+        "cdp_connected": guidance["cdp_connected"],
+        "execution_venue": venue,
+        "buying_power": float(acct.buying_power),
+        "unsettled_sales_bdt": unsettled,
+        "guidance": guidance,
+        "operator_instructions": guidance["operator_instructions"],
+    }
+
+
+@router.get("/learning/summary")
+def get_learning_summary(
+    tier: str | None = Query(None, description="Optional tier filter: L1, L2, GSC_L1, GSC_L2"),
+    limit: int = Query(20, ge=1, le=100),
+    db: Database = Depends(get_db),
+):
+    """Returns TradeLearningLog review metrics, win rate, and recent logs for Hermes self-learning."""
+    from backend.database import TradeLearningLog
+
+    with db.read() as session:
+        q = select(TradeLearningLog)
+        if tier:
+            clean_tier = tier.strip().upper()
+            if clean_tier in ("L1", "GSC_L1"):
+                q = q.where(TradeLearningLog.tier.in_(["L1", "GSC_L1"]))
+            elif clean_tier in ("L2", "GSC_L2"):
+                q = q.where(TradeLearningLog.tier.in_(["L2", "GSC_L2"]))
+            else:
+                q = q.where(TradeLearningLog.tier == clean_tier)
+
+        q = q.order_by(TradeLearningLog.id.desc()).limit(limit)
+        logs = list(session.scalars(q))
+
+        buys = [l for l in logs if l.side == "BUY" and l.outcome_type == "BUY_FILL"]
+        sells = [l for l in logs if l.side == "SELL"]
+        profitable_sells = [s for s in sells if (s.net_pnl_pct or ZERO) > ZERO]
+        win_rate = (len(profitable_sells) / len(sells) * 100) if sells else 100.0
+        avg_pnl = (float(sum((s.net_pnl_pct or ZERO for s in sells), ZERO)) / len(sells)) if sells else 0.0
+
+        return {
+            "total_records": len(logs),
+            "buys_count": len(buys),
+            "sells_count": len(sells),
+            "win_rate_pct": round(win_rate, 2),
+            "avg_net_pnl_pct": round(avg_pnl, 2),
+            "recent_logs": [
+                {
+                    "symbol": l.symbol,
+                    "tier": l.tier,
+                    "side": l.side,
+                    "outcome_type": l.outcome_type,
+                    "entry_price": float(l.entry_price),
+                    "exit_price": float(l.exit_price) if l.exit_price is not None else None,
+                    "net_pnl_pct": float(l.net_pnl_pct) if l.net_pnl_pct is not None else None,
+                    "actor": l.actor,
+                    "lesson_summary": l.lesson_summary,
+                    "session_on": l.session_on.isoformat() if l.session_on else "",
+                }
+                for l in logs
+            ],
+        }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # STANDALONE LOCAL SERVICE FACTORY
 # ─────────────────────────────────────────────────────────────────────────────

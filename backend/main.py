@@ -123,9 +123,9 @@ class EventBroadcaster:
                 pass
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None, database: Database | None = None) -> FastAPI:
     settings = settings or Settings.from_env()
-    database = Database(settings.database_url)
+    database = database or Database(settings.database_url)
     stocknow_client = StockNowLiveClient(ingestion_mode="BACKGROUND_POLLING")
     trader = AutoTrader(database, settings)
     broadcaster = EventBroadcaster()
@@ -748,6 +748,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(build_hermes_bridge_router(database, settings, broadcaster))
     app.include_router(build_auth_settings_router(database, settings, broadcaster))
     app.include_router(build_stocknow_router(database, settings, broadcaster, stocknow_client, scheduler=scheduler))
+    from backend.routes_tradexpress import build_tradexpress_router
+    app.include_router(build_tradexpress_router(database, settings, broadcaster))
     from backend.kernel_api import build_kernel_router
     app.state.broadcaster = broadcaster
     app.include_router(build_kernel_router(database, settings, stocknow_client, broadcaster))

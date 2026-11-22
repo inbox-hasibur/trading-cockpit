@@ -388,20 +388,26 @@ Reconciliation of all audit findings and architectural items from historical MVP
 
 ---
 
-### 🧪 Sprint 5A (Active): TradeXpress Passive Feed Bridge, Realistic SHADOW_DUMMY Simulator, L1/L2 Strategy & Hermes TradeReflectionLog
+### ✅ Sprint 5A (Completed): TradeXpress Passive Feed Bridge, Realistic SHADOW_DUMMY Simulator, L1/L2 Strategy & Hermes TradeLearningLog
 
-- [ ] **TradeXpress Passive Feed Bridge:**
+- [x] **TradeXpress Passive Feed Bridge (`backend/adapters/tradexpress/passive_feed.py`):**
   - Ingest live passively sniffed TradeXpress quotes and Level-2 Bid/Offer order depth via CDP sniffer into local memory cache and SQLite.
   - Real-time tick updates with zero active polling, zero HTTP requests, and zero page reloads on LankaBangla portals.
-- [ ] **Realistic `SHADOW_DUMMY` Mirror Simulator:**
+  - Pure Ember table parsers (`parse_ember_market_watch_rows`, `parse_ember_portfolio_rows`, `parse_account_summary_dict`).
+  - Feed health evaluator with actionable operator instructions for missing or stale tabs (`get_feed_health_and_guidance`).
+- [x] **Realistic `SHADOW_DUMMY` Mirror Simulator (`backend/adapters/tradexpress/shadow_simulator.py`):**
   - Simulate realistic limit order fills against real passively sniffed exchange Level-2 depth with 0 real BDT capital risk.
-  - Full T+2 settlement tracking, conservative `0.50%` round-trip commission math, and zero-drift ledger balancing.
-- [ ] **L1 / L2 Strategy Pipeline:**
+  - Resting limit orders queued in `ShadowOrder` table when inside the spread; automatic fill on favorable quote movements (`reconcile_queued_orders`) and expiry on session close (`14:10`).
+  - Full T+2 settlement tracking, strict no-loss rule verification (`~0.40%` LankaBangla fee), and immediate credit of gross sales to `unsettled_sales_bdt` & Buying Power.
+  - Atomic state checkpoints (`KernelStateCheckpoint`) before every fill mutation.
+- [x] **L1 / L2 Strategy Pipeline & Hard Exchange Safety (`backend/engine/auto_trader.py`):**
   - Prioritize `GSC_L1` (safe multi-week recovery curves) as Priority #1 and `GSC_L2` (early green swing scalps) as Priority #2.
-  - Base `GSC` preserved strictly in observation-only mode (`WAIT_OBSERVATION_ONLY`, no blind buys).
-- [ ] **Post-Market Hermes Reflection Loop & `TradeReflectionLog`:**
-  - Automated post-14:10 reflection cycle analyzing daily signal performance, execution slippage, and canary theses.
-  - Structured storage in SQLite `trade_reflections` table (`TradeReflectionLog`) and self-learning memory updates in `memories/MEMORY.md`.
+  - Enforce `15%` max symbol allocation on `GSC_L2` and tighter profit-taking scalp tiers (`+1.5%`, `+2.5%`, `+4.0%`).
+  - Hard safety filters: automatic skip on `Z`-category stocks, `SPOT` settlement instruments, and upper-circuit locked stocks.
+- [x] **Hermes Trade Learning Engine & Reflection API:**
+  - Automated logging of every executed trade and skipped candidate into SQLite `trade_learning_logs` table (`TradeLearningLog`).
+  - New Kernel API endpoints `GET /k/feed-status` and `GET /k/learning/summary`.
+  - 2 new Hermes agentic tools (`hb_feed_status`, `hb_learning_review`) expanding registered tool count to 24.
 
 ---
 

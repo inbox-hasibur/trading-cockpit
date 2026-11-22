@@ -28,6 +28,8 @@ from .schemas import (
     HB_MODE_SET_SCHEMA,
     HB_CAPS_GET_SCHEMA,
     HB_CAPS_SET_SCHEMA,
+    HB_FEED_STATUS_SCHEMA,
+    HB_LEARNING_REVIEW_SCHEMA,
 )
 from .tools import (
     hb_automation_get,
@@ -35,7 +37,9 @@ from .tools import (
     hb_canaries,
     hb_caps_get,
     hb_caps_set,
+    hb_feed_status,
     hb_inspect_curve,
+    hb_learning_review,
     hb_lots,
     hb_market_open,
     hb_mode_get,
@@ -77,6 +81,8 @@ _TOOLS = (
     ("hb_mode_set", HB_MODE_SET_SCHEMA, hb_mode_set),
     ("hb_caps_get", HB_CAPS_GET_SCHEMA, hb_caps_get),
     ("hb_caps_set", HB_CAPS_SET_SCHEMA, hb_caps_set),
+    ("hb_feed_status", HB_FEED_STATUS_SCHEMA, hb_feed_status),
+    ("hb_learning_review", HB_LEARNING_REVIEW_SCHEMA, hb_learning_review),
 )
 
 

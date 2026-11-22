@@ -7,9 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [v1.0.0-dev] - Unreleased (Trading Cockpit V1 Branch - Sprints 4A, 4B, 4C)
+## [v1.0.0-dev] - Unreleased (Trading Cockpit V1 Branch - Sprints 4A, 4B, 4C, 5A)
 
 ### Added
+- **TradeXpress Passive Feed Bridge (`backend/adapters/tradexpress/passive_feed.py`):** Pure Ember DOM table parsers (`parse_ember_market_watch_rows`, `parse_ember_portfolio_rows`, `parse_account_summary_dict`) and passive snapshot ingestion updating SQLite company profiles, Level-2 depth, and organic 30-day price history bars with zero active network traffic.
+- **Operator Ingestion Guidance (`get_feed_health_and_guidance`):** Real-time feed health evaluator diagnosing stale or missing tabs and generating clear step-by-step UI clicking instructions for the operator.
+- **Realistic `SHADOW_DUMMY` Order-Book Simulator (`backend/adapters/tradexpress/shadow_simulator.py`):** Realistic limit order simulator matching against live passively sniffed exchange Bid/Offer depth. Supports immediate fills, resting queued orders (`ShadowOrder`), post-fill `reconcile_queued_orders` on price drops, and automatic expiry at session close (`14:10`).
+- **T+2 Shadow Settlement & Buying Power Balance:** Tracks T+2 settlement maturity, enforces strict no-loss rules, immediately credits gross sell proceeds to `unsettled_sales_bdt` & Buying Power, and records atomic `KernelStateCheckpoint` snapshots before state mutations.
+- **L1 / L2 Strategy & Hard Exchange Safety (`backend/engine/auto_trader.py`):** Enforces hard exclusions on `Z`-category instruments, `SPOT` settlement stocks, and upper-circuit locked equities. Caps `GSC_L2` exposure to `<= 15%` with tighter profit-taking scalp tiers (`+1.5%`, `+2.5%`, `+4.0%`).
+- **Trade Learning & Reflection Engine (`backend/database.py`):** SQLite persistence in `trade_learning_logs` table (`TradeLearningLog`) recording every trade execution, outcome, and skipped candidate.
+- **TradeXpress Fast-Path & Learning API Routes (`backend/routes_tradexpress.py`, `backend/kernel_api.py`):** Endpoints for passive snapshot ingestion, shadow order placement (2-step preview and fill), queued order querying, and feed status/learning reviews (`GET /k/feed-status`, `GET /k/learning/summary`).
+- **New Hermes Agentic Tools (`hb_feed_status`, `hb_learning_review`):** Expanded registered toolset from 22 to 24 tools across `plugins/humming_bird/`.
 - **Archive Branch Setup:** Archived StockNow virtual automation baseline permanently to branch `stocknow-automation`. Active development transitioned to branch `trading-cockpit-v1`.
 - **Master TradeXpress 2.0 & iBroker Context Blueprint (`documentation/TRADEXPRESS_CONTEXT.md`):** Complete site map, Ember.js DOM hierarchy, dual WebSockets (`streaming-api` and `wsqs`), and operational protocols.
 - **First Real Live DSE Trade Milestones (Client Code `H9210`):**
@@ -17,9 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - First Live Sell (Round-Trip Milestone): `Sell BANKASIA`PB : 9 @ 18.40 : Filled` at `13:33:36` (Continuous session, Order Value: `165.60 BDT`).
 - **2-Touchpoint Hard Broker Firewall Rule:** Strict operational constraint codified in `AGENTS.md` and `TRADEXPRESS_CONTEXT.md` permitting only passive CDP sniffing (port 9222) and explicit 2-step limit confirmation. Zero automated login, zero credential handling, and zero active scraping.
 - **Read-Only Passive CDP Inspector (`scripts/inspect_tradexpress_passive.py`):** Non-intrusive probe attaching to operator's active browser session via Chrome DevTools Protocol to sniff incoming WebSocket frames with automatic secret redaction.
-- **Decoupled Broker Adapter Abstraction (`backend/adapters/base_broker.py`, `backend/adapters/tradexpress_adapter.py`):** Abstract base class (`BaseBrokerAdapter`) and TradeXpress implementation providing unified order validation, quote querying, and two-stage execution (`SHADOW_DUMMY` vs `TRADEXPRESS_LIVE`).
-- **Broker Fee & Breakdown Math:** Detailed calculations in `tradexpress_adapter.py` (`calculate_broker_fee_breakdown`, `round_trip_breakeven_price`) incorporating `0.40%` commission, `15%` VAT on commission, and exchange fees.
-- **TradeXpress Safety Validator (`OrderSafetyValidator`):** In-kernel preflight guard blocking `SPOT` settlement stocks, `Z`-category instruments, market orders, circuit limit violations, and off-hour/post-closing price discrepancies.
+- **Decoupled Broker Adapter Abstraction (`backend/adapters/base.py`):** Abstract interfaces (`MarketFeedAdapter`, `BrokerOrderExecutor`) and data classes (`MarketQuote`, `PortfolioHolding`) providing unified order validation, quote querying, and two-stage execution (`SHADOW_DUMMY` vs `TRADEXPRESS_LIVE`).
+- **Broker Fee & Breakdown Math (`backend/engine/money.py`):** Precise arithmetic (`calculate_broker_fee_breakdown`, `round_trip_breakeven_price`) incorporating verified `~0.40%` commission, `15%` VAT on commission, and round-trip breakeven hurdle.
+- **TradeXpress Safety Validator (`validate_tradexpress_order_safety` in `backend/adapters/base.py`):** Preflight safety guard blocking `SPOT` settlement stocks, `Z`-category instruments, market orders, non-`DAY` TIF, circuit limit violations, and off-hour/post-closing price discrepancies.
 - **Symbol Normalization:** Robust conversion supporting DSE Public Board backtick format (`` `PB ``), e.g. `BANKASIA` -> ``BANKASIA`PB``.
 - **Knowledge Graph Generator (`scripts/generate_code_map.py`):** Generates 7 enriched sections in `documentation/CODEBASE_MAP.md` including automated ASCII repository tree, reverse dependency blast-radius radar, full SQLAlchemy schema X-ray, Pydantic contract registry, and Hermes-to-Kernel route call graph.
 - **Test Cache Isolation:** Added autouse cache cleaning fixture in `tests/conftest.py` preventing quote and share cache cross-test contamination.

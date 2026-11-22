@@ -28,5 +28,7 @@ provides_tools:
   - hb_mode_set
   - hb_caps_get
   - hb_caps_set
+  - hb_feed_status
+  - hb_learning_review
 provides_hooks:
   - pre_tool_call

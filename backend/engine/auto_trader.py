@@ -21,6 +21,7 @@ from backend.database import (
     DecisionLog,
     OrderIdempotencyKey,
     TaxLot,
+    TradeLearningLog,
     TradeLog,
     portfolio_state,
 )
@@ -371,6 +372,12 @@ class AutoTrader:
             if lot.last_sale_revision == state.revision:
                 record(lot.symbol, "WAIT_NEW_QUOTE", "One sale per lot per market snapshot.", lot_id=lot.id)
                 continue
+            comp_obj = next((c for c in companies if c.symbol == lot.symbol), None)
+            lot_cat = getattr(comp_obj, "watchlist_category", "GSC") if comp_obj else "GSC"
+            tiers_to_use = tuple(decimal(value) for value in rule.profit_tiers)
+            if lot_cat == "GSC_L2" and list(rule.profit_tiers) == ["1.5", "3.5", "6.0"]:
+                tiers_to_use = (Decimal("1.5"), Decimal("2.5"), Decimal("4.0"))
+
             plan = plan_sale(
                 SellState(
                     remaining_qty=lot.remaining_qty,
@@ -385,7 +392,7 @@ class AutoTrader:
                 current_price=quote.unit_price,
                 as_of=state.clock_date,
                 sell_fee_rate=self.settings.sell_fee_rate,
-                tiers=tuple(decimal(value) for value in rule.profit_tiers),
+                tiers=tiers_to_use,
                 slices=tuple(decimal(value) for value in rule.tier_slices),
                 pullback_pct=rule.pullback_pct,
             )
@@ -459,6 +466,20 @@ class AutoTrader:
                 )
                 session.add(trade)
                 session.flush()
+                session.add(
+                    TradeLearningLog(
+                        symbol=lot.symbol,
+                        tier=lot_cat,
+                        side="SELL",
+                        outcome_type="SELL_PROFIT",
+                        entry_price=lot.buy_price,
+                        exit_price=fill_price,
+                        net_pnl_pct=(plan.realized_pnl / (lot.remaining_cost_basis + plan.realized_pnl) * Decimal("100")) if (lot.remaining_cost_basis + plan.realized_pnl) > ZERO else ZERO,
+                        actor="AUTOTRADER",
+                        lesson_summary=f"AutoTrader Sell {plan.action}: {plan.quantity} sh @ ৳{fill_price:.2f} (+৳{plan.realized_pnl:.2f})",
+                        session_on=state.clock_date,
+                    )
+                )
                 trades.append(self._trade_result(trade, plan.action))
                 sold_symbols.add(lot.symbol)
 
@@ -499,6 +520,59 @@ class AutoTrader:
             rule = rules[company.symbol]
             analysis, quote = assessments[company.symbol]
             cat = getattr(company, "watchlist_category", "GSC")
+            sym_cat = getattr(company, "symbol_category", "A")
+            sett_type = getattr(company, "settlement_type", "PUBLIC")
+            upper_circ = getattr(company, "hit_upper_circuit", False)
+
+            # Hard exchange exclusions: Z-category, SPOT settlement, Upper Circuit locked
+            if str(sym_cat).upper() == "Z":
+                record(company.symbol, "SKIP_Z_CATEGORY", f"Excluded: {company.symbol} is Z-category junk company.")
+                session.add(
+                    TradeLearningLog(
+                        symbol=company.symbol,
+                        tier=cat,
+                        side="BUY",
+                        outcome_type="SKIP",
+                        entry_price=company.last_price,
+                        actor="AUTOTRADER",
+                        lesson_summary="Hard exclusion: Z-category junk company.",
+                        session_on=state.clock_date,
+                    )
+                )
+                continue
+
+            if str(sett_type).upper() == "SPOT":
+                record(company.symbol, "SKIP_SPOT_SETTLEMENT", f"Excluded: {company.symbol} is under SPOT settlement.")
+                session.add(
+                    TradeLearningLog(
+                        symbol=company.symbol,
+                        tier=cat,
+                        side="BUY",
+                        outcome_type="SKIP",
+                        entry_price=company.last_price,
+                        actor="AUTOTRADER",
+                        lesson_summary="Hard exclusion: SPOT settlement stock.",
+                        session_on=state.clock_date,
+                    )
+                )
+                continue
+
+            if upper_circ:
+                record(company.symbol, "SKIP_UPPER_CIRCUIT_LOCKED", f"Excluded: {company.symbol} is locked at upper circuit.")
+                session.add(
+                    TradeLearningLog(
+                        symbol=company.symbol,
+                        tier=cat,
+                        side="BUY",
+                        outcome_type="SKIP",
+                        entry_price=company.last_price,
+                        actor="AUTOTRADER",
+                        lesson_summary="Hard exclusion: Upper circuit locked.",
+                        session_on=state.clock_date,
+                    )
+                )
+                continue
+
             is_stocknow = getattr(company, "source", "") == "STOCKNOW_FAVORITES" or any(pid in getattr(state, "name", "") for pid in get_allowed_portfolios(self.settings))
             if is_stocknow and has_active_tiers and cat not in {"GSC_L1", "GSC_L2"}:
                 record(company.symbol, "WAIT_OBSERVATION_ONLY", "Observation pool only (not in GSC_L1 or GSC_L2).")
@@ -560,7 +634,10 @@ class AutoTrader:
             if active_pid:
                 open_basis_q = open_basis_q.where(TaxLot.portfolio_id == active_pid)
             open_basis = sum(session.scalars(open_basis_q), ZERO)
-            exposure_cap = money(state.initial_capital * rule.buy_allocation_pct / HUNDRED)
+            effective_alloc_pct = rule.buy_allocation_pct
+            if cat == "GSC_L2":
+                effective_alloc_pct = min(effective_alloc_pct, Decimal("15"))
+            exposure_cap = money(state.initial_capital * effective_alloc_pct / HUNDRED)
             headroom = max(ZERO, exposure_cap - open_basis)
 
             # Enforce max symbol exposure cap
@@ -666,6 +743,18 @@ class AutoTrader:
             active.today_buy_spend += cost
             record(company.symbol, "BUY", trade.reason, quantity, lot.id)
             trades.append(self._trade_result(trade, "BUY"))
+            session.add(
+                TradeLearningLog(
+                    symbol=company.symbol,
+                    tier=cat,
+                    side="BUY",
+                    outcome_type="BUY_FILL",
+                    entry_price=fill_price,
+                    actor="AUTOTRADER",
+                    lesson_summary=f"AutoTrader Buy filled {quantity} sh @ ৳{fill_price:.2f}",
+                    session_on=state.clock_date,
+                )
+            )
 
             # In DEMO mode, notify adapter for paper receipt/mock tracking
             if getattr(self.adapter, "mode", "DEMO") == "DEMO":

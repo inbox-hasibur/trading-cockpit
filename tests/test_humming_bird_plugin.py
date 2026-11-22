@@ -32,6 +32,8 @@ from plugins.humming_bird.schemas import (
     HB_WATCHLIST_SCHEMA,
     HB_MODE_GET_SCHEMA,
     HB_MODE_SET_SCHEMA,
+    HB_FEED_STATUS_SCHEMA,
+    HB_LEARNING_REVIEW_SCHEMA,
 )
 from plugins.humming_bird.tools import (
     _kernel_get,
@@ -39,7 +41,11 @@ from plugins.humming_bird.tools import (
     hb_automation_get,
     hb_automation_set,
     hb_canaries,
+    hb_caps_get,
+    hb_caps_set,
+    hb_feed_status,
     hb_inspect_curve,
+    hb_learning_review,
     hb_lots,
     hb_market_open,
     hb_mode_get,
@@ -81,11 +87,13 @@ ALL_EXPECTED_TOOLS = [
     "hb_mode_set",
     "hb_caps_get",
     "hb_caps_set",
+    "hb_feed_status",
+    "hb_learning_review",
 ]
 
 
 def test_plugin_yaml_manifest():
-    """Manifest declares proper metadata, 22 tools, and pre_tool_call hook."""
+    """Manifest declares proper metadata, 24 tools, and pre_tool_call hook."""
     with open("plugins/humming_bird/plugin.yaml", "r", encoding="utf-8") as f:
         manifest = yaml.safe_load(f)
 
@@ -98,11 +106,11 @@ def test_plugin_yaml_manifest():
 
 
 def test_plugin_registration():
-    """register(ctx) registers all 22 tools and the pre_tool_call hook."""
+    """register(ctx) registers all 24 tools and the pre_tool_call hook."""
     ctx = MagicMock()
     register(ctx)
 
-    assert ctx.register_tool.call_count == 22
+    assert ctx.register_tool.call_count == 24
     registered_names = [call.kwargs["name"] for call in ctx.register_tool.call_args_list]
     for name in ALL_EXPECTED_TOOLS:
         assert name in registered_names
@@ -133,33 +141,14 @@ def test_skills_registration():
 
 
 def test_schemas_structure():
-    """All 18 schemas conform to JSON Schema parameter specifications."""
-    schemas = [
-        HB_PORTFOLIO_SCHEMA,
-        HB_WATCHLIST_SCHEMA,
-        HB_INSPECT_CURVE_SCHEMA,
-        HB_MARKET_OPEN_SCHEMA,
-        HB_CANARIES_SCHEMA,
-        HB_LOTS_SCHEMA,
-        HB_SET_TIER_SCHEMA,
-        HB_SET_ALLOCATION_SCHEMA,
-        HB_QUARANTINE_CANARY_SCHEMA,
-        HB_RESTORE_QUARANTINE_SCHEMA,
-        HB_SYNC_SCHEMA,
-        HB_PLACE_ORDER_SCHEMA,
-        HB_ROLLBACK_LAST_SCHEMA,
-        HB_AUTOMATION_GET_SCHEMA,
-        HB_AUTOMATION_SET_SCHEMA,
-        HB_SCHEDULER_SCHEMA,
-        HB_RUN_CYCLE_SCHEMA,
-        HB_STOCKNOW_SESSION_SCHEMA,
-    ]
-    assert len(schemas) == 18
-    for s in schemas:
-        assert "name" in s
-        assert "description" in s
-        assert "parameters" in s
-        params = s["parameters"]
+    """All 24 schemas conform to JSON Schema parameter specifications."""
+    from plugins.humming_bird import _TOOLS
+    assert len(_TOOLS) == 24
+    for name, schema, handler in _TOOLS:
+        assert "name" in schema
+        assert "description" in schema
+        assert "parameters" in schema
+        params = schema["parameters"]
         assert params["type"] == "object"
         assert "properties" in params
 
@@ -462,4 +451,31 @@ def test_hb_mode_tools(mock_urlopen):
 
     err_res = hb_stocknow_session({"action": "destroy"})
     assert "error" in json.loads(err_res)
+
+
+@patch("urllib.request.urlopen")
+def test_hb_feed_status_and_learning_review(mock_urlopen):
+    """hb_feed_status and hb_learning_review query kernel endpoints cleanly."""
+    fake_response = MagicMock()
+    fake_payload = {
+        "status": "ONLINE",
+        "cdp_connected": True,
+        "operator_instructions": ["All TradeXpress passive data feeds are fresh and active. No action needed."],
+    }
+    fake_response.read.return_value = json.dumps(fake_payload).encode("utf-8")
+    fake_response.__enter__.return_value = fake_response
+    mock_urlopen.return_value = fake_response
+
+    status_res = hb_feed_status()
+    assert json.loads(status_res)["status"] == "ONLINE"
+
+    fake_learning = {
+        "total_records": 10,
+        "win_rate_pct": 100.0,
+        "recent_logs": [],
+    }
+    fake_response.read.return_value = json.dumps(fake_learning).encode("utf-8")
+    learn_res = hb_learning_review({"tier": "L1", "limit": 10})
+    assert json.loads(learn_res)["win_rate_pct"] == 100.0
+
 
