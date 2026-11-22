@@ -7,9 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [v1.0.0-dev] - Unreleased (Trading Cockpit V1 Branch - Sprints 4A, 4B, 4C, 5A)
+## [v1.0.0-dev] - Unreleased (Trading Cockpit V1 Branch - Sprints 4A, 4B, 4C, 5A, 5B)
 
 ### Added
+- **Trading Cockpit V1 UI Terminal (`frontend/index.html`, `frontend/styles.css`, `frontend/theme_light_hermes.css`, `frontend/tradexpress_ui.js`):** Exact 3-pane TradeXpress 2.0 replica layout with viewport-locked app shell, top header telemetry strip (`CLIENT A/C: H9210 (Shadow)`, `BUYING POWER`, `GAIN / LOSS`, market clock widget, and mode switch).
+- **13-Column Market Watch Grid (`frontend/app.js`):** Comprehensive table displaying `Symbol`, `Curve (7–15d)`, `LTP ৳`, `% Chg`, `Bid / Qty` (emerald tint), `Offer / Qty` (rose tint), `Cat / Signal`, `Day` (hold-day indicator), `Matured / Qty`, `Bought Avg`, `Bought Total`, `Sell Total`, and `Net Profit`. Supports instant symbol selection on click, plus filters for hiding Z/SPOT stocks and filtering held-only positions.
+- **TradeXpress Order Ticket & 5-Level Depth (`frontend/tradexpress_ui.js`):** Buy/Sell segmented toggle, live 5-level Bid/Offer depth table with click-to-populate limit price and quantity, quick quantity steppers (25%, 50%, 100%), and real-time order value and estimated fee preview.
+- **2-Step Limit Confirmation Modal (`#tx-confirm-order-modal`):** Mandatory step-2 confirmation modal with side-themed color banners (Green for BUY, Red for SELL), comprehensive fee breakdown, and explicit execution approval.
+- **4-Pane Monitor Panel:** Sub-tabs for `Order List` (with cancelation action for queued shadow orders), `Portfolio` (with Quick-Sell `↓` shortcuts), `Account Summary` (with interactive SVG Asset Allocation Donut chart), and `Order Search`.
+- **Secondary Workspace Navigation (`#tx-main-nav`):** Instant switching between `Trade`, `Heat Map`, `Auto Rules & T+2`, `Ledger`, `Learning`, and `Settings` without page reloads.
+- **Enriched Portfolio Snapshot Microstructure (`backend/portfolio.py`):** Injected additive microstructure fields (`bid`, `bid_qty`, `offer`, `offer_qty`, `min_limit`, `max_limit`, `settlement_type`, `symbol_category`, `tradexpress_symbol`) and position telemetry (`avg_bought_price`, `bought_total`, `sell_total_net`, `net_profit_bdt`, `net_profit_pct`, `hold_day_label`) alongside top-level `buying_power_bdt` and `unsettled_sales_bdt`.
+- **New Test Suite (`tests/test_tradexpress_ui_v1.py`):** Full automated verification of HTML structure, enriched snapshot payload, 2-step limit order preview -> commit flow, and shadow order cancellation.
 - **TradeXpress Passive Feed Bridge (`backend/adapters/tradexpress/passive_feed.py`):** Pure Ember DOM table parsers (`parse_ember_market_watch_rows`, `parse_ember_portfolio_rows`, `parse_account_summary_dict`) and passive snapshot ingestion updating SQLite company profiles, Level-2 depth, and organic 30-day price history bars with zero active network traffic.
 - **Operator Ingestion Guidance (`get_feed_health_and_guidance`):** Real-time feed health evaluator diagnosing stale or missing tabs and generating clear step-by-step UI clicking instructions for the operator.
 - **Realistic `SHADOW_DUMMY` Order-Book Simulator (`backend/adapters/tradexpress/shadow_simulator.py`):** Realistic limit order simulator matching against live passively sniffed exchange Bid/Offer depth. Supports immediate fills, resting queued orders (`ShadowOrder`), post-fill `reconcile_queued_orders` on price drops, and automatic expiry at session close (`14:10`).

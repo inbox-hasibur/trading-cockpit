@@ -10,6 +10,7 @@ import os
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from backend.adapters.base import to_tradexpress_symbol
 from backend.adapters.stocknow_adapter import StockNowAdapter
 from backend.config import (
     DHAKA,
@@ -476,6 +477,28 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             if quarantine_reason_text and ("session decline" in quarantine_reason_text or "session drop" in quarantine_reason_text):
                 quarantine_reason_text = f"Abnormal {drawdown_desc}; block buys and require review."
 
+        held_qty = sum(lot["remaining_qty"] for lot in company_lots)
+        mature_qty = sum(lot["remaining_qty"] for lot in company_lots if lot["is_mature"])
+        locked_qty = sum(lot["remaining_qty"] for lot in company_lots if not lot["is_mature"])
+
+        if held_qty > 0 and company_basis > ZERO:
+            avg_bought_price = float(money(company_basis / held_qty))
+            bought_total = float(company_basis)
+            sell_total_net = float(company_net)
+            net_profit_bdt = float(company_net - company_basis)
+            net_profit_pct = float(((company_net / company_basis) - 1) * HUNDRED)
+            oldest_acquired = min((lot.acquired_on for lot in lots if lot.symbol == company.symbol), default=None)
+            hold_sessions = calendar.session_distance(oldest_acquired, state.clock_date) if oldest_acquired else None
+            hold_day_label = f"T+{hold_sessions}" if hold_sessions is not None else "—"
+        else:
+            avg_bought_price = 0.0
+            bought_total = 0.0
+            sell_total_net = 0.0
+            net_profit_bdt = 0.0
+            net_profit_pct = 0.0
+            hold_sessions = None
+            hold_day_label = "—"
+
         company_views.append({
             "symbol": company.symbol,
             "name": company.name,
@@ -494,13 +517,32 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             "quarantine_persisted": company.quarantined,
             "quarantine_reason": quarantine_reason_text,
             "rule": rule_view(rule),
-            "holding_qty": sum(lot["remaining_qty"] for lot in company_lots),
-            "mature_qty": sum(lot["remaining_qty"] for lot in company_lots if lot["is_mature"]),
-            "locked_qty": sum(lot["remaining_qty"] for lot in company_lots if not lot["is_mature"]),
+            "holding_qty": held_qty,
+            "mature_qty": mature_qty,
+            "locked_qty": locked_qty,
             "cost_basis": float(company_basis),
             "estimated_net_value": float(company_net),
             "unrealized_pnl": float(company_net - company_basis),
             "net_return_pct": float((company_net / company_basis - 1) * HUNDRED) if company_basis else 0,
+            "bid": float(getattr(company, "bid", Decimal("0")) or Decimal("0")),
+            "bid_qty": int(getattr(company, "bid_qty", 0) or 0),
+            "offer": float(getattr(company, "offer", Decimal("0")) or Decimal("0")),
+            "offer_qty": int(getattr(company, "offer_qty", 0) or 0),
+            "min_limit": float(company.min_limit) if getattr(company, "min_limit", None) is not None else None,
+            "max_limit": float(company.max_limit) if getattr(company, "max_limit", None) is not None else None,
+            "settlement_type": getattr(company, "settlement_type", "PUBLIC") or "PUBLIC",
+            "symbol_category": getattr(company, "symbol_category", "A") or "A",
+            "hit_52w_high": bool(getattr(company, "hit_52w_high", False)),
+            "hit_upper_circuit": bool(getattr(company, "hit_upper_circuit", False)),
+            "last_trade_time": getattr(company, "last_trade_time", "") or "",
+            "tradexpress_symbol": to_tradexpress_symbol(company.symbol),
+            "avg_bought_price": avg_bought_price,
+            "bought_total": bought_total,
+            "sell_total_net": sell_total_net,
+            "net_profit_bdt": net_profit_bdt,
+            "net_profit_pct": net_profit_pct,
+            "hold_sessions": hold_sessions,
+            "hold_day_label": hold_day_label,
             "lots": company_lots,
         })
 
@@ -685,6 +727,9 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             getattr(state, "polling_interval_sec", 120),
             live_client=live_client,
         ),
+        "execution_venue": getattr(state, "execution_venue", "SHADOW_DUMMY") or "SHADOW_DUMMY",
+        "unsettled_sales_bdt": float(getattr(state, "unsettled_sales_bdt", ZERO) or ZERO),
+        "buying_power_bdt": float(cash + (getattr(state, "unsettled_sales_bdt", ZERO) or ZERO)),
         "notice": "All prices/scenarios/trades are synthetic. No live orders. No guaranteed recovery or returns.",
     }
 

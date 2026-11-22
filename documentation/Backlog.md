@@ -411,19 +411,25 @@ Reconciliation of all audit findings and architectural items from historical MVP
 
 ---
 
-### 🎨 Sprint 5B: Trading Cockpit V1 TradeXpress 3-Pane Redesign, Resizable Hermes Sidebar & Safety Badging
+### ✅ Sprint 5B (Completed): Trading Cockpit V1 TradeXpress 3-Pane Redesign, Resizable Hermes Sidebar & Safety Badging
 
-- [ ] **TradeXpress 3-Pane Cockpit Layout:**
+- [x] **TradeXpress 3-Pane Cockpit Layout (`frontend/index.html`, `frontend/styles.css`, `frontend/tradexpress_ui.js`):**
   - Professional DSE workstation layout mirroring TradeXpress NetPlus structure:
-    - Top/Left: Market Watch, Watchlist Tiers (`GSC`, `L1`, `L2`), and Heatmap.
-    - Bottom Left: New Order Entry Ticket with 2-step verification preview.
-    - Bottom Right: Order List, Active Portfolio, and Account Summary tabs.
-- [ ] **Resizable Hermes Copilot Sidebar:**
-  - Interactive draggable/resizable chat sidebar with docked, collapsed, and expanded split states.
-  - Conversational order preview cards with 1-click Confirm / Cancel interaction tokens.
-- [ ] **Safety Badging & Risk Meter Visualizations:**
-  - Prominent visual badges for active mode (`SHADOW_DUMMY` vs `TRADEXPRESS_LIVE`) and 2-Touchpoint Hard Broker Firewall status.
-  - Real-time DSE session clock badge (`CONTINUOUS 10:00-14:00`, `POST_CLOSING 14:00-14:10`, `CLOSED`) and daily risk budget gauge meters.
+    - Top Pane (~54%): Market Watch Grid with 13 custom columns (`Symbol`, `Curve (7–15d)`, `LTP ৳`, `% Chg`, `Bid / Qty`, `Offer / Qty`, `Cat / Signal`, `Day`, `Matured / Qty`, `Bought Avg`, `Bought Total`, `Sell Total`, `Net Profit`).
+    - Bottom Left (~46%): New Order Ticket with 5-level Bid/Offer depth table, steppers, and real-time fee calculation.
+    - Bottom Right (~46%): Monitor panel with `Order List`, `Portfolio` (with Quick-Sell `↓`), `Account Summary` (with SVG Donut chart), and `Order Search`.
+- [x] **2-Step Limit Order Confirmation Modal (`#tx-confirm-order-modal`):**
+  - Mandatory Step 2 modal review before order dispatch, featuring side-themed banners (Green BUY / Red SELL), full price/fee/net values, and risk warnings.
+- [x] **Resizable Hermes Copilot Dock & Quick Chips:**
+  - Interactive resizable/collapsible chat sidebar with quick-prompt chips (`Passive sync guide 📡`).
+- [x] **Safety Badging & Risk Meter Visualizations:**
+  - Prominent visual brand pill and `#portfolio-header-badge` (`SHADOW_DUMMY · 0 BDT RISK`).
+  - DSE market clock widget (`CONTINUOUS 10:00–14:00`, `POST_CLOSING 14:00–14:10`, `CLOSED`).
+  - Topbar live telemetry (`CLIENT A/C: H9210 (Shadow)`, `BUYING POWER`, `GAIN / LOSS`).
+- [x] **Enriched Portfolio Snapshot Microstructure (`backend/portfolio.py`):**
+  - Added company microstructure (`bid`, `offer`, `min_limit`, `max_limit`, `settlement_type`, `symbol_category`) and position telemetry (`avg_bought_price`, `bought_total`, `sell_total_net`, `net_profit_bdt`, `net_profit_pct`, `hold_day_label`).
+- [x] **Full Automated Verification:**
+  - `tests/test_tradexpress_ui_v1.py` with 100% pass covering HTML structure, enriched snapshots, 2-step limit order execution, and order cancellation.
 
 ---
 

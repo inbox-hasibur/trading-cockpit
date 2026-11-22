@@ -510,7 +510,7 @@ def parse_frontend(repo_root: Path = REPO_ROOT):
     pattern_arrow = re.compile(r'^(?:export\s+)?(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*(?:async\s*)?(?:\(([^)]*)\)|([a-zA-Z0-9_$]+))\s*=>')
     pattern_expr = re.compile(r'^(?:export\s+)?(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*(?:async\s+)?function\s*\(([^)]*)\)')
 
-    target_js_files = ["app.js", "charts.js", "hermes_ui.js"]
+    target_js_files = ["app.js", "charts.js", "hermes_ui.js", "tradexpress_ui.js"]
     js_funcs: list[dict[str, Any]] = []
     js_endpoints = set()
 

@@ -411,6 +411,9 @@ function renderSnapshot() {
   renderHermesSkills();
   renderLedger();
   updateControls();
+  if (window.tradexpressUI && typeof window.tradexpressUI.updateFromSnapshot === "function") {
+    window.tradexpressUI.updateFromSnapshot(state.snapshot);
+  }
 }
 
 function renderEquitySparkline() {
@@ -468,6 +471,16 @@ function renderActiveHoldings() {
 
     // COMPANY
     const compCell = cell();
+    if (window.tradexpressUI && typeof window.tradexpressUI.quickSell === "function") {
+      const qsBtn = element("button", "quick-sell-btn", "↓");
+      qsBtn.type = "button";
+      qsBtn.title = `Quick-sell ${c.symbol} in TradeXpress Order Ticket`;
+      qsBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        window.tradexpressUI.quickSell(c.symbol, c.mature_qty || c.holding_qty, c.price);
+      });
+      compCell.append(qsBtn);
+    }
     compCell.append(element("strong", "holding-symbol", c.symbol));
     compCell.append(element("span", "holding-name muted small", ` · ${c.name}`));
 
@@ -590,6 +603,12 @@ function renderActiveHoldings() {
     }
 
     row.append(compCell, tierCell, qtyCell, ltpCell, costCell, sellCell, pnlCell, statusCell);
+    row.addEventListener("click", () => {
+      selectCompany(c.symbol);
+      if (window.tradexpressUI && typeof window.tradexpressUI.selectSymbol === "function") {
+        window.tradexpressUI.selectSymbol(c.symbol);
+      }
+    });
     return row;
   });
 
@@ -792,13 +811,22 @@ function renderWatchlist() {
     return;
   }
 
-  // Standard category view
+  // Standard TradeXpress 2.0 Market Watch View
   if (thead) {
-    thead.innerHTML = '<tr><th scope="col">COMPANY</th><th scope="col" class="align-right">PRICE ৳</th><th scope="col" class="align-right">DAY</th><th scope="col">7–15 SESSION CURVE</th><th scope="col" id="col-curve-signal">CURVE SIGNAL</th><th scope="col" class="align-right" id="col-held-mature">HELD / MATURE</th><th scope="col" class="align-right" id="col-buy-cap">BUY CAP</th><th scope="col" class="align-center">TREND</th></tr>';
+    thead.innerHTML = '<tr><th scope="col">Symbol</th><th scope="col">Curve (7–15d)</th><th scope="col" class="align-right">LTP ৳</th><th scope="col" class="align-right">% Chg</th><th scope="col" class="align-right tx-col-bid">Bid / Qty</th><th scope="col" class="align-right tx-col-offer">Offer / Qty</th><th scope="col" class="align-center" id="col-curve-signal">Cat / Signal</th><th scope="col" class="align-center">Day</th><th scope="col" class="align-right" id="col-held-mature">Matured / Qty</th><th scope="col" class="align-right">Bought Avg</th><th scope="col" class="align-right" id="col-buy-cap">Bought Total</th><th scope="col" class="align-right">Sell Total</th><th scope="col" class="align-right">Net Profit</th></tr>';
   }
   if (paginationBar) paginationBar.hidden = true;
 
+  const hideZSpot = $("filter-hide-z-spot")?.checked ?? false;
+  const heldOnly = $("filter-held-only")?.checked ?? false;
+
   const companies = all.filter((company) => {
+    if (hideZSpot && (company.symbol_category === "Z" || company.settlement_type === "SPOT")) {
+      return false;
+    }
+    if (heldOnly && (company.holding_qty || 0) === 0) {
+      return false;
+    }
     const matchesQuery = `${company.symbol} ${company.name} ${company.sector}`.toLowerCase().includes(query);
     const matchesCat = cat === "ALL" || (company.watchlist_category || "GSC") === cat;
     return matchesQuery && matchesCat;
@@ -810,24 +838,45 @@ function renderWatchlist() {
     const companyCell = cell();
     const button = element("button", "company-button");
     button.type = "button"; button.setAttribute("aria-label", `Inspect ${company.symbol}`);
-    button.append(element("span", `company-icon sector-${company.sector.toLowerCase()}`, company.symbol[0]));
+    const secClass = (company.sector || "other").toLowerCase().replace(/[^a-z0-9]/g, "_");
+    button.append(element("span", `company-icon sector-${secClass}`, company.symbol[0]));
     const name = element("span");
-    const symSpan = element("span", "company-symbol", company.symbol);
+    const symText = company.tradexpress_symbol || `${company.symbol}\`PB`;
+    const symSpan = element("span", "company-symbol", symText);
     const catCode = company.watchlist_category || "GSC";
     symSpan.append(element("span", `cat-tag cat-${catCode.toLowerCase()}`, catLabels[catCode] || catCode));
-    name.append(symSpan, element("span", "company-subtitle", company.sector.replaceAll("_", " ").toLowerCase()));
+    name.append(symSpan, element("span", "company-subtitle", (company.name || company.sector).slice(0, 20)));
     button.append(name); companyCell.append(button);
-    const day = cell(percentage(company.curve.day_change_pct), `align-right ${company.curve.day_change_pct >= 0 ? "positive" : "negative"}`);
-    const chart = cell(); chart.append(sparkline(company.history));
-    const signal = cell();
 
-    // Check Dhaka trading session hours (Sun-Thu 10:00–14:30)
+    // 2. Curve sparkline
+    const chart = cell(); chart.append(sparkline(company.history));
+
+    // 3. LTP
+    const ltpCell = cell(numberFormat.format(company.price), "align-right tabular-nums");
+
+    // 4. % Chg
+    const day = cell(percentage(company.curve.day_change_pct), `align-right tabular-nums ${company.curve.day_change_pct >= 0 ? "positive" : "negative"}`);
+
+    // 5. Bid / Qty
+    const bidPriceStr = company.bid ? numberFormat.format(company.bid) : numberFormat.format(company.price);
+    const bidQtyStr = company.bid_qty ? formatCompactNumber(company.bid_qty) : "—";
+    const bidCell = cell(`${bidPriceStr} / ${bidQtyStr}`, "align-right tx-col-bid tabular-nums");
+
+    // 6. Offer / Qty
+    const offerPriceStr = company.offer ? numberFormat.format(company.offer) : numberFormat.format(company.price);
+    const offerQtyStr = company.offer_qty ? formatCompactNumber(company.offer_qty) : "—";
+    const offerCell = cell(`${offerPriceStr} / ${offerQtyStr}`, "align-right tx-col-offer tabular-nums");
+
+    // 7. Cat / Signal
+    const signal = cell(undefined, "align-center");
+
+    // Check Dhaka trading session hours (Sun-Thu 10:00–14:10)
     const now = new Date();
     const dhakaStr = now.toLocaleString("en-US", { timeZone: "Asia/Dhaka" });
     const dhakaDate = new Date(dhakaStr);
     const dayOfWeek = dhakaDate.getDay();
     const totalMinutes = dhakaDate.getHours() * 60 + dhakaDate.getMinutes();
-    const isTradingHours = (dayOfWeek >= 0 && dayOfWeek <= 4) && (totalMinutes >= 600 && totalMinutes < 870);
+    const isTradingHours = (dayOfWeek >= 0 && dayOfWeek <= 4) && (totalMinutes >= 600 && totalMinutes < 850);
 
     let displaySignal = company.curve.signal;
     let tooltipReason = company.curve.reason || "";
@@ -838,7 +887,7 @@ function renderWatchlist() {
       isDataFallback = true;
       if (!isTradingHours) {
         displaySignal = "LAST_CLOSE";
-        tooltipReason = `Market closed (Trading hours: Sun–Thu 10:00–14:30) · Showing last close ৳${numberFormat.format(company.price)}`;
+        tooltipReason = `Market closed (Trading hours: Sun–Thu 10:00–14:10) · Showing last close ৳${numberFormat.format(company.price)}`;
       } else if (!company.history || company.history.length === 0) {
         displaySignal = "NO_DATA";
         tooltipReason = "No historical candle data available from StockNow API";
@@ -895,24 +944,47 @@ function renderWatchlist() {
       signalWrap.append(retryLink);
     }
     signal.append(signalWrap);
-    const position = cell(undefined, "align-right position-count");
-    position.append(element("span", "", company.holding_qty), element("span", "muted", `/ ${company.mature_qty}`));
-    const allocation = cell(`${company.rule.buy_allocation_pct}%`, "align-right allocation-value");
-    allocation.title = company.rule.enabled ? "Maximum open cost basis as % of initial capital" : "Automation disabled";
-    const actionCell = cell(undefined, "align-center");
-    const trendBtn = element("button", "button secondary small-button deep-trend-btn", "Trend ⤢");
-    trendBtn.type = "button";
-    trendBtn.title = `View ${company.symbol} Deep Trend & Fundamentals`;
-    trendBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      openDeepTrendModal(company.symbol);
+
+    // 8. Day (Hold-day label)
+    const dayLabel = company.hold_day_label || (company.mature_qty > 0 ? "T+2" : (company.holding_qty > 0 ? "T+1" : "T+0"));
+    const dayCell = cell(dayLabel, "align-center small muted");
+
+    // 9. Matured / Qty
+    const position = cell(undefined, "align-right position-count tabular-nums");
+    position.append(element("span", "", company.mature_qty), element("span", "muted", ` / ${company.holding_qty}`));
+
+    // 10. Bought Avg
+    const avgBought = company.avg_bought_price ? currency(company.avg_bought_price.toFixed(2)) : "—";
+    const avgBoughtCell = cell(avgBought, "align-right tabular-nums");
+
+    // 11. Bought Total
+    const boughtTot = company.bought_total ? currency(Math.round(company.bought_total)) : "—";
+    const boughtTotCell = cell(boughtTot, "align-right tabular-nums");
+
+    // 12. Sell Total (net)
+    const sellTot = company.sell_total_net ? currency(Math.round(company.sell_total_net)) : "—";
+    const sellTotCell = cell(sellTot, "align-right tabular-nums");
+
+    // 13. Net Profit
+    let pnlCell;
+    if (company.holding_qty > 0 && company.net_profit_bdt !== undefined) {
+      const sign = company.net_profit_bdt >= 0 ? "+" : "";
+      const pnlText = `${sign}${currency(Math.round(company.net_profit_bdt))} (${sign}${company.net_profit_pct.toFixed(2)}%)`;
+      pnlCell = cell(pnlText, `align-right tabular-nums ${company.net_profit_bdt >= 0 ? "positive" : "negative"}`);
+    } else {
+      pnlCell = cell("—", "align-right muted");
+    }
+
+    row.append(companyCell, chart, ltpCell, day, bidCell, offerCell, signal, dayCell, position, avgBoughtCell, boughtTotCell, sellTotCell, pnlCell);
+    row.addEventListener("click", () => {
+      selectCompany(company.symbol);
+      if (window.tradexpressUI && typeof window.tradexpressUI.selectSymbol === "function") {
+        window.tradexpressUI.selectSymbol(company.symbol);
+      }
     });
-    actionCell.append(trendBtn);
-    row.append(companyCell, cell(numberFormat.format(company.price), "align-right"), day, chart, signal, position, allocation, actionCell);
-    row.addEventListener("click", () => selectCompany(company.symbol));
     return row;
   });
-  if (!rows.length) { const row = element("tr"); const td = cell("No matching companies in this category.", "loading-cell"); td.colSpan = 8; row.append(td); rows.push(row); }
+  if (!rows.length) { const row = element("tr"); const td = cell("No matching companies in this category.", "loading-cell"); td.colSpan = 13; row.append(td); rows.push(row); }
   $("watchlist-body").replaceChildren(...rows);
 }
 
