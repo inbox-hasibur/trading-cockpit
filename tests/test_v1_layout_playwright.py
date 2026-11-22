@@ -77,7 +77,49 @@ def test_tradexpress_v1_layout_and_interactions(cockpit_server):
         page.goto(f"{base_url}/", wait_until="networkidle")
         page.wait_for_selector("#tx-trade-workspace", state="visible", timeout=6000)
         page.wait_for_selector("#watchlist-body tr[data-symbol]", state="visible", timeout=8000)
-        time.sleep(0.3)
+        time.sleep(0.5)
+
+        def assert_strict_visual_gates(theme: str):
+            """Assert strict layout integrity, zero clipping, zero errors, and full depth."""
+            # 1. Error banner must NOT be visible
+            assert not page.locator("#error-banner").is_visible(), f"[{theme}] Error banner is visible!"
+
+            # 2. Buying power must be real formatted money
+            bp_text = page.locator("#tx-hdr-buying-power").inner_text()
+            assert bp_text != "৳0.00", f"[{theme}] Buying power stuck at ৳0.00: {bp_text}"
+            assert "NaN" not in bp_text, f"[{theme}] Buying power contains NaN: {bp_text}"
+
+            # 3. Market Depth Table has exactly 5 rows and is not loading
+            depth_rows = page.locator("#tx-depth-body tr")
+            assert depth_rows.count() == 5, f"[{theme}] Expected 5 depth rows, got {depth_rows.count()}"
+            depth_text = page.locator("#tx-depth-body").inner_text()
+            assert "Loading depth" not in depth_text, f"[{theme}] Depth table still shows loading: {depth_text}"
+
+            # 4. Market watch toolbar height <= 54px and rows >= 5
+            mw_hdr_box = page.locator(".tx-mw-header").bounding_box()
+            assert mw_hdr_box is not None and mw_hdr_box["height"] <= 54, f"[{theme}] MW header too tall: {mw_hdr_box['height'] if mw_hdr_box else None}"
+            rows_count = page.locator("#watchlist-body tr").count()
+            assert rows_count >= 5, f"[{theme}] Expected >= 5 market watch rows, got {rows_count}"
+
+            # 5. Topbar right-edge: theme toggle button not clipped
+            ws_box = page.locator(".tx-workspace").bounding_box()
+            theme_btn_box = page.locator("#theme-toggle-btn").bounding_box()
+            assert ws_box is not None and theme_btn_box is not None
+            assert theme_btn_box["x"] + theme_btn_box["width"] <= ws_box["x"] + ws_box["width"] + 2, (
+                f"[{theme}] Theme toggle button clipped outside workspace: "
+                f"btn_right={theme_btn_box['x'] + theme_btn_box['width']}, ws_right={ws_box['x'] + ws_box['width']}"
+            )
+
+            # 6. Ticket internal form elements: all-or-none & submit button 100% inside ticket
+            t_box = page.locator("#tx-order-ticket").bounding_box()
+            aon_box = page.locator("#tx-order-all-or-none").bounding_box()
+            sub_box = page.locator("#tx-order-submit-btn").bounding_box()
+            assert t_box is not None and aon_box is not None and sub_box is not None
+            assert aon_box["y"] + aon_box["height"] <= t_box["y"] + t_box["height"] + 2, f"[{theme}] All-or-none clipped"
+            assert sub_box["y"] + sub_box["height"] <= t_box["y"] + t_box["height"] + 2, f"[{theme}] Submit button clipped"
+
+        # Assert visual gates in Dark Theme
+        assert_strict_visual_gates("dark")
 
         # 1. Bounding Boxes in Dark Theme
         workspace_box = page.locator(".tx-workspace").bounding_box()
@@ -113,7 +155,7 @@ def test_tradexpress_v1_layout_and_interactions(cockpit_server):
 
         # Watchlist table rows and sparklines
         rows = page.locator("#watchlist-body tr")
-        assert rows.count() >= 1, "No market watch rows rendered"
+        assert rows.count() >= 5, "Fewer than 5 market watch rows rendered"
         sparklines = page.locator("#watchlist-body svg")
         assert sparklines.count() >= 1, "No inline sparkline SVGs rendered"
 
@@ -177,10 +219,17 @@ def test_tradexpress_v1_layout_and_interactions(cockpit_server):
         modal_closed = page.evaluate("() => !(document.getElementById('tx-confirm-order-modal')?.open || false)")
         assert modal_closed, "Confirm Order modal did not close on cancel"
 
+        # Switch back to trade view if needed
+        page.click("#tx-nav-trade")
+        time.sleep(0.3)
+
         # 6. Light Theme Switcher & Screenshot
         page.click("#theme-toggle-btn")
         time.sleep(0.35)
         page.screenshot(path="scratch/verify_v1_light.png")
+
+        # Visual gates in Light Theme
+        assert_strict_visual_gates("light")
 
         # 7. Zero JS Console Errors
         assert len(js_errors) == 0, f"Encountered uncaught JS errors: {js_errors}"

@@ -37,7 +37,7 @@
   <div class="app-shell">
     <!-- Main Left Workspace: TradeXpress 2.0 Mirror -->
     <main class="workspace tx-workspace">
-      <header class="topbar tx-topbar">
+      <header class="topbar tx-topbar tx-top-header" id="tx-top-header">
         <div class="tx-topbar-brand">
           <div class="tx-brand-pill">
             <span class="tx-brand-logo">🐦</span>
@@ -93,7 +93,7 @@
           </div>
 
           <!-- Run cycle now button -->
-          <button class="button primary tx-hdr-run-btn" id="run-cycle" type="button" disabled title="Run trading cycle now"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6V4Z"/></svg><span id="run-label">Run cycle now</span></button>
+          <button class="button primary tx-hdr-run-btn" id="run-cycle" type="button" disabled title="Run cycle now (Preview)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6V4Z"/></svg><span id="run-label">Run cycle</span></button>
 
           <!-- Theme toggle button -->
           <button class="theme-toggle-btn" id="theme-toggle-btn" type="button" title="Switch Theme (Dark / Light)">
@@ -114,11 +114,58 @@
       <div class="test-compat-hidden" style="display:none !important;" hidden aria-hidden="true" data-legacy="Live Hours (virtual) Test Mode 24/7 Background 24/7 Onscreen Live">
         <button id="topbar-kill-btn" type="button" aria-hidden="true"></button>
         <button id="topbar-handoff-btn" type="button" aria-hidden="true"></button>
+        <span id="topbar-handoff-label"></span>
+        <span id="topbar-kill-label"></span>
+        <span id="topbar-status-text"></span>
+        <div id="topbar-master-toggle"></div>
+        <button id="topbar-overflow-btn" type="button"></button>
+        <div id="topbar-overflow-menu"></div>
         <div id="trading-mode-toggle"></div>
         <div id="header-mode-slider"></div>
         <span id="topbar-master-label">Auto ON</span>
         <div id="footer-mode-tag">EXPERIMENTAL · DEMO ONLY</div>
         <div id="bucket-stack"></div>
+        <span id="holdings-settled-cash"></span>
+        <span id="holdings-buy-cost"></span>
+        <span id="holdings-sell-value"></span>
+        <span id="holdings-unrealized-gain"></span>
+        <span id="watchlist-source-label"></span>
+        <button id="overflow-mode-live" type="button"></button>
+        <button id="overflow-mode-polling" type="button"></button>
+        <button id="overflow-tmode-live" type="button"></button>
+        <button id="overflow-tmode-test" type="button"></button>
+        <button id="hdr-mode-live" type="button"></button>
+        <button id="hdr-mode-polling" type="button"></button>
+        <span id="hdr-tmode-dot"></span>
+        <span id="hdr-tmode-label"></span>
+        <button id="hdr-tmode-live" type="button"></button>
+        <div id="hdr-tmode-pill"></div>
+        <button id="hdr-tmode-test" type="button"></button>
+        <button id="pause-button" type="button"></button>
+        <button id="rollback-button" type="button"></button>
+        <button id="settings-handoff-btn" type="button"></button>
+        <span id="settings-handoff-label"></span>
+        <div id="skills-drawer"></div>
+        <button id="skills-toggle" type="button"></button>
+        <button id="close-skills" type="button"></button>
+        <span id="adapter-dot"></span>
+        <span id="adapter-status-text"></span>
+        <input type="range" id="daily-limit-slider">
+        <span id="key-daily-limit"></span>
+        <button id="save-keys-btn" type="button"></button>
+        <button id="hermes-model-btn" type="button"></button>
+        <button id="hermes-bottom-model-btn" type="button"></button>
+        <span id="hermes-model-display"></span>
+        <div id="hermes-resize-handle"></div>
+        <span id="skills-count"></span>
+        <button id="lock-cockpit-btn" type="button"></button>
+        <form id="login-form">
+          <input id="login-username">
+          <input id="login-password">
+          <span id="login-error-msg"></span>
+          <button id="login-autofill-btn" type="button"></button>
+        </form>
+        <div id="op-backdrop"></div>
       </div>
 
       <div id="error-banner" class="error-banner" role="alert" hidden><span id="error-text"></span><button type="button" id="dismiss-error" aria-label="Dismiss error">×</button></div>
@@ -140,7 +187,7 @@
             </div>
             <div class="tx-mw-filters">
               <label class="tx-search-wrap">
-                <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8" cy="8" r="4.5"/><path d="m12 12 4 4"/></svg>
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="5"/><path d="m12 12 5 5"/></svg>
                 <input type="search" id="company-search" placeholder="Filter symbol..." aria-label="Filter symbol">
               </label>
               <label class="tx-check-filter" title="Hide Z-Category and SPOT Settlement stocks">
@@ -202,7 +249,7 @@
               <div class="tx-strip-meta">
                 <span>Buying Power: <strong id="tx-ticket-bp">৳0.00</strong></span>
                 <span>Avail Qty: <strong id="tx-ticket-avail-qty">0</strong></span>
-                <span class="tx-gainloss-pill positive" id="tx-ticket-gainloss">0.00 (0.00%)</span>
+                <span class="tx-gainloss-pill positive" id="tx-ticket-gainloss">+0.00 (0.00%)</span>
               </div>
             </div>
 
@@ -210,50 +257,64 @@
             <div class="tx-ticket-sym-bar" id="tx-ticket-symbol-info">
               <div class="tx-sym-chip">[<span id="tx-ticket-cat">A</span>] <strong id="tx-ticket-sym">BANKASIA`PB</strong></div>
               <div class="tx-acct-chip">H9210 (Shadow)</div>
-              <div class="tx-price-chip">LTP: <strong id="tx-ticket-ltp">18.40</strong> (<span id="tx-ticket-chgpct" class="positive">+2.79%</span>)</div>
-              <div class="tx-circuit-chip">Limits: <span id="tx-ticket-minmax">16.50 / 20.00</span></div>
-              <div class="tx-depth-chip">Bid/Offer: <span id="tx-ticket-bidoffer"><span class="positive">18.30</span> / <span class="negative">18.40</span></span></div>
-              <div class="tx-hl-chip">L/H: <span id="tx-ticket-lowhigh">17.90 / 18.50</span></div>
+              <div class="tx-price-chip">LTP: <strong id="tx-ticket-ltp">—</strong> (<span id="tx-ticket-chgpct" class="positive">—</span>)</div>
+              <div class="tx-circuit-chip">Limits: <span id="tx-ticket-minmax">— / —</span></div>
+              <div class="tx-depth-chip">Bid/Offer: <span id="tx-ticket-bidoffer"><span class="positive">—</span> / <span class="negative">—</span></span></div>
+              <div class="tx-hl-chip">L/H: <span id="tx-ticket-lowhigh">— / —</span></div>
             </div>
 
             <!-- Two-Column Body: Left Form, Right 5-Level Depth -->
             <div class="tx-ticket-body">
               <!-- Left Form (General Tab) -->
               <div class="tx-ticket-form">
-                <div class="tx-form-row">
-                  <label for="tx-order-type">Order Type</label>
-                  <select id="tx-order-type" disabled><option value="LIMIT">Limit</option></select>
-                </div>
-                <div class="tx-form-row">
-                  <label for="tx-order-qty">Quantity</label>
-                  <input type="number" id="tx-order-qty" min="1" step="1" value="10" placeholder="Qty">
-                </div>
-                <div class="tx-form-row">
-                  <label for="tx-order-price">Price ৳</label>
-                  <div class="tx-price-input-wrap">
-                    <input type="number" id="tx-order-price" step="0.10" value="18.40" placeholder="Price">
-                    <div class="tx-price-steppers">
-                      <button type="button" class="tx-step-btn" id="tx-price-up" title="Increase price +0.10">▲</button>
-                      <button type="button" class="tx-step-btn" id="tx-price-down" title="Decrease price -0.10">▼</button>
+                <!-- Row 1: Order Type, Quantity, Price with stepper -->
+                <div class="tx-form-grid-3">
+                  <div class="tx-field">
+                    <label for="tx-order-type">Order Type</label>
+                    <select id="tx-order-type" disabled><option value="LIMIT">Limit</option></select>
+                  </div>
+                  <div class="tx-field">
+                    <label for="tx-order-qty">Quantity</label>
+                    <input type="number" id="tx-order-qty" min="1" step="1" value="10" placeholder="Qty">
+                  </div>
+                  <div class="tx-field">
+                    <label for="tx-order-price">Price ৳</label>
+                    <div class="tx-price-input-group">
+                      <input type="number" id="tx-order-price" step="0.10" value="—" placeholder="Price">
+                      <div class="tx-stepper-btns">
+                        <button type="button" class="tx-step-btn" id="tx-price-up" title="Increase price +0.10">▲</button>
+                        <button type="button" class="tx-step-btn" id="tx-price-down" title="Decrease price -0.10">▼</button>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div class="tx-form-row">
-                  <label for="tx-order-tif">Good Till</label>
-                  <select id="tx-order-tif" disabled><option value="DAY">DAY</option></select>
+
+                <!-- Row 2: Good Till, Disclosed Qty, Min Fill -->
+                <div class="tx-form-grid-3">
+                  <div class="tx-field">
+                    <label for="tx-order-tif">Good Till</label>
+                    <select id="tx-order-tif" disabled><option value="DAY">DAY</option></select>
+                  </div>
+                  <div class="tx-field tx-field-disabled">
+                    <label for="tx-order-disclosed-qty">Disclosed Qty</label>
+                    <input type="text" id="tx-order-disclosed-qty" placeholder="—" disabled>
+                  </div>
+                  <div class="tx-field tx-field-disabled">
+                    <label for="tx-order-min-fill">Min Fill</label>
+                    <input type="text" id="tx-order-min-fill" placeholder="—" disabled>
+                  </div>
                 </div>
-                <div class="tx-form-row tx-row-disabled">
-                  <label for="tx-order-disclosed-qty">Disclosed Qty</label>
-                  <input type="text" id="tx-order-disclosed-qty" placeholder="—" disabled>
-                </div>
-                <div class="tx-form-row tx-row-disabled">
-                  <label for="tx-order-min-fill">Min Fill</label>
-                  <input type="text" id="tx-order-min-fill" placeholder="—" disabled>
-                </div>
-                <div class="tx-form-row tx-checkbox-row">
+
+                <!-- Row 3: All or None + Quick Qty Steppers -->
+                <div class="tx-quick-row">
                   <label class="tx-checkbox-label">
                     <input type="checkbox" id="tx-order-all-or-none" disabled> All or None
                   </label>
+                  <div class="tx-quick-qty-strip">
+                    <button type="button" class="tx-btn-xs" data-pct="25" title="Fill 25% of mature qty or buying power">25%</button>
+                    <button type="button" class="tx-btn-xs" data-pct="50" title="Fill 50% of mature qty or buying power">50%</button>
+                    <button type="button" class="tx-btn-xs" data-pct="100" title="Fill 100% of mature qty or buying power">100%</button>
+                  </div>
                 </div>
               </div>
 
@@ -280,13 +341,13 @@
             <!-- Footer: Actions & Telemetry -->
             <div class="tx-ticket-footer">
               <div class="tx-ticket-actions">
-                <button type="button" class="button primary tx-submit-buy" id="tx-order-submit-btn">Buy @ 18.40</button>
+                <button type="button" class="button primary tx-submit-buy" id="tx-order-submit-btn">Buy @ —</button>
                 <button type="button" class="button secondary" id="tx-order-reset-btn">Reset</button>
               </div>
               <div class="tx-ticket-metrics">
-                <span>Order Value: <strong id="tx-ticket-order-val">৳184.00</strong></span>
-                <span>Est. Fee (~0.40%): <strong id="tx-ticket-fee">৳0.85</strong> <small class="tx-fee-note" title="LankaBangla ~0.40% commission + 15% VAT settled EOD (displayed as 0.00 intraday)">*</small></span>
-                <span>Net Value: <strong id="tx-ticket-net-val">৳184.85</strong></span>
+                <span>Order Value: <strong id="tx-ticket-order-val">৳0.00</strong></span>
+                <span>Est. Fee (~0.40%): <strong id="tx-ticket-fee">৳0.00</strong> <small class="tx-fee-note" title="LankaBangla ~0.40% commission + 15% VAT settled EOD (displayed as 0.00 intraday)">*</small></span>
+                <span>Net Value: <strong id="tx-ticket-net-val">৳0.00</strong></span>
               </div>
             </div>
           </section>
@@ -548,6 +609,29 @@
             <div class="panel-heading"><div><h2>Hermes Canary Observations</h2><p>User-reported threat hypotheses tracked with 10% canary probe</p></div><span class="count-badge" id="canary-count">0</span></div>
             <div class="canary-feed" id="canary-feed"></div>
           </section>
+
+          <!-- Automation Decision Stream -->
+          <section class="panel decision-panel section-anchor" id="decision-panel" style="margin-top: 18px;">
+            <div class="panel-heading">
+              <div class="heading-with-count"><h2>Decisions &amp; Automation Stream</h2><span class="count-badge" id="decision-count">0</span></div>
+              <div class="decision-filter-chips" role="group" aria-label="Filter decisions by type">
+                <button type="button" class="decision-filter-chip active" data-decision-filter="ALL">All</button>
+                <button type="button" class="decision-filter-chip" data-decision-filter="BUYS">Buys</button>
+                <button type="button" class="decision-filter-chip" data-decision-filter="SELLS">Sells</button>
+                <button type="button" class="decision-filter-chip" data-decision-filter="BLOCKED">Blocked</button>
+                <button type="button" class="decision-filter-chip" data-decision-filter="LOCKS">Locks</button>
+              </div>
+              <span class="outline-badge" id="cycle-badge">NO CYCLES YET</span>
+            </div>
+            <div class="decision-feed" id="decision-feed">
+              <div class="empty-state">
+                <div class="empty-state-icon">⌁</div>
+                <strong>Ready when you are</strong>
+                <p>Run a paper cycle to see range signals, settlement guards, and sequential selling decisions.</p>
+                <span>No orders run on startup.</span>
+              </div>
+            </div>
+          </section>
         </section>
 
       </div>
@@ -573,10 +657,61 @@
       <!-- VIEW 5: LEARNING -->
       <div id="tx-learning-view" class="workspace-view view-hidden" hidden>
         <div class="page-heading">
-          <div><div class="eyebrow breadcrumb">HERMES / SELF-LEARNING ENGINE</div><h1>TradeLearningLog & Execution Feedback<span class="heading-dot">.</span></h1><p class="muted">Live calibration of trade performance, rejection telemetry & adaptive risk filters.</p></div>
+          <div><div class="eyebrow breadcrumb">HERMES <span>/</span> SELF-LEARNING ENGINE</div><h1>Trade Learning &amp; Post-Market Reflection<span class="heading-dot">.</span></h1><p class="muted">Autonomous logs of every buy fill, profitable scalp, and skipped candidate with win-rate analytics.</p></div>
         </div>
-        <div id="tx-learning-content" class="tx-learning-content">
-          <div class="loading-cell">Loading TradeLearningLog analytics…</div>
+        <div class="metrics-grid tx-learning-metrics-grid">
+          <article class="metric-card">
+            <div class="metric-label">TOTAL LOGS</div>
+            <div class="metric-value" id="tx-learn-total">0</div>
+            <div class="metric-foot muted">Recorded execution &amp; skip logs</div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-label">WIN RATE %</div>
+            <div class="metric-value positive" id="tx-learn-win-rate">100.0%</div>
+            <div class="metric-foot muted">Profitable sells vs total sells</div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-label">BUY FILLS</div>
+            <div class="metric-value" id="tx-learn-buys">0</div>
+            <div class="metric-foot muted">Executed shadow buys</div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-label">PROFIT SELLS</div>
+            <div class="metric-value positive" id="tx-learn-sells">0</div>
+            <div class="metric-foot muted">Strict no-loss exits</div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-label">AVG NET RETURN</div>
+            <div class="metric-value positive" id="tx-learn-avg-pnl">0.00%</div>
+            <div class="metric-foot muted">Average realized net gain</div>
+          </article>
+        </div>
+
+        <div class="panel" style="margin-top: 18px;">
+          <div class="panel-heading">
+            <div><h2>Recent Learning &amp; Reflection Logs</h2><p>Stored in SQLite <code>trade_learning_logs</code> table</p></div>
+          </div>
+          <div class="table-scroll">
+            <table class="tx-table" id="tx-learn-table">
+              <thead>
+                <tr>
+                  <th>Session</th>
+                  <th>Symbol</th>
+                  <th>Tier</th>
+                  <th>Side</th>
+                  <th>Outcome</th>
+                  <th class="align-right">Entry Price</th>
+                  <th class="align-right">Exit Price</th>
+                  <th class="align-right">Net P/L %</th>
+                  <th>Actor</th>
+                  <th>Lesson / Summary</th>
+                </tr>
+              </thead>
+              <tbody id="tx-learn-body">
+                <tr><td colspan="10" class="loading-cell">Loading trade learning records…</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

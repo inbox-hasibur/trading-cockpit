@@ -657,6 +657,17 @@
       metrics.open_cost_basis || 0
     );
 
+    // Auto-select first GSC_L1 or held company if not already selected or valid
+    if (snapshot.companies && snapshot.companies.length) {
+      const exists = snapshot.companies.some((c) => c.symbol === state.selectedSymbol);
+      if (!exists || !state.selectedSymbol) {
+        const l1 = snapshot.companies.find((c) => c.watchlist_category === "GSC_L1") ||
+                   snapshot.companies.find((c) => (c.holding_qty || 0) > 0) ||
+                   snapshot.companies[0];
+        if (l1) state.selectedSymbol = l1.symbol;
+      }
+    }
+
     // Refresh symbol ticket
     selectSymbolForTicket(state.selectedSymbol);
   }
@@ -776,17 +787,46 @@
       });
     }
 
-    // Initial load of orders
+    // Quick-qty buttons (25%, 50%, 100%)
+    document.querySelectorAll(".tx-quick-qty-strip button[data-pct]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const pct = parseInt(btn.dataset.pct, 10) || 100;
+        let baseQty = 10;
+        let company = null;
+        if (window.state && window.state.snapshot && window.state.snapshot.companies) {
+          company = window.state.snapshot.companies.find((c) => c.symbol === state.selectedSymbol);
+        }
+        if (state.selectedSide === "SELL") {
+          const mature = (company && company.mature_qty) || (company && company.holding_qty) || 0;
+          baseQty = Math.max(1, Math.round((mature * pct) / 100));
+        } else {
+          const bp = (window.state && window.state.snapshot && (window.state.snapshot.buying_power_bdt || (window.state.snapshot.metrics && window.state.snapshot.metrics.available_cash))) || 10000;
+          const p = parseFloat(priceInput?.value) || (company && company.price) || 17.50;
+          if (p > 0) {
+            const maxShares = Math.floor(bp / p);
+            baseQty = Math.max(1, Math.floor((maxShares * pct) / 100));
+          }
+        }
+        if (qtyInput) {
+          qtyInput.value = String(baseQty);
+          updateOrderTicketCalculations();
+        }
+      });
+    });
+
+    // Initial load of orders & depth table auto-population
     loadOrders();
+    selectSymbolForTicket(state.selectedSymbol || "BANKASIA");
 
     // Auto poll orders every 10s
     setInterval(loadOrders, 10000);
   }
 
   // Expose global controller
-  window.tradexpressUI = {
+  window.TradeXpressUI = window.tradexpressUI = {
     init,
     selectSymbol: selectSymbolForTicket,
+    selectSymbolForTicket,
     quickSell,
     switchNavView,
     switchMonPane,

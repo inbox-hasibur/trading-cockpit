@@ -410,15 +410,20 @@ function renderSnapshot() {
   renderWatchlist();
   renderMarketMap();
   renderTopSectorsChart();
-  renderAutomationControlBar();
-  renderInspector();
-  renderDecisions();
-  renderCanaryTheses();
-  renderHermesSkills();
-  renderLedger();
-  updateControls();
-  if (window.tradexpressUI && typeof window.tradexpressUI.updateFromSnapshot === "function") {
-    window.tradexpressUI.updateFromSnapshot(state.snapshot);
+  try { renderAutomationControlBar(); } catch (e) { console.warn("renderAutomationControlBar error:", e); }
+  try { renderInspector(); } catch (e) { console.warn("renderInspector error:", e); }
+  try { renderDecisions(); } catch (e) { console.warn("renderDecisions error:", e); }
+  try { renderCanaryTheses(); } catch (e) { console.warn("renderCanaryTheses error:", e); }
+  try { renderHermesSkills(); } catch (e) { console.warn("renderHermesSkills error:", e); }
+  try { renderLedger(); } catch (e) { console.warn("renderLedger error:", e); }
+  try { updateControls(); } catch (e) { console.warn("updateControls error:", e); }
+  const txUI = window.TradeXpressUI || window.tradexpressUI;
+  if (txUI && typeof txUI.updateFromSnapshot === "function") {
+    try {
+      txUI.updateFromSnapshot(state.snapshot);
+    } catch (e) {
+      console.warn("TradeXpressUI.updateFromSnapshot error:", e);
+    }
   }
 }
 
@@ -852,6 +857,12 @@ function renderWatchlist() {
     const symSpan = element("span", "company-symbol", symText);
     const catCode = company.watchlist_category || "GSC";
     symSpan.append(element("span", `cat-tag cat-${catCode.toLowerCase()}`, catLabels[catCode] || catCode));
+    if (company.hit_52w_high) {
+      symSpan.append(element("span", "badge-52", "52"));
+    }
+    if (company.hit_upper_circuit) {
+      symSpan.append(element("span", "badge-circuit", "▲Max"));
+    }
     name.append(symSpan, element("span", "company-subtitle", (company.name || company.sector).slice(0, 20)));
     button.append(name); companyCell.append(button);
 
@@ -929,6 +940,18 @@ function renderWatchlist() {
     signal.title = tooltipReason;
 
     const signalWrap = element("div", "signal-cell-wrap");
+    const catLetter = company.symbol_category || "A";
+    const catClass = `cat-badge cat-${catLetter.toLowerCase()}`;
+    const catBadge = element("span", catClass, catLetter);
+    catBadge.title = `Exchange Category ${catLetter}`;
+    signalWrap.append(catBadge);
+
+    if (company.settlement_type === "SPOT") {
+      const spotBadge = element("span", "spot-badge", "SPOT");
+      spotBadge.title = "SPOT Settlement - T+0 Cash Only";
+      signalWrap.append(spotBadge);
+    }
+
     signalWrap.append(sigBadge);
 
     // Provide a retry link for any data-fallback state (NO DATA, LAST CLOSE, STALE, LIVE when recovering)
@@ -1122,6 +1145,9 @@ function isBlockedDecision(d) {
 
 function renderDecisions() {
   if (!state.snapshot) return;
+  const feed = $("decision-feed");
+  if (!feed) return;
+
   const { latest_cycle: cycle } = state.snapshot;
   const decisions = state.snapshot.decisions || [];
   setText("cycle-badge", cycle ? `SNAPSHOT ${cycle.revision} · ${cycle.trades.length} TRADES` : "NO CYCLES YET");
@@ -1155,13 +1181,12 @@ function renderDecisions() {
   });
 
   if (!decisions.length) {
-    const feed = $("decision-feed");
-    const emptyP = feed ? feed.querySelector(".empty-state p") : null;
+    const emptyP = feed.querySelector(".empty-state p");
     if (emptyP) {
       emptyP.textContent = isLiveSource()
         ? "Run cycle now to preview decisions"
         : "Run a paper cycle to see range signals, settlement guards, and sequential selling decisions.";
-    } else if (feed) {
+    } else {
       feed.innerHTML = `
         <div class="empty-state">
           <div class="empty-state-icon">⌁</div>
@@ -1184,7 +1209,7 @@ function renderDecisions() {
     const empty = element("div", "decision-feed-empty muted small", `No ${currentFilter} decisions in this snapshot`);
     empty.style.padding = "20px 14px";
     empty.style.textAlign = "center";
-    $("decision-feed").replaceChildren(empty);
+    feed.replaceChildren(empty);
     return;
   }
 
@@ -1203,7 +1228,7 @@ function renderDecisions() {
     entry.append(top, element("p", "", decision.reason));
     return entry;
   });
-  $("decision-feed").replaceChildren(...entries);
+  feed.replaceChildren(...entries);
 }
 
 function renderLedger() {

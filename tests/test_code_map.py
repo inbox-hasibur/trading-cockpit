@@ -12,6 +12,7 @@ from scripts.generate_code_map import (
     parse_python_files,
     get_pinned_vendor_commit,
     parse_frontend,
+    parse_frontend_dom_audit,
     parse_plugin_tools,
     generate_ascii_tree,
     compute_blast_radius,
@@ -124,6 +125,15 @@ def test_frontend_indexing():
     assert "formatTimestamp" in func_names
     assert "renderMainChart" in func_names
     assert "renderOrderPreviewCard" in func_names
+
+
+def test_frontend_dom_audit():
+    """Verify Section 6.8 DOM binding audit verifies 0 orphan critical IDs."""
+    dom_audit = parse_frontend_dom_audit(REPO_ROOT)
+    assert dom_audit["total_js_ids"] >= 200
+    assert dom_audit["matched_count"] == dom_audit["total_js_ids"]
+    assert dom_audit["orphan_count"] == 0
+    assert len(dom_audit["orphans"]) == 0
 
 
 def test_plugin_tools_indexing():
