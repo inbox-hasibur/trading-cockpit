@@ -61,6 +61,8 @@ function getBezierPointAtContinuousIndex(coords, continuousIdx) {
 }
 
 function renderMainChart() {
+  const mainChart = $("main-chart");
+  if (!mainChart) return;
   const points = state.snapshot.normalized_curve;
   if (!points || points.length < 2) {
     $("main-chart").replaceChildren(element("span", "muted", "Insufficient valid history to chart."));

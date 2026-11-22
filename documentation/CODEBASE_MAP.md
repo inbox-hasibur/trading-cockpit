@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Knowledge Graph & Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-22 13:07:43 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-22 14:42:36 UTC**.
 > **Core Strategy Invariants:**
 > - **Strict No-Loss Guarantee:** Never sell at net loss (< 0% net P/L after round-trip 1.00% fees).
 > - **Sequential No-Regret Selling:** 25% / 25% / 25% profit tiers (+1.5%, +3.5%, +6.0% net) + 25% runner.
@@ -168,7 +168,8 @@ trading-cockpit/
 │   ├── test_tradexpress_foundation.py
 │   ├── test_tradexpress_shadow_and_learning.py
 │   ├── test_tradexpress_ui_v1.py
-│   └── test_trading_mode.py
+│   ├── test_trading_mode.py
+│   └── test_v1_layout_playwright.py
 ├── .agentignore
 ├── .cursorignore
 ├── .env.example
@@ -187,12 +188,12 @@ trading-cockpit/
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 91 | 27,680 | Python Core Kernel, Engine, Tests & Plugins |
-| `.css` | 2 | 10,521 | Custom Dark / Light / Terminal Design System |
-| `.js` | 4 | 6,327 | Vanilla ES6+ Reactive Terminal Controller & UI |
+| `.py` | 92 | 27,868 | Python Core Kernel, Engine, Tests & Plugins |
+| `.css` | 2 | 10,575 | Custom Dark / Light / Terminal Design System |
+| `.js` | 4 | 6,355 | Vanilla ES6+ Reactive Terminal Controller & UI |
 | `.json` | 13 | 5,659 | Fixtures & Configuration |
-| `.md` | 14 | 5,458 | Architecture & Strategy Documentation |
-| `.html` | 1 | 995 | Single Page Application DOM Structure |
+| `.md` | 14 | 5,564 | Architecture & Strategy Documentation |
+| `.html` | 1 | 1,310 | Single Page Application DOM Structure |
 | `.ps1` | 2 | 199 | Windows PowerShell Automation |
 | `.yaml` | 1 | 34 | Manifest & Plugin Configuration |
 | `.toml` | 1 | 13 | PyProject Configuration |
@@ -200,7 +201,7 @@ trading-cockpit/
 | `.sh` | 1 | 9 | Shell Scripts |
 | `.bat` | 1 | 8 | Batch Launchers |
 | *other* | 9 | 43,383 | Other Configuration, Assets & Dotfiles |
-| **TOTAL** | **142** | **100,297** | *Entire Humming Bird Repository* |
+| **TOTAL** | **143** | **100,988** | *Entire Humming Bird Repository* |
 
 ---
 
@@ -2271,326 +2272,416 @@ Indexed **29** Pydantic contract and request/response models across `backend/` a
 
 | Component Selector | Stylesheet File | Line | Display | Grid / Layout | Position | Background / Color | Flex Wrap |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `.app-shell` | [`frontend/styles.css`](/frontend/styles.css#L242) | `L242` | `grid` | `64px minmax(0, 1fr) var(--hermes-width)` | — | — | — |
-| `.nav-rail` | [`frontend/styles.css`](/frontend/styles.css#L255) | `L255` | `flex` | — | — | `var(--nav-bg)` | — |
-| `.workspace` | [`frontend/styles.css`](/frontend/styles.css#L356) | `L356` | — | — | `relative` | — | — |
-| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L380) | `L380` | `flex` | — | `sticky` | `rgba(10, 16, 24, 0.88)` | `nowrap` |
-| `.topbar-right` | [`frontend/styles.css`](/frontend/styles.css#L416) | `L416` | `flex` | — | — | — | `nowrap` |
-| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L426) | `L426` | `flex` | — | — | — | `nowrap` |
-| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L435) | `L435` | — | — | — | — | — |
-| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L796) | `L796` | — | — | — | — | — |
-| `.engine-controls` | [`frontend/styles.css`](/frontend/styles.css#L962) | `L962` | `flex` | — | — | — | — |
-| `.session-bar` | [`frontend/styles.css`](/frontend/styles.css#L998) | `L998` | `flex` | — | — | `#0e161f` | `wrap` |
-| `.metric-card` | [`frontend/styles.css`](/frontend/styles.css#L1054) | `L1054` | — | — | — | `var(--panel)` | — |
-| `.skills-drawer` | [`frontend/styles.css`](/frontend/styles.css#L2724) | `L2724` | — | — | — | `var(--panel)` | — |
-| `.model-dropup-menu` | [`frontend/styles.css`](/frontend/styles.css#L4657) | `L4657` | — | — | `absolute` | `var(--panel, #111a24)` | — |
+| `.app-shell` | [`frontend/styles.css`](/frontend/styles.css#L242) | `L242` | `grid` | `minmax(0, 1fr) var(--hermes-width, 380px) !important` | — | — | — |
+| `.nav-rail` | [`frontend/styles.css`](/frontend/styles.css#L262) | `L262` | `none !important` | — | — | — | — |
+| `.nav-rail` | [`frontend/styles.css`](/frontend/styles.css#L269) | `L269` | `flex` | — | — | `var(--nav-bg)` | — |
+| `.workspace` | [`frontend/styles.css`](/frontend/styles.css#L370) | `L370` | — | — | `relative` | — | — |
+| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L394) | `L394` | `flex` | — | `sticky` | `rgba(10, 16, 24, 0.88)` | `nowrap` |
+| `.topbar-right` | [`frontend/styles.css`](/frontend/styles.css#L430) | `L430` | `flex` | — | — | — | `nowrap` |
+| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L440) | `L440` | `flex` | — | — | — | `nowrap` |
+| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L449) | `L449` | — | — | — | — | — |
+| `.topbar` | [`frontend/styles.css`](/frontend/styles.css#L810) | `L810` | — | — | — | — | — |
+| `.engine-controls` | [`frontend/styles.css`](/frontend/styles.css#L976) | `L976` | `flex` | — | — | — | — |
+| `.session-bar` | [`frontend/styles.css`](/frontend/styles.css#L1012) | `L1012` | `flex` | — | — | `#0e161f` | `wrap` |
+| `.metric-card` | [`frontend/styles.css`](/frontend/styles.css#L1068) | `L1068` | — | — | — | `var(--panel)` | — |
+| `.skills-drawer` | [`frontend/styles.css`](/frontend/styles.css#L2738) | `L2738` | — | — | — | `var(--panel)` | — |
+| `.model-dropup-menu` | [`frontend/styles.css`](/frontend/styles.css#L4671) | `L4671` | — | — | `absolute` | `var(--panel, #111a24)` | — |
 | `.session-bar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L69) | `L69` | — | — | — | `#ffffff` | — |
 | `.metric-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L95) | `L95` | — | — | — | `#ffffff` | — |
 | `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L499) | `L499` | — | — | — | `#f8fafc !important` | — |
 | `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L557) | `L557` | — | — | — | `#ffffff !important` | — |
 | `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L596) | `L596` | — | — | — | `#ffffff !important` | — |
 | `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L809) | `L809` | — | — | — | `#ccfbf1 !important` | — |
-| `.topbar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L871) | `L871` | — | — | — | `rgba(226, 232, 240, 0.92)` | — |
-| `#hermes-resizer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L958) | `L958` | — | — | `absolute` | `transparent` | — |
-| `.app-shell` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L999) | `L999` | — | — | — | — | — |
-| `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1108) | `L1108` | — | — | — | — | — |
-| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1598) | `L1598` | — | — | — | `var(--panel)` | — |
-| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1733) | `L1733` | — | — | `absolute` | `var(--panel, #111a24)` | — |
-| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1750) | `L1750` | — | — | — | `#ffffff` | — |
-| `.workspace` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1873) | `L1873` | — | — | — | — | — |
-| `.skills-drawer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L2225) | `L2225` | — | — | — | `#ffffff !important` | — |
-| `.skills-drawer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L2976) | `L2976` | — | — | — | `var(--panel)` | — |
+| `.topbar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L872) | `L872` | — | — | — | `rgba(226, 232, 240, 0.92)` | — |
+| `#hermes-resizer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L959) | `L959` | — | — | `absolute` | `transparent` | — |
+| `.app-shell` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1000) | `L1000` | — | — | — | — | — |
+| `.chat-messages` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1109) | `L1109` | — | — | — | — | — |
+| `.diff-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1599) | `L1599` | — | — | — | `var(--panel)` | — |
+| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1734) | `L1734` | — | — | `absolute` | `var(--panel, #111a24)` | — |
+| `.model-dropup-menu` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1751) | `L1751` | — | — | — | `#ffffff` | — |
+| `.workspace` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L1874) | `L1874` | — | — | — | — | — |
+| `.skills-drawer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L2226) | `L2226` | — | — | — | `#ffffff !important` | — |
+| `.skills-drawer` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L2977) | `L2977` | — | — | — | `var(--panel)` | — |
 
 
 ### 6.3 DOM Identifiers Index (`frontend/index.html`)
 
-Complete catalog of all **283** distinct element IDs in `frontend/index.html` for UI element location:
+Complete catalog of all **372** distinct element IDs in `frontend/index.html` for UI element location:
 
 | DOM Element ID (`id="..."`) | HTML Tag | Line Number |
 | :--- | :--- | :--- |
-| `#nav-system-control` | `<a>` | [`frontend/index.html#L30`](/frontend/index.html#L30) |
-| `#user-avatar-btn` | `<button>` | [`frontend/index.html#L32`](/frontend/index.html#L32) |
-| `#portfolio-header-badge` | `<span>` | [`frontend/index.html#L44`](/frontend/index.html#L44) |
-| `#portfolio-header-badge-dot` | `<span>` | [`frontend/index.html#L45`](/frontend/index.html#L45) |
-| `#portfolio-header-badge-text` | `<span>` | [`frontend/index.html#L46`](/frontend/index.html#L46) |
-| `#tx-hdr-buying-power` | `<span>` | [`frontend/index.html#L58`](/frontend/index.html#L58) |
-| `#tx-hdr-gain-loss` | `<span>` | [`frontend/index.html#L62`](/frontend/index.html#L62) |
-| `#topbar-clock-widget` | `<button>` | [`frontend/index.html#L66`](/frontend/index.html#L66) |
-| `#market-status-dot` | `<span>` | [`frontend/index.html#L67`](/frontend/index.html#L67) |
-| `#market-status-text` | `<span>` | [`frontend/index.html#L68`](/frontend/index.html#L68) |
-| `#market-countdown-text` | `<span>` | [`frontend/index.html#L70`](/frontend/index.html#L70) |
-| `#topbar-tmode-badge` | `<span>` | [`frontend/index.html#L71`](/frontend/index.html#L71) |
-| `#topbar-run-mode-switch` | `<div>` | [`frontend/index.html#L76`](/frontend/index.html#L76) |
-| `#topbar-mode-btn-background` | `<button>` | [`frontend/index.html#L77`](/frontend/index.html#L77) |
-| `#topbar-mode-btn-onscreen` | `<button>` | [`frontend/index.html#L78`](/frontend/index.html#L78) |
-| `#topbar-switching-state` | `<span>` | [`frontend/index.html#L80`](/frontend/index.html#L80) |
-| `#topbar-automation-control` | `<div>` | [`frontend/index.html#L84`](/frontend/index.html#L84) |
-| `#topbar-automation-toggle-input` | `<input>` | [`frontend/index.html#L87`](/frontend/index.html#L87) |
-| `#topbar-automation-state` | `<span>` | [`frontend/index.html#L90`](/frontend/index.html#L90) |
-| `#run-cycle` | `<button>` | [`frontend/index.html#L94`](/frontend/index.html#L94) |
-| `#run-label` | `<span>` | [`frontend/index.html#L94`](/frontend/index.html#L94) |
-| `#theme-toggle-btn` | `<button>` | [`frontend/index.html#L97`](/frontend/index.html#L97) |
-| `#theme-name` | `<span>` | [`frontend/index.html#L98`](/frontend/index.html#L98) |
-| `#tx-main-nav` | `<nav>` | [`frontend/index.html#L104`](/frontend/index.html#L104) |
-| `#tx-nav-trade` | `<button>` | [`frontend/index.html#L105`](/frontend/index.html#L105) |
-| `#tx-nav-heatmap` | `<button>` | [`frontend/index.html#L106`](/frontend/index.html#L106) |
-| `#tx-nav-rules` | `<button>` | [`frontend/index.html#L107`](/frontend/index.html#L107) |
-| `#tx-nav-ledger` | `<button>` | [`frontend/index.html#L108`](/frontend/index.html#L108) |
-| `#tx-nav-learning` | `<button>` | [`frontend/index.html#L109`](/frontend/index.html#L109) |
-| `#tx-nav-settings` | `<button>` | [`frontend/index.html#L110`](/frontend/index.html#L110) |
+| `#nav-system-control` | `<a>` | [`frontend/index.html#L31`](/frontend/index.html#L31) |
+| `#user-avatar-btn` | `<button>` | [`frontend/index.html#L33`](/frontend/index.html#L33) |
+| `#portfolio-header-badge` | `<span>` | [`frontend/index.html#L46`](/frontend/index.html#L46) |
+| `#portfolio-header-badge-dot` | `<span>` | [`frontend/index.html#L47`](/frontend/index.html#L47) |
+| `#portfolio-header-badge-text` | `<span>` | [`frontend/index.html#L48`](/frontend/index.html#L48) |
+| `#tx-hdr-buying-power` | `<span>` | [`frontend/index.html#L60`](/frontend/index.html#L60) |
+| `#tx-hdr-gain-loss` | `<span>` | [`frontend/index.html#L64`](/frontend/index.html#L64) |
+| `#topbar-clock-widget` | `<button>` | [`frontend/index.html#L68`](/frontend/index.html#L68) |
+| `#market-status-dot` | `<span>` | [`frontend/index.html#L69`](/frontend/index.html#L69) |
+| `#market-status-text` | `<span>` | [`frontend/index.html#L70`](/frontend/index.html#L70) |
+| `#market-countdown-text` | `<span>` | [`frontend/index.html#L72`](/frontend/index.html#L72) |
+| `#topbar-tmode-badge` | `<span>` | [`frontend/index.html#L73`](/frontend/index.html#L73) |
+| `#topbar-run-mode-switch` | `<div>` | [`frontend/index.html#L78`](/frontend/index.html#L78) |
+| `#topbar-mode-btn-background` | `<button>` | [`frontend/index.html#L79`](/frontend/index.html#L79) |
+| `#topbar-mode-btn-onscreen` | `<button>` | [`frontend/index.html#L80`](/frontend/index.html#L80) |
+| `#topbar-switching-state` | `<span>` | [`frontend/index.html#L82`](/frontend/index.html#L82) |
+| `#topbar-automation-control` | `<div>` | [`frontend/index.html#L86`](/frontend/index.html#L86) |
+| `#topbar-automation-toggle-input` | `<input>` | [`frontend/index.html#L89`](/frontend/index.html#L89) |
+| `#topbar-automation-state` | `<span>` | [`frontend/index.html#L92`](/frontend/index.html#L92) |
+| `#run-cycle` | `<button>` | [`frontend/index.html#L96`](/frontend/index.html#L96) |
+| `#run-label` | `<span>` | [`frontend/index.html#L96`](/frontend/index.html#L96) |
+| `#theme-toggle-btn` | `<button>` | [`frontend/index.html#L99`](/frontend/index.html#L99) |
+| `#theme-name` | `<span>` | [`frontend/index.html#L100`](/frontend/index.html#L100) |
+| `#tx-main-nav` | `<nav>` | [`frontend/index.html#L105`](/frontend/index.html#L105) |
+| `#tx-nav-trade` | `<button>` | [`frontend/index.html#L106`](/frontend/index.html#L106) |
+| `#tx-nav-heatmap` | `<button>` | [`frontend/index.html#L107`](/frontend/index.html#L107) |
+| `#tx-nav-rules` | `<button>` | [`frontend/index.html#L108`](/frontend/index.html#L108) |
+| `#tx-nav-ledger` | `<button>` | [`frontend/index.html#L109`](/frontend/index.html#L109) |
+| `#tx-nav-learning` | `<button>` | [`frontend/index.html#L110`](/frontend/index.html#L110) |
+| `#tx-nav-settings` | `<button>` | [`frontend/index.html#L111`](/frontend/index.html#L111) |
 | `#topbar-kill-btn` | `<button>` | [`frontend/index.html#L115`](/frontend/index.html#L115) |
 | `#topbar-handoff-btn` | `<button>` | [`frontend/index.html#L116`](/frontend/index.html#L116) |
 | `#trading-mode-toggle` | `<div>` | [`frontend/index.html#L117`](/frontend/index.html#L117) |
 | `#header-mode-slider` | `<div>` | [`frontend/index.html#L118`](/frontend/index.html#L118) |
 | `#topbar-master-label` | `<span>` | [`frontend/index.html#L119`](/frontend/index.html#L119) |
 | `#footer-mode-tag` | `<div>` | [`frontend/index.html#L120`](/frontend/index.html#L120) |
-| `#error-banner` | `<div>` | [`frontend/index.html#L123`](/frontend/index.html#L123) |
-| `#error-text` | `<span>` | [`frontend/index.html#L123`](/frontend/index.html#L123) |
-| `#dismiss-error` | `<button>` | [`frontend/index.html#L123`](/frontend/index.html#L123) |
-| `#view-dashboard` | `<div>` | [`frontend/index.html#L128`](/frontend/index.html#L128) |
-| `#tx-trade-workspace` | `<div>` | [`frontend/index.html#L129`](/frontend/index.html#L129) |
-| `#tx-market-watch` | `<section>` | [`frontend/index.html#L131`](/frontend/index.html#L131) |
-| `#category-tabs` | `<div>` | [`frontend/index.html#L135`](/frontend/index.html#L135) |
-| `#cat-all-count` | `<span>` | [`frontend/index.html#L136`](/frontend/index.html#L136) |
-| `#cat-gsc-count` | `<span>` | [`frontend/index.html#L137`](/frontend/index.html#L137) |
-| `#cat-l1-count` | `<span>` | [`frontend/index.html#L138`](/frontend/index.html#L138) |
-| `#cat-l2-count` | `<span>` | [`frontend/index.html#L139`](/frontend/index.html#L139) |
-| `#cat-dse-count` | `<span>` | [`frontend/index.html#L140`](/frontend/index.html#L140) |
-| `#company-search` | `<input>` | [`frontend/index.html#L146`](/frontend/index.html#L146) |
-| `#filter-hide-z-spot` | `<input>` | [`frontend/index.html#L149`](/frontend/index.html#L149) |
-| `#filter-held-only` | `<input>` | [`frontend/index.html#L152`](/frontend/index.html#L152) |
-| `#company-count` | `<span>` | [`frontend/index.html#L154`](/frontend/index.html#L154) |
-| `#watchlist` | `<table>` | [`frontend/index.html#L160`](/frontend/index.html#L160) |
-| `#watchlist-thead` | `<thead>` | [`frontend/index.html#L161`](/frontend/index.html#L161) |
-| `#col-curve-signal` | `<th>` | [`frontend/index.html#L169`](/frontend/index.html#L169) |
-| `#col-held-mature` | `<th>` | [`frontend/index.html#L171`](/frontend/index.html#L171) |
-| `#col-buy-cap` | `<th>` | [`frontend/index.html#L175`](/frontend/index.html#L175) |
-| `#watchlist-body` | `<tbody>` | [`frontend/index.html#L178`](/frontend/index.html#L178) |
-| `#watchlist-pagination` | `<div>` | [`frontend/index.html#L183`](/frontend/index.html#L183) |
-| `#watchlist-prev-page` | `<button>` | [`frontend/index.html#L184`](/frontend/index.html#L184) |
-| `#watchlist-page-info` | `<span>` | [`frontend/index.html#L185`](/frontend/index.html#L185) |
-| `#watchlist-next-page` | `<button>` | [`frontend/index.html#L186`](/frontend/index.html#L186) |
-| `#tx-order-ticket` | `<section>` | [`frontend/index.html#L193`](/frontend/index.html#L193) |
-| `#tx-ticket-header-title` | `<h2>` | [`frontend/index.html#L195`](/frontend/index.html#L195) |
-| `#tx-order-side-toggle` | `<div>` | [`frontend/index.html#L200`](/frontend/index.html#L200) |
-| `#tx-side-buy-btn` | `<button>` | [`frontend/index.html#L201`](/frontend/index.html#L201) |
-| `#tx-side-sell-btn` | `<button>` | [`frontend/index.html#L202`](/frontend/index.html#L202) |
-| `#tx-ticket-bp` | `<strong>` | [`frontend/index.html#L205`](/frontend/index.html#L205) |
-| `#tx-ticket-avail-qty` | `<strong>` | [`frontend/index.html#L206`](/frontend/index.html#L206) |
-| `#tx-ticket-gainloss` | `<span>` | [`frontend/index.html#L207`](/frontend/index.html#L207) |
-| `#tx-ticket-symbol-info` | `<div>` | [`frontend/index.html#L212`](/frontend/index.html#L212) |
-| `#tx-ticket-cat` | `<span>` | [`frontend/index.html#L213`](/frontend/index.html#L213) |
-| `#tx-ticket-sym` | `<strong>` | [`frontend/index.html#L213`](/frontend/index.html#L213) |
-| `#tx-ticket-ltp` | `<strong>` | [`frontend/index.html#L215`](/frontend/index.html#L215) |
-| `#tx-ticket-chgpct` | `<span>` | [`frontend/index.html#L215`](/frontend/index.html#L215) |
-| `#tx-ticket-minmax` | `<span>` | [`frontend/index.html#L216`](/frontend/index.html#L216) |
-| `#tx-ticket-bidoffer` | `<span>` | [`frontend/index.html#L217`](/frontend/index.html#L217) |
-| `#tx-ticket-lowhigh` | `<span>` | [`frontend/index.html#L218`](/frontend/index.html#L218) |
-| `#tx-order-type` | `<select>` | [`frontend/index.html#L227`](/frontend/index.html#L227) |
-| `#tx-order-qty` | `<input>` | [`frontend/index.html#L231`](/frontend/index.html#L231) |
-| `#tx-order-price` | `<input>` | [`frontend/index.html#L236`](/frontend/index.html#L236) |
-| `#tx-price-up` | `<button>` | [`frontend/index.html#L238`](/frontend/index.html#L238) |
-| `#tx-price-down` | `<button>` | [`frontend/index.html#L239`](/frontend/index.html#L239) |
-| `#tx-order-tif` | `<select>` | [`frontend/index.html#L245`](/frontend/index.html#L245) |
-| `#tx-order-disclosed-qty` | `<input>` | [`frontend/index.html#L249`](/frontend/index.html#L249) |
-| `#tx-order-min-fill` | `<input>` | [`frontend/index.html#L253`](/frontend/index.html#L253) |
-| `#tx-order-all-or-none` | `<input>` | [`frontend/index.html#L257`](/frontend/index.html#L257) |
-| `#tx-depth-table` | `<table>` | [`frontend/index.html#L265`](/frontend/index.html#L265) |
-| `#tx-depth-body` | `<tbody>` | [`frontend/index.html#L274`](/frontend/index.html#L274) |
-| `#tx-order-submit-btn` | `<button>` | [`frontend/index.html#L285`](/frontend/index.html#L285) |
-| `#tx-order-reset-btn` | `<button>` | [`frontend/index.html#L286`](/frontend/index.html#L286) |
-| `#tx-ticket-order-val` | `<strong>` | [`frontend/index.html#L289`](/frontend/index.html#L289) |
-| `#tx-ticket-fee` | `<strong>` | [`frontend/index.html#L290`](/frontend/index.html#L290) |
-| `#tx-ticket-net-val` | `<strong>` | [`frontend/index.html#L291`](/frontend/index.html#L291) |
-| `#tx-monitor-panel` | `<section>` | [`frontend/index.html#L297`](/frontend/index.html#L297) |
-| `#tx-tab-order-list` | `<button>` | [`frontend/index.html#L300`](/frontend/index.html#L300) |
-| `#tx-order-count` | `<span>` | [`frontend/index.html#L300`](/frontend/index.html#L300) |
-| `#tx-tab-portfolio` | `<button>` | [`frontend/index.html#L301`](/frontend/index.html#L301) |
-| `#tx-tab-account-summary` | `<button>` | [`frontend/index.html#L302`](/frontend/index.html#L302) |
-| `#tx-tab-order-search` | `<button>` | [`frontend/index.html#L303`](/frontend/index.html#L303) |
-| `#tx-pane-order-list` | `<div>` | [`frontend/index.html#L309`](/frontend/index.html#L309) |
-| `#tx-orders-table` | `<table>` | [`frontend/index.html#L311`](/frontend/index.html#L311) |
-| `#tx-orders-body` | `<tbody>` | [`frontend/index.html#L327`](/frontend/index.html#L327) |
-| `#tx-pane-portfolio` | `<div>` | [`frontend/index.html#L335`](/frontend/index.html#L335) |
-| `#tx-portfolio-table` | `<table>` | [`frontend/index.html#L337`](/frontend/index.html#L337) |
-| `#active-holdings-body` | `<tbody>` | [`frontend/index.html#L352`](/frontend/index.html#L352) |
-| `#active-holdings-foot` | `<tfoot>` | [`frontend/index.html#L355`](/frontend/index.html#L355) |
-| `#tx-pane-account-summary` | `<div>` | [`frontend/index.html#L361`](/frontend/index.html#L361) |
-| `#tx-acc-settled-cash` | `<span>` | [`frontend/index.html#L367`](/frontend/index.html#L367) |
-| `#tx-acc-buying-power` | `<strong>` | [`frontend/index.html#L368`](/frontend/index.html#L368) |
-| `#tx-acc-blocked` | `<span>` | [`frontend/index.html#L369`](/frontend/index.html#L369) |
-| `#tx-acc-unsettled-sales` | `<strong>` | [`frontend/index.html#L370`](/frontend/index.html#L370) |
-| `#tx-acc-realized-pnl` | `<span>` | [`frontend/index.html#L371`](/frontend/index.html#L371) |
-| `#tx-acc-unrealized-pnl` | `<span>` | [`frontend/index.html#L372`](/frontend/index.html#L372) |
-| `#tx-account-donut` | `<div>` | [`frontend/index.html#L376`](/frontend/index.html#L376) |
-| `#tx-pane-order-search` | `<div>` | [`frontend/index.html#L383`](/frontend/index.html#L383) |
-| `#tx-search-sym` | `<input>` | [`frontend/index.html#L385`](/frontend/index.html#L385) |
-| `#tx-search-side` | `<select>` | [`frontend/index.html#L386`](/frontend/index.html#L386) |
-| `#tx-search-status` | `<select>` | [`frontend/index.html#L391`](/frontend/index.html#L391) |
-| `#tx-search-orders-body` | `<tbody>` | [`frontend/index.html#L408`](/frontend/index.html#L408) |
-| `#view-heatmap-wrap` | `<div>` | [`frontend/index.html#L423`](/frontend/index.html#L423) |
-| `#market-map` | `<section>` | [`frontend/index.html#L424`](/frontend/index.html#L424) |
-| `#treemap-sector-select` | `<select>` | [`frontend/index.html#L431`](/frontend/index.html#L431) |
-| `#treemap-back-btn` | `<button>` | [`frontend/index.html#L441`](/frontend/index.html#L441) |
-| `#treemap-active-view` | `<span>` | [`frontend/index.html#L444`](/frontend/index.html#L444) |
-| `#treemap-turnover-badge` | `<span>` | [`frontend/index.html#L445`](/frontend/index.html#L445) |
-| `#treemap-container` | `<div>` | [`frontend/index.html#L450`](/frontend/index.html#L450) |
-| `#treemap-tooltip` | `<div>` | [`frontend/index.html#L453`](/frontend/index.html#L453) |
-| `#sector-gainer-chart-wrap` | `<div>` | [`frontend/index.html#L471`](/frontend/index.html#L471) |
-| `#sector-gainer-chart` | `<svg>` | [`frontend/index.html#L472`](/frontend/index.html#L472) |
-| `#view-rules-wrap` | `<div>` | [`frontend/index.html#L481`](/frontend/index.html#L481) |
-| `#rules` | `<section>` | [`frontend/index.html#L482`](/frontend/index.html#L482) |
-| `#what-if-card` | `<article>` | [`frontend/index.html#L493`](/frontend/index.html#L493) |
-| `#sim-symbol-badge` | `<span>` | [`frontend/index.html#L499`](/frontend/index.html#L499) |
-| `#what-if-target-price` | `<strong>` | [`frontend/index.html#L503`](/frontend/index.html#L503) |
-| `#what-if-target-pct` | `<span>` | [`frontend/index.html#L504`](/frontend/index.html#L504) |
-| `#what-if-slider` | `<input>` | [`frontend/index.html#L507`](/frontend/index.html#L507) |
-| `#what-if-gross` | `<strong>` | [`frontend/index.html#L516`](/frontend/index.html#L516) |
-| `#what-if-fee` | `<strong>` | [`frontend/index.html#L517`](/frontend/index.html#L517) |
-| `#what-if-net-pnl` | `<strong>` | [`frontend/index.html#L518`](/frontend/index.html#L518) |
-| `#what-if-return-pct` | `<strong>` | [`frontend/index.html#L519`](/frontend/index.html#L519) |
-| `#profit-tiers` | `<div>` | [`frontend/index.html#L528`](/frontend/index.html#L528) |
-| `#pullback-setting` | `<span>` | [`frontend/index.html#L528`](/frontend/index.html#L528) |
-| `#allocation-form` | `<form>` | [`frontend/index.html#L529`](/frontend/index.html#L529) |
-| `#buy-allocation` | `<input>` | [`frontend/index.html#L533`](/frontend/index.html#L533) |
-| `#company-enabled` | `<input>` | [`frontend/index.html#L539`](/frontend/index.html#L539) |
-| `#save-allocation` | `<button>` | [`frontend/index.html#L544`](/frontend/index.html#L544) |
-| `#bucket-stack` | `<div>` | [`frontend/index.html#L552`](/frontend/index.html#L552) |
-| `#cycle-badge` | `<span>` | [`frontend/index.html#L559`](/frontend/index.html#L559) |
-| `#decision-feed` | `<div>` | [`frontend/index.html#L561`](/frontend/index.html#L561) |
-| `#canary-section` | `<section>` | [`frontend/index.html#L564`](/frontend/index.html#L564) |
-| `#canary-count` | `<span>` | [`frontend/index.html#L565`](/frontend/index.html#L565) |
-| `#canary-feed` | `<div>` | [`frontend/index.html#L566`](/frontend/index.html#L566) |
-| `#view-ledger-wrap` | `<div>` | [`frontend/index.html#L574`](/frontend/index.html#L574) |
-| `#ledger` | `<section>` | [`frontend/index.html#L575`](/frontend/index.html#L575) |
-| `#period-pnl` | `<strong>` | [`frontend/index.html#L596`](/frontend/index.html#L596) |
-| `#period-buy` | `<strong>` | [`frontend/index.html#L597`](/frontend/index.html#L597) |
-| `#period-sell` | `<strong>` | [`frontend/index.html#L598`](/frontend/index.html#L598) |
-| `#period-trades` | `<strong>` | [`frontend/index.html#L599`](/frontend/index.html#L599) |
-| `#trades-body` | `<tbody>` | [`frontend/index.html#L610`](/frontend/index.html#L610) |
-| `#tx-learning-view` | `<div>` | [`frontend/index.html#L620`](/frontend/index.html#L620) |
-| `#tx-learn-total` | `<div>` | [`frontend/index.html#L632`](/frontend/index.html#L632) |
-| `#tx-learn-win-rate` | `<div>` | [`frontend/index.html#L637`](/frontend/index.html#L637) |
-| `#tx-learn-buys` | `<div>` | [`frontend/index.html#L642`](/frontend/index.html#L642) |
-| `#tx-learn-sells` | `<div>` | [`frontend/index.html#L647`](/frontend/index.html#L647) |
-| `#tx-learn-avg-pnl` | `<div>` | [`frontend/index.html#L652`](/frontend/index.html#L652) |
-| `#tx-learn-table` | `<table>` | [`frontend/index.html#L662`](/frontend/index.html#L662) |
-| `#tx-learn-body` | `<tbody>` | [`frontend/index.html#L677`](/frontend/index.html#L677) |
-| `#view-settings` | `<div>` | [`frontend/index.html#L688`](/frontend/index.html#L688) |
-| `#system-control` | `<div>` | [`frontend/index.html#L697`](/frontend/index.html#L697) |
-| `#automation-settings-card` | `<article>` | [`frontend/index.html#L699`](/frontend/index.html#L699) |
-| `#circuit-state` | `<span>` | [`frontend/index.html#L712`](/frontend/index.html#L712) |
-| `#master-automation-toggle-input` | `<input>` | [`frontend/index.html#L716`](/frontend/index.html#L716) |
-| `#master-automation-status-text` | `<span>` | [`frontend/index.html#L719`](/frontend/index.html#L719) |
-| `#master-automation-toggle` | `<button>` | [`frontend/index.html#L721`](/frontend/index.html#L721) |
-| `#current-mode-pill` | `<span>` | [`frontend/index.html#L730`](/frontend/index.html#L730) |
-| `#ingestion-mode-switch` | `<div>` | [`frontend/index.html#L732`](/frontend/index.html#L732) |
-| `#mode-btn-polling` | `<button>` | [`frontend/index.html#L733`](/frontend/index.html#L733) |
-| `#mode-btn-live` | `<button>` | [`frontend/index.html#L737`](/frontend/index.html#L737) |
-| `#settings-runmode-status-line` | `<div>` | [`frontend/index.html#L742`](/frontend/index.html#L742) |
-| `#tx-feed-status-card` | `<article>` | [`frontend/index.html#L747`](/frontend/index.html#L747) |
-| `#tx-feed-cdp-badge` | `<span>` | [`frontend/index.html#L749`](/frontend/index.html#L749) |
-| `#tx-feed-health-badge` | `<span>` | [`frontend/index.html#L750`](/frontend/index.html#L750) |
-| `#tx-feed-tabs-status` | `<div>` | [`frontend/index.html#L755`](/frontend/index.html#L755) |
-| `#tx-feed-guidance-list` | `<ul>` | [`frontend/index.html#L761`](/frontend/index.html#L761) |
-| `#trading-mode-settings-card` | `<article>` | [`frontend/index.html#L768`](/frontend/index.html#L768) |
-| `#settings-trading-mode-wrap` | `<div>` | [`frontend/index.html#L774`](/frontend/index.html#L774) |
-| `#settings-trading-mode-toggle` | `<label>` | [`frontend/index.html#L775`](/frontend/index.html#L775) |
-| `#settings-trading-mode-input` | `<input>` | [`frontend/index.html#L776`](/frontend/index.html#L776) |
-| `#settings-tmode-label` | `<span>` | [`frontend/index.html#L779`](/frontend/index.html#L779) |
-| `#risk-caps-card` | `<article>` | [`frontend/index.html#L784`](/frontend/index.html#L784) |
-| `#api-keys-card` | `<article>` | [`frontend/index.html#L799`](/frontend/index.html#L799) |
-| `#overview` | `<div>` | [`frontend/index.html#L810`](/frontend/index.html#L810) |
-| `#demo-date` | `<div>` | [`frontend/index.html#L811`](/frontend/index.html#L811) |
-| `#engine-state` | `<div>` | [`frontend/index.html#L812`](/frontend/index.html#L812) |
-| `#snapshot-label` | `<div>` | [`frontend/index.html#L813`](/frontend/index.html#L813) |
-| `#overview-sys-link` | `<a>` | [`frontend/index.html#L814`](/frontend/index.html#L814) |
-| `#overview-sys-dot` | `<span>` | [`frontend/index.html#L814`](/frontend/index.html#L814) |
-| `#overview-sys-text` | `<span>` | [`frontend/index.html#L814`](/frontend/index.html#L814) |
-| `#scenario` | `<select>` | [`frontend/index.html#L815`](/frontend/index.html#L815) |
-| `#next-session` | `<button>` | [`frontend/index.html#L816`](/frontend/index.html#L816) |
-| `#metric-equity` | `<div>` | [`frontend/index.html#L817`](/frontend/index.html#L817) |
-| `#metric-total-gain` | `<div>` | [`frontend/index.html#L817`](/frontend/index.html#L817) |
-| `#metric-cash` | `<div>` | [`frontend/index.html#L818`](/frontend/index.html#L818) |
-| `#metric-unsettled` | `<div>` | [`frontend/index.html#L818`](/frontend/index.html#L818) |
-| `#metric-realized` | `<div>` | [`frontend/index.html#L819`](/frontend/index.html#L819) |
-| `#metric-unrealized` | `<div>` | [`frontend/index.html#L819`](/frontend/index.html#L819) |
-| `#equity-sparkline` | `<div>` | [`frontend/index.html#L820`](/frontend/index.html#L820) |
-| `#mature-shares` | `<span>` | [`frontend/index.html#L821`](/frontend/index.html#L821) |
-| `#locked-shares` | `<span>` | [`frontend/index.html#L821`](/frontend/index.html#L821) |
-| `#quarantined-count` | `<span>` | [`frontend/index.html#L821`](/frontend/index.html#L821) |
-| `#fees-paid` | `<span>` | [`frontend/index.html#L821`](/frontend/index.html#L821) |
-| `#ledger-status` | `<span>` | [`frontend/index.html#L821`](/frontend/index.html#L821) |
-| `#index-value` | `<div>` | [`frontend/index.html#L822`](/frontend/index.html#L822) |
-| `#index-change` | `<div>` | [`frontend/index.html#L822`](/frontend/index.html#L822) |
-| `#pulse-support-val` | `<div>` | [`frontend/index.html#L823`](/frontend/index.html#L823) |
-| `#pulse-resistance-val` | `<div>` | [`frontend/index.html#L823`](/frontend/index.html#L823) |
-| `#curve-sessions` | `<div>` | [`frontend/index.html#L824`](/frontend/index.html#L824) |
-| `#main-chart` | `<div>` | [`frontend/index.html#L825`](/frontend/index.html#L825) |
-| `#main-chart-tooltip` | `<div>` | [`frontend/index.html#L825`](/frontend/index.html#L825) |
-| `#execution` | `<div>` | [`frontend/index.html#L827`](/frontend/index.html#L827) |
-| `#inspector-symbol` | `<h2>` | [`frontend/index.html#L828`](/frontend/index.html#L828) |
-| `#open-deep-trend` | `<button>` | [`frontend/index.html#L828`](/frontend/index.html#L828) |
-| `#inspector-sector` | `<span>` | [`frontend/index.html#L829`](/frontend/index.html#L829) |
-| `#inspector-basis` | `<strong>` | [`frontend/index.html#L829`](/frontend/index.html#L829) |
-| `#inspector-pnl` | `<strong>` | [`frontend/index.html#L829`](/frontend/index.html#L829) |
-| `#inspector-return` | `<strong>` | [`frontend/index.html#L829`](/frontend/index.html#L829) |
-| `#inspector-reason` | `<p>` | [`frontend/index.html#L830`](/frontend/index.html#L830) |
-| `#lots-body` | `<tbody>` | [`frontend/index.html#L830`](/frontend/index.html#L830) |
-| `#hermes-sidebar` | `<aside>` | [`frontend/index.html#L835`](/frontend/index.html#L835) |
-| `#hermes-resizer` | `<div>` | [`frontend/index.html#L836`](/frontend/index.html#L836) |
-| `#hermes-model-trigger` | `<button>` | [`frontend/index.html#L846`](/frontend/index.html#L846) |
-| `#hermes-model-name` | `<span>` | [`frontend/index.html#L847`](/frontend/index.html#L847) |
-| `#hermes-collapse-btn` | `<button>` | [`frontend/index.html#L849`](/frontend/index.html#L849) |
-| `#chat-tab-pane` | `<div>` | [`frontend/index.html#L856`](/frontend/index.html#L856) |
-| `#chat-messages` | `<div>` | [`frontend/index.html#L857`](/frontend/index.html#L857) |
-| `#welcome-chips-slot` | `<div>` | [`frontend/index.html#L864`](/frontend/index.html#L864) |
-| `#bottom-chips-slot` | `<div>` | [`frontend/index.html#L866`](/frontend/index.html#L866) |
-| `#chat-quick-prompts` | `<div>` | [`frontend/index.html#L868`](/frontend/index.html#L868) |
-| `#chip-passive-sync-guide` | `<button>` | [`frontend/index.html#L869`](/frontend/index.html#L869) |
-| `#chat-form` | `<form>` | [`frontend/index.html#L875`](/frontend/index.html#L875) |
-| `#chat-input` | `<input>` | [`frontend/index.html#L876`](/frontend/index.html#L876) |
-| `#chat-send` | `<button>` | [`frontend/index.html#L877`](/frontend/index.html#L877) |
-| `#floating-hermes-open` | `<button>` | [`frontend/index.html#L884`](/frontend/index.html#L884) |
-| `#tx-confirm-order-modal` | `<dialog>` | [`frontend/index.html#L891`](/frontend/index.html#L891) |
-| `#tx-confirm-banner` | `<div>` | [`frontend/index.html#L893`](/frontend/index.html#L893) |
-| `#tx-confirm-banner-title` | `<h3>` | [`frontend/index.html#L894`](/frontend/index.html#L894) |
-| `#tx-confirm-subtitle` | `<div>` | [`frontend/index.html#L896`](/frontend/index.html#L896) |
-| `#tx-confirm-side` | `<strong>` | [`frontend/index.html#L901`](/frontend/index.html#L901) |
-| `#tx-confirm-price` | `<strong>` | [`frontend/index.html#L905`](/frontend/index.html#L905) |
-| `#tx-confirm-qty` | `<strong>` | [`frontend/index.html#L906`](/frontend/index.html#L906) |
-| `#tx-confirm-fee` | `<strong>` | [`frontend/index.html#L907`](/frontend/index.html#L907) |
-| `#tx-confirm-order-val` | `<strong>` | [`frontend/index.html#L910`](/frontend/index.html#L910) |
-| `#tx-confirm-net-val` | `<strong>` | [`frontend/index.html#L911`](/frontend/index.html#L911) |
-| `#tx-confirm-submit-btn` | `<button>` | [`frontend/index.html#L915`](/frontend/index.html#L915) |
-| `#tx-confirm-cancel-btn` | `<button>` | [`frontend/index.html#L916`](/frontend/index.html#L916) |
-| `#deep-trend-modal` | `<dialog>` | [`frontend/index.html#L922`](/frontend/index.html#L922) |
-| `#modal-backdrop` | `<div>` | [`frontend/index.html#L923`](/frontend/index.html#L923) |
-| `#modal-company-sector` | `<span>` | [`frontend/index.html#L927`](/frontend/index.html#L927) |
-| `#modal-company-category` | `<span>` | [`frontend/index.html#L927`](/frontend/index.html#L927) |
-| `#modal-company-title` | `<h2>` | [`frontend/index.html#L928`](/frontend/index.html#L928) |
-| `#modal-company-sub` | `<span>` | [`frontend/index.html#L928`](/frontend/index.html#L928) |
-| `#modal-price` | `<span>` | [`frontend/index.html#L930`](/frontend/index.html#L930) |
-| `#modal-change` | `<span>` | [`frontend/index.html#L931`](/frontend/index.html#L931) |
-| `#modal-signal-tag` | `<span>` | [`frontend/index.html#L932`](/frontend/index.html#L932) |
-| `#deep-timeframe-tabs` | `<div>` | [`frontend/index.html#L936`](/frontend/index.html#L936) |
-| `#modal-close-btn` | `<button>` | [`frontend/index.html#L942`](/frontend/index.html#L942) |
-| `#deep-support-val` | `<strong>` | [`frontend/index.html#L949`](/frontend/index.html#L949) |
-| `#deep-resistance-val` | `<strong>` | [`frontend/index.html#L950`](/frontend/index.html#L950) |
-| `#deep-chart-container` | `<div>` | [`frontend/index.html#L953`](/frontend/index.html#L953) |
-| `#deep-trend-chart-mount` | `<div>` | [`frontend/index.html#L954`](/frontend/index.html#L954) |
-| `#deep-chart-tooltip` | `<div>` | [`frontend/index.html#L955`](/frontend/index.html#L955) |
-| `#fundamentals-grid` | `<div>` | [`frontend/index.html#L959`](/frontend/index.html#L959) |
-| `#fund-pe` | `<span>` | [`frontend/index.html#L960`](/frontend/index.html#L960) |
-| `#fund-eps` | `<span>` | [`frontend/index.html#L961`](/frontend/index.html#L961) |
-| `#fund-nav` | `<span>` | [`frontend/index.html#L962`](/frontend/index.html#L962) |
-| `#fund-mcap` | `<span>` | [`frontend/index.html#L963`](/frontend/index.html#L963) |
-| `#operator-modal` | `<dialog>` | [`frontend/index.html#L970`](/frontend/index.html#L970) |
-| `#op-title` | `<h2>` | [`frontend/index.html#L973`](/frontend/index.html#L973) |
-| `#op-close-btn` | `<button>` | [`frontend/index.html#L974`](/frontend/index.html#L974) |
-| `#login-gate-overlay` | `<dialog>` | [`frontend/index.html#L983`](/frontend/index.html#L983) |
-| `#login-title` | `<h2>` | [`frontend/index.html#L987`](/frontend/index.html#L987) |
-| `#toast` | `<div>` | [`frontend/index.html#L993`](/frontend/index.html#L993) |
+| `#bucket-stack` | `<div>` | [`frontend/index.html#L121`](/frontend/index.html#L121) |
+| `#error-banner` | `<div>` | [`frontend/index.html#L124`](/frontend/index.html#L124) |
+| `#error-text` | `<span>` | [`frontend/index.html#L124`](/frontend/index.html#L124) |
+| `#dismiss-error` | `<button>` | [`frontend/index.html#L124`](/frontend/index.html#L124) |
+| `#view-dashboard` | `<div>` | [`frontend/index.html#L126`](/frontend/index.html#L126) |
+| `#tx-trade-workspace` | `<div>` | [`frontend/index.html#L127`](/frontend/index.html#L127) |
+| `#tx-market-watch` | `<section>` | [`frontend/index.html#L129`](/frontend/index.html#L129) |
+| `#category-tabs` | `<div>` | [`frontend/index.html#L133`](/frontend/index.html#L133) |
+| `#cat-all-count` | `<span>` | [`frontend/index.html#L134`](/frontend/index.html#L134) |
+| `#cat-gsc-count` | `<span>` | [`frontend/index.html#L135`](/frontend/index.html#L135) |
+| `#cat-l1-count` | `<span>` | [`frontend/index.html#L136`](/frontend/index.html#L136) |
+| `#cat-l2-count` | `<span>` | [`frontend/index.html#L137`](/frontend/index.html#L137) |
+| `#cat-dse-count` | `<span>` | [`frontend/index.html#L138`](/frontend/index.html#L138) |
+| `#company-search` | `<input>` | [`frontend/index.html#L144`](/frontend/index.html#L144) |
+| `#filter-hide-z-spot` | `<input>` | [`frontend/index.html#L147`](/frontend/index.html#L147) |
+| `#filter-held-only` | `<input>` | [`frontend/index.html#L150`](/frontend/index.html#L150) |
+| `#company-count` | `<span>` | [`frontend/index.html#L152`](/frontend/index.html#L152) |
+| `#watchlist` | `<table>` | [`frontend/index.html#L158`](/frontend/index.html#L158) |
+| `#watchlist-thead` | `<thead>` | [`frontend/index.html#L159`](/frontend/index.html#L159) |
+| `#col-curve-signal` | `<th>` | [`frontend/index.html#L167`](/frontend/index.html#L167) |
+| `#col-held-mature` | `<th>` | [`frontend/index.html#L169`](/frontend/index.html#L169) |
+| `#col-buy-cap` | `<th>` | [`frontend/index.html#L173`](/frontend/index.html#L173) |
+| `#watchlist-body` | `<tbody>` | [`frontend/index.html#L176`](/frontend/index.html#L176) |
+| `#watchlist-pagination` | `<div>` | [`frontend/index.html#L181`](/frontend/index.html#L181) |
+| `#watchlist-prev-page` | `<button>` | [`frontend/index.html#L182`](/frontend/index.html#L182) |
+| `#watchlist-page-info` | `<span>` | [`frontend/index.html#L183`](/frontend/index.html#L183) |
+| `#watchlist-next-page` | `<button>` | [`frontend/index.html#L184`](/frontend/index.html#L184) |
+| `#tx-order-ticket` | `<section>` | [`frontend/index.html#L191`](/frontend/index.html#L191) |
+| `#tx-ticket-header-title` | `<h2>` | [`frontend/index.html#L193`](/frontend/index.html#L193) |
+| `#tx-order-side-toggle` | `<div>` | [`frontend/index.html#L198`](/frontend/index.html#L198) |
+| `#tx-side-buy-btn` | `<button>` | [`frontend/index.html#L199`](/frontend/index.html#L199) |
+| `#tx-side-sell-btn` | `<button>` | [`frontend/index.html#L200`](/frontend/index.html#L200) |
+| `#tx-ticket-bp` | `<strong>` | [`frontend/index.html#L203`](/frontend/index.html#L203) |
+| `#tx-ticket-avail-qty` | `<strong>` | [`frontend/index.html#L204`](/frontend/index.html#L204) |
+| `#tx-ticket-gainloss` | `<span>` | [`frontend/index.html#L205`](/frontend/index.html#L205) |
+| `#tx-ticket-symbol-info` | `<div>` | [`frontend/index.html#L210`](/frontend/index.html#L210) |
+| `#tx-ticket-cat` | `<span>` | [`frontend/index.html#L211`](/frontend/index.html#L211) |
+| `#tx-ticket-sym` | `<strong>` | [`frontend/index.html#L211`](/frontend/index.html#L211) |
+| `#tx-ticket-ltp` | `<strong>` | [`frontend/index.html#L213`](/frontend/index.html#L213) |
+| `#tx-ticket-chgpct` | `<span>` | [`frontend/index.html#L213`](/frontend/index.html#L213) |
+| `#tx-ticket-minmax` | `<span>` | [`frontend/index.html#L214`](/frontend/index.html#L214) |
+| `#tx-ticket-bidoffer` | `<span>` | [`frontend/index.html#L215`](/frontend/index.html#L215) |
+| `#tx-ticket-lowhigh` | `<span>` | [`frontend/index.html#L216`](/frontend/index.html#L216) |
+| `#tx-order-type` | `<select>` | [`frontend/index.html#L225`](/frontend/index.html#L225) |
+| `#tx-order-qty` | `<input>` | [`frontend/index.html#L229`](/frontend/index.html#L229) |
+| `#tx-order-price` | `<input>` | [`frontend/index.html#L234`](/frontend/index.html#L234) |
+| `#tx-price-up` | `<button>` | [`frontend/index.html#L236`](/frontend/index.html#L236) |
+| `#tx-price-down` | `<button>` | [`frontend/index.html#L237`](/frontend/index.html#L237) |
+| `#tx-order-tif` | `<select>` | [`frontend/index.html#L243`](/frontend/index.html#L243) |
+| `#tx-order-disclosed-qty` | `<input>` | [`frontend/index.html#L247`](/frontend/index.html#L247) |
+| `#tx-order-min-fill` | `<input>` | [`frontend/index.html#L251`](/frontend/index.html#L251) |
+| `#tx-order-all-or-none` | `<input>` | [`frontend/index.html#L255`](/frontend/index.html#L255) |
+| `#tx-depth-table` | `<table>` | [`frontend/index.html#L263`](/frontend/index.html#L263) |
+| `#tx-depth-body` | `<tbody>` | [`frontend/index.html#L272`](/frontend/index.html#L272) |
+| `#tx-order-submit-btn` | `<button>` | [`frontend/index.html#L283`](/frontend/index.html#L283) |
+| `#tx-order-reset-btn` | `<button>` | [`frontend/index.html#L284`](/frontend/index.html#L284) |
+| `#tx-ticket-order-val` | `<strong>` | [`frontend/index.html#L287`](/frontend/index.html#L287) |
+| `#tx-ticket-fee` | `<strong>` | [`frontend/index.html#L288`](/frontend/index.html#L288) |
+| `#tx-ticket-net-val` | `<strong>` | [`frontend/index.html#L289`](/frontend/index.html#L289) |
+| `#tx-monitor-panel` | `<section>` | [`frontend/index.html#L295`](/frontend/index.html#L295) |
+| `#tx-tab-order-list` | `<button>` | [`frontend/index.html#L298`](/frontend/index.html#L298) |
+| `#tx-order-count` | `<span>` | [`frontend/index.html#L298`](/frontend/index.html#L298) |
+| `#tx-tab-portfolio` | `<button>` | [`frontend/index.html#L299`](/frontend/index.html#L299) |
+| `#tx-tab-account-summary` | `<button>` | [`frontend/index.html#L300`](/frontend/index.html#L300) |
+| `#tx-tab-order-search` | `<button>` | [`frontend/index.html#L301`](/frontend/index.html#L301) |
+| `#tx-pane-order-list` | `<div>` | [`frontend/index.html#L307`](/frontend/index.html#L307) |
+| `#tx-orders-table` | `<table>` | [`frontend/index.html#L309`](/frontend/index.html#L309) |
+| `#tx-orders-body` | `<tbody>` | [`frontend/index.html#L325`](/frontend/index.html#L325) |
+| `#tx-pane-portfolio` | `<div>` | [`frontend/index.html#L333`](/frontend/index.html#L333) |
+| `#tx-portfolio-table` | `<table>` | [`frontend/index.html#L335`](/frontend/index.html#L335) |
+| `#active-holdings-body` | `<tbody>` | [`frontend/index.html#L350`](/frontend/index.html#L350) |
+| `#active-holdings-foot` | `<tfoot>` | [`frontend/index.html#L353`](/frontend/index.html#L353) |
+| `#tx-pane-account-summary` | `<div>` | [`frontend/index.html#L359`](/frontend/index.html#L359) |
+| `#tx-acc-settled-cash` | `<span>` | [`frontend/index.html#L365`](/frontend/index.html#L365) |
+| `#tx-acc-buying-power` | `<strong>` | [`frontend/index.html#L366`](/frontend/index.html#L366) |
+| `#tx-acc-blocked` | `<span>` | [`frontend/index.html#L367`](/frontend/index.html#L367) |
+| `#tx-acc-unsettled-sales` | `<strong>` | [`frontend/index.html#L368`](/frontend/index.html#L368) |
+| `#tx-acc-realized-pnl` | `<span>` | [`frontend/index.html#L369`](/frontend/index.html#L369) |
+| `#tx-acc-unrealized-pnl` | `<span>` | [`frontend/index.html#L370`](/frontend/index.html#L370) |
+| `#tx-account-donut` | `<div>` | [`frontend/index.html#L374`](/frontend/index.html#L374) |
+| `#tx-pane-order-search` | `<div>` | [`frontend/index.html#L381`](/frontend/index.html#L381) |
+| `#tx-search-sym` | `<input>` | [`frontend/index.html#L383`](/frontend/index.html#L383) |
+| `#tx-search-side` | `<select>` | [`frontend/index.html#L384`](/frontend/index.html#L384) |
+| `#tx-search-status` | `<select>` | [`frontend/index.html#L389`](/frontend/index.html#L389) |
+| `#tx-search-orders-body` | `<tbody>` | [`frontend/index.html#L406`](/frontend/index.html#L406) |
+| `#view-heatmap-wrap` | `<div>` | [`frontend/index.html#L419`](/frontend/index.html#L419) |
+| `#market-map` | `<section>` | [`frontend/index.html#L420`](/frontend/index.html#L420) |
+| `#treemap-sector-select` | `<select>` | [`frontend/index.html#L427`](/frontend/index.html#L427) |
+| `#treemap-back-btn` | `<button>` | [`frontend/index.html#L437`](/frontend/index.html#L437) |
+| `#treemap-active-view` | `<span>` | [`frontend/index.html#L440`](/frontend/index.html#L440) |
+| `#treemap-turnover-badge` | `<span>` | [`frontend/index.html#L441`](/frontend/index.html#L441) |
+| `#treemap-container` | `<div>` | [`frontend/index.html#L446`](/frontend/index.html#L446) |
+| `#treemap-tooltip` | `<div>` | [`frontend/index.html#L449`](/frontend/index.html#L449) |
+| `#sector-gainer-chart-wrap` | `<div>` | [`frontend/index.html#L468`](/frontend/index.html#L468) |
+| `#sector-gainer-chart` | `<svg>` | [`frontend/index.html#L469`](/frontend/index.html#L469) |
+| `#view-rules-wrap` | `<div>` | [`frontend/index.html#L477`](/frontend/index.html#L477) |
+| `#rules` | `<section>` | [`frontend/index.html#L478`](/frontend/index.html#L478) |
+| `#what-if-card` | `<article>` | [`frontend/index.html#L487`](/frontend/index.html#L487) |
+| `#sim-symbol-badge` | `<span>` | [`frontend/index.html#L493`](/frontend/index.html#L493) |
+| `#what-if-target-price` | `<strong>` | [`frontend/index.html#L497`](/frontend/index.html#L497) |
+| `#what-if-target-pct` | `<span>` | [`frontend/index.html#L498`](/frontend/index.html#L498) |
+| `#what-if-slider` | `<input>` | [`frontend/index.html#L501`](/frontend/index.html#L501) |
+| `#what-if-gross` | `<strong>` | [`frontend/index.html#L510`](/frontend/index.html#L510) |
+| `#what-if-fee` | `<strong>` | [`frontend/index.html#L511`](/frontend/index.html#L511) |
+| `#what-if-net-pnl` | `<strong>` | [`frontend/index.html#L512`](/frontend/index.html#L512) |
+| `#what-if-return-pct` | `<strong>` | [`frontend/index.html#L513`](/frontend/index.html#L513) |
+| `#profit-tiers` | `<div>` | [`frontend/index.html#L525`](/frontend/index.html#L525) |
+| `#pullback-setting` | `<span>` | [`frontend/index.html#L525`](/frontend/index.html#L525) |
+| `#allocation-form` | `<form>` | [`frontend/index.html#L526`](/frontend/index.html#L526) |
+| `#buy-allocation` | `<input>` | [`frontend/index.html#L530`](/frontend/index.html#L530) |
+| `#company-enabled` | `<input>` | [`frontend/index.html#L536`](/frontend/index.html#L536) |
+| `#save-allocation` | `<button>` | [`frontend/index.html#L541`](/frontend/index.html#L541) |
+| `#canary-section` | `<section>` | [`frontend/index.html#L547`](/frontend/index.html#L547) |
+| `#canary-count` | `<span>` | [`frontend/index.html#L548`](/frontend/index.html#L548) |
+| `#canary-feed` | `<div>` | [`frontend/index.html#L549`](/frontend/index.html#L549) |
+| `#view-ledger-wrap` | `<div>` | [`frontend/index.html#L556`](/frontend/index.html#L556) |
+| `#ledger` | `<section>` | [`frontend/index.html#L557`](/frontend/index.html#L557) |
+| `#period-pnl` | `<strong>` | [`frontend/index.html#L566`](/frontend/index.html#L566) |
+| `#period-buy` | `<strong>` | [`frontend/index.html#L566`](/frontend/index.html#L566) |
+| `#period-sell` | `<strong>` | [`frontend/index.html#L566`](/frontend/index.html#L566) |
+| `#period-trades` | `<strong>` | [`frontend/index.html#L566`](/frontend/index.html#L566) |
+| `#trades-body` | `<tbody>` | [`frontend/index.html#L567`](/frontend/index.html#L567) |
+| `#ledger-range` | `<span>` | [`frontend/index.html#L568`](/frontend/index.html#L568) |
+| `#tx-learning-view` | `<div>` | [`frontend/index.html#L574`](/frontend/index.html#L574) |
+| `#tx-learning-content` | `<div>` | [`frontend/index.html#L578`](/frontend/index.html#L578) |
+| `#view-settings` | `<div>` | [`frontend/index.html#L583`](/frontend/index.html#L583) |
+| `#system-control` | `<div>` | [`frontend/index.html#L588`](/frontend/index.html#L588) |
+| `#automation-settings-card` | `<article>` | [`frontend/index.html#L590`](/frontend/index.html#L590) |
+| `#circuit-state` | `<span>` | [`frontend/index.html#L603`](/frontend/index.html#L603) |
+| `#master-automation-toggle-input` | `<input>` | [`frontend/index.html#L607`](/frontend/index.html#L607) |
+| `#master-automation-status-text` | `<span>` | [`frontend/index.html#L610`](/frontend/index.html#L610) |
+| `#master-automation-toggle` | `<button>` | [`frontend/index.html#L613`](/frontend/index.html#L613) |
+| `#current-mode-pill` | `<span>` | [`frontend/index.html#L622`](/frontend/index.html#L622) |
+| `#ingestion-mode-switch` | `<div>` | [`frontend/index.html#L624`](/frontend/index.html#L624) |
+| `#mode-btn-polling` | `<button>` | [`frontend/index.html#L625`](/frontend/index.html#L625) |
+| `#mode-btn-live` | `<button>` | [`frontend/index.html#L635`](/frontend/index.html#L635) |
+| `#settings-runmode-status-line` | `<div>` | [`frontend/index.html#L646`](/frontend/index.html#L646) |
+| `#settings-active-mode-text` | `<span>` | [`frontend/index.html#L647`](/frontend/index.html#L647) |
+| `#settings-pending-handoff-state` | `<span>` | [`frontend/index.html#L648`](/frontend/index.html#L648) |
+| `#settings-trading-mode-wrap` | `<div>` | [`frontend/index.html#L652`](/frontend/index.html#L652) |
+| `#settings-trading-mode-pill` | `<span>` | [`frontend/index.html#L658`](/frontend/index.html#L658) |
+| `#settings-trading-mode-toggle` | `<div>` | [`frontend/index.html#L660`](/frontend/index.html#L660) |
+| `#settings-tmode-live` | `<button>` | [`frontend/index.html#L661`](/frontend/index.html#L661) |
+| `#settings-tmode-test` | `<button>` | [`frontend/index.html#L671`](/frontend/index.html#L671) |
+| `#polling-interval-wrap` | `<div>` | [`frontend/index.html#L684`](/frontend/index.html#L684) |
+| `#polling-interval-display` | `<strong>` | [`frontend/index.html#L690`](/frontend/index.html#L690) |
+| `#polling-range-slider` | `<input>` | [`frontend/index.html#L693`](/frontend/index.html#L693) |
+| `#polling-interval-pills` | `<div>` | [`frontend/index.html#L702`](/frontend/index.html#L702) |
+| `#polling-disabled-hint` | `<div>` | [`frontend/index.html#L708`](/frontend/index.html#L708) |
+| `#tx-feed-status-card` | `<article>` | [`frontend/index.html#L713`](/frontend/index.html#L713) |
+| `#tx-feed-cdp-badge` | `<span>` | [`frontend/index.html#L715`](/frontend/index.html#L715) |
+| `#tx-feed-health-badge` | `<span>` | [`frontend/index.html#L716`](/frontend/index.html#L716) |
+| `#tx-feed-tabs-status` | `<div>` | [`frontend/index.html#L721`](/frontend/index.html#L721) |
+| `#tx-feed-guidance-list` | `<ul>` | [`frontend/index.html#L727`](/frontend/index.html#L727) |
+| `#stocknow-connection-card` | `<article>` | [`frontend/index.html#L734`](/frontend/index.html#L734) |
+| `#stocknow-api-status` | `<strong>` | [`frontend/index.html#L744`](/frontend/index.html#L744) |
+| `#stocknow-browser-status` | `<strong>` | [`frontend/index.html#L748`](/frontend/index.html#L748) |
+| `#stocknow-prices-synced` | `<strong>` | [`frontend/index.html#L752`](/frontend/index.html#L752) |
+| `#stocknow-portfolio-synced` | `<strong>` | [`frontend/index.html#L756`](/frontend/index.html#L756) |
+| `#stocknow-active-portfolio` | `<strong>` | [`frontend/index.html#L760`](/frontend/index.html#L760) |
+| `#btn-stocknow-launch` | `<button>` | [`frontend/index.html#L765`](/frontend/index.html#L765) |
+| `#btn-stocknow-auth` | `<button>` | [`frontend/index.html#L766`](/frontend/index.html#L766) |
+| `#btn-stocknow-sync` | `<button>` | [`frontend/index.html#L767`](/frontend/index.html#L767) |
+| `#btn-stocknow-logout` | `<button>` | [`frontend/index.html#L768`](/frontend/index.html#L768) |
+| `#btn-stocknow-sync-portfolio` | `<button>` | [`frontend/index.html#L770`](/frontend/index.html#L770) |
+| `#risk-caps-card` | `<article>` | [`frontend/index.html#L775`](/frontend/index.html#L775) |
+| `#risk-caps-form` | `<form>` | [`frontend/index.html#L782`](/frontend/index.html#L782) |
+| `#caps-kill-switch` | `<input>` | [`frontend/index.html#L790`](/frontend/index.html#L790) |
+| `#caps-kill-switch-status` | `<span>` | [`frontend/index.html#L791`](/frontend/index.html#L791) |
+| `#caps-max-order` | `<input>` | [`frontend/index.html#L799`](/frontend/index.html#L799) |
+| `#caps-max-symbol` | `<input>` | [`frontend/index.html#L803`](/frontend/index.html#L803) |
+| `#caps-daily-budget` | `<input>` | [`frontend/index.html#L807`](/frontend/index.html#L807) |
+| `#caps-max-orders` | `<input>` | [`frontend/index.html#L811`](/frontend/index.html#L811) |
+| `#btn-save-caps` | `<button>` | [`frontend/index.html#L816`](/frontend/index.html#L816) |
+| `#caps-save-status` | `<span>` | [`frontend/index.html#L819`](/frontend/index.html#L819) |
+| `#hermes-brain-card` | `<article>` | [`frontend/index.html#L825`](/frontend/index.html#L825) |
+| `#brain-primary-model` | `<strong>` | [`frontend/index.html#L837`](/frontend/index.html#L837) |
+| `#brain-primary-provider` | `<span>` | [`frontend/index.html#L838`](/frontend/index.html#L838) |
+| `#brain-profile-tag` | `<span>` | [`frontend/index.html#L838`](/frontend/index.html#L838) |
+| `#brain-primary-status` | `<span>` | [`frontend/index.html#L840`](/frontend/index.html#L840) |
+| `#brain-fallbacks-list` | `<div>` | [`frontend/index.html#L847`](/frontend/index.html#L847) |
+| `#brain-fallbacks-empty` | `<div>` | [`frontend/index.html#L848`](/frontend/index.html#L848) |
+| `#brain-last-turn-provider` | `<strong>` | [`frontend/index.html#L859`](/frontend/index.html#L859) |
+| `#brain-last-turn-model` | `<span>` | [`frontend/index.html#L860`](/frontend/index.html#L860) |
+| `#brain-last-turn-time` | `<span>` | [`frontend/index.html#L862`](/frontend/index.html#L862) |
+| `#advanced-settings-card` | `<details>` | [`frontend/index.html#L872`](/frontend/index.html#L872) |
+| `#api-keys-card` | `<div>` | [`frontend/index.html#L883`](/frontend/index.html#L883) |
+| `#api-keys-form` | `<form>` | [`frontend/index.html#L889`](/frontend/index.html#L889) |
+| `#key-telegram-token` | `<input>` | [`frontend/index.html#L894`](/frontend/index.html#L894) |
+| `#key-telegram-chat` | `<input>` | [`frontend/index.html#L901`](/frontend/index.html#L901) |
+| `#btn-save-api-keys` | `<button>` | [`frontend/index.html#L905`](/frontend/index.html#L905) |
+| `#keys-save-status` | `<span>` | [`frontend/index.html#L908`](/frontend/index.html#L908) |
+| `#fees-card` | `<div>` | [`frontend/index.html#L914`](/frontend/index.html#L914) |
+| `#bridge-ctrl-card` | `<div>` | [`frontend/index.html#L930`](/frontend/index.html#L930) |
+| `#adp-mode-text` | `<strong>` | [`frontend/index.html#L937`](/frontend/index.html#L937) |
+| `#sse-status-badge` | `<span>` | [`frontend/index.html#L943`](/frontend/index.html#L943) |
+| `#live-dot` | `<span>` | [`frontend/index.html#L943`](/frontend/index.html#L943) |
+| `#source-badge` | `<span>` | [`frontend/index.html#L944`](/frontend/index.html#L944) |
+| `#token-button` | `<button>` | [`frontend/index.html#L945`](/frontend/index.html#L945) |
+| `#overview` | `<div>` | [`frontend/index.html#L956`](/frontend/index.html#L956) |
+| `#demo-date` | `<div>` | [`frontend/index.html#L957`](/frontend/index.html#L957) |
+| `#engine-state` | `<div>` | [`frontend/index.html#L958`](/frontend/index.html#L958) |
+| `#snapshot-label` | `<div>` | [`frontend/index.html#L959`](/frontend/index.html#L959) |
+| `#overview-sys-link` | `<a>` | [`frontend/index.html#L960`](/frontend/index.html#L960) |
+| `#overview-sys-dot` | `<span>` | [`frontend/index.html#L960`](/frontend/index.html#L960) |
+| `#overview-sys-text` | `<span>` | [`frontend/index.html#L960`](/frontend/index.html#L960) |
+| `#scenario` | `<select>` | [`frontend/index.html#L961`](/frontend/index.html#L961) |
+| `#next-session` | `<button>` | [`frontend/index.html#L962`](/frontend/index.html#L962) |
+| `#metric-equity` | `<div>` | [`frontend/index.html#L963`](/frontend/index.html#L963) |
+| `#metric-total-gain` | `<div>` | [`frontend/index.html#L963`](/frontend/index.html#L963) |
+| `#metric-cash` | `<div>` | [`frontend/index.html#L964`](/frontend/index.html#L964) |
+| `#metric-unsettled` | `<div>` | [`frontend/index.html#L964`](/frontend/index.html#L964) |
+| `#metric-realized` | `<div>` | [`frontend/index.html#L965`](/frontend/index.html#L965) |
+| `#metric-unrealized` | `<div>` | [`frontend/index.html#L965`](/frontend/index.html#L965) |
+| `#equity-sparkline` | `<div>` | [`frontend/index.html#L966`](/frontend/index.html#L966) |
+| `#mature-shares` | `<span>` | [`frontend/index.html#L967`](/frontend/index.html#L967) |
+| `#locked-shares` | `<span>` | [`frontend/index.html#L967`](/frontend/index.html#L967) |
+| `#quarantined-count` | `<span>` | [`frontend/index.html#L967`](/frontend/index.html#L967) |
+| `#fees-paid` | `<span>` | [`frontend/index.html#L967`](/frontend/index.html#L967) |
+| `#ledger-status` | `<span>` | [`frontend/index.html#L967`](/frontend/index.html#L967) |
+| `#index-value` | `<div>` | [`frontend/index.html#L968`](/frontend/index.html#L968) |
+| `#index-change` | `<div>` | [`frontend/index.html#L968`](/frontend/index.html#L968) |
+| `#pulse-support-val` | `<div>` | [`frontend/index.html#L969`](/frontend/index.html#L969) |
+| `#pulse-resistance-val` | `<div>` | [`frontend/index.html#L969`](/frontend/index.html#L969) |
+| `#curve-sessions` | `<div>` | [`frontend/index.html#L970`](/frontend/index.html#L970) |
+| `#main-chart` | `<div>` | [`frontend/index.html#L971`](/frontend/index.html#L971) |
+| `#main-chart-tooltip` | `<div>` | [`frontend/index.html#L971`](/frontend/index.html#L971) |
+| `#execution` | `<div>` | [`frontend/index.html#L973`](/frontend/index.html#L973) |
+| `#inspector-symbol` | `<h2>` | [`frontend/index.html#L974`](/frontend/index.html#L974) |
+| `#open-deep-trend` | `<button>` | [`frontend/index.html#L974`](/frontend/index.html#L974) |
+| `#inspector-sector` | `<span>` | [`frontend/index.html#L975`](/frontend/index.html#L975) |
+| `#inspector-basis` | `<strong>` | [`frontend/index.html#L975`](/frontend/index.html#L975) |
+| `#inspector-pnl` | `<strong>` | [`frontend/index.html#L975`](/frontend/index.html#L975) |
+| `#inspector-return` | `<strong>` | [`frontend/index.html#L975`](/frontend/index.html#L975) |
+| `#inspector-reason` | `<p>` | [`frontend/index.html#L976`](/frontend/index.html#L976) |
+| `#lots-body` | `<tbody>` | [`frontend/index.html#L976`](/frontend/index.html#L976) |
+| `#hermes-sidebar` | `<aside>` | [`frontend/index.html#L980`](/frontend/index.html#L980) |
+| `#hermes-resizer` | `<div>` | [`frontend/index.html#L981`](/frontend/index.html#L981) |
+| `#hermes-collapse-btn` | `<button>` | [`frontend/index.html#L988`](/frontend/index.html#L988) |
+| `#active-conv-title` | `<span>` | [`frontend/index.html#L994`](/frontend/index.html#L994) |
+| `#tab-hermes-chat` | `<button>` | [`frontend/index.html#L999`](/frontend/index.html#L999) |
+| `#tab-hermes-conversations` | `<button>` | [`frontend/index.html#L1000`](/frontend/index.html#L1000) |
+| `#conversations-badge` | `<span>` | [`frontend/index.html#L1000`](/frontend/index.html#L1000) |
+| `#tab-hermes-changes` | `<button>` | [`frontend/index.html#L1001`](/frontend/index.html#L1001) |
+| `#changes-badge` | `<span>` | [`frontend/index.html#L1001`](/frontend/index.html#L1001) |
+| `#tab-hermes-skills` | `<button>` | [`frontend/index.html#L1002`](/frontend/index.html#L1002) |
+| `#skills-badge` | `<span>` | [`frontend/index.html#L1002`](/frontend/index.html#L1002) |
+| `#pane-hermes-chat` | `<div>` | [`frontend/index.html#L1006`](/frontend/index.html#L1006) |
+| `#chat-messages` | `<div>` | [`frontend/index.html#L1007`](/frontend/index.html#L1007) |
+| `#hermes-welcome-message` | `<article>` | [`frontend/index.html#L1008`](/frontend/index.html#L1008) |
+| `#chat-safety-note` | `<div>` | [`frontend/index.html#L1013`](/frontend/index.html#L1013) |
+| `#welcome-chips-slot` | `<div>` | [`frontend/index.html#L1014`](/frontend/index.html#L1014) |
+| `#bottom-chips-slot` | `<div>` | [`frontend/index.html#L1019`](/frontend/index.html#L1019) |
+| `#chat-quick-prompts` | `<div>` | [`frontend/index.html#L1020`](/frontend/index.html#L1020) |
+| `#chip-passive-sync-guide` | `<button>` | [`frontend/index.html#L1021`](/frontend/index.html#L1021) |
+| `#hermes-model-trigger` | `<button>` | [`frontend/index.html#L1030`](/frontend/index.html#L1030) |
+| `#provider-prefix-label` | `<span>` | [`frontend/index.html#L1031`](/frontend/index.html#L1031) |
+| `#hermes-active-model-name` | `<strong>` | [`frontend/index.html#L1032`](/frontend/index.html#L1032) |
+| `#model-dropup-menu` | `<div>` | [`frontend/index.html#L1035`](/frontend/index.html#L1035) |
+| `#model-dropdown-list` | `<div>` | [`frontend/index.html#L1037`](/frontend/index.html#L1037) |
+| `#chat-form` | `<form>` | [`frontend/index.html#L1043`](/frontend/index.html#L1043) |
+| `#chat-input` | `<textarea>` | [`frontend/index.html#L1045`](/frontend/index.html#L1045) |
+| `#chat-send` | `<button>` | [`frontend/index.html#L1048`](/frontend/index.html#L1048) |
+| `#chat-footer-note` | `<p>` | [`frontend/index.html#L1053`](/frontend/index.html#L1053) |
+| `#pane-hermes-conversations` | `<div>` | [`frontend/index.html#L1058`](/frontend/index.html#L1058) |
+| `#new-conversation-btn` | `<button>` | [`frontend/index.html#L1060`](/frontend/index.html#L1060) |
+| `#conversations-list` | `<div>` | [`frontend/index.html#L1065`](/frontend/index.html#L1065) |
+| `#pane-hermes-changes` | `<div>` | [`frontend/index.html#L1071`](/frontend/index.html#L1071) |
+| `#changes-badge-count` | `<span>` | [`frontend/index.html#L1075`](/frontend/index.html#L1075) |
+| `#rollback-pane-btn` | `<button>` | [`frontend/index.html#L1078`](/frontend/index.html#L1078) |
+| `#refresh-changes-btn` | `<button>` | [`frontend/index.html#L1081`](/frontend/index.html#L1081) |
+| `#changes-diff-list` | `<div>` | [`frontend/index.html#L1085`](/frontend/index.html#L1085) |
+| `#files-changed-list` | `<div>` | [`frontend/index.html#L1089`](/frontend/index.html#L1089) |
+| `#changes-checkpoints-list` | `<div>` | [`frontend/index.html#L1090`](/frontend/index.html#L1090) |
+| `#pane-hermes-skills` | `<div>` | [`frontend/index.html#L1094`](/frontend/index.html#L1094) |
+| `#rollback-skills-btn` | `<button>` | [`frontend/index.html#L1097`](/frontend/index.html#L1097) |
+| `#skills-list` | `<div>` | [`frontend/index.html#L1104`](/frontend/index.html#L1104) |
+| `#btn-add-cron` | `<button>` | [`frontend/index.html#L1109`](/frontend/index.html#L1109) |
+| `#crons-list` | `<div>` | [`frontend/index.html#L1111`](/frontend/index.html#L1111) |
+| `#hermes-memory-preview` | `<div>` | [`frontend/index.html#L1117`](/frontend/index.html#L1117) |
+| `#user-md-preview` | `<div>` | [`frontend/index.html#L1122`](/frontend/index.html#L1122) |
+| `#memory-md-preview` | `<div>` | [`frontend/index.html#L1128`](/frontend/index.html#L1128) |
+| `#durable-facts-list` | `<div>` | [`frontend/index.html#L1134`](/frontend/index.html#L1134) |
+| `#checkpoints-list` | `<div>` | [`frontend/index.html#L1138`](/frontend/index.html#L1138) |
+| `#floating-hermes-open` | `<button>` | [`frontend/index.html#L1145`](/frontend/index.html#L1145) |
+| `#tx-confirm-order-modal` | `<dialog>` | [`frontend/index.html#L1152`](/frontend/index.html#L1152) |
+| `#tx-confirm-banner` | `<div>` | [`frontend/index.html#L1154`](/frontend/index.html#L1154) |
+| `#tx-confirm-banner-title` | `<h3>` | [`frontend/index.html#L1155`](/frontend/index.html#L1155) |
+| `#tx-confirm-subtitle` | `<div>` | [`frontend/index.html#L1157`](/frontend/index.html#L1157) |
+| `#tx-confirm-side` | `<strong>` | [`frontend/index.html#L1162`](/frontend/index.html#L1162) |
+| `#tx-confirm-price` | `<strong>` | [`frontend/index.html#L1166`](/frontend/index.html#L1166) |
+| `#tx-confirm-qty` | `<strong>` | [`frontend/index.html#L1167`](/frontend/index.html#L1167) |
+| `#tx-confirm-fee` | `<strong>` | [`frontend/index.html#L1168`](/frontend/index.html#L1168) |
+| `#tx-confirm-order-val` | `<strong>` | [`frontend/index.html#L1171`](/frontend/index.html#L1171) |
+| `#tx-confirm-net-val` | `<strong>` | [`frontend/index.html#L1172`](/frontend/index.html#L1172) |
+| `#tx-confirm-submit-btn` | `<button>` | [`frontend/index.html#L1176`](/frontend/index.html#L1176) |
+| `#tx-confirm-cancel-btn` | `<button>` | [`frontend/index.html#L1177`](/frontend/index.html#L1177) |
+| `#deep-trend-modal` | `<dialog>` | [`frontend/index.html#L1182`](/frontend/index.html#L1182) |
+| `#modal-backdrop` | `<div>` | [`frontend/index.html#L1183`](/frontend/index.html#L1183) |
+| `#modal-company-sector` | `<span>` | [`frontend/index.html#L1187`](/frontend/index.html#L1187) |
+| `#modal-company-category` | `<span>` | [`frontend/index.html#L1187`](/frontend/index.html#L1187) |
+| `#modal-company-title` | `<h2>` | [`frontend/index.html#L1188`](/frontend/index.html#L1188) |
+| `#modal-company-sub` | `<span>` | [`frontend/index.html#L1188`](/frontend/index.html#L1188) |
+| `#modal-price` | `<span>` | [`frontend/index.html#L1190`](/frontend/index.html#L1190) |
+| `#modal-change` | `<span>` | [`frontend/index.html#L1191`](/frontend/index.html#L1191) |
+| `#modal-signal-tag` | `<span>` | [`frontend/index.html#L1192`](/frontend/index.html#L1192) |
+| `#deep-timeframe-tabs` | `<div>` | [`frontend/index.html#L1196`](/frontend/index.html#L1196) |
+| `#modal-close-btn` | `<button>` | [`frontend/index.html#L1202`](/frontend/index.html#L1202) |
+| `#deep-support-val` | `<strong>` | [`frontend/index.html#L1218`](/frontend/index.html#L1218) |
+| `#deep-resistance-val` | `<strong>` | [`frontend/index.html#L1219`](/frontend/index.html#L1219) |
+| `#deep-chart-container` | `<div>` | [`frontend/index.html#L1222`](/frontend/index.html#L1222) |
+| `#deep-trend-chart-mount` | `<div>` | [`frontend/index.html#L1223`](/frontend/index.html#L1223) |
+| `#deep-chart-tooltip` | `<div>` | [`frontend/index.html#L1224`](/frontend/index.html#L1224) |
+| `#fundamentals-grid` | `<div>` | [`frontend/index.html#L1237`](/frontend/index.html#L1237) |
+| `#fund-pe` | `<strong>` | [`frontend/index.html#L1238`](/frontend/index.html#L1238) |
+| `#fund-eps` | `<strong>` | [`frontend/index.html#L1239`](/frontend/index.html#L1239) |
+| `#fund-nav` | `<strong>` | [`frontend/index.html#L1240`](/frontend/index.html#L1240) |
+| `#fund-mcap` | `<strong>` | [`frontend/index.html#L1241`](/frontend/index.html#L1241) |
+| `#fund-div` | `<strong>` | [`frontend/index.html#L1242`](/frontend/index.html#L1242) |
+| `#fund-paidup` | `<strong>` | [`frontend/index.html#L1243`](/frontend/index.html#L1243) |
+| `#fund-52w` | `<strong>` | [`frontend/index.html#L1244`](/frontend/index.html#L1244) |
+| `#fund-cat` | `<strong>` | [`frontend/index.html#L1245`](/frontend/index.html#L1245) |
+| `#modal-sim-name` | `<span>` | [`frontend/index.html#L1255`](/frontend/index.html#L1255) |
+| `#modal-sim-target-price` | `<strong>` | [`frontend/index.html#L1260`](/frontend/index.html#L1260) |
+| `#modal-sim-target-pct` | `<span>` | [`frontend/index.html#L1261`](/frontend/index.html#L1261) |
+| `#modal-sim-slider` | `<input>` | [`frontend/index.html#L1264`](/frontend/index.html#L1264) |
+| `#modal-sim-gross` | `<strong>` | [`frontend/index.html#L1273`](/frontend/index.html#L1273) |
+| `#modal-sim-fee` | `<strong>` | [`frontend/index.html#L1274`](/frontend/index.html#L1274) |
+| `#modal-sim-net-pnl` | `<strong>` | [`frontend/index.html#L1275`](/frontend/index.html#L1275) |
+| `#modal-sim-return-pct` | `<strong>` | [`frontend/index.html#L1276`](/frontend/index.html#L1276) |
+| `#operator-modal` | `<dialog>` | [`frontend/index.html#L1285`](/frontend/index.html#L1285) |
+| `#op-title` | `<h2>` | [`frontend/index.html#L1288`](/frontend/index.html#L1288) |
+| `#op-close-btn` | `<button>` | [`frontend/index.html#L1289`](/frontend/index.html#L1289) |
+| `#login-gate-overlay` | `<dialog>` | [`frontend/index.html#L1298`](/frontend/index.html#L1298) |
+| `#login-title` | `<h2>` | [`frontend/index.html#L1302`](/frontend/index.html#L1302) |
+| `#toast` | `<div>` | [`frontend/index.html#L1308`](/frontend/index.html#L1308) |
 
 
 ### 6.4 JavaScript Controllers & UI Functions (`frontend/app.js`, `charts.js`, `hermes_ui.js`)
@@ -2614,66 +2705,66 @@ Complete index of all **142** JavaScript controller and rendering functions:
 | `showError()` | [`frontend/app.js`](/frontend/app.js#L158) | `L158` | UI Controller |
 | `api()` | [`frontend/app.js`](/frontend/app.js#L165) | `L165` | API Client / Ingestion |
 | `updateControls()` | [`frontend/app.js`](/frontend/app.js#L202) | `L202` | DOM Updater / State Sync |
-| `refresh()` | [`frontend/app.js`](/frontend/app.js#L242) | `L242` | UI Controller |
-| `mutate()` | [`frontend/app.js`](/frontend/app.js#L258) | `L258` | UI Controller |
-| `isLiveSource()` | [`frontend/app.js`](/frontend/app.js#L267) | `L267` | UI Controller |
-| `renderPortfolioHeaderBadge()` | [`frontend/app.js`](/frontend/app.js#L279) | `L279` | DOM Renderer |
-| `renderSnapshot()` | [`frontend/app.js`](/frontend/app.js#L343) | `L343` | DOM Renderer |
-| `renderEquitySparkline()` | [`frontend/app.js`](/frontend/app.js#L419) | `L419` | DOM Renderer |
-| `renderActiveHoldings()` | [`frontend/app.js`](/frontend/app.js#L433) | `L433` | DOM Renderer |
-| `renderBuckets()` | [`frontend/app.js`](/frontend/app.js#L632) | `L632` | DOM Renderer |
-| `cell()` | [`frontend/app.js`](/frontend/app.js#L664) | `L664` | UI Controller |
-| `selectCompany()` | [`frontend/app.js`](/frontend/app.js#L666) | `L666` | Event Handler / State Transition |
-| `formatCompactNumber()` | [`frontend/app.js`](/frontend/app.js#L673) | `L673` | Formatter / Utility |
-| `renderWatchlist()` | [`frontend/app.js`](/frontend/app.js#L681) | `L681` | DOM Renderer |
-| `renderCanaryTheses()` | [`frontend/app.js`](/frontend/app.js#L991) | `L991` | DOM Renderer |
-| `renderInspector()` | [`frontend/app.js`](/frontend/app.js#L1025) | `L1025` | DOM Renderer |
-| `isBuyDecision()` | [`frontend/app.js`](/frontend/app.js#L1060) | `L1060` | UI Controller |
-| `isSellDecision()` | [`frontend/app.js`](/frontend/app.js#L1066) | `L1066` | UI Controller |
-| `isLockDecision()` | [`frontend/app.js`](/frontend/app.js#L1072) | `L1072` | UI Controller |
-| `isBlockedDecision()` | [`frontend/app.js`](/frontend/app.js#L1089) | `L1089` | UI Controller |
-| `renderDecisions()` | [`frontend/app.js`](/frontend/app.js#L1112) | `L1112` | DOM Renderer |
-| `renderLedger()` | [`frontend/app.js`](/frontend/app.js#L1198) | `L1198` | DOM Renderer |
-| `initMarketMapResizeObserver()` | [`frontend/app.js`](/frontend/app.js#L1375) | `L1375` | UI Controller |
-| `initTheme()` | [`frontend/app.js`](/frontend/app.js#L1401) | `L1401` | UI Controller |
-| `setTheme()` | [`frontend/app.js`](/frontend/app.js#L1407) | `L1407` | DOM Updater / State Sync |
-| `toggleTheme()` | [`frontend/app.js`](/frontend/app.js#L1418) | `L1418` | Event Handler / State Transition |
-| `tickMarketClock()` | [`frontend/app.js`](/frontend/app.js#L1424) | `L1424` | UI Controller |
-| `tickClock()` | [`frontend/app.js`](/frontend/app.js#L1506) | `L1506` | UI Controller |
-| `renderAutomationControlBar()` | [`frontend/app.js`](/frontend/app.js#L1515) | `L1515` | DOM Renderer |
-| `setAutomationConfig()` | [`frontend/app.js`](/frontend/app.js#L1856) | `L1856` | DOM Updater / State Sync |
-| `setHandoffPendingState()` | [`frontend/app.js`](/frontend/app.js#L1979) | `L1979` | DOM Updater / State Sync |
-| `executeRunModeHandoff()` | [`frontend/app.js`](/frontend/app.js#L1997) | `L1997` | UI Controller |
-| `executeHandoff()` | [`frontend/app.js`](/frontend/app.js#L2022) | `L2022` | UI Controller |
-| `switchToLiveHours()` | [`frontend/app.js`](/frontend/app.js#L2123) | `L2123` | Event Handler / State Transition |
-| `switchToTestMode()` | [`frontend/app.js`](/frontend/app.js#L2132) | `L2132` | Event Handler / State Transition |
-| `initRealtimeStream()` | [`frontend/app.js`](/frontend/app.js#L2184) | `L2184` | UI Controller |
-| `switchView()` | [`frontend/app.js`](/frontend/app.js#L2210) | `L2210` | Event Handler / State Transition |
-| `initViewRouter()` | [`frontend/app.js`](/frontend/app.js#L2268) | `L2268` | UI Controller |
-| `initScrollSpy()` | [`frontend/app.js`](/frontend/app.js#L2305) | `L2305` | UI Controller |
-| `updateActiveNav()` | [`frontend/app.js`](/frontend/app.js#L2318) | `L2318` | DOM Updater / State Sync |
+| `refresh()` | [`frontend/app.js`](/frontend/app.js#L248) | `L248` | UI Controller |
+| `mutate()` | [`frontend/app.js`](/frontend/app.js#L264) | `L264` | UI Controller |
+| `isLiveSource()` | [`frontend/app.js`](/frontend/app.js#L273) | `L273` | UI Controller |
+| `renderPortfolioHeaderBadge()` | [`frontend/app.js`](/frontend/app.js#L285) | `L285` | DOM Renderer |
+| `renderSnapshot()` | [`frontend/app.js`](/frontend/app.js#L349) | `L349` | DOM Renderer |
+| `renderEquitySparkline()` | [`frontend/app.js`](/frontend/app.js#L425) | `L425` | DOM Renderer |
+| `renderActiveHoldings()` | [`frontend/app.js`](/frontend/app.js#L439) | `L439` | DOM Renderer |
+| `renderBuckets()` | [`frontend/app.js`](/frontend/app.js#L638) | `L638` | DOM Renderer |
+| `cell()` | [`frontend/app.js`](/frontend/app.js#L671) | `L671` | UI Controller |
+| `selectCompany()` | [`frontend/app.js`](/frontend/app.js#L673) | `L673` | Event Handler / State Transition |
+| `formatCompactNumber()` | [`frontend/app.js`](/frontend/app.js#L680) | `L680` | Formatter / Utility |
+| `renderWatchlist()` | [`frontend/app.js`](/frontend/app.js#L688) | `L688` | DOM Renderer |
+| `renderCanaryTheses()` | [`frontend/app.js`](/frontend/app.js#L998) | `L998` | DOM Renderer |
+| `renderInspector()` | [`frontend/app.js`](/frontend/app.js#L1032) | `L1032` | DOM Renderer |
+| `isBuyDecision()` | [`frontend/app.js`](/frontend/app.js#L1071) | `L1071` | UI Controller |
+| `isSellDecision()` | [`frontend/app.js`](/frontend/app.js#L1077) | `L1077` | UI Controller |
+| `isLockDecision()` | [`frontend/app.js`](/frontend/app.js#L1083) | `L1083` | UI Controller |
+| `isBlockedDecision()` | [`frontend/app.js`](/frontend/app.js#L1100) | `L1100` | UI Controller |
+| `renderDecisions()` | [`frontend/app.js`](/frontend/app.js#L1123) | `L1123` | DOM Renderer |
+| `renderLedger()` | [`frontend/app.js`](/frontend/app.js#L1209) | `L1209` | DOM Renderer |
+| `initMarketMapResizeObserver()` | [`frontend/app.js`](/frontend/app.js#L1399) | `L1399` | UI Controller |
+| `initTheme()` | [`frontend/app.js`](/frontend/app.js#L1425) | `L1425` | UI Controller |
+| `setTheme()` | [`frontend/app.js`](/frontend/app.js#L1431) | `L1431` | DOM Updater / State Sync |
+| `toggleTheme()` | [`frontend/app.js`](/frontend/app.js#L1442) | `L1442` | Event Handler / State Transition |
+| `tickMarketClock()` | [`frontend/app.js`](/frontend/app.js#L1448) | `L1448` | UI Controller |
+| `tickClock()` | [`frontend/app.js`](/frontend/app.js#L1530) | `L1530` | UI Controller |
+| `renderAutomationControlBar()` | [`frontend/app.js`](/frontend/app.js#L1539) | `L1539` | DOM Renderer |
+| `setAutomationConfig()` | [`frontend/app.js`](/frontend/app.js#L1880) | `L1880` | DOM Updater / State Sync |
+| `setHandoffPendingState()` | [`frontend/app.js`](/frontend/app.js#L2003) | `L2003` | DOM Updater / State Sync |
+| `executeRunModeHandoff()` | [`frontend/app.js`](/frontend/app.js#L2021) | `L2021` | UI Controller |
+| `executeHandoff()` | [`frontend/app.js`](/frontend/app.js#L2046) | `L2046` | UI Controller |
+| `switchToLiveHours()` | [`frontend/app.js`](/frontend/app.js#L2147) | `L2147` | Event Handler / State Transition |
+| `switchToTestMode()` | [`frontend/app.js`](/frontend/app.js#L2156) | `L2156` | Event Handler / State Transition |
+| `initRealtimeStream()` | [`frontend/app.js`](/frontend/app.js#L2208) | `L2208` | UI Controller |
+| `switchView()` | [`frontend/app.js`](/frontend/app.js#L2234) | `L2234` | Event Handler / State Transition |
+| `initViewRouter()` | [`frontend/app.js`](/frontend/app.js#L2292) | `L2292` | UI Controller |
+| `initScrollSpy()` | [`frontend/app.js`](/frontend/app.js#L2329) | `L2329` | UI Controller |
+| `updateActiveNav()` | [`frontend/app.js`](/frontend/app.js#L2342) | `L2342` | DOM Updater / State Sync |
 | `smoothCurvePath()` | [`frontend/charts.js`](/frontend/charts.js#L8) | `L8` | Canvas / Chart Geometry |
 | `getBezierPointAtContinuousIndex()` | [`frontend/charts.js`](/frontend/charts.js#L31) | `L31` | Canvas / Chart Geometry |
 | `renderMainChart()` | [`frontend/charts.js`](/frontend/charts.js#L63) | `L63` | DOM Renderer |
-| `x()` | [`frontend/charts.js`](/frontend/charts.js#L93) | `L93` | UI Controller |
-| `y()` | [`frontend/charts.js`](/frontend/charts.js#L94) | `L94` | UI Controller |
-| `sparkline()` | [`frontend/charts.js`](/frontend/charts.js#L350) | `L350` | Canvas / Chart Geometry |
-| `squarify()` | [`frontend/charts.js`](/frontend/charts.js#L366) | `L366` | Canvas / Chart Geometry |
-| `layoutRow()` | [`frontend/charts.js`](/frontend/charts.js#L376) | `L376` | UI Controller |
-| `worst()` | [`frontend/charts.js`](/frontend/charts.js#L423) | `L423` | UI Controller |
-| `showTreemapTooltip()` | [`frontend/charts.js`](/frontend/charts.js#L460) | `L460` | Canvas / Chart Geometry |
-| `hideTreemapTooltip()` | [`frontend/charts.js`](/frontend/charts.js#L473) | `L473` | Canvas / Chart Geometry |
-| `renderMarketMap()` | [`frontend/charts.js`](/frontend/charts.js#L478) | `L478` | DOM Renderer |
-| `renderTopSectorsChart()` | [`frontend/charts.js`](/frontend/charts.js#L657) | `L657` | DOM Renderer |
-| `renderGainerChart()` | [`frontend/charts.js`](/frontend/charts.js#L817) | `L817` | DOM Renderer |
-| `updateWhatIfSimulator()` | [`frontend/charts.js`](/frontend/charts.js#L822) | `L822` | DOM Updater / State Sync |
-| `updateModalSimulator()` | [`frontend/charts.js`](/frontend/charts.js#L866) | `L866` | DOM Updater / State Sync |
-| `openDeepTrendModal()` | [`frontend/charts.js`](/frontend/charts.js#L905) | `L905` | UI Controller |
-| `closeDeepTrendModal()` | [`frontend/charts.js`](/frontend/charts.js#L1014) | `L1014` | UI Controller |
-| `renderDeepTrendChart()` | [`frontend/charts.js`](/frontend/charts.js#L1024) | `L1024` | DOM Renderer |
-| `x()` | [`frontend/charts.js`](/frontend/charts.js#L1052) | `L1052` | UI Controller |
-| `y()` | [`frontend/charts.js`](/frontend/charts.js#L1053) | `L1053` | UI Controller |
-| `initCharts()` | [`frontend/charts.js`](/frontend/charts.js#L1308) | `L1308` | Canvas / Chart Geometry |
+| `x()` | [`frontend/charts.js`](/frontend/charts.js#L95) | `L95` | UI Controller |
+| `y()` | [`frontend/charts.js`](/frontend/charts.js#L96) | `L96` | UI Controller |
+| `sparkline()` | [`frontend/charts.js`](/frontend/charts.js#L352) | `L352` | Canvas / Chart Geometry |
+| `squarify()` | [`frontend/charts.js`](/frontend/charts.js#L368) | `L368` | Canvas / Chart Geometry |
+| `layoutRow()` | [`frontend/charts.js`](/frontend/charts.js#L378) | `L378` | UI Controller |
+| `worst()` | [`frontend/charts.js`](/frontend/charts.js#L425) | `L425` | UI Controller |
+| `showTreemapTooltip()` | [`frontend/charts.js`](/frontend/charts.js#L462) | `L462` | Canvas / Chart Geometry |
+| `hideTreemapTooltip()` | [`frontend/charts.js`](/frontend/charts.js#L475) | `L475` | Canvas / Chart Geometry |
+| `renderMarketMap()` | [`frontend/charts.js`](/frontend/charts.js#L480) | `L480` | DOM Renderer |
+| `renderTopSectorsChart()` | [`frontend/charts.js`](/frontend/charts.js#L659) | `L659` | DOM Renderer |
+| `renderGainerChart()` | [`frontend/charts.js`](/frontend/charts.js#L819) | `L819` | DOM Renderer |
+| `updateWhatIfSimulator()` | [`frontend/charts.js`](/frontend/charts.js#L824) | `L824` | DOM Updater / State Sync |
+| `updateModalSimulator()` | [`frontend/charts.js`](/frontend/charts.js#L868) | `L868` | DOM Updater / State Sync |
+| `openDeepTrendModal()` | [`frontend/charts.js`](/frontend/charts.js#L907) | `L907` | UI Controller |
+| `closeDeepTrendModal()` | [`frontend/charts.js`](/frontend/charts.js#L1016) | `L1016` | UI Controller |
+| `renderDeepTrendChart()` | [`frontend/charts.js`](/frontend/charts.js#L1026) | `L1026` | DOM Renderer |
+| `x()` | [`frontend/charts.js`](/frontend/charts.js#L1054) | `L1054` | UI Controller |
+| `y()` | [`frontend/charts.js`](/frontend/charts.js#L1055) | `L1055` | UI Controller |
+| `initCharts()` | [`frontend/charts.js`](/frontend/charts.js#L1310) | `L1310` | Canvas / Chart Geometry |
 | `renderHermesSkills()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L8) | `L8` | DOM Renderer |
 | `createCard()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L23) | `L23` | UI Controller |
 | `loadHermesOSState()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L79) | `L79` | API Client / Ingestion |
@@ -2720,27 +2811,27 @@ Complete index of all **142** JavaScript controller and rendering functions:
 | `formatMoney()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L41) | `L41` | Formatter / Utility |
 | `formatPct()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L46) | `L46` | Formatter / Utility |
 | `switchNavView()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L53) | `L53` | Event Handler / State Transition |
-| `switchMonPane()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L94) | `L94` | Event Handler / State Transition |
-| `updateOrderTicketCalculations()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L118) | `L118` | DOM Updater / State Sync |
-| `selectSymbolForTicket()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L146) | `L146` | Event Handler / State Transition |
-| `setOrderSide()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L220) | `L220` | DOM Updater / State Sync |
-| `quickSell()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L232) | `L232` | UI Controller |
-| `renderMarketDepthTable()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L248) | `L248` | DOM Renderer |
-| `submitOrderPreview()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L288) | `L288` | Hermes Copilot / Chat UI |
-| `openConfirmModal()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L327) | `L327` | UI Controller |
-| `executeConfirmedOrder()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L363) | `L363` | UI Controller |
-| `loadOrders()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L408) | `L408` | API Client / Ingestion |
-| `renderOrdersTable()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L420) | `L420` | DOM Renderer |
-| `cancelOrder()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L462) | `L462` | UI Controller |
-| `loadLearningSummary()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L481) | `L481` | API Client / Ingestion |
-| `renderLearningView()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L493) | `L493` | DOM Renderer |
-| `loadFeedStatus()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L531) | `L531` | API Client / Ingestion |
-| `renderFeedStatusCard()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L543) | `L543` | DOM Renderer |
-| `renderAccountDonut()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L579) | `L579` | DOM Renderer |
-| `updateFromSnapshot()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L625) | `L625` | DOM Updater / State Sync |
-| `setText()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L662) | `L662` | DOM Updater / State Sync |
-| `showToast()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L667) | `L667` | UI Controller |
-| `init()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L685) | `L685` | UI Controller |
+| `switchMonPane()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L96) | `L96` | Event Handler / State Transition |
+| `updateOrderTicketCalculations()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L120) | `L120` | DOM Updater / State Sync |
+| `selectSymbolForTicket()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L148) | `L148` | Event Handler / State Transition |
+| `setOrderSide()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L222) | `L222` | DOM Updater / State Sync |
+| `quickSell()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L234) | `L234` | UI Controller |
+| `renderMarketDepthTable()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L250) | `L250` | DOM Renderer |
+| `submitOrderPreview()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L290) | `L290` | Hermes Copilot / Chat UI |
+| `openConfirmModal()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L329) | `L329` | UI Controller |
+| `executeConfirmedOrder()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L365) | `L365` | UI Controller |
+| `loadOrders()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L410) | `L410` | API Client / Ingestion |
+| `renderOrdersTable()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L422) | `L422` | DOM Renderer |
+| `cancelOrder()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L464) | `L464` | UI Controller |
+| `loadLearningSummary()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L483) | `L483` | API Client / Ingestion |
+| `renderLearningView()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L495) | `L495` | DOM Renderer |
+| `loadFeedStatus()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L533) | `L533` | API Client / Ingestion |
+| `renderFeedStatusCard()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L545) | `L545` | DOM Renderer |
+| `renderAccountDonut()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L581) | `L581` | DOM Renderer |
+| `updateFromSnapshot()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L627) | `L627` | DOM Updater / State Sync |
+| `setText()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L664) | `L664` | DOM Updater / State Sync |
+| `showToast()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L669) | `L669` | UI Controller |
+| `init()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L687) | `L687` | UI Controller |
 
 
 ### 6.5 Hermes Agent Plugin Tool Registry (`plugins/humming_bird/tools.py`)
@@ -2779,8 +2870,8 @@ Complete catalog of all **24** registered Hermes tools powering chat commands an
 
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
-| `styles.css` | 7344 | Core design tokens, layout & widgets |
-| `theme_light_hermes.css` | 3177 | Daylight overrides & Hermes IDE sidebar |
+| `styles.css` | 7397 | Core design tokens, layout & widgets |
+| `theme_light_hermes.css` | 3178 | Daylight overrides & Hermes IDE sidebar |
 
 
 ### 6.7 Frontend API Contract Invocations (`frontend/*.js`)
@@ -3006,4 +3097,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/verify_chat_card.py` | `main` | 121 | 3 | Decompose into sub-functions |
 
 
-> **Knowledge Graph Summary:** 56 Python modules inspected, 67 FastAPI endpoints registered, 19 SQLAlchemy tables mapped, 29 Pydantic contracts indexed, 24 Hermes tools bound to skills, 142 JS functions mapped, 283 DOM IDs indexed, 100,297 total LOC indexed across 142 repository files.
+> **Knowledge Graph Summary:** 56 Python modules inspected, 67 FastAPI endpoints registered, 19 SQLAlchemy tables mapped, 29 Pydantic contracts indexed, 24 Hermes tools bound to skills, 142 JS functions mapped, 372 DOM IDs indexed, 100,988 total LOC indexed across 143 repository files.

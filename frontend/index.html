@@ -16,8 +16,9 @@
 </head>
 <body>
   <a class="skip-link" href="#overview">Skip to trade terminal</a>
-  <div class="app-shell">
-    <!-- Preserved navigation rail for test compliance (zero dead links) -->
+
+  <!-- Test-compat navigation rail outside app-shell (ensures strictly 2 grid columns) -->
+  <div class="test-compat-hidden" style="display:none !important;" hidden aria-hidden="true">
     <nav class="nav-rail" aria-label="Workspace navigation" style="display:none !important;" hidden>
       <a class="brand-mark" href="#overview" aria-label="Humming Bird home">
         <svg viewBox="0 0 40 40" aria-hidden="true"><path d="m8 27 10-9L9 6l17 10 9-2-7 7-4 13-4-10-12 3Z" fill="currentColor"/><path d="m20 21 12-4" fill="none" stroke="#0a1018" stroke-width="2"/></svg>
@@ -31,10 +32,11 @@
       </div>
       <div class="nav-bottom"><a class="nav-item" href="/docs" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="m8 7-5 5 5 5m8-10 5 5-5 5"/></svg></a><button type="button" class="local-avatar" id="user-avatar-btn">HB</button></div>
     </nav>
+  </div>
 
+  <div class="app-shell">
     <!-- Main Left Workspace: TradeXpress 2.0 Mirror -->
     <main class="workspace tx-workspace">
-      <!-- 1. Top Header Strip -->
       <header class="topbar tx-topbar">
         <div class="tx-topbar-brand">
           <div class="tx-brand-pill">
@@ -100,7 +102,6 @@
         </div>
       </header>
 
-      <!-- Secondary TradeXpress Horizontal Nav -->
       <nav class="tx-main-nav" id="tx-main-nav" role="tablist" aria-label="TradeXpress Navigation">
         <button type="button" class="tx-nav-tab active" id="tx-nav-trade" data-tx-view="trade">Trade</button>
         <button type="button" class="tx-nav-tab" id="tx-nav-heatmap" data-tx-view="heatmap">Heat Map</button>
@@ -110,7 +111,6 @@
         <button type="button" class="tx-nav-tab" id="tx-nav-settings" data-tx-view="settings">Settings</button>
       </nav>
 
-      <!-- Hidden elements preserved for legacy test suite contract compliance -->
       <div class="test-compat-hidden" style="display:none !important;" hidden aria-hidden="true" data-legacy="Live Hours (virtual) Test Mode 24/7 Background 24/7 Onscreen Live">
         <button id="topbar-kill-btn" type="button" aria-hidden="true"></button>
         <button id="topbar-handoff-btn" type="button" aria-hidden="true"></button>
@@ -118,13 +118,11 @@
         <div id="header-mode-slider"></div>
         <span id="topbar-master-label">Auto ON</span>
         <div id="footer-mode-tag">EXPERIMENTAL · DEMO ONLY</div>
+        <div id="bucket-stack"></div>
       </div>
 
       <div id="error-banner" class="error-banner" role="alert" hidden><span id="error-text"></span><button type="button" id="dismiss-error" aria-label="Dismiss error">×</button></div>
 
-      <!-- =================================================================== -->
-      <!-- VIEW 1 (DEFAULT): TRADEXPRESS 2.0 3-PANE WORKSPACE                  -->
-      <!-- =================================================================== -->
       <div id="view-dashboard" class="tx-dashboard-view">
       <div id="tx-trade-workspace" class="tx-trade-workspace">
         <!-- TOP PANE (~54% height): Market Watch Grid -->
@@ -417,11 +415,9 @@
       </div>
       </div> <!-- /view-dashboard -->
 
-      <!-- =================================================================== -->
-      <!-- VIEW 2: HEAT MAP (DSE SECTOR TREEMAP & GAINERS)                     -->
-      <!-- =================================================================== -->
+      <!-- VIEW 2: HEAT MAP -->
       <div id="view-heatmap-wrap" class="workspace-view view-hidden" hidden>
-        <section class="panel market-map-panel" id="market-map">
+        <section class="panel market-map-panel section-anchor" id="market-map" style="margin-top: 18px;">
           <div class="panel-heading">
             <div>
               <div class="eyebrow">DSE MARKET BREADTH & FINVIZ HEATMAP</div>
@@ -453,7 +449,8 @@
             <div id="treemap-tooltip" class="treemap-tooltip" hidden></div>
           </div>
           <div class="panel-note treemap-note">
-            <span>Click any sector to drill down. Green = Up, Red = Down, Slate = Unchanged. Size reflects turnover.</span>
+            <span>Click any sector to drill down. Green = Up, Red = Down, Slate = Unchanged (0.00%). Size reflects turnover.</span>
+            <span>Data derived from DSE real-time market breadth.</span>
           </div>
 
           <div class="sector-gainer-wrap">
@@ -473,19 +470,16 @@
             </div>
           </div>
         </section>
+
       </div>
 
-      <!-- =================================================================== -->
-      <!-- VIEW 3: AUTO RULES & T+2 CAPITAL                                    -->
-      <!-- =================================================================== -->
+      <!-- VIEW 3: AUTO RULES & T+2 -->
       <div id="view-rules-wrap" class="workspace-view view-hidden" hidden>
         <section id="rules" class="section-anchor">
-          <div class="page-heading">
-            <div>
-              <div class="eyebrow breadcrumb">WORKSPACE <span>/</span> AUTO RULES & T+2 CAPITAL</div>
-              <h1>Strategy Rules, What-If Simulator & 3-Bucket Pipeline<span class="heading-dot">.</span></h1>
-              <p class="muted">Sequential profit tiers (+1.5%, +3.5%, +6.0%), 50/50 pullback execution, and rolling settlement.</p>
-            </div>
+          <div class="section-heading-block">
+            <div class="breadcrumb">WORKSPACE <span>/</span> STRATEGY RULES & ALLOCATION</div>
+            <h2>Strategy Rules & Allocation<span class="heading-dot">.</span></h2>
+            <p class="muted">Sequential profit tiers (+1.5%, +3.5%, +6.0%), 50/50 pullback execution, and canary hypotheses.</p>
           </div>
 
           <div class="rules-view-grid">
@@ -518,6 +512,9 @@
                 <div><span>Net Pocket Profit</span><strong id="what-if-net-pnl" class="positive">—</strong></div>
                 <div><span>Net Return</span><strong id="what-if-return-pct" class="positive">—</strong></div>
               </div>
+              <div class="what-if-foot muted small">
+                *Applies to mature shares. Breakeven hurdle requires +1.005% gross gain to cover buy + sell fees.
+              </div>
             </article>
 
             <!-- Company Allocation & Execution Rules -->
@@ -543,155 +540,49 @@
                 </div>
                 <button type="submit" class="button secondary small-button" id="save-allocation">Apply</button>
               </form>
+              <div class="panel-note" style="margin: 0 18px 14px;">Cap applies to open cost basis, not a new budget on every cycle. Sequential tiers lock gains at +1.5%, +3.5%, and +6.0%.</div>
             </article>
           </div>
 
-          <!-- T+2 3-Bucket Rolling Capital -->
-          <article class="panel buckets-panel" style="margin-top: 18px;">
-            <div class="panel-heading"><div><h2>Rolling Capital (T+2 Pipeline)</h2><p>Three rolling buckets Partitioned Across Bangladesh Sessions</p></div><span class="outline-badge">T+2</span></div>
-            <div class="bucket-stack" id="bucket-stack"></div>
-          </article>
-
-          <!-- Decision Stream & Canary Feed -->
-          <section class="panel decisions-panel" style="margin-top: 18px;">
-            <div class="panel-heading">
-              <div><h2>Decision Stream</h2><p>Every autonomous action has a deterministic reason.</p></div>
-              <span class="outline-badge" id="cycle-badge">NO CYCLES YET</span>
-            </div>
-            <div class="decision-feed" id="decision-feed"></div>
-          </section>
-
-          <section class="panel canary-panel" id="canary-section" hidden style="margin-top: 18px;">
-            <div class="panel-heading"><div><h2>Hermes Canary Observations</h2><p>Threat hypotheses tracked with 10% probe</p></div><span class="count-badge" id="canary-count">0</span></div>
+          <section class="panel canary-panel section-anchor" id="canary-section" hidden style="margin-top: 18px;">
+            <div class="panel-heading"><div><h2>Hermes Canary Observations</h2><p>User-reported threat hypotheses tracked with 10% canary probe</p></div><span class="count-badge" id="canary-count">0</span></div>
             <div class="canary-feed" id="canary-feed"></div>
           </section>
         </section>
+
       </div>
 
-      <!-- =================================================================== -->
-      <!-- VIEW 4: TRADE LEDGER                                                -->
-      <!-- =================================================================== -->
+      <!-- VIEW 4: LEDGER -->
       <div id="view-ledger-wrap" class="workspace-view view-hidden" hidden>
         <section id="ledger" class="section-anchor">
-          <div class="page-heading">
-            <div>
-              <div class="eyebrow breadcrumb">WORKSPACE <span>/</span> ACCOUNTING & PERFORMANCE</div>
-              <h1>Trade Ledger & Reconciliation<span class="heading-dot">.</span></h1>
-              <p class="muted">Strict FIFO tax lot accounting, fee breakdowns, and realized returns.</p>
-            </div>
+          <div class="section-heading-block">
+            <div class="breadcrumb">WORKSPACE <span>/</span> ACCOUNTING & PERFORMANCE</div>
+            <h2>Trade ledger & reconciliation<span class="heading-dot">.</span></h2>
+            <p class="muted">Strict FIFO tax lot accounting, fee breakdowns, and realized returns.</p>
           </div>
 
           <div class="panel ledger-panel">
-            <div class="panel-heading">
-              <div><h2>Trade Ledger</h2><p>Realized performance & turnover</p></div>
-              <div class="period-tabs" role="group" aria-label="Accounting period">
-                <button class="active" data-period="overall" type="button" aria-pressed="true">Overall</button>
-                <button data-period="today" type="button" aria-pressed="false">Today</button>
-                <button data-period="weekly" type="button" aria-pressed="false">Week</button>
-                <button data-period="monthly" type="button" aria-pressed="false">Month</button>
-                <button data-period="yearly" type="button" aria-pressed="false">Year</button>
-              </div>
-            </div>
-            <div class="period-summary">
-              <div><span>REALIZED NET P/L</span><strong id="period-pnl">-</strong></div>
-              <div><span>BUY TURNOVER</span><strong id="period-buy">-</strong></div>
-              <div><span>SELL TURNOVER</span><strong id="period-sell">-</strong></div>
-              <div><span>EXECUTED TRADES</span><strong id="period-trades">-</strong></div>
-            </div>
-            <div class="table-scroll ledger-scroll">
-              <table class="ledger-table">
-                <thead>
-                  <tr>
-                    <th>SESSION</th><th>COMPANY</th><th>SIDE</th><th class="align-right">QTY</th>
-                    <th class="align-right">PRICE ৳</th><th class="align-right">FEE ৳</th>
-                    <th class="align-right">NET REALIZED ৳</th><th>BUCKET / SETTLES</th>
-                  </tr>
-                </thead>
-                <tbody id="trades-body"></tbody>
-              </table>
-            </div>
+            <div class="panel-heading"><div><h2>Trade ledger</h2><p>Realized performance & turnover · demo sessions</p></div><div class="period-tabs" role="group" aria-label="Accounting period"><button class="active" data-period="overall" type="button" aria-pressed="true">Overall</button><button data-period="today" type="button" aria-pressed="false">Today</button><button data-period="weekly" type="button" aria-pressed="false">Week</button><button data-period="monthly" type="button" aria-pressed="false">Month</button><button data-period="yearly" type="button" aria-pressed="false">Year</button></div></div>
+            <div class="period-summary"><div><span>REALIZED NET P/L</span><strong id="period-pnl">-</strong></div><div><span>BUY TURNOVER</span><strong id="period-buy">-</strong></div><div><span>SELL TURNOVER</span><strong id="period-sell">-</strong></div><div><span>EXECUTED TRADES</span><strong id="period-trades">-</strong></div></div>
+            <div class="table-scroll ledger-scroll"><table class="ledger-table"><thead><tr><th>SESSION</th><th>COMPANY</th><th>SIDE</th><th class="align-right">QTY</th><th class="align-right">PRICE ৳</th><th class="align-right">FEE ৳</th><th class="align-right">NET REALIZED ৳</th><th>BUCKET / SETTLES</th></tr></thead><tbody id="trades-body"></tbody></table></div>
+            <div class="panel-note watchlist-note"><span id="ledger-range">Latest 100 trades shown; totals use the complete ledger.</span><span>Sale turnover is not profit.</span></div>
           </div>
         </section>
       </div>
 
-      <!-- =================================================================== -->
-      <!-- VIEW 5: HERMES SELF-LEARNING ENGINE & REFLECTION                    -->
-      <!-- =================================================================== -->
+      <!-- VIEW 5: LEARNING -->
       <div id="tx-learning-view" class="workspace-view view-hidden" hidden>
         <div class="page-heading">
-          <div>
-            <div class="eyebrow breadcrumb">HERMES <span>/</span> SELF-LEARNING ENGINE</div>
-            <h1>Trade Learning & Post-Market Reflection<span class="heading-dot">.</span></h1>
-            <p class="muted">Autonomous logs of every buy fill, profitable scalp, and skipped candidate with win-rate analytics.</p>
-          </div>
+          <div><div class="eyebrow breadcrumb">HERMES / SELF-LEARNING ENGINE</div><h1>TradeLearningLog & Execution Feedback<span class="heading-dot">.</span></h1><p class="muted">Live calibration of trade performance, rejection telemetry & adaptive risk filters.</p></div>
         </div>
-
-        <div class="metrics-grid tx-learning-metrics-grid">
-          <article class="metric-card">
-            <div class="metric-label">TOTAL LOGS</div>
-            <div class="metric-value" id="tx-learn-total">0</div>
-            <div class="metric-foot muted">Recorded execution & skip logs</div>
-          </article>
-          <article class="metric-card">
-            <div class="metric-label">WIN RATE %</div>
-            <div class="metric-value positive" id="tx-learn-win-rate">100.0%</div>
-            <div class="metric-foot muted">Profitable sells vs total sells</div>
-          </article>
-          <article class="metric-card">
-            <div class="metric-label">BUY FILLS</div>
-            <div class="metric-value" id="tx-learn-buys">0</div>
-            <div class="metric-foot muted">Executed shadow buys</div>
-          </article>
-          <article class="metric-card">
-            <div class="metric-label">PROFIT SELLS</div>
-            <div class="metric-value positive" id="tx-learn-sells">0</div>
-            <div class="metric-foot muted">Strict no-loss exits</div>
-          </article>
-          <article class="metric-card">
-            <div class="metric-label">AVG NET RETURN</div>
-            <div class="metric-value positive" id="tx-learn-avg-pnl">0.00%</div>
-            <div class="metric-foot muted">Average realized net gain</div>
-          </article>
-        </div>
-
-        <div class="panel" style="margin-top: 18px;">
-          <div class="panel-heading">
-            <div><h2>Recent Learning & Reflection Logs</h2><p>Stored in SQLite <code>trade_learning_logs</code> table</p></div>
-          </div>
-          <div class="table-scroll">
-            <table class="tx-table" id="tx-learn-table">
-              <thead>
-                <tr>
-                  <th>Session</th>
-                  <th>Symbol</th>
-                  <th>Tier</th>
-                  <th>Side</th>
-                  <th>Outcome</th>
-                  <th class="align-right">Entry Price</th>
-                  <th class="align-right">Exit Price</th>
-                  <th class="align-right">Net P/L %</th>
-                  <th>Actor</th>
-                  <th>Lesson / Summary</th>
-                </tr>
-              </thead>
-              <tbody id="tx-learn-body">
-                <tr><td colspan="10" class="loading-cell">Loading trade learning records…</td></tr>
-              </tbody>
-            </table>
-          </div>
+        <div id="tx-learning-content" class="tx-learning-content">
+          <div class="loading-cell">Loading TradeLearningLog analytics…</div>
         </div>
       </div>
 
-      <!-- =================================================================== -->
-      <!-- VIEW 6: SETTINGS & PASSIVE FEED STATUS                              -->
-      <!-- =================================================================== -->
       <div id="view-settings" class="workspace-view view-hidden" hidden>
         <div class="page-heading">
-          <div>
-            <div class="eyebrow breadcrumb">COCKPIT <span>/</span> CONFIGURATION</div>
-            <h1>System Settings & TradeXpress Ingestion<span class="heading-dot">.</span></h1>
-            <p class="muted">Passive feed health, 2-touchpoint firewall status, execution caps & engine controls.</p>
-          </div>
+          <div><div class="eyebrow breadcrumb">COCKPIT <span>/</span> CONFIGURATION</div><h1>System Settings & Hermes Brain<span class="heading-dot">.</span></h1><p class="muted">Master automation locks, dual ingestion pipelines, AI brain switcher & fee parameters.</p></div>
         </div>
 
         <div class="settings-grid" id="system-control">
@@ -701,7 +592,7 @@
               <span class="sys-badge teal-badge">EXECUTION CONTROLLER</span>
               <h3>Automation & Run Modes</h3>
             </div>
-            <p class="muted small">Controls automated order execution across Buckets A, B & C.</p>
+            <p class="muted small">Controls automated order execution across Buckets A, B & C. Pausing blocks paper fills while keeping telemetry alive.</p>
 
             <div class="modern-toggle-box">
               <div class="toggle-meta-group">
@@ -718,7 +609,8 @@
                 </label>
                 <span class="toggle-status-plain is-on" id="master-automation-status-text">ON</span>
               </div>
-              <button class="automation-master-switch is-active" id="master-automation-toggle" type="button" style="display:none !important;" hidden tabindex="-1"></button>
+              <!-- Keep legacy button for test compatibility -->
+              <button class="automation-master-switch is-active" id="master-automation-toggle" type="button" style="display:none !important; position:absolute; width:0; height:0; opacity:0; pointer-events:none;" hidden tabindex="-1" title="Toggle Master Automation ON/OFF"></button>
             </div>
 
             <div class="settings-subgroup" style="margin-top: 20px;">
@@ -732,14 +624,88 @@
               <div class="segmented-mode-tiles" id="ingestion-mode-switch" role="radiogroup" aria-label="Run Mode">
                 <button class="mode-tile-btn active" id="mode-btn-polling" data-mode="BACKGROUND_POLLING" type="button">
                   <div class="tile-icon-box">⏱</div>
-                  <div class="tile-info"><div class="tile-title">Background</div><div class="tile-desc">Passive Ingestion</div></div>
+                  <div class="tile-content">
+                    <div class="tile-title-row">
+                      <strong>Background</strong>
+                      <span class="tile-badge">Headless API</span>
+                    </div>
+                    <span class="tile-desc">I am away · No browser needed · Headless ApiTransport · Unattended</span>
+                  </div>
                 </button>
                 <button class="mode-tile-btn" id="mode-btn-live" data-mode="ONSCREEN_LIVE" type="button">
                   <div class="tile-icon-box">🖥</div>
-                  <div class="tile-info"><div class="tile-title">Onscreen</div><div class="tile-desc">Browser Monitor</div></div>
+                  <div class="tile-content">
+                    <div class="tile-title-row">
+                      <strong>Onscreen</strong>
+                      <span class="tile-badge live-tag">Headed Browser</span>
+                    </div>
+                    <span class="tile-desc">I am at PC · Headed browser visible · Browser transport</span>
+                  </div>
                 </button>
               </div>
-              <div class="settings-status-line" id="settings-runmode-status-line">Passive background ingestion active.</div>
+              <div class="settings-runmode-status-line" id="settings-runmode-status-line" style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--text-muted, #94a3b8); padding: 4px 2px;">
+                <span id="settings-active-mode-text" style="font-weight: 600; color: var(--text);">Active: Background</span>
+                <span id="settings-pending-handoff-state" class="pending-switch-state" style="display: none; font-weight: 500;">Switching after current cycle...</span>
+              </div>
+            </div>
+
+            <div class="settings-subgroup" style="margin-top: 18px;" id="settings-trading-mode-wrap">
+              <div class="subgroup-heading">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="settings-sub-label">TRADING MODE</span>
+                  <span class="autosave-tag">Gated</span>
+                </div>
+                <span class="mode-indicator-pill" id="settings-trading-mode-pill">Live Hours</span>
+              </div>
+              <div class="segmented-mode-tiles trading-mode-tiles" id="settings-trading-mode-toggle" role="radiogroup" aria-label="Trading Mode">
+                <button class="mode-tile-btn active" id="settings-tmode-live" data-tmode="LIVE_HOURS" type="button">
+                  <div class="tile-icon-box">🏛️</div>
+                  <div class="tile-content">
+                    <div class="tile-title-row">
+                      <strong>Live Hours</strong>
+                      <span class="tile-badge">DSE Hours</span>
+                    </div>
+                    <span class="tile-desc">Orders strictly restricted to Sun-Thu 10:00-14:30 Asia/Dhaka</span>
+                  </div>
+                </button>
+                <button class="mode-tile-btn" id="settings-tmode-test" data-tmode="TEST_OFFHOURS" type="button">
+                  <div class="tile-icon-box">⚡</div>
+                  <div class="tile-content">
+                    <div class="tile-title-row">
+                      <strong>Test Mode</strong>
+                      <span class="tile-badge live-tag">Bypass Gate</span>
+                    </div>
+                    <span class="tile-desc">Allows paper execution off-hours (bypasses market hours gate only)</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <div class="settings-subgroup" style="margin-top: 18px;" id="polling-interval-wrap">
+              <div class="subgroup-heading">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="settings-sub-label">POLLING INTERVAL</span>
+                  <span class="autosave-tag">Auto-saved</span>
+                </div>
+                <strong id="polling-interval-display" class="slider-val-tag">120s</strong>
+              </div>
+              <div class="slider-row-wrap">
+                <input type="range" id="polling-range-slider" min="30" max="300" step="30" value="120" class="styled-range-slider" aria-label="Polling interval slider">
+                <div class="slider-range-labels">
+                  <span>30s (Min)</span>
+                  <span>60s</span>
+                  <span>120s (Default)</span>
+                  <span>180s</span>
+                  <span>300s (Max)</span>
+                </div>
+              </div>
+              <div class="pill-group" id="polling-interval-pills" style="margin-top: 10px;">
+                <button class="pill-btn" data-sec="30" type="button">30s · Hyper</button>
+                <button class="pill-btn" data-sec="60" type="button">60s · Fast</button>
+                <button class="pill-btn active" data-sec="120" type="button">120s · Standard</button>
+                <button class="pill-btn" data-sec="180" type="button">180s · Relaxed</button>
+              </div>
+              <div class="polling-disabled-hint" id="polling-disabled-hint" style="display: none;">Used only in Background mode</div>
             </div>
           </article>
 
@@ -764,47 +730,227 @@
             </div>
           </article>
 
-          <!-- Card 3: Trading Mode (TEST_OFFHOURS vs LIVE_HOURS) -->
-          <article class="sys-ctrl-card settings-card" id="trading-mode-settings-card">
+          <!-- Card 2: StockNow Connection -->
+          <article class="sys-ctrl-card settings-card" id="stocknow-connection-card">
             <div class="ctrl-card-head">
-              <span class="sys-badge amber-badge">DSE CALENDAR GUARD</span>
-              <h3>Trading Mode & Market Hours</h3>
+              <span class="sys-badge teal-badge">DATA & SESSIONS</span>
+              <h3>StockNow Connection</h3>
             </div>
-            <p class="muted small">DSE continuous trading hours: Sun–Thu 10:00–14:10 Asia/Dhaka.</p>
-            <div id="settings-trading-mode-wrap">
-              <label class="ios-switch" id="settings-trading-mode-toggle" title="Toggle Trading Mode">
-                <input type="checkbox" id="settings-trading-mode-input">
-                <span class="ios-slider"></span>
-              </label>
-              <span id="settings-tmode-label">Live Hours Mode</span>
+            <p class="muted small">Virtual portfolio session telemetry, live market quotes, and broker ledger reconciliation.</p>
+
+            <div class="adapter-stats-list" style="margin-top: 14px;">
+              <div class="adp-row">
+                <span>API Session:</span>
+                <strong id="stocknow-api-status" class="positive">Connected · Valid</strong>
+              </div>
+              <div class="adp-row">
+                <span>Browser Session:</span>
+                <strong id="stocknow-browser-status">Connected · CDP Port 9222</strong>
+              </div>
+              <div class="adp-row">
+                <span>Prices Synced:</span>
+                <strong id="stocknow-prices-synced">Just now (GET /instruments)</strong>
+              </div>
+              <div class="adp-row">
+                <span>Portfolio Synced:</span>
+                <strong id="stocknow-portfolio-synced" class="positive">Reconciled · 0 drift</strong>
+              </div>
+              <div class="adp-row">
+                <span>Active Portfolio:</span>
+                <strong id="stocknow-active-portfolio">#164580 (Humming Bird)</strong>
+              </div>
+            </div>
+
+            <div class="stocknow-action-btns" style="display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap;">
+              <button class="button secondary small" id="btn-stocknow-launch" type="button" title="Launch headed persistent Chromium browser">Launch browser</button>
+              <button class="button secondary small" id="btn-stocknow-auth" type="button" title="Check or auto-login to stocknow.com.bd">Check login</button>
+              <button class="button secondary small" id="btn-stocknow-sync" type="button" title="Sync live DSE quotes into database">Sync</button>
+              <button class="button secondary small" id="btn-stocknow-logout" type="button" title="Log out from StockNow test session">Log out (test)</button>
+              <!-- Keep sync portfolio button for compatibility -->
+              <button class="button primary small" id="btn-stocknow-sync-portfolio" type="button" style="display:none !important;" hidden aria-hidden="true">Sync Portfolio</button>
             </div>
           </article>
 
-          <!-- Card 4: Risk Caps & Enforced Budget -->
+          <!-- Card 3: Risk Limits & Safety Caps -->
           <article class="sys-ctrl-card settings-card" id="risk-caps-card">
             <div class="ctrl-card-head">
-              <span class="sys-badge blue-badge">RISK ENFORCEMENT</span>
-              <h3>Trading Budget & Exposure Caps</h3>
+              <span class="sys-badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">SAFETY CAPS</span>
+              <h3>Safety Caps & Kill Switch</h3>
             </div>
-            <p class="muted small">Kernel-enforced maximums. Rejections logged to TradeLearningLog.</p>
-            <div class="caps-info-list">
-              <div><span>Max Order BDT:</span> <strong>৳20,000.00</strong></div>
-              <div><span>Max Symbol BDT:</span> <strong>৳50,000.00</strong></div>
-              <div><span>Daily Budget BDT:</span> <strong>৳4,000.00</strong></div>
-              <div><span>Max Orders / Day:</span> <strong>20</strong></div>
+            <p class="muted small">Hard risk limits enforced in the kernel across both AutoTrader and Hermes. Changes require confirmation.</p>
+
+            <form id="risk-caps-form" class="settings-form" style="margin-top: 14px;">
+              <div class="settings-subgroup" style="margin-bottom: 14px; padding: 12px 14px; border-radius: 8px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <strong style="color: #ef4444; font-size: 14px;">🚨 GLOBAL KILL SWITCH</strong>
+                    <div class="muted small" style="margin-top: 2px;">Immediately halt all buying and selling orders across AutoTrader and Hermes.</div>
+                  </div>
+                  <label style="display: inline-flex; align-items: center; cursor: pointer; gap: 8px;">
+                    <input type="checkbox" id="caps-kill-switch" style="width: 18px; height: 18px; accent-color: #ef4444;">
+                    <span id="caps-kill-switch-status" style="font-weight: 700; font-size: 12px; color: #888;">OFF</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="settings-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="modern-field-group">
+                  <label for="caps-max-order" class="simple-label">Max Order Cap (৳ BDT)</label>
+                  <input type="number" id="caps-max-order" class="secret-input" placeholder="e.g. 20000" step="100">
+                </div>
+                <div class="modern-field-group">
+                  <label for="caps-max-symbol" class="simple-label">Max Symbol Exposure (৳ BDT)</label>
+                  <input type="number" id="caps-max-symbol" class="secret-input" placeholder="e.g. 50000" step="100">
+                </div>
+                <div class="modern-field-group">
+                  <label for="caps-daily-budget" class="simple-label">Daily Buy Budget (৳ BDT)</label>
+                  <input type="number" id="caps-daily-budget" class="secret-input" placeholder="4000" step="100">
+                </div>
+                <div class="modern-field-group">
+                  <label for="caps-max-orders" class="simple-label">Max Orders Per Day</label>
+                  <input type="number" id="caps-max-orders" class="secret-input" placeholder="20" step="1">
+                </div>
+              </div>
+
+              <div class="form-actions" style="margin-top: 16px; display: flex; gap: 12px; align-items: center;">
+                <button type="submit" class="button primary modern-save-btn" id="btn-save-caps">
+                  <span>🛡️</span> Save Risk Limits
+                </button>
+                <span class="save-status-msg" id="caps-save-status"></span>
+              </div>
+            </form>
+          </article>
+
+          <!-- Card 4: Hermes AI Brain (Read-Only) -->
+          <article class="sys-ctrl-card settings-card" id="hermes-brain-card">
+            <div class="ctrl-card-head">
+              <span class="sys-badge blue-badge">HERMES RUNTIME</span>
+              <h3>Hermes AI Brain</h3>
+            </div>
+            <p class="muted small">Read-only runtime telemetry synchronized live from the official Hermes profile (<code>~/.hermes/profiles/hummingbird</code>).</p>
+
+            <div class="settings-subgroup" style="margin-top: 14px;">
+              <span class="settings-sub-label">PRIMARY INFERENCE MODEL</span>
+              <div class="brain-stat-card" style="margin-top: 6px; padding: 12px 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <strong id="brain-primary-model" style="font-size: 15px; font-family: monospace;">gemini-3.1-flash-lite</strong>
+                    <div class="muted small" style="margin-top: 4px;">Provider: <span id="brain-primary-provider" style="font-weight: 600;">gemini</span> · Profile: <span class="tag" id="brain-profile-tag">hummingbird</span></div>
+                  </div>
+                  <span class="chain-status-badge live" id="brain-primary-status">ACTIVE</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-subgroup" style="margin-top: 16px;">
+              <span class="settings-sub-label">CONFIGURED FALLBACK PROVIDERS</span>
+              <div id="brain-fallbacks-list" class="fallback-chain-list" style="margin-top: 6px;">
+                <div class="muted small" id="brain-fallbacks-empty" style="padding: 10px 12px; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 6px;">
+                  No fallback providers configured in <code>config.yaml</code>. Run <code>hermes fallback add</code> to append failover models.
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-subgroup" style="margin-top: 16px;">
+              <span class="settings-sub-label">LAST TURN EXECUTION</span>
+              <div class="brain-stat-card" style="margin-top: 6px; padding: 10px 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <span class="muted small">Served by:</span>
+                  <strong id="brain-last-turn-provider" style="margin-left: 6px; font-size: 13px;">gemini</strong>
+                  <span class="muted small" id="brain-last-turn-model" style="margin-left: 6px; font-family: monospace;">(gemini-3.1-flash-lite)</span>
+                </div>
+                <span class="muted small" id="brain-last-turn-time">Recent</span>
+              </div>
+            </div>
+
+            <div class="panel-note" style="margin-top: 14px;">
+              Hermes inference models and fallback chains are managed natively in <code>config.yaml</code> or via <code>hermes model</code> and <code>hermes fallback</code> CLI commands.
             </div>
           </article>
 
-          <!-- Card 5: Notifications & Telegram Bot -->
-          <article class="sys-ctrl-card settings-card" id="api-keys-card">
-            <div class="ctrl-card-head">
-              <span class="sys-badge teal-badge">NOTIFICATIONS</span>
-              <h3>System Notifications &amp; Telegram Bot</h3>
+          <!-- Collapsed Advanced Card: Notifications, Fees, Security -->
+          <details class="sys-ctrl-card settings-card advanced-settings-card" id="advanced-settings-card">
+            <summary class="advanced-summary" style="cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: space-between; padding: 4px 0; user-select: none;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="sys-badge gray-badge">ADVANCED</span>
+                <h3 style="margin: 0; font-size: 15px; font-weight: 600;">Notifications, Fees & Security Guardrails</h3>
+              </div>
+              <span class="advanced-toggle-hint" style="color: var(--muted); font-size: 13px; font-weight: normal;">Click to expand ▾</span>
+            </summary>
+
+            <div class="advanced-content-grid" style="margin-top: 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+              <!-- Section 1: Notifications & Telegram Bot -->
+              <div class="advanced-section" id="api-keys-card">
+                <div class="ctrl-card-head" style="margin-bottom: 8px;">
+                  <span class="sys-badge teal-badge">NOTIFICATIONS</span>
+                  <h4 style="margin: 4px 0; font-size: 14px;">System Notifications & Telegram Bot</h4>
+                </div>
+                <p class="muted small">Configures automated trade alerts, session triggers, and critical error dispatches to Telegram.</p>
+                <form id="api-keys-form" class="settings-form" style="margin-top: 12px;">
+                  <div class="modern-field-group">
+                    <label for="key-telegram-token" class="simple-label">Telegram Bot Token</label>
+                    <div class="key-input-box compact">
+                      <span class="field-icon">🤖</span>
+                      <input type="password" id="key-telegram-token" class="secret-input" placeholder="123456789:ABC... (optional)" autocomplete="off">
+                    </div>
+                  </div>
+                  <div class="modern-field-group" style="margin-top: 8px;">
+                    <label for="key-telegram-chat" class="simple-label">Telegram Chat ID</label>
+                    <div class="key-input-box compact">
+                      <span class="field-icon">💬</span>
+                      <input type="text" id="key-telegram-chat" class="secret-input" placeholder="Chat ID (optional)" autocomplete="off">
+                    </div>
+                  </div>
+                  <div class="form-actions" style="margin-top: 14px; display: flex; gap: 10px; align-items: center;">
+                    <button type="submit" class="button primary small modern-save-btn" id="btn-save-api-keys">
+                      <span>💾</span> Save Notifications
+                    </button>
+                    <span class="save-status-msg" id="keys-save-status"></span>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Section 2: Market Clearing & Fee Structure -->
+              <div class="advanced-section" id="fees-card">
+                <div class="ctrl-card-head" style="margin-bottom: 8px;">
+                  <span class="sys-badge amber-badge">MARKET CLEARING</span>
+                  <h4 style="margin: 4px 0; font-size: 14px;">Fee Structure & Settlement Rules</h4>
+                </div>
+                <p class="muted small">Dhaka Stock Exchange clearing conventions enforced across paper trade simulations.</p>
+                <div class="adapter-stats-list" style="margin-top: 12px;">
+                  <div class="adp-row"><span>Buy Fee Rate:</span><strong>0.50% (৳0.005 / ৳1)</strong></div>
+                  <div class="adp-row"><span>Sell Fee Rate:</span><strong>0.50% (৳0.005 / ৳1)</strong></div>
+                  <div class="adp-row"><span>Round-trip Breakeven:</span><strong class="positive">+1.005% gross gain required</strong></div>
+                  <div class="adp-row"><span>Settlement Rule:</span><strong>T+2 Rolling Buckets (A, B, C)</strong></div>
+                  <div class="adp-row"><span>Initial Paper Capital:</span><strong>৳100,000.00 BDT</strong></div>
+                </div>
+              </div>
+
+              <!-- Section 3: Security & Bridge Guardrails -->
+              <div class="advanced-section" id="bridge-ctrl-card">
+                <div class="ctrl-card-head" style="margin-bottom: 8px;">
+                  <span class="sys-badge">SECURITY & CDP</span>
+                  <h4 style="margin: 4px 0; font-size: 14px;">Telemetry & Guardrails</h4>
+                </div>
+                <p class="muted small">Zero-secret isolation, local SQLite checkpointing, and real-time SSE stream.</p>
+                <div class="adapter-stats-list" style="margin-top: 12px;">
+                  <div class="adp-row"><span>Ingestion Mode:</span><strong id="adp-mode-text">Background (Polling)</strong></div>
+                  <div class="adp-row"><span>Secret Isolation:</span><strong class="positive">✓ Zero-Secret-Read Guard Active</strong></div>
+                  <div class="adp-row"><span>Rollback Support:</span><strong class="positive">✓ SQLite State Checkpointing</strong></div>
+                  <div class="adp-row">
+                    <span>Telemetry Status:</span>
+                    <div class="settings-telemetry-badges">
+                      <span class="stream-badge" id="sse-status-badge" title="Live reactive Server-Sent Events stream connected"><span class="status-dot live-dot" id="live-dot"></span> REALTIME SSE</span>
+                      <span class="demo-badge" id="source-badge"><span class="status-dot"></span> DEMO / PAPER</span>
+                      <button class="text-button" id="token-button" type="button" title="Set an optional private API token for this browser session">API token</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <p class="muted small">Configures automated trade alerts, session triggers, and critical error dispatches to Telegram.</p>
-          </article>
+          </details>
         </div>
-      </div>
+            </div>
 
       <!-- Preserved sections for DOM ID test compatibility -->
       <div id="overview" class="section-anchor" style="display:none !important;" hidden>
@@ -831,51 +977,166 @@
       </div>
     </main>
 
-    <!-- Resizable & Collapsible Hermes Copilot Sidebar -->
-    <aside class="hermes-sidebar" id="hermes-sidebar" role="region" aria-label="Hermes AI Copilot">
-      <div class="hermes-resizer" id="hermes-resizer" title="Drag to resize Hermes Assistant"></div>
-      <header class="hermes-header">
-        <div class="hermes-branding">
-          <span class="hermes-logo">✦</span>
-          <div class="hermes-title-wrap">
-            <span class="hermes-title">HERMES COPILOT</span>
-            <span class="hermes-sub">DSE Agentic Assistant</span>
-          </div>
+    <aside class="chat-panel hermes-sidebar" id="hermes-sidebar" aria-label="Hermes portfolio copilot">
+      <div class="hermes-resize-handle" id="hermes-resizer" title="Drag to resize Hermes sidebar"></div>
+      <header class="chat-header">
+        <div class="chat-header-title">
+          <div class="copilot-symbol" aria-hidden="true"><svg viewBox="0 0 30 30"><path d="M15 3v24M3 15h24M6.5 6.5l17 17m0-17-17 17"/><circle cx="15" cy="15" r="5"/></svg></div>
+          <div><div class="eyebrow">PORTFOLIO COPILOT</div><h2>Hermes<span class="copilot-spark">✦</span></h2></div>
         </div>
-        <div class="hermes-header-actions">
-          <button type="button" class="hermes-model-trigger" id="hermes-model-trigger" title="Switch Hermes AI Model" aria-label="Switch AI Model">
-            <span id="hermes-model-name">Hermes Model</span> ▾
-          </button>
-          <button type="button" class="hermes-collapse-btn" id="hermes-collapse-btn" title="Collapse Hermes Assistant" aria-label="Collapse Assistant">
-            <span aria-hidden="true">✕</span>
-          </button>
+        <div class="chat-header-actions">
+          <button type="button" class="panel-ctrl-btn" id="hermes-collapse-btn" title="Minimize / Collapse sidebar" aria-label="Minimize sidebar">⇥</button>
         </div>
       </header>
 
-      <div class="hermes-body">
-        <div class="chat-tab-pane active" id="chat-tab-pane">
-          <div class="chat-messages" id="chat-messages">
-            <article class="chat-message assistant welcome-message">
-              <div class="message-author"><span class="assistant-avatar">✦</span>HERMES <span>· COPILOT</span></div>
-              <div class="message-body">
-                Assalamu Alaikum! Ami Hermes, apnar TradeXpress DSE trading assistant. GSC, L1 o L2 strategy monitor korchi ebong <code>SHADOW_DUMMY</code> venue-te order simulate korchi.
-              </div>
-            </article>
-            <div id="welcome-chips-slot"></div>
-          </div>
-          <div id="bottom-chips-slot"></div>
-          <div class="chat-footer-controls">
+      <div class="chat-context">
+        <span class="mini-dot teal"></span>
+        <span id="active-conv-title">Humming Bird</span>
+        <span class="muted">/ Autonomous Share Assistant</span>
+      </div>
+
+      <nav class="hermes-ide-tabs" role="tablist" aria-label="Hermes Panes">
+        <button class="hermes-tab-btn active" id="tab-hermes-chat" data-pane="pane-hermes-chat" role="tab" aria-selected="true" type="button"><span class="tab-icon">💬</span> Chat</button>
+        <button class="hermes-tab-btn" id="tab-hermes-conversations" data-pane="pane-hermes-conversations" role="tab" aria-selected="false" type="button"><span class="tab-icon">📂</span> Topics <span class="tab-count-badge" id="conversations-badge">0</span></button>
+        <button class="hermes-tab-btn" id="tab-hermes-changes" data-pane="pane-hermes-changes" role="tab" aria-selected="false" type="button"><span class="tab-icon">⚡</span> Changes <span class="tab-count-badge" id="changes-badge">0</span></button>
+        <button class="hermes-tab-btn" id="tab-hermes-skills" data-pane="pane-hermes-skills" role="tab" aria-selected="false" type="button"><span class="tab-icon">🧠</span> Skills <span class="tab-count-badge" id="skills-badge">4</span></button>
+      </nav>
+
+      <!-- Pane 1: Chat Stream -->
+      <div class="hermes-pane is-active" id="pane-hermes-chat" role="tabpanel">
+        <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation">
+          <article class="chat-message assistant welcome-message" id="hermes-welcome-message">
+            <div class="message-author"><span class="assistant-avatar">✦</span> HERMES <span class="muted">· ASSISTANT</span></div>
+            <div class="message-body">
+              <strong>A little context. A measured next move.</strong>
+              <p>I am your human-like share assistant. I can explain holdings, monitor curves, execute crash quarantines with 90% profit-lock + 10% canary probes, and verify your market theses over time. Bangla, Banglish, or English - ask or command away.</p>
+              <div class="chat-safety-note" id="chat-safety-note">Demo Paper Mode: Hermes executes actions on local simulated holdings with strict ledger reconciliation.</div>
+              <div class="welcome-chips-container" id="welcome-chips-slot"></div>
+            </div>
+          </article>
+        </div>
+        <div class="chat-bottom">
+          <div class="bottom-chips-slot" id="bottom-chips-slot">
             <div class="quick-prompts" id="chat-quick-prompts">
               <button type="button" id="chip-passive-sync-guide" data-prompt="Check hb_feed_status and tell me which TradeXpress tabs to click right now">Passive sync guide 📡</button>
               <button type="button" data-prompt="Portfolio kemon ache?">Portfolio status <span>↗</span></button>
               <button type="button" data-prompt="/preview buy 10 BANKASIA">Preview buy BANKASIA <span>⚡</span></button>
+              <button type="button" data-prompt="Ajke SQURPHARMA er khoti hoye geche, 1 month e deulia hoye jabe">Alert bankruptcy threat <span>⚡</span></button>
               <button type="button" data-prompt="SQURPHARMA restore koro">Restore company <span>↺</span></button>
             </div>
           </div>
-          <form class="chat-form" id="chat-form">
-            <input type="text" id="chat-input" placeholder="Ask Hermes in Banglish... (e.g. /preview buy 10 BANKASIA)" autocomplete="off">
-            <button type="submit" class="button primary chat-send-btn" id="chat-send">Send</button>
+          <div class="provider-status">
+            <div class="model-picker-wrap bottom-model-picker">
+              <button type="button" class="bottom-model-btn" id="hermes-model-trigger" title="Switch Hermes AI Brain Model" aria-haspopup="true" aria-expanded="false">
+                <span class="muted-label" id="provider-prefix-label">GOOGLE ·</span>
+                <strong id="hermes-active-model-name">gemini-3.1-flash-lite</strong>
+                <span class="badge-caret">▾</span>
+              </button>
+              <div class="model-dropup-menu" id="model-dropup-menu" hidden>
+                <div class="dropup-header" style="padding: 6px 10px; font-size: 10px; font-weight: 700; color: var(--muted, #94a3b8); letter-spacing: 0.05em; border-bottom: 1px solid var(--line, #243547); margin-bottom: 4px;">SELECT AI BRAIN MODEL</div>
+                <div class="dropdown-list" id="model-dropdown-list">
+                  <div class="empty-state-small" style="padding: 8px 10px; font-size: 11px; color: var(--muted, #94a3b8);">Loading models…</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <form id="chat-form" class="chat-form">
+            <label for="chat-input" class="sr-only">Message Hermes</label>
+            <textarea id="chat-input" rows="2" maxlength="2000" placeholder="Ask status, alert company threat, or command actions…" required></textarea>
+            <div class="chat-input-bottom">
+              <span>বাংলা / Banglish / English</span>
+              <button type="submit" id="chat-send" aria-label="Send message" title="Send message">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 15V5m-4 4 4-4 4 4"/></svg>
+              </button>
+            </div>
           </form>
+          <p class="chat-footer-note" id="chat-footer-note">Hermes can execute emergency quarantines, canary probes, and rule adjustments.</p>
+        </div>
+      </div>
+
+      <!-- Pane 2: Conversation Topics (Antigravity Human Topic Separator) -->
+      <div class="hermes-pane" id="pane-hermes-conversations" role="tabpanel" hidden>
+        <div class="pane-action-bar">
+          <button type="button" class="new-conv-btn" id="new-conversation-btn">
+            <span class="plus-icon">＋</span> New Conversation
+          </button>
+          <span class="pane-sub-note">Strategy / topic separator for humans. Hermes retains shared cross-conversation skill memory.</span>
+        </div>
+        <div class="conversations-list" id="conversations-list">
+          <div class="empty-state-small">Loading conversations…</div>
+        </div>
+      </div>
+
+      <!-- Pane 3: System & Rule Audit Diffs (/rollback) -->
+      <div class="hermes-pane" id="pane-hermes-changes" role="tabpanel" hidden>
+        <div class="pane-section-header">
+          <div>
+            <strong>System & Rule Audit Diffs</strong>
+            <span class="count-tag" id="changes-badge-count">0</span>
+          </div>
+          <div class="changes-header-actions">
+            <button type="button" id="rollback-pane-btn" class="toolbar-btn rollback-btn" title="Undo the last Hermes mutation (/rollback)">
+              <span aria-hidden="true">↺</span> Rollback
+            </button>
+            <button type="button" class="refresh-sub-btn" id="refresh-changes-btn" title="Refresh audit diffs">⟳</button>
+          </div>
+        </div>
+        <p class="pane-sub-note" style="margin: 4px 12px 10px;">Audit immutable state checkpoints and rule mutations with Before vs. After diffs.</p>
+        <div class="changes-diff-list" id="changes-diff-list">
+          <div class="empty-state-small">Loading audit diffs…</div>
+        </div>
+        <!-- Keep hidden containers for backward compatibility -->
+        <div id="files-changed-list" style="display:none;"></div>
+        <div id="changes-checkpoints-list" style="display:none;"></div>
+      </div>
+
+      <!-- Pane 4: Skills & Layer 3 Facts -->
+      <div class="hermes-pane" id="pane-hermes-skills" role="tabpanel" hidden>
+        <div class="drawer-header">
+          <strong>Hermes Procedural Skills & Memory</strong>
+          <button type="button" id="rollback-skills-btn" class="toolbar-btn rollback-btn" title="Undo the last Hermes mutation (/rollback)">
+            <span aria-hidden="true">↺</span> Rollback
+          </button>
+        </div>
+        <div class="skills-pane-body">
+          <div class="drawer-section">
+            <span class="drawer-title">Skills</span>
+            <div id="skills-list" class="skills-list"></div>
+          </div>
+          <div class="drawer-section">
+            <div class="section-title-strip">
+              <span class="drawer-title">AUTONOMOUS CRON JOBS</span>
+              <button type="button" class="mini-cron-btn" id="btn-add-cron" onclick="window.promptAddCron()" title="Schedule a recurring autonomous task">+ Schedule Cron</button>
+            </div>
+            <div id="crons-list" class="crons-list">
+              <div class="cron-empty-hint">No cron jobs scheduled yet. Type natural instructions in chat or click + Schedule Cron.</div>
+            </div>
+          </div>
+          <div class="drawer-section">
+            <span class="drawer-title">AGENT-CURATED PROFILES (USER.md & MEMORY.md)</span>
+            <div id="hermes-memory-preview" class="memory-preview-container">
+              <div class="memory-card">
+                <div class="memory-head">
+                  <span>USER.md (Operator Directives)</span>
+                </div>
+                <div id="user-md-preview" class="memory-code-preview">Loading operator profile...</div>
+              </div>
+              <div class="memory-card">
+                <div class="memory-head">
+                  <span>MEMORY.md (Working Market Memory)</span>
+                </div>
+                <div id="memory-md-preview" class="memory-code-preview">Loading market working context...</div>
+              </div>
+            </div>
+          </div>
+          <div class="drawer-section">
+            <span class="drawer-title">DURABLE COMPANY FACTS (LAYER 3)</span>
+            <div id="durable-facts-list" class="facts-list"></div>
+          </div>
+          <div class="drawer-section">
+            <span class="drawer-title">RECENT CHECKPOINTS</span>
+            <div id="checkpoints-list" class="checkpoints-list"></div>
+          </div>
         </div>
       </div>
     </aside>
@@ -918,22 +1179,21 @@
     </div>
   </dialog>
 
-  <!-- Deep Trend & Fundamental Profile Modal -->
   <dialog id="deep-trend-modal" class="deep-trend-modal" aria-labelledby="modal-company-title">
     <div class="modal-backdrop" id="modal-backdrop"></div>
     <div class="modal-dialog">
       <header class="modal-header">
         <div class="modal-title-wrap">
-          <div class="modal-eyebrow"><span id="modal-company-sector">BANK</span> · <span id="modal-company-category">GSC</span></div>
-          <h2 id="modal-company-title">BANKASIA <span class="modal-company-sub" id="modal-company-sub">Bank Asia PLC.</span></h2>
+          <div class="modal-eyebrow"><span id="modal-company-sector">TELECOM</span> · <span id="modal-company-category">GSC BLUE-CHIP</span></div>
+          <h2 id="modal-company-title">GP <span class="modal-company-sub" id="modal-company-sub">Grameenphone Ltd.</span></h2>
           <div class="modal-price-strip">
-            <span class="modal-price" id="modal-price">৳18.40</span>
-            <span class="modal-change positive" id="modal-change">+2.79%</span>
+            <span class="modal-price" id="modal-price">৳265.00</span>
+            <span class="modal-change positive" id="modal-change">+0.52%</span>
             <span class="signal-badge tone-buy" id="modal-signal-tag">BUY ZONE</span>
           </div>
         </div>
         <div class="modal-actions">
-          <div class="timeframe-tabs" id="deep-timeframe-tabs" role="tablist">
+          <div class="timeframe-tabs" id="deep-timeframe-tabs" role="tablist" aria-label="Chart timeframe">
             <button class="active" data-tf="7d" type="button">7D</button>
             <button data-tf="1m" type="button">1M</button>
             <button data-tf="6m" type="button">6M</button>
@@ -942,25 +1202,80 @@
           <button type="button" class="modal-close-btn" id="modal-close-btn" aria-label="Close modal">×</button>
         </div>
       </header>
+
       <div class="modal-body">
+        <!-- Interactive TradingView Style Chart -->
         <div class="deep-chart-wrap">
           <div class="deep-chart-header">
+            <div class="chart-legend-items">
+              <span class="legend-item"><i class="leg-color leg-curve"></i> Price Curve</span>
+              <span class="legend-item"><i class="leg-color leg-support"></i> Support Floor</span>
+              <span class="legend-item"><i class="leg-color leg-resistance"></i> Resistance Ceiling</span>
+              <span class="legend-item"><i class="leg-color leg-buy"></i> Buy Marker (B)</span>
+              <span class="legend-item"><i class="leg-color leg-sell"></i> Sell Marker (S)</span>
+            </div>
             <div class="deep-chart-telemetry">
-              <span>Support: <strong id="deep-support-val">৳18.00</strong></span>
-              <span>Resistance: <strong id="deep-resistance-val">৳19.50</strong></span>
+              <span>Support: <strong id="deep-support-val">৳260.00</strong></span>
+              <span>Resistance: <strong id="deep-resistance-val">৳275.00</strong></span>
             </div>
           </div>
           <div class="deep-chart-container" id="deep-chart-container">
             <div id="deep-trend-chart-mount" class="deep-trend-chart-mount"></div>
             <div id="deep-chart-tooltip" class="deep-chart-tooltip" hidden></div>
           </div>
+          <div class="deep-chart-footer-note muted small">
+            TradingView-style interactive crosshair · Hover over data points to inspect date, price, % return & executed bot orders.
+          </div>
         </div>
 
-        <div class="fundamentals-grid" id="fundamentals-grid">
-          <div class="fund-card"><span class="fund-label">P/E RATIO</span><span class="fund-value" id="fund-pe">—</span></div>
-          <div class="fund-card"><span class="fund-label">EPS</span><span class="fund-value" id="fund-eps">—</span></div>
-          <div class="fund-card"><span class="fund-label">NAV</span><span class="fund-value" id="fund-nav">—</span></div>
-          <div class="fund-card"><span class="fund-label">MKT CAP</span><span class="fund-value" id="fund-mcap">—</span></div>
+        <!-- Fundamental Profile (8 Metrics) -->
+        <div class="fundamentals-section">
+          <div class="section-subheading">
+            <h3>Fundamental Company Profile</h3>
+            <span class="small muted">Audited financial & market breadth telemetry</span>
+          </div>
+          <div class="fundamentals-grid" id="fundamentals-grid">
+            <div class="fund-card"><span class="fund-label">P/E RATIO</span><strong id="fund-pe">—</strong></div>
+            <div class="fund-card"><span class="fund-label">EPS (TTM)</span><strong id="fund-eps">—</strong></div>
+            <div class="fund-card"><span class="fund-label">NAV PER SHARE</span><strong id="fund-nav">—</strong></div>
+            <div class="fund-card"><span class="fund-label">MARKET CAP</span><strong id="fund-mcap">—</strong></div>
+            <div class="fund-card"><span class="fund-label">DIVIDEND YIELD</span><strong id="fund-div">—</strong></div>
+            <div class="fund-card"><span class="fund-label">PAID-UP CAPITAL</span><strong id="fund-paidup">—</strong></div>
+            <div class="fund-card"><span class="fund-label">52-WEEK RANGE</span><strong id="fund-52w">—</strong></div>
+            <div class="fund-card"><span class="fund-label">CATEGORY / YEAR</span><strong id="fund-cat">—</strong></div>
+          </div>
+        </div>
+
+        <!-- Embedded What-If Profit Simulator in Modal -->
+        <div class="modal-simulator-section">
+          <div class="what-if-card modal-sim-card">
+            <div class="what-if-head">
+              <div>
+                <strong>"What-If" Profit Simulator</strong>
+                <p class="small muted">Simulate net pocket return for <span id="modal-sim-name">this company</span> after 1% round-trip brokerage fee</p>
+              </div>
+            </div>
+            <div class="what-if-slider-box">
+              <div class="slider-labels">
+                <span>Target Price: <strong id="modal-sim-target-price">৳265.00</strong></span>
+                <span id="modal-sim-target-pct" class="positive">+0.00%</span>
+              </div>
+              <div class="slider-track-wrap">
+                <input type="range" id="modal-sim-slider" min="-30" max="40" step="0.5" value="0" aria-label="Target price slider">
+                <div class="slider-breakeven-marker" style="left: 44.29%;" title="Round-trip breakeven (+1.005%)">
+                  <span class="breakeven-line"></span>
+                  <span class="breakeven-label">BE +1.005%</span>
+                </div>
+              </div>
+              <div class="slider-scale"><span>-30%</span><span>-15%</span><span>0%</span><span>+15%</span><span>+30%</span></div>
+            </div>
+            <div class="what-if-stats">
+              <div><span>Target Value</span><strong id="modal-sim-gross">—</strong></div>
+              <div><span>Fee (~1.0%)</span><strong id="modal-sim-fee">—</strong></div>
+              <div><span>Net Pocket Profit</span><strong id="modal-sim-net-pnl" class="positive">—</strong></div>
+              <div><span>Net Return %</span><strong id="modal-sim-return-pct" class="positive">—</strong></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

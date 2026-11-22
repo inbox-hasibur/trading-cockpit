@@ -224,12 +224,18 @@ function updateControls() {
   const settingsHandoff = $("settings-handoff-btn");
   if (settingsHandoff) settingsHandoff.disabled = !ready || state.busy;
 
-  $("next-session").disabled = !ready || state.busy;
-  $("scenario").disabled = state.busy;
-  $("save-allocation").disabled = !ready || state.busy;
-  $("buy-allocation").disabled = !ready || state.busy;
-  $("company-enabled").disabled = !ready || state.busy;
-  $("chat-send").disabled = !ready || state.chatBusy;
+  const nextSessionEl = $("next-session");
+  if (nextSessionEl) nextSessionEl.disabled = !ready || state.busy;
+  const scenarioEl = $("scenario");
+  if (scenarioEl) scenarioEl.disabled = state.busy;
+  const saveAlloc = $("save-allocation");
+  if (saveAlloc) saveAlloc.disabled = !ready || state.busy;
+  const buyAlloc = $("buy-allocation");
+  if (buyAlloc) buyAlloc.disabled = !ready || state.busy;
+  const compEnabled = $("company-enabled");
+  if (compEnabled) compEnabled.disabled = !ready || state.busy;
+  const chatSend = $("chat-send");
+  if (chatSend) chatSend.disabled = !ready || state.chatBusy;
   document.querySelectorAll("[data-prompt]").forEach((button) => { button.disabled = !ready || state.chatBusy; });
 
   if (ready) {
@@ -658,7 +664,8 @@ function renderBuckets() {
     card.append(left, value);
     return card;
   });
-  $("bucket-stack").replaceChildren(...cards);
+  const bucketStack = $("bucket-stack");
+  if (bucketStack) bucketStack.replaceChildren(...cards);
 }
 
 function cell(text, className) { return element("td", className, text); }
@@ -1047,12 +1054,16 @@ function renderInspector() {
     return row;
   });
   if (!rows.length) { const row = element("tr"); const td = cell("No open lots for this company.", "loading-cell"); td.colSpan = 5; row.append(td); rows.push(row); }
-  $("lots-body").replaceChildren(...rows);
-  $("profit-tiers").replaceChildren(...company.rule.profit_tiers.map((value, i) => element("span", "tier-chip", `+${value}% · ${company.rule.tier_slices[i]}% slice`)));
+  const lotsBody = $("lots-body");
+  if (lotsBody) lotsBody.replaceChildren(...rows);
+  const profitTiers = $("profit-tiers");
+  if (profitTiers) profitTiers.replaceChildren(...company.rule.profit_tiers.map((value, i) => element("span", "tier-chip", `+${value}% · ${company.rule.tier_slices[i]}% slice`)));
   setText("pullback-setting", `${company.rule.pullback_pct}% pullback → 50/50`);
   if (!state.allocationDirty) {
-    $("buy-allocation").value = company.rule.buy_allocation_pct;
-    $("company-enabled").checked = company.rule.enabled;
+    const buyAlloc = $("buy-allocation");
+    if (buyAlloc) buyAlloc.value = company.rule.buy_allocation_pct;
+    const compEnabled = $("company-enabled");
+    if (compEnabled) compEnabled.checked = company.rule.enabled;
   }
   updateWhatIfSimulator(company);
 }
@@ -1256,28 +1267,38 @@ if (pauseBtn) {
   }));
 }
 
-$("next-session").addEventListener("click", () => mutate(async () => {
-  const result = await api("/api/demo/advance", { method: "POST", body: { scenario: $("scenario").value } });
-  await refresh();
-  notify(`Demo moved to ${sessionDate(result.date)} (${result.scenario.toLowerCase()}). No trades executed; run a cycle to evaluate.`);
-}));
-
-$("allocation-form").addEventListener("submit", (event) => {
-  event.preventDefault();
-  if (!$("allocation-form").reportValidity()) return;
-  const symbol = state.selectedSymbol;
-  const body = { buy_allocation_pct: $("buy-allocation").valueAsNumber, enabled: $("company-enabled").checked };
-  mutate(async () => {
-    await api(`/api/companies/${encodeURIComponent(symbol)}/allocation`, { method: "PATCH", body });
-    state.allocationDirty = false;
+const nextSessionBtn = $("next-session");
+if (nextSessionBtn) {
+  nextSessionBtn.addEventListener("click", () => mutate(async () => {
+    const result = await api("/api/demo/advance", { method: "POST", body: { scenario: $("scenario") ? $("scenario").value : "NORMAL" } });
     await refresh();
-    notify(`${symbol} settings saved. No trades executed.`);
+    notify(`Demo moved to ${sessionDate(result.date)} (${result.scenario.toLowerCase()}). No trades executed; run a cycle to evaluate.`);
+  }));
+}
+
+const allocForm = $("allocation-form");
+if (allocForm) {
+  allocForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!allocForm.reportValidity()) return;
+    const symbol = state.selectedSymbol;
+    const body = { buy_allocation_pct: $("buy-allocation").valueAsNumber, enabled: $("company-enabled").checked };
+    mutate(async () => {
+      await api(`/api/companies/${encodeURIComponent(symbol)}/allocation`, { method: "PATCH", body });
+      state.allocationDirty = false;
+      await refresh();
+      notify(`${symbol} settings saved. No trades executed.`);
+    });
   });
-});
-$("buy-allocation").addEventListener("input", () => { state.allocationDirty = true; });
-$("company-enabled").addEventListener("change", () => { state.allocationDirty = true; });
-$("company-search").addEventListener("input", () => { if (state.snapshot) renderWatchlist(); });
-$("dismiss-error").addEventListener("click", () => { $("error-banner").hidden = true; });
+}
+const buyAllocInput = $("buy-allocation");
+if (buyAllocInput) buyAllocInput.addEventListener("input", () => { state.allocationDirty = true; });
+const compEnabledInput = $("company-enabled");
+if (compEnabledInput) compEnabledInput.addEventListener("change", () => { state.allocationDirty = true; });
+const compSearchInput = $("company-search");
+if (compSearchInput) compSearchInput.addEventListener("input", () => { if (state.snapshot) renderWatchlist(); });
+const dismissErrBtn = $("dismiss-error");
+if (dismissErrBtn) dismissErrBtn.addEventListener("click", () => { $("error-banner").hidden = true; });
 
 document.querySelectorAll(".decision-filter-chip").forEach((button) => {
   button.addEventListener("click", () => {
@@ -1322,11 +1343,14 @@ document.querySelectorAll(".nav-links a").forEach((link) => link.addEventListene
   document.querySelectorAll(".nav-links a").forEach((node) => node.classList.toggle("active", node === link));
 }));
 document.querySelectorAll("[data-prompt]").forEach((button) => button.addEventListener("click", () => sendChat(button.dataset.prompt)));
-$("chat-form").addEventListener("submit", (event) => { event.preventDefault(); sendChat($("chat-input").value); });
-$("chat-input").addEventListener("keydown", (event) => {
+const chatFormEl = $("chat-form");
+if (chatFormEl) chatFormEl.addEventListener("submit", (event) => { event.preventDefault(); sendChat($("chat-input").value); });
+const chatInputEl = $("chat-input");
+if (chatInputEl) chatInputEl.addEventListener("keydown", (event) => {
   if (event.key === "Enter" && !event.shiftKey && !event.isComposing) { event.preventDefault(); sendChat($("chat-input").value); }
 });
-$("token-button").addEventListener("click", () => {
+const tokenBtn = $("token-button");
+if (tokenBtn) tokenBtn.addEventListener("click", () => {
   const token = window.prompt("Optional private cockpit API token. Stored only in this browser session. Leave blank for a local server without a token.", "");
   if (token === null) return;
   state.token = token.trim();

@@ -57,7 +57,7 @@
     });
 
     const views = {
-      trade: document.getElementById("tx-trade-workspace"),
+      trade: document.getElementById("view-dashboard") || document.getElementById("tx-trade-workspace"),
       heatmap: document.getElementById("view-heatmap-wrap"),
       rules: document.getElementById("view-rules-wrap"),
       ledger: document.getElementById("view-ledger-wrap"),
@@ -69,9 +69,11 @@
       if (!el) return;
       if (k === viewName) {
         el.classList.remove("view-hidden");
+        el.classList.add("active");
         el.hidden = false;
       } else {
         el.classList.add("view-hidden");
+        el.classList.remove("active");
         el.hidden = true;
       }
     });

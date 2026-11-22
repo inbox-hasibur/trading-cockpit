@@ -861,10 +861,11 @@
 }
 
 .app-shell.hermes-collapsed {
-  grid-template-columns: 64px minmax(0, 1fr) 0px !important;
+  grid-template-columns: minmax(0, 1fr) 0px !important;
 }
 
-.app-shell.hermes-collapsed .chat-panel {
+.app-shell.hermes-collapsed .chat-panel,
+.app-shell.hermes-collapsed #hermes-sidebar {
   display: none !important;
 }
 
