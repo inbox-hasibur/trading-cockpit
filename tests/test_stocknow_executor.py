@@ -223,7 +223,7 @@ def test_ledger_mismatch_restores_checkpoint(test_app_and_db, auth_headers):
 
             assert res.status_code == 422
             data = res.json()
-            assert data["error"] == "NO_RECEIPT"
+            assert data["error"] == "NO_RECEIPT", f"Actual response data: {data}"
             assert "not verified in StockNow ledger" in data["detail"]
 
     # Verify SQLite ledger is untouched (checkpoint restored)

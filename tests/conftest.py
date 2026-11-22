@@ -7,6 +7,19 @@ from backend.config import Settings
 from backend.main import create_app
 
 
+@pytest.fixture(autouse=True)
+def clean_test_caches():
+    from backend.engine.price_guard import clear_market_quotes
+    import backend.adapters.stocknow_market_sync as sms
+    clear_market_quotes()
+    sms._ALL_DSE_SHARES_CACHE.clear()
+    sms._ALL_DSE_SHARES_UPDATED_AT = 0.0
+    yield
+    clear_market_quotes()
+    sms._ALL_DSE_SHARES_CACHE.clear()
+    sms._ALL_DSE_SHARES_UPDATED_AT = 0.0
+
+
 @pytest.fixture
 def settings(tmp_path):
     return Settings(

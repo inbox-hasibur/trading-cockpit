@@ -124,7 +124,7 @@ def test_order_dry_run_defaults_true(client, auth_headers):
         "quantity": 10,
     }
     res = client.post("/k/order", json=req_body, headers=auth_headers)
-    assert res.status_code == 200
+    assert res.status_code == 200, res.text
     data = res.json()
 
     assert data["dry_run"] is True

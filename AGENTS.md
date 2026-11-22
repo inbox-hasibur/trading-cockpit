@@ -6,6 +6,7 @@
 - Do NOT use colons (`:`) in commit messages.
 - Do NOT use conventional commit prefixes such as `feat:`, `fix:`, `chore:`, etc.
 - Keep messages lowercase or sentence case, direct, concise, and natural.
+- Changelog Hygiene: Keep `documentation/CHANGELOG.md` updated with every sprint following the "Keep a Changelog" standard.
 
 ## Hermes Trading Assistant Operating Context
 - Strict No-Loss: Never sell at net loss (< 0% net P/L after round-trip 1% fees).
@@ -22,7 +23,10 @@
 - Enforced Risk Limits: max_order_bdt, max_symbol_bdt, daily_budget_bdt (default 4000), max_orders_per_day, and global kill switch are strictly enforced in the kernel across AutoTrader and Hermes.
 
 ## TradeXpress Passive-Only & Strategy Lock
-- Passive Network Sniffing Only: Capture live quotes and market depth strictly passively via local CDP (`connect_over_cdp("http://127.0.0.1:9222")`) from operator's manually logged-in session. NEVER automate login, password submission, or send active HTTP/scraping/reload requests to `itrade.lbsbd.com` or `ibroker.lbsbd.com`.
+- 2-Touchpoint Hard Broker Firewall: Only TWO interaction touchpoints are permitted with TradeXpress:
+  1. Passive Sniffing: Passive Chrome DevTools Protocol (`connect_over_cdp("http://127.0.0.1:9222")`) listening ONLY to incoming browser WebSocket frames (`page.on("websocket")`) and read-only DOM text inspection of operator's manually logged-in session. Zero active HTTP scraping, zero polling, zero reload.
+  2. 2-Step Limit Execution: Permitted ONLY in Stage 2 (`TRADEXPRESS_LIVE`) mode with mandatory operator confirmation: Step 1 (`New Order` input) -> Step 2 (`Confirm Order` read-back verify) -> Confirm.
+  - ZERO-BAN MANDATE: NEVER automate login, credential entry, password submission, or active HTTP requests on `itrade.lbsbd.com` or `ibroker.lbsbd.com`. 3–5 failures lock account `H9210`.
 - GSC / L1 / L2 Strategy Hierarchy:
   - GSC: Master observation pool of old, massive, stable companies (survival guarantee, not current profit; observation only, do not auto-buy without promotion).
   - GSC_L1: Safe primary active buy list (Priority #1), subset of GSC with multi-week upward profitability curves.

@@ -1,20 +1,189 @@
-# 🗺️ Codebase AST Map & System Architecture Radar
+# 🗺️ Codebase AST Knowledge Graph & Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-20 05:51:58 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-22 09:16:55 UTC**.
+> **Core Strategy Invariants:**
+> - **Strict No-Loss Guarantee:** Never sell at net loss (< 0% net P/L after round-trip 1.00% fees).
+> - **Sequential No-Regret Selling:** 25% / 25% / 25% profit tiers (+1.5%, +3.5%, +6.0% net) + 25% runner.
+> - **50/50 Pullback Split & Recovery Hold:** 50% profit lock on >= 3% pullback from peak; 50% recovery hold.
+> - **3-Bucket Rolling Capital:** Sunday–Thursday DSE sessions partitioned into Buckets A, B, and C (T+2 rolling maturity).
+> - **Crash Quarantine & 90/10 Canary Split:** Emergency quarantine on falling-knives; 90% profit exit, 10% observation probe. Hold if unrealized loss.
+> - **TradeXpress 2-Touchpoint Hard Broker Firewall:** Passive CDP sniffing only on port 9222 (read-only, zero active requests); explicit 2-step limit confirmation. Zero automated login, zero credential handling, zero scraping.
+> - **Verified DSE Market Schedule:** Continuous `10:00–14:00`, Post-Closing exact LTP only `14:00–14:10`, Market Close `14:10 Asia/Dhaka`.
 > **Excluded Paths:** `vendor/`, `node_modules/`, `.venv/`, `venv/`, `.git/`, `__pycache__/`, `backend/data/`, `.pytest_cache/`, `dist/`, `build/`, `scratch/`
 > **Pinned Vendor Commit (`vendor/hermes-agent`):** `b777adb7918713e5786cc9d95ad5b854074f2cb6`
 
 ---
 
-## 1. Repository Topology & File Metrics
+## 1. Repository Topology, Automated ASCII File Tree & Extension Metrics
+
+### 1.1 Automated Repository Directory Tree
+
+```text
+trading-cockpit/
+├── backend/
+│   ├── adapters/
+│   │   ├── __init__.py
+│   │   ├── base.py
+│   │   ├── stocknow_adapter.py
+│   │   ├── stocknow_api.py
+│   │   ├── stocknow_client.py
+│   │   ├── stocknow_executor.py
+│   │   ├── stocknow_market_sync.py
+│   │   ├── stocknow_portfolio_sync.py
+│   │   └── stocknow_write_guard.py
+│   ├── engine/
+│   │   ├── __init__.py
+│   │   ├── agent_actions.py
+│   │   ├── auto_trader.py
+│   │   ├── checkpoint.py
+│   │   ├── circuit_breaker.py
+│   │   ├── curve_analyzer.py
+│   │   ├── heartbeat.py
+│   │   ├── money.py
+│   │   ├── preflight_service.py
+│   │   ├── price_guard.py
+│   │   ├── scheduler.py
+│   │   ├── sequential_seller.py
+│   │   ├── signals.py
+│   │   ├── t2_ledger.py
+│   │   ├── telegram_bot.py
+│   │   └── trading_lock.py
+│   ├── .env.example
+│   ├── __init__.py
+│   ├── config.py
+│   ├── database.py
+│   ├── hermes_bridge.py
+│   ├── kernel_api.py
+│   ├── logging_config.py
+│   ├── main.py
+│   ├── market_map.py
+│   ├── portfolio.py
+│   ├── requirements-dev.txt
+│   ├── requirements.txt
+│   ├── routes_auth_settings.py
+│   ├── routes_hermes.py
+│   ├── routes_stocknow.py
+│   ├── secret_guard.py
+│   └── seed.py
+├── documentation/
+│   ├── About_Project.md
+│   ├── Backlog.md
+│   ├── CHANGELOG.md
+│   ├── CODEBASE_MAP.md
+│   ├── MVP_VERIFICATION.md
+│   ├── STOCKNOW_SITE_MAP.md
+│   └── TRADEXPRESS_CONTEXT.md
+├── frontend/
+│   ├── app.js
+│   ├── charts.js
+│   ├── favicon.svg
+│   ├── hermes_ui.js
+│   ├── index.html
+│   ├── styles.css
+│   └── theme_light_hermes.css
+├── plugins/
+│   └── humming_bird/
+│       ├── skills/
+│       │   ├── canary_90_10/
+│       │   │   └── SKILL.md
+│       │   ├── gsc_tiers/
+│       │   │   └── SKILL.md
+│       │   ├── sequential_no_regret/
+│       │   │   └── SKILL.md
+│       │   ├── stocknow_dse_quirks/
+│       │   │   └── SKILL.md
+│       │   └── tradexpress_passive_safety/
+│       │       └── SKILL.md
+│       ├── __init__.py
+│       ├── hooks.py
+│       ├── plugin.yaml
+│       ├── schemas.py
+│       └── tools.py
+├── scripts/
+│   ├── backup_db.py
+│   ├── check_dse_market_open.py
+│   ├── check_heartbeat.py
+│   ├── generate_code_map.py
+│   ├── inspect_tradexpress_passive.py
+│   ├── install_autostart.ps1
+│   ├── install_plugin.ps1
+│   ├── preflight.py
+│   ├── restore_db.py
+│   ├── verify_chat_card.py
+│   └── verify_step10_ui.py
+├── tests/
+│   ├── fixtures/
+│   │   └── stocknow/
+│   │       ├── har/
+│   │       │   ├── stocknow_exploration.har
+│   │       │   └── stocknow_write_contract.har
+│   │       ├── config.json
+│   │       ├── exploration_meta.json
+│   │       ├── history_candles.json
+│   │       ├── instruments.json
+│   │       ├── portfolio_ledger.json
+│   │       ├── portfolio_show.json
+│   │       ├── portfolios.json
+│   │       ├── sectors.json
+│   │       ├── user.json
+│   │       ├── user_lists.json
+│   │       ├── write_contract_ledger.json
+│   │       └── write_contract_results.json
+│   ├── conftest.py
+│   ├── test_api.py
+│   ├── test_chat_order_preview_card.py
+│   ├── test_code_map.py
+│   ├── test_engine.py
+│   ├── test_hermes_skills_origin.py
+│   ├── test_humming_bird_plugin.py
+│   ├── test_ingestion_switch.py
+│   ├── test_kernel_api.py
+│   ├── test_kernel_caps.py
+│   ├── test_mvp_rules.py
+│   ├── test_order_path.py
+│   ├── test_portfolio_badge_and_watchlist.py
+│   ├── test_portfolio_config.py
+│   ├── test_preflight_and_backups.py
+│   ├── test_price_guard.py
+│   ├── test_reliability_and_safety.py
+│   ├── test_run_modes_decisions.py
+│   ├── test_secret_guard.py
+│   ├── test_stocknow_api.py
+│   ├── test_stocknow_api_sync.py
+│   ├── test_stocknow_executor.py
+│   ├── test_stocknow_portfolio_164580.py
+│   ├── test_stocknow_step2_1.py
+│   ├── test_stocknow_step2_2.py
+│   ├── test_stocknow_step2_3.py
+│   ├── test_stocknow_step2_4.py
+│   ├── test_stocknow_step2_5.py
+│   ├── test_stocknow_write_guard.py
+│   ├── test_test_portfolio_guard.py
+│   ├── test_tradexpress_foundation.py
+│   └── test_trading_mode.py
+├── .agentignore
+├── .cursorignore
+├── .env.example
+├── .gitignore
+├── .opencodeignore
+├── AGENTS.md
+├── package.json
+├── pyproject.toml
+├── README.md
+├── run.bat
+├── run.py
+└── run.sh
+```
+
+### 1.2 File Count & Lines of Code Breakdown
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 85 | 24,569 | Python Core Kernel, Engine, Tests & Plugins |
+| `.py` | 85 | 24,860 | Python Core Kernel, Engine, Tests & Plugins |
 | `.css` | 2 | 9,568 | Custom Dark / Light / Terminal Design System |
 | `.json` | 13 | 5,659 | Fixtures & Configuration |
 | `.js` | 3 | 5,452 | Vanilla ES6+ Reactive Terminal Controller & UI |
-| `.md` | 13 | 4,637 | Architecture & Strategy Documentation |
+| `.md` | 14 | 4,620 | Architecture & Strategy Documentation |
 | `.html` | 1 | 1,103 | Single Page Application DOM Structure |
 | `.ps1` | 2 | 199 | Windows PowerShell Automation |
 | `.yaml` | 1 | 32 | Manifest & Plugin Configuration |
@@ -23,9 +192,71 @@
 | `.sh` | 1 | 9 | Shell Scripts |
 | `.bat` | 1 | 8 | Batch Launchers |
 | *other* | 9 | 43,383 | Other Configuration, Assets & Dotfiles |
-| **TOTAL** | **134** | **94,643** | *Entire Humming Bird Repository* |
+| **TOTAL** | **135** | **94,917** | *Entire Humming Bird Repository* |
 
-## 2. Internal Dependency & Import Graph
+---
+
+## 2. Reverse Dependency & Blast-Radius Radar
+
+### 2.1 Module Blast-Radius Risk Radar (Impact Analysis)
+
+| Module File | Direct Dependents | Dependents Count | Blast Radius Risk Level | Direct Consumers (Who Imports This) |
+| :--- | :--- | :--- | :--- | :--- |
+| [`backend/database.py`](/backend/database.py) | 23 | 23 | **CRITICAL** | `backend/adapters/stocknow_adapter.py`, `backend/adapters/stocknow_executor.py`, `backend/adapters/stocknow_market_sync.py`, `backend/adapters/stocknow_portfolio_sync.py`, `backend/engine/agent_actions.py`, `backend/engine/auto_trader.py`, `backend/engine/checkpoint.py`, `backend/engine/circuit_breaker.py`, `backend/engine/heartbeat.py`, `backend/engine/preflight_service.py`, `backend/engine/scheduler.py`, `backend/engine/signals.py`, `backend/engine/t2_ledger.py`, `backend/engine/telegram_bot.py`, `backend/kernel_api.py`, `backend/main.py`, `backend/portfolio.py`, `backend/routes_auth_settings.py`, `backend/routes_hermes.py`, `backend/routes_stocknow.py`, `backend/seed.py`, `scripts/check_heartbeat.py`, `scripts/preflight.py` |
+| [`backend/config.py`](/backend/config.py) | 21 | 21 | **CRITICAL** | `backend/adapters/stocknow_portfolio_sync.py`, `backend/adapters/stocknow_write_guard.py`, `backend/database.py`, `backend/engine/agent_actions.py`, `backend/engine/auto_trader.py`, `backend/engine/circuit_breaker.py`, `backend/engine/heartbeat.py`, `backend/engine/preflight_service.py`, `backend/engine/scheduler.py`, `backend/engine/signals.py`, `backend/engine/t2_ledger.py`, `backend/engine/telegram_bot.py`, `backend/kernel_api.py`, `backend/main.py`, `backend/portfolio.py`, `backend/routes_auth_settings.py`, `backend/routes_hermes.py`, `backend/routes_stocknow.py`, `backend/seed.py`, `scripts/check_heartbeat.py`, `scripts/preflight.py` |
+| [`backend/engine/money.py`](/backend/engine/money.py) | 14 | 14 | **CRITICAL** | `backend/adapters/stocknow_adapter.py`, `backend/adapters/stocknow_market_sync.py`, `backend/adapters/stocknow_portfolio_sync.py`, `backend/engine/agent_actions.py`, `backend/engine/auto_trader.py`, `backend/engine/checkpoint.py`, `backend/engine/curve_analyzer.py`, `backend/engine/sequential_seller.py`, `backend/engine/signals.py`, `backend/engine/t2_ledger.py`, `backend/kernel_api.py`, `backend/main.py`, `backend/portfolio.py`, `backend/seed.py` |
+| [`backend/engine/t2_ledger.py`](/backend/engine/t2_ledger.py) | 10 | 10 | **CRITICAL** | `backend/adapters/stocknow_portfolio_sync.py`, `backend/engine/agent_actions.py`, `backend/engine/auto_trader.py`, `backend/engine/checkpoint.py`, `backend/engine/heartbeat.py`, `backend/engine/scheduler.py`, `backend/kernel_api.py`, `backend/portfolio.py`, `backend/seed.py`, `scripts/preflight.py` |
+| [`backend/adapters/stocknow_client.py`](/backend/adapters/stocknow_client.py) | 8 | 8 | **CRITICAL** | `backend/adapters/__init__.py`, `backend/adapters/stocknow_adapter.py`, `backend/adapters/stocknow_market_sync.py`, `backend/adapters/stocknow_portfolio_sync.py`, `backend/engine/scheduler.py`, `backend/main.py`, `backend/routes_stocknow.py`, `scripts/preflight.py` |
+| [`backend/adapters/stocknow_market_sync.py`](/backend/adapters/stocknow_market_sync.py) | 7 | 7 | **HIGH** | `backend/adapters/__init__.py`, `backend/engine/price_guard.py`, `backend/engine/scheduler.py`, `backend/kernel_api.py`, `backend/main.py`, `backend/portfolio.py`, `backend/routes_stocknow.py` |
+| [`backend/adapters/stocknow_adapter.py`](/backend/adapters/stocknow_adapter.py) | 6 | 6 | **HIGH** | `backend/adapters/__init__.py`, `backend/engine/auto_trader.py`, `backend/engine/signals.py`, `backend/kernel_api.py`, `backend/main.py`, `backend/portfolio.py` |
+| [`backend/portfolio.py`](/backend/portfolio.py) | 6 | 6 | **HIGH** | `backend/adapters/stocknow_market_sync.py`, `backend/engine/scheduler.py`, `backend/kernel_api.py`, `backend/main.py`, `backend/routes_hermes.py`, `backend/routes_stocknow.py` |
+| [`backend/adapters/stocknow_api.py`](/backend/adapters/stocknow_api.py) | 5 | 5 | **HIGH** | `backend/adapters/stocknow_executor.py`, `backend/adapters/stocknow_market_sync.py`, `backend/adapters/stocknow_portfolio_sync.py`, `backend/kernel_api.py`, `backend/routes_stocknow.py` |
+| [`backend/engine/checkpoint.py`](/backend/engine/checkpoint.py) | 5 | 5 | **HIGH** | `backend/adapters/stocknow_portfolio_sync.py`, `backend/kernel_api.py`, `backend/main.py`, `backend/routes_auth_settings.py`, `backend/routes_hermes.py` |
+| [`backend/engine/scheduler.py`](/backend/engine/scheduler.py) | 5 | 5 | **HIGH** | `backend/engine/auto_trader.py`, `backend/engine/heartbeat.py`, `backend/kernel_api.py`, `backend/main.py`, `backend/routes_stocknow.py` |
+| [`backend/hermes_bridge.py`](/backend/hermes_bridge.py) | 4 | 4 | MEDIUM | `backend/main.py`, `backend/portfolio.py`, `backend/routes_hermes.py`, `scripts/preflight.py` |
+| [`backend/engine/auto_trader.py`](/backend/engine/auto_trader.py) | 3 | 3 | MEDIUM | `backend/engine/scheduler.py`, `backend/kernel_api.py`, `backend/main.py` |
+| [`backend/engine/circuit_breaker.py`](/backend/engine/circuit_breaker.py) | 3 | 3 | MEDIUM | `backend/engine/auto_trader.py`, `backend/kernel_api.py`, `backend/main.py` |
+| [`backend/engine/telegram_bot.py`](/backend/engine/telegram_bot.py) | 3 | 3 | MEDIUM | `backend/engine/circuit_breaker.py`, `backend/engine/heartbeat.py`, `backend/main.py` |
+| [`backend/engine/trading_lock.py`](/backend/engine/trading_lock.py) | 3 | 3 | MEDIUM | `backend/engine/auto_trader.py`, `backend/kernel_api.py`, `backend/main.py` |
+| [`backend/adapters/stocknow_executor.py`](/backend/adapters/stocknow_executor.py) | 2 | 2 | MEDIUM | `backend/adapters/stocknow_adapter.py`, `backend/kernel_api.py` |
+| [`backend/adapters/stocknow_portfolio_sync.py`](/backend/adapters/stocknow_portfolio_sync.py) | 2 | 2 | MEDIUM | `backend/kernel_api.py`, `backend/routes_stocknow.py` |
+| [`backend/adapters/stocknow_write_guard.py`](/backend/adapters/stocknow_write_guard.py) | 2 | 2 | MEDIUM | `backend/adapters/stocknow_api.py`, `backend/adapters/stocknow_executor.py` |
+| [`backend/engine/agent_actions.py`](/backend/engine/agent_actions.py) | 2 | 2 | MEDIUM | `backend/engine/auto_trader.py`, `backend/kernel_api.py` |
+| [`backend/engine/curve_analyzer.py`](/backend/engine/curve_analyzer.py) | 2 | 2 | MEDIUM | `backend/engine/signals.py`, `backend/kernel_api.py` |
+| [`backend/engine/heartbeat.py`](/backend/engine/heartbeat.py) | 2 | 2 | MEDIUM | `backend/main.py`, `scripts/check_heartbeat.py` |
+| [`backend/engine/preflight_service.py`](/backend/engine/preflight_service.py) | 2 | 2 | MEDIUM | `backend/kernel_api.py`, `backend/main.py` |
+| [`backend/engine/signals.py`](/backend/engine/signals.py) | 2 | 2 | MEDIUM | `backend/engine/auto_trader.py`, `backend/portfolio.py` |
+| [`backend/kernel_api.py`](/backend/kernel_api.py) | 2 | 2 | MEDIUM | `backend/main.py`, `backend/routes_stocknow.py` |
+| [`backend/market_map.py`](/backend/market_map.py) | 2 | 2 | MEDIUM | `backend/main.py`, `backend/portfolio.py` |
+| [`backend/secret_guard.py`](/backend/secret_guard.py) | 2 | 2 | MEDIUM | `backend/adapters/stocknow_client.py`, `scripts/inspect_tradexpress_passive.py` |
+| [`backend/seed.py`](/backend/seed.py) | 2 | 2 | MEDIUM | `backend/kernel_api.py`, `backend/main.py` |
+| [`scripts/backup_db.py`](/scripts/backup_db.py) | 2 | 2 | MEDIUM | `scripts/preflight.py`, `scripts/restore_db.py` |
+| [`backend/engine/price_guard.py`](/backend/engine/price_guard.py) | 1 | 1 | LOW | `backend/kernel_api.py` |
+| [`backend/engine/sequential_seller.py`](/backend/engine/sequential_seller.py) | 1 | 1 | LOW | `backend/engine/auto_trader.py` |
+| [`backend/logging_config.py`](/backend/logging_config.py) | 1 | 1 | LOW | `backend/main.py` |
+| [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py) | 1 | 1 | LOW | `backend/main.py` |
+| [`backend/routes_hermes.py`](/backend/routes_hermes.py) | 1 | 1 | LOW | `backend/main.py` |
+| [`backend/routes_stocknow.py`](/backend/routes_stocknow.py) | 1 | 1 | LOW | `backend/main.py` |
+| [`plugins/humming_bird/tools.py`](/plugins/humming_bird/tools.py) | 1 | 1 | LOW | `plugins/humming_bird/hooks.py` |
+| [`scripts/preflight.py`](/scripts/preflight.py) | 1 | 1 | LOW | `backend/engine/preflight_service.py` |
+| [`backend/__init__.py`](/backend/__init__.py) | 0 | 0 | LEAF | *Leaf / Entrypoint* |
+| [`backend/adapters/__init__.py`](/backend/adapters/__init__.py) | 0 | 0 | LEAF | *Leaf / Entrypoint* |
+| [`backend/adapters/base.py`](/backend/adapters/base.py) | 0 | 0 | LEAF | *Leaf / Entrypoint* |
+| [`backend/engine/__init__.py`](/backend/engine/__init__.py) | 0 | 0 | LEAF | *Leaf / Entrypoint* |
+| [`backend/main.py`](/backend/main.py) | 0 | 0 | LEAF | *Leaf / Entrypoint* |
+| [`plugins/humming_bird/__init__.py`](/plugins/humming_bird/__init__.py) | 0 | 0 | LEAF | *Leaf / Entrypoint* |
+| [`plugins/humming_bird/hooks.py`](/plugins/humming_bird/hooks.py) | 0 | 0 | LEAF | *Leaf / Entrypoint* |
+| [`plugins/humming_bird/schemas.py`](/plugins/humming_bird/schemas.py) | 0 | 0 | LEAF | *Leaf / Entrypoint* |
+| [`scripts/check_dse_market_open.py`](/scripts/check_dse_market_open.py) | 0 | 0 | LEAF | *Leaf / Entrypoint* |
+| [`scripts/check_heartbeat.py`](/scripts/check_heartbeat.py) | 0 | 0 | LEAF | *Leaf / Entrypoint* |
+| [`scripts/generate_code_map.py`](/scripts/generate_code_map.py) | 0 | 0 | LEAF | *Leaf / Entrypoint* |
+| [`scripts/inspect_tradexpress_passive.py`](/scripts/inspect_tradexpress_passive.py) | 0 | 0 | LEAF | *Leaf / Entrypoint* |
+| [`scripts/restore_db.py`](/scripts/restore_db.py) | 0 | 0 | LEAF | *Leaf / Entrypoint* |
+| [`scripts/verify_chat_card.py`](/scripts/verify_chat_card.py) | 0 | 0 | LEAF | *Leaf / Entrypoint* |
+| [`scripts/verify_step10_ui.py`](/scripts/verify_step10_ui.py) | 0 | 0 | LEAF | *Leaf / Entrypoint* |
+
+
+### 2.2 Internal Forward Import Dependency Graph
 
 Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts/`:
 
@@ -1201,7 +1432,7 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `check_dse_trading_hours` | `L13–L41` | `(dt: datetime | None=None...)` | `tuple[bool, str]` | Check if time falls within DSE trading hours (Sun-Thu 10:00 to 14:30 Asia/Dhaka). | `ZoneInfo`, `astimezone`, `now`, `replace` |
+| `check_dse_trading_hours` | `L13–L41` | `(dt: datetime | None=None...)` | `tuple[bool, str]` | Check if time falls within DSE trading hours (Sun-Thu 10:00 to 14:10 Asia/Dhaka). | `ZoneInfo`, `astimezone`, `now`, `replace` |
 | `on_pre_tool_call` | `L44–L92` | `(tool_name: str, args: dict[str, Any...)` | `dict[str, Any] | None` | Pre-tool-call lifecycle hook. | `_kernel_get`, `check_dse_trading_hours`, `get`, `getenv` |
 
 
@@ -1323,7 +1554,14 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 | `scan_file` | `L429–L478` | `(css_text: str, filename: str...)` | — | — | `any`, `append`, `escape`, `get` |
 | `parse_frontend` | `L486–L577` | `(repo_root: Path=REPO_ROOT...)` | — | Index frontend HTML IDs, JS functions, API invocations, and CSS stylesheets. | `add`, `any`, `append`, `compile` |
 | `parse_plugin_tools` | `L580–L615` | `(repo_root: Path=REPO_ROOT...)` | `list[dict[str, Any]]` | Parse tools registered in plugins/humming_bird/tools.py using AST. | `append`, `exists`, `get_docstring`, `getattr` |
-| `generate_markdown` | `L618–L833` | `(repo_root: Path=REPO_ROOT, output_f...)` | — | — | `append`, `collect_file_metrics`, `discover_files`, `get` |
+| `generate_ascii_tree` | `L618–L643` | `(discovered_files: list[Path], repo_...)` | `str` | Generate a clean ASCII directory tree from discovered files. | `_format`, `join`, `relative_to`, `setdefault` |
+| `_format` | `L630–L640` | `(d: dict[str, Any], prefix: str=''...)` | — | — | `_format`, `append`, `enumerate`, `keys` |
+| `compute_blast_radius` | `L646–L675` | `(parsed_py: dict[str, AstVisitor]...)` | `dict[str, dict[str, Any]]` | Compute reverse dependencies and blast-radius risk levels for each module. | `add`, `items`, `len`, `list` |
+| `parse_sqlalchemy_schema` | `L678–L721` | `(repo_root: Path=REPO_ROOT...)` | `list[dict[str, Any]]` | Parse SQLAlchemy ORM entities in backend/database.py. | `append`, `exists`, `get_docstring`, `getattr` |
+| `parse_pydantic_contracts` | `L724–L758` | `(discovered_files: list[Path], repo_...)` | `list[dict[str, Any]]` | Parse all Pydantic models across backend/ and plugins/. | `any`, `append`, `as_posix`, `endswith` |
+| `parse_hermes_skills_graph` | `L761–L815` | `(repo_root: Path=REPO_ROOT...)` | `list[dict[str, Any]]` | Map Hermes tools in plugins/humming_bird/tools.py to kernel routes and procedural skills. | `append`, `exists`, `get`, `get_docstring` |
+| `parse_environment_registry` | `L818–L836` | `(repo_root: Path=REPO_ROOT...)` | `list[dict[str, str]]` | Extract environment variables and configuration properties across the repository. | — |
+| `generate_markdown` | `L839–L1103` | `(repo_root: Path=REPO_ROOT, output_f...)` | — | — | `append`, `collect_file_metrics`, `compute_blast_radius`, `discover_files` |
 
 
 ---
@@ -1409,101 +1647,380 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 
 ---
 
-## 4. Database Schema X-Ray (`backend/database.py`)
+## 4. Full SQLAlchemy Database Schema X-Ray (`backend/database.py`)
 
 SQLAlchemy ORM Entities backing the deterministic ledger and state store:
 
-| Model Entity | Line Range | Base | Purpose & Managed Ledger State |
-| :--- | :--- | :--- | :--- |
-| `PortfolioState` | `L42–L69` | `Base` | Durable transactional entity |
-| `CompanyProfile` | `L72–L85` | `Base` | Durable transactional entity |
-| `CustomRule` | `L88–L99` | `Base` | Durable transactional entity |
-| `TaxLot` | `L102–L129` | `Base` | Durable transactional entity |
-| `AutomationCycle` | `L132–L141` | `Base` | Durable transactional entity |
-| `TradeLog` | `L144–L171` | `Base` | Durable transactional entity |
-| `CanaryThesis` | `L174–L186` | `Base` | Durable transactional entity |
-| `KernelStateCheckpoint` | `L189–L199` | `Base` | Durable transactional entity |
-| `CycleRequestKey` | `L202–L205` | `Base` | Durable transactional entity |
-| `DecisionLog` | `L208–L218` | `Base` | Durable transactional entity |
-| `RuleAudit` | `L221–L229` | `Base` | Durable transactional entity |
-| `KernelAuditLog` | `L232–L243` | `Base` | Durable transactional entity |
-| `OrderIdempotencyKey` | `L246–L254` | `Base` | Durable transactional entity |
-| `ChatBudget` | `L257–L260` | `Base` | Durable transactional entity |
-| `SystemHeartbeat` | `L263–L273` | `Base` | Durable transactional entity |
-| `PreflightCheckLog` | `L276–L284` | `Base` | Durable transactional entity |
-| `DailySummaryLog` | `L287–L302` | `Base` | Durable transactional entity |
+
+### Table `portfolio_state` (Model `PortfolioState`)
+
+- **File & Lines:** [`backend/database.py#L42`](/backend/database.py#L42-L69)
+- **Purpose:** Managed transactional state
+
+| Column Name | ORM Mapped Type | Constraints / Defaults / SQL Type |
+| :--- | :--- | :--- |
+| `id` | `Mapped[int]` | primary_key=True, default=1 |
+| `name` | `Mapped[str]` | String(80), default='Humming Bird' |
+| `mode` | `Mapped[str]` | String(16), default='DEMO' |
+| `initial_capital` | `Mapped[Decimal]` | MONEY |
+| `clock_date` | `Mapped[date]` | Date |
+| `revision` | `Mapped[int]` | Integer, default=1 |
+| `rules_revision` | `Mapped[int]` | Integer, default=1 |
+| `paused` | `Mapped[bool]` | Boolean, default=False |
+| `automation_enabled` | `Mapped[bool]` | Boolean, default=True |
+| `ingestion_mode` | `Mapped[str]` | String(32), default='BACKGROUND_POLLING' |
+| `polling_interval_sec` | `Mapped[int]` | Integer, default=120 |
+| `active_model` | `Mapped[str]` | String(64), default='xiaomi/mimo-v2-flash' |
+| `trading_mode` | `Mapped[str]` | String(32), default='LIVE_HOURS' |
+| `max_order_bdt` | `Mapped[Decimal | None]` | MONEY, nullable=True, default=Decimal('20000.00') |
+| `max_symbol_bdt` | `Mapped[Decimal | None]` | MONEY, nullable=True, default=Decimal('50000.00') |
+| `daily_budget_bdt` | `Mapped[Decimal]` | MONEY, default=Decimal('4000.00') |
+| `max_orders_per_day` | `Mapped[int]` | Integer, default=20 |
+| `kill_switch_active` | `Mapped[bool]` | Boolean, default=False |
+| `consecutive_failure_count` | `Mapped[int]` | Integer, default=0 |
+| `circuit_breaker_tripped` | `Mapped[bool]` | Boolean, default=False |
+| `circuit_breaker_reason` | `Mapped[str | None]` | String(255), nullable=True, default=None |
+| `startup_health_passed` | `Mapped[bool]` | Boolean, default=True |
+| `startup_health_status` | `Mapped[str]` | String(32), default='READY' |
+| `calendar_holidays` | `Mapped[list[str]]` | JSON, default=list |
+| `bucket_anchor` | `Mapped[date]` | Date |
+| `created_at` | `Mapped[str]` | String(40), default=utc_now_iso |
+
+
+### Table `company_profiles` (Model `CompanyProfile`)
+
+- **File & Lines:** [`backend/database.py#L72`](/backend/database.py#L72-L85)
+- **Purpose:** Managed transactional state
+
+| Column Name | ORM Mapped Type | Constraints / Defaults / SQL Type |
+| :--- | :--- | :--- |
+| `symbol` | `Mapped[str]` | String(32), primary_key=True |
+| `name` | `Mapped[str]` | String(100) |
+| `sector` | `Mapped[str]` | String(32) |
+| `favorite` | `Mapped[bool]` | Boolean, default=True |
+| `settlement_days` | `Mapped[int]` | Integer, default=2 |
+| `last_price` | `Mapped[Decimal]` | PRICE |
+| `price_history` | `Mapped[list[dict[str, str]]]` | JSON |
+| `quote_on` | `Mapped[date]` | Date |
+| `source` | `Mapped[str]` | String(32), default='DEMO_SEED' |
+| `watchlist_category` | `Mapped[str]` | String(32), default='GSC' |
+| `quarantined` | `Mapped[bool]` | Boolean, default=False |
+| `quarantine_reason` | `Mapped[str]` | String(500), default='' |
+
+
+### Table `custom_rules` (Model `CustomRule`)
+
+- **File & Lines:** [`backend/database.py#L88`](/backend/database.py#L88-L99)
+- **Purpose:** Managed transactional state
+
+| Column Name | ORM Mapped Type | Constraints / Defaults / SQL Type |
+| :--- | :--- | :--- |
+| `symbol` | `Mapped[str]` | ForeignKey('company_profiles.symbol'), primary_key=True |
+| `enabled` | `Mapped[bool]` | Boolean, default=True |
+| `buy_allocation_pct` | `Mapped[Decimal]` | PERCENT |
+| `profit_tiers` | `Mapped[list[str]]` | JSON, default=lambda: ['1.5', '3.5', '6.0'] |
+| `tier_slices` | `Mapped[list[str]]` | JSON, default=lambda: ['25', '25', '25'] |
+| `pullback_pct` | `Mapped[Decimal]` | PERCENT, default=Decimal('3') |
+| `buy_zone_fraction` | `Mapped[Decimal]` | PERCENT, default=Decimal('0.35') |
+| `crash_daily_pct` | `Mapped[Decimal]` | PERCENT, default=Decimal('8') |
+| `crash_drawdown_pct` | `Mapped[Decimal]` | PERCENT, default=Decimal('15') |
+
+
+### Table `tax_lots` (Model `TaxLot`)
+
+- **File & Lines:** [`backend/database.py#L102`](/backend/database.py#L102-L129)
+- **Purpose:** Managed transactional state
+
+| Column Name | ORM Mapped Type | Constraints / Defaults / SQL Type |
+| :--- | :--- | :--- |
+| `id` | `Mapped[int]` | primary_key=True |
+| `symbol` | `Mapped[str]` | ForeignKey('company_profiles.symbol') |
+| `bucket` | `Mapped[str]` | String(1) |
+| `acquired_on` | `Mapped[date]` | Date |
+| `matures_on` | `Mapped[date]` | Date |
+| `original_qty` | `Mapped[int]` | Integer |
+| `remaining_qty` | `Mapped[int]` | Integer |
+| `buy_price` | `Mapped[Decimal]` | PRICE |
+| `buy_fee` | `Mapped[Decimal]` | MONEY |
+| `original_cost_basis` | `Mapped[Decimal]` | MONEY |
+| `remaining_cost_basis` | `Mapped[Decimal]` | MONEY |
+| `cycle_base_qty` | `Mapped[int]` | Integer |
+| `next_tier` | `Mapped[int]` | Integer, default=0 |
+| `last_sale_revision` | `Mapped[int]` | Integer, default=0 |
+| `peak_price` | `Mapped[Decimal]` | PRICE |
+| `phase` | `Mapped[str]` | String(24), default='ACTIVE' |
+| `recovery_anchor` | `Mapped[Decimal | None]` | PRICE, nullable=True |
+| `portfolio_id` | `Mapped[str]` | String(32), default='164580' |
+
+
+### Table `automation_cycles` (Model `AutomationCycle`)
+
+- **File & Lines:** [`backend/database.py#L132`](/backend/database.py#L132-L141)
+- **Purpose:** Managed transactional state
+
+| Column Name | ORM Mapped Type | Constraints / Defaults / SQL Type |
+| :--- | :--- | :--- |
+| `id` | `Mapped[str]` | String(36), primary_key=True |
+| `request_id` | `Mapped[str | None]` | String(36), unique=True, nullable=True |
+| `signal_key` | `Mapped[str]` | String(100), unique=True |
+| `session_on` | `Mapped[date]` | Date |
+| `market_revision` | `Mapped[int]` | Integer |
+| `rules_revision` | `Mapped[int]` | Integer |
+| `result` | `Mapped[dict[str, Any]]` | JSON, default=dict |
+| `created_at` | `Mapped[str]` | String(40), default=utc_now_iso |
+
+
+### Table `trade_logs` (Model `TradeLog`)
+
+- **File & Lines:** [`backend/database.py#L144`](/backend/database.py#L144-L171)
+- **Purpose:** Managed transactional state
+
+| Column Name | ORM Mapped Type | Constraints / Defaults / SQL Type |
+| :--- | :--- | :--- |
+| `id` | `Mapped[int]` | primary_key=True |
+| `trade_key` | `Mapped[str]` | String(160), unique=True |
+| `cycle_id` | `Mapped[str | None]` | ForeignKey('automation_cycles.id'), nullable=True |
+| `lot_id` | `Mapped[int]` | ForeignKey('tax_lots.id') |
+| `symbol` | `Mapped[str]` | ForeignKey('company_profiles.symbol') |
+| `side` | `Mapped[str]` | String(4) |
+| `quantity` | `Mapped[int]` | Integer |
+| `price` | `Mapped[Decimal]` | PRICE |
+| `gross_amount` | `Mapped[Decimal]` | MONEY |
+| `fee` | `Mapped[Decimal]` | MONEY |
+| `net_cash_change` | `Mapped[Decimal]` | MONEY |
+| `realized_pnl` | `Mapped[Decimal]` | MONEY, default=Decimal('0') |
+| `bucket` | `Mapped[str]` | String(1) |
+| `trade_on` | `Mapped[date]` | Date |
+| `settles_on` | `Mapped[date]` | Date |
+| `reason` | `Mapped[str]` | String(500) |
+| `source` | `Mapped[str]` | String(32), default='DEMO_PAPER' |
+| `portfolio_id` | `Mapped[str]` | String(32), default='164580' |
+| `created_at` | `Mapped[str]` | String(40), default=utc_now_iso |
+
+
+### Table `canary_theses` (Model `CanaryThesis`)
+
+- **File & Lines:** [`backend/database.py#L174`](/backend/database.py#L174-L186)
+- **Purpose:** Managed transactional state
+
+| Column Name | ORM Mapped Type | Constraints / Defaults / SQL Type |
+| :--- | :--- | :--- |
+| `id` | `Mapped[int]` | primary_key=True |
+| `symbol` | `Mapped[str]` | ForeignKey('company_profiles.symbol'), index=True |
+| `thesis` | `Mapped[str]` | String(500) |
+| `created_on` | `Mapped[date]` | Date |
+| `entry_price` | `Mapped[Decimal]` | PRICE |
+| `canary_qty` | `Mapped[int]` | Integer, default=0 |
+| `status` | `Mapped[str]` | String(32), default='OBSERVING' |
+| `observations_count` | `Mapped[int]` | Integer, default=0 |
+| `last_price_observed` | `Mapped[Decimal]` | PRICE |
+| `notes` | `Mapped[str]` | String(500), default='' |
+| `created_at` | `Mapped[str]` | String(40), default=utc_now_iso |
+
+
+### Table `kernel_state_checkpoints` (Model `KernelStateCheckpoint`)
+
+- **File & Lines:** [`backend/database.py#L189`](/backend/database.py#L189-L199)
+- **Purpose:** Managed transactional state
+
+| Column Name | ORM Mapped Type | Constraints / Defaults / SQL Type |
+| :--- | :--- | :--- |
+| `id` | `Mapped[str]` | String(36), primary_key=True |
+| `action` | `Mapped[str]` | String(64) |
+| `description` | `Mapped[str]` | String(500) |
+| `snapshot_payload` | `Mapped[dict[str, Any]]` | JSON |
+| `diff_payload` | `Mapped[dict[str, Any] | None]` | JSON, nullable=True |
+| `actor` | `Mapped[str]` | String(32), default='Kernel API' |
+| `session_on` | `Mapped[date]` | Date |
+| `reverted` | `Mapped[bool]` | Boolean, default=False |
+| `created_at` | `Mapped[str]` | String(40), default=utc_now_iso |
+
+
+### Table `cycle_request_keys` (Model `CycleRequestKey`)
+
+- **File & Lines:** [`backend/database.py#L202`](/backend/database.py#L202-L205)
+- **Purpose:** Managed transactional state
+
+| Column Name | ORM Mapped Type | Constraints / Defaults / SQL Type |
+| :--- | :--- | :--- |
+| `request_id` | `Mapped[str]` | String(36), primary_key=True |
+| `cycle_id` | `Mapped[str]` | ForeignKey('automation_cycles.id') |
+
+
+### Table `decision_logs` (Model `DecisionLog`)
+
+- **File & Lines:** [`backend/database.py#L208`](/backend/database.py#L208-L218)
+- **Purpose:** Managed transactional state
+
+| Column Name | ORM Mapped Type | Constraints / Defaults / SQL Type |
+| :--- | :--- | :--- |
+| `id` | `Mapped[int]` | primary_key=True |
+| `cycle_id` | `Mapped[str | None]` | ForeignKey('automation_cycles.id'), nullable=True, index=True, default=None |
+| `symbol` | `Mapped[str]` | String(40), index=True |
+| `lot_id` | `Mapped[int | None]` | ForeignKey('tax_lots.id'), nullable=True |
+| `action` | `Mapped[str]` | String(40) |
+| `quantity` | `Mapped[int]` | Integer, default=0 |
+| `reason` | `Mapped[str]` | String(600) |
+| `trading_mode` | `Mapped[str]` | String(32), default='LIVE_HOURS' |
+| `created_at` | `Mapped[str]` | String(40), default=utc_now_iso |
+
+
+### Table `rule_audit` (Model `RuleAudit`)
+
+- **File & Lines:** [`backend/database.py#L221`](/backend/database.py#L221-L229)
+- **Purpose:** Managed transactional state
+
+| Column Name | ORM Mapped Type | Constraints / Defaults / SQL Type |
+| :--- | :--- | :--- |
+| `id` | `Mapped[int]` | primary_key=True |
+| `symbol` | `Mapped[str]` | ForeignKey('company_profiles.symbol') |
+| `before` | `Mapped[dict[str, Any]]` | JSON |
+| `after` | `Mapped[dict[str, Any]]` | JSON |
+| `session_on` | `Mapped[date]` | Date |
+| `trading_mode` | `Mapped[str]` | String(32), default='LIVE_HOURS' |
+| `created_at` | `Mapped[str]` | String(40), default=utc_now_iso |
+
+
+### Table `kernel_audit_logs` (Model `KernelAuditLog`)
+
+- **File & Lines:** [`backend/database.py#L232`](/backend/database.py#L232-L243)
+- **Purpose:** Managed transactional state
+
+| Column Name | ORM Mapped Type | Constraints / Defaults / SQL Type |
+| :--- | :--- | :--- |
+| `id` | `Mapped[int]` | primary_key=True |
+| `endpoint` | `Mapped[str]` | String(80) |
+| `action` | `Mapped[str]` | String(80) |
+| `symbol` | `Mapped[str | None]` | String(20), nullable=True |
+| `payload` | `Mapped[dict[str, Any]]` | JSON |
+| `result` | `Mapped[dict[str, Any]]` | JSON |
+| `checkpoint_id` | `Mapped[str | None]` | String(64), nullable=True |
+| `session_on` | `Mapped[date]` | Date |
+| `trading_mode` | `Mapped[str]` | String(32), default='LIVE_HOURS' |
+| `created_at` | `Mapped[str]` | String(40), default=utc_now_iso |
+
+
+### Table `order_idempotency_keys` (Model `OrderIdempotencyKey`)
+
+- **File & Lines:** [`backend/database.py#L246`](/backend/database.py#L246-L254)
+- **Purpose:** Managed transactional state
+
+| Column Name | ORM Mapped Type | Constraints / Defaults / SQL Type |
+| :--- | :--- | :--- |
+| `idempotency_key` | `Mapped[str]` | String(128), primary_key=True |
+| `symbol` | `Mapped[str]` | String(32) |
+| `side` | `Mapped[str]` | String(10) |
+| `quantity` | `Mapped[int]` | Integer |
+| `price` | `Mapped[Decimal]` | PRICE |
+| `response_payload` | `Mapped[dict[str, Any]]` | JSON |
+| `created_at` | `Mapped[str]` | String(40), default=utc_now_iso |
+
+
+### Table `chat_budget` (Model `ChatBudget`)
+
+- **File & Lines:** [`backend/database.py#L257`](/backend/database.py#L257-L260)
+- **Purpose:** Managed transactional state
+
+| Column Name | ORM Mapped Type | Constraints / Defaults / SQL Type |
+| :--- | :--- | :--- |
+| `day` | `Mapped[date]` | Date, primary_key=True |
+| `calls` | `Mapped[int]` | Integer, default=0 |
+
+
+### Table `system_heartbeats` (Model `SystemHeartbeat`)
+
+- **File & Lines:** [`backend/database.py#L263`](/backend/database.py#L263-L273)
+- **Purpose:** Managed transactional state
+
+| Column Name | ORM Mapped Type | Constraints / Defaults / SQL Type |
+| :--- | :--- | :--- |
+| `id` | `Mapped[int]` | primary_key=True |
+| `status` | `Mapped[str]` | String(32), default='OK' |
+| `ingestion_mode` | `Mapped[str]` | String(32), default='BACKGROUND_POLLING' |
+| `trading_mode` | `Mapped[str]` | String(32), default='LIVE_HOURS' |
+| `automation_enabled` | `Mapped[bool]` | Boolean, default=True |
+| `kill_switch_active` | `Mapped[bool]` | Boolean, default=False |
+| `circuit_breaker_tripped` | `Mapped[bool]` | Boolean, default=False |
+| `details` | `Mapped[dict[str, Any]]` | JSON, default=dict |
+| `created_at` | `Mapped[str]` | String(40), default=utc_now_iso, index=True |
+
+
+### Table `preflight_check_logs` (Model `PreflightCheckLog`)
+
+- **File & Lines:** [`backend/database.py#L276`](/backend/database.py#L276-L284)
+- **Purpose:** Managed transactional state
+
+| Column Name | ORM Mapped Type | Constraints / Defaults / SQL Type |
+| :--- | :--- | :--- |
+| `id` | `Mapped[int]` | primary_key=True |
+| `status` | `Mapped[str]` | String(20) |
+| `passed_count` | `Mapped[int]` | Integer |
+| `total_count` | `Mapped[int]` | Integer |
+| `checks` | `Mapped[list[dict[str, Any]]]` | JSON |
+| `actor` | `Mapped[str]` | String(40), default='System' |
+| `created_at` | `Mapped[str]` | String(40), default=utc_now_iso, index=True |
+
+
+### Table `daily_summary_logs` (Model `DailySummaryLog`)
+
+- **File & Lines:** [`backend/database.py#L287`](/backend/database.py#L287-L302)
+- **Purpose:** Managed transactional state
+
+| Column Name | ORM Mapped Type | Constraints / Defaults / SQL Type |
+| :--- | :--- | :--- |
+| `id` | `Mapped[int]` | primary_key=True |
+| `session_date` | `Mapped[date]` | Date, index=True |
+| `orders_count` | `Mapped[int]` | Integer, default=0 |
+| `buys_count` | `Mapped[int]` | Integer, default=0 |
+| `sells_count` | `Mapped[int]` | Integer, default=0 |
+| `buy_spend_bdt` | `Mapped[Decimal]` | MONEY, default=ZERO |
+| `sell_proceeds_bdt` | `Mapped[Decimal]` | MONEY, default=ZERO |
+| `skips_count` | `Mapped[int]` | Integer, default=0 |
+| `skips_breakdown` | `Mapped[dict[str, Any]]` | JSON, default=dict |
+| `drift_bdt` | `Mapped[Decimal]` | MONEY, default=ZERO |
+| `errors_count` | `Mapped[int]` | Integer, default=0 |
+| `errors_summary` | `Mapped[list[str]]` | JSON, default=list |
+| `telegram_sent` | `Mapped[bool]` | Boolean, default=False |
+| `created_at` | `Mapped[str]` | String(40), default=utc_now_iso |
+
 
 ---
 
-## 5. FastAPI Route Registry (All Sub-Routers & Endpoints)
+## 5. Pydantic Model Contract Registry
 
-| Method | Route Path | Module File | Line | Handler Function | Description |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/api/health` | [`backend/main.py`](/backend/main.py#L282) | `L282` | `health()` | Route endpoint |
-| `GET` | `/api/portfolio` | [`backend/main.py`](/backend/main.py#L317) | `L317` | `portfolio()` | Route endpoint |
-| `POST` | `/api/automation/cycle` | [`backend/main.py`](/backend/main.py#L321) | `L321` | `cycle()` | Route endpoint |
-| `POST` | `/api/automation/kill` | [`backend/main.py`](/backend/main.py#L361) | `L361` | `quick_kill()` | Route endpoint |
-| `POST` | `/api/automation/handoff` | [`backend/main.py`](/backend/main.py#L396) | `L396` | `automation_handoff()` | Route endpoint |
-| `POST` | `/api/automation/pause` | [`backend/main.py`](/backend/main.py#L453) | `L453` | `pause()` | Route endpoint |
-| `POST` | `/api/automation/config` | [`backend/main.py`](/backend/main.py#L463) | `L463` | `automation_config()` | Route endpoint |
-| `POST` | `/api/automation/circuit-breaker/reset` | [`backend/main.py`](/backend/main.py#L554) | `L554` | `reset_circuit_breaker_endpoint()` | Route endpoint |
-| `GET` | `/api/automation/circuit-breaker/status` | [`backend/main.py`](/backend/main.py#L559) | `L559` | `get_circuit_breaker_status()` | Route endpoint |
-| `POST` | `/api/automation/preflight` | [`backend/main.py`](/backend/main.py#L571) | `L571` | `run_preflight_endpoint()` | Route endpoint |
-| `GET` | `/api/automation/preflight/status` | [`backend/main.py`](/backend/main.py#L576) | `L576` | `get_preflight_status()` | Route endpoint |
-| `GET` | `/api/caps` | [`backend/main.py`](/backend/main.py#L584) | `L584` | `get_caps_public()` | Route endpoint |
-| `POST` | `/api/caps` | [`backend/main.py`](/backend/main.py#L616) | `L616` | `set_caps_public()` | Route endpoint |
-| `POST` | `/api/demo/advance` | [`backend/main.py`](/backend/main.py#L704) | `L704` | `advance()` | Route endpoint |
-| `GET` | `/api/market/map` | [`backend/main.py`](/backend/main.py#L718) | `L718` | `market_map_endpoint()` | Route endpoint |
-| `PATCH` | `/api/companies/{symbol}/allocation` | [`backend/main.py`](/backend/main.py#L722) | `L722` | `allocation()` | Route endpoint |
-| `GET` | `/api/stream` | [`backend/main.py`](/backend/main.py#L756) | `L756` | `event_stream()` | Route endpoint |
-| `GET` | `/` | [`backend/main.py`](/backend/main.py#L792) | `L792` | `cockpit()` | Route endpoint |
-| `GET` | `/api/hermes/conversations` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L103) | `L103` | `list_conversations()` | Returns conversation topics. |
-| `POST` | `/api/hermes/conversations` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L108) | `L108` | `create_conversation()` | Creates a local conversation topic stub. |
-| `GET` | `/api/hermes/conversations/{conversation_id}/messages` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L119) | `L119` | `conversation_messages()` | Returns messages for a conversation topic. |
-| `GET` | `/api/system/changes` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L124) | `L124` | `system_changes()` | Returns git diff summary and recent kernel checkpoints. |
-| `GET` | `/api/hermes/models` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L199) | `L199` | `get_hermes_models()` | Returns available models, active model, and provider from Hermes state. |
-| `POST` | `/api/hermes/model` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L213) | `L213` | `switch_hermes_model()` | Switches active model and provider in Hermes profile and updates local state. |
-| `POST` | `/api/auth/login` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L44) | `L44` | `login()` | Route endpoint |
-| `POST` | `/api/auth/logout` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L61) | `L61` | `logout()` | Route endpoint |
-| `GET` | `/api/auth/session` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L68) | `L68` | `auth_session()` | Route endpoint |
-| `GET` | `/api/settings/keys` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L83) | `L83` | `get_api_keys()` | Route endpoint |
-| `POST` | `/api/settings/keys` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L125) | `L125` | `update_api_keys()` | Route endpoint |
-| `GET` | `/api/stocknow/status` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L99) | `L99` | `get_stocknow_status()` | Route endpoint |
-| `GET` | `/api/stocknow/page` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L103) | `L103` | `get_stocknow_page()` | Route endpoint |
-| `POST` | `/api/stocknow/session` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L117) | `L117` | `post_stocknow_session()` | Route endpoint |
-| `POST` | `/api/stocknow/sync-market` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L176) | `L176` | `post_stocknow_sync_market()` | Route endpoint |
-| `GET` | `/api/stocknow/all-shares` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L191) | `L191` | `get_all_dse_shares()` | Returns the full 470+ DSE shares catalog with live LTP, +/- %, and sparkline curves. |
-| `GET` | `/api/stocknow/history/{symbol}` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L196) | `L196` | `get_stocknow_symbol_history()` | Returns real 400-candle daily history for any DSE company directly from StockNow. |
-| `POST` | `/api/stocknow/sync-portfolio` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L212) | `L212` | `post_stocknow_sync_portfolio()` | Route endpoint |
-| `POST` | `/api/stocknow/execute-order` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L250) | `L250` | `post_stocknow_execute_order()` | Route endpoint |
-| `GET` | `/api/stocknow/scheduler` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L288) | `L288` | `get_stocknow_scheduler()` | Route endpoint |
-| `POST` | `/api/stocknow/scheduler` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L292) | `L292` | `post_stocknow_scheduler()` | Route endpoint |
-| `GET` | `/k/portfolio` | [`backend/kernel_api.py`](/backend/kernel_api.py#L151) | `L151` | `get_portfolio()` | Returns full portfolio snapshot with holdings, cash, and rolling buckets. |
-| `GET` | `/k/watchlist` | [`backend/kernel_api.py`](/backend/kernel_api.py#L162) | `L162` | `get_watchlist()` | Returns watchlist companies, optionally filtered by tier. |
-| `GET` | `/k/curve/{symbol}` | [`backend/kernel_api.py`](/backend/kernel_api.py#L192) | `L192` | `get_curve()` | Returns price curve analysis, support floor, resistance ceiling, and sparkline points. |
-| `GET` | `/k/market-open` | [`backend/kernel_api.py`](/backend/kernel_api.py#L228) | `L228` | `get_market_open()` | Returns real DSE trading hours and session status in Asia/Dhaka time. |
-| `GET` | `/k/canaries` | [`backend/kernel_api.py`](/backend/kernel_api.py#L234) | `L234` | `get_canaries()` | Returns active and past 10% canary probe theses. |
-| `GET` | `/k/lots` | [`backend/kernel_api.py`](/backend/kernel_api.py#L256) | `L256` | `get_lots()` | Returns T+2 rolling tax lots with maturity status. |
-| `POST` | `/k/tier` | [`backend/kernel_api.py`](/backend/kernel_api.py#L298) | `L298` | `post_tier()` | Updates a company's watchlist tier (GSC, GSC_L1, GSC_L2). |
-| `POST` | `/k/allocation` | [`backend/kernel_api.py`](/backend/kernel_api.py#L359) | `L359` | `post_allocation()` | Updates buying allocation percentage for a company rule. |
-| `POST` | `/k/quarantine` | [`backend/kernel_api.py`](/backend/kernel_api.py#L428) | `L428` | `post_quarantine()` | Places stock in 90% profit-lock + 10% canary quarantine, or restores it. |
-| `POST` | `/k/canary/evaluate` | [`backend/kernel_api.py`](/backend/kernel_api.py#L483) | `L483` | `post_canary_evaluate()` | Evaluates observing canary probe theses against recent price movements. |
-| `POST` | `/k/sync` | [`backend/kernel_api.py`](/backend/kernel_api.py#L526) | `L526` | `post_sync()` | Syncs market prices, all-shares board, or virtual portfolio holdings. |
-| `POST` | `/k/order` | [`backend/kernel_api.py`](/backend/kernel_api.py#L733) | `L733` | `post_order()` | Submits a virtual BUY or SELL order enforcing T+2 maturity, strict no-loss, and 0.5% fees. |
-| `POST` | `/k/rollback` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1244) | `L1244` | `post_rollback()` | Rolls back the last state checkpoint atomically. |
-| `GET` | `/k/mode` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1283) | `L1283` | `get_trading_mode()` | Returns current trading mode (TEST_OFFHOURS or LIVE_HOURS). |
-| `POST` | `/k/mode` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1295) | `L1295` | `post_trading_mode()` | Sets trading mode to TEST_OFFHOURS or LIVE_HOURS with snapshot and audit log. |
-| `GET` | `/k/automation` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1349) | `L1349` | `get_automation_config()` | Returns master buy/sell automation switch, paused state, ingestion mode, and polling interval. |
-| `POST` | `/k/automation` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1362) | `L1362` | `post_automation_config()` | Updates master automation switch, paused state, ingestion mode, or polling interval with snapshot & audit. |
-| `POST` | `/k/automation/handoff` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1450) | `L1450` | `post_automation_handoff()` | Single-writer run mode handoff: finishes current cycle under lock, then switches mode. |
-| `POST` | `/k/automation/circuit-breaker/reset` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1506) | `L1506` | `post_reset_circuit_breaker()` | Manually resets the tripped circuit breaker and clears consecutive failure count. |
-| `POST` | `/k/automation/preflight` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1516) | `L1516` | `post_run_preflight()` | Executes the preflight check suite and returns the readiness audit. |
-| `GET` | `/k/scheduler` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1530) | `L1530` | `get_scheduler_status()` | Returns current scheduler operational status and telemetry. |
-| `POST` | `/k/scheduler` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1545) | `L1545` | `post_scheduler_control()` | Controls background market scheduler (start, stop, status). |
-| `POST` | `/k/cycle` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1604) | `L1604` | `post_run_cycle()` | Executes an automation trading cycle via AutoTrader under the single-writer trading lock. |
-| `POST` | `/k/stocknow/session` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1654) | `L1654` | `post_stocknow_session()` | Controls live StockNow session (launch, status, login, logout). |
-| `GET` | `/k/caps` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1742) | `L1742` | `get_caps()` | Fetch current risk limits, kill switch status, and today's usage scoped by active portfolio. |
-| `POST` | `/k/caps` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1779) | `L1779` | `set_caps()` | Update risk limits in the kernel. May only lower limits by itself; raising a limit requires confirmation. |
+Indexed **28** Pydantic contract and request/response models across `backend/` and `plugins/`:
+
+
+| Model Class | Defined In | Line | Category | Fields Count | Key Fields | Docstring / Purpose |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `BridgeChatRequest` | [`backend/hermes_bridge.py`](/backend/hermes_bridge.py#L76) | `L76` | Request Model | 2 | `message`: str, `session_id`: Optional[str] | Request Model |
+| `SetTierRequest` | [`backend/kernel_api.py`](/backend/kernel_api.py#L292) | `L292` | Request Model | 2 | `symbol`: str, `tier`: str | Request Model |
+| `SetAllocationRequest` | [`backend/kernel_api.py`](/backend/kernel_api.py#L352) | `L352` | Request Model | 3 | `symbol`: str, `buy_allocation_pct`: Decimal, `enabled`: bool | Request Model |
+| `QuarantineRequest` | [`backend/kernel_api.py`](/backend/kernel_api.py#L421) | `L421` | Request Model | 3 | `symbol`: str, `action`: str, `reason`: str | Request Model |
+| `SyncRequest` | [`backend/kernel_api.py`](/backend/kernel_api.py#L520) | `L520` | Request Model | 2 | `target`: str, `payload`: dict[str, Any] \| list[Any] \| None | Request Model |
+| `OrderRequest` | [`backend/kernel_api.py`](/backend/kernel_api.py#L712) | `L712` | Request Model | 9 | `idempotency_key`: str, `symbol`: str, `side`: str... | Request Model |
+| `SetTradingModeRequest` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1277) | `L1277` | Request Model | 2 | `trading_mode`: Literal['TEST_OFFHOURS', 'LIVE_HOURS'], `confirm`: bool | Request Model |
+| `SetAutomationConfigRequest` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1341) | `L1341` | Request Model | 4 | `automation_enabled`: bool \| None, `paused`: bool \| None, `ingestion_mode`: str \| None... | Request Model |
+| `KernelHandoffRequest` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1445) | `L1445` | Request Model | 1 | `target_mode`: str | Request Model |
+| `SchedulerActionRequest` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1525) | `L1525` | Request Model | 1 | `action`: str | Request Model |
+| `RunCycleRequest` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1598) | `L1598` | Request Model | 2 | `dry_run`: bool, `idempotency_key`: str \| None | Request Model |
+| `StockNowSessionActionRequest` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1648) | `L1648` | Request Model | 2 | `action`: str, `mode`: str \| None | Request Model |
+| `CapsUpdateRequest` | [`backend/kernel_api.py`](/backend/kernel_api.py#L1732) | `L1732` | Request Model | 6 | `max_order_bdt`: Decimal \| float \| None, `max_symbol_bdt`: Decimal \| float \| None, `daily_budget_bdt`: Decimal \| float \| None... | Request Model |
+| `PauseRequest` | [`backend/main.py`](/backend/main.py#L69) | `L69` | Request Model | 1 | `paused`: StrictBool | Request Model |
+| `AutomationConfigRequest` | [`backend/main.py`](/backend/main.py#L74) | `L74` | Request Model | 5 | `automation_enabled`: bool \| None, `paused`: bool \| None, `ingestion_mode`: Literal['BACKGROUND_POLLING', 'ONSCREEN_LIVE', 'SIDE_BY_SIDE_LIVE', 'BACKGROUND_24_7', 'BACKGROUND 24/7'] \| None... | Request Model |
+| `HandoffRequest` | [`backend/main.py`](/backend/main.py#L83) | `L83` | Request Model | 2 | `target_mode`: Literal['BACKGROUND_POLLING', 'ONSCREEN_LIVE', 'BACKGROUND_24_7', 'BACKGROUND 24/7'], `reason`: str \| None | Request Model |
+| `KillRequest` | [`backend/main.py`](/backend/main.py#L89) | `L89` | Request Model | 2 | `active`: bool, `reason`: str \| None | Request Model |
+| `AdvanceRequest` | [`backend/main.py`](/backend/main.py#L95) | `L95` | Request Model | 1 | `scenario`: Literal['NORMAL', 'RALLY', 'PULLBACK', 'CRASH', 'RECOVERY'] | Request Model |
+| `AllocationRequest` | [`backend/main.py`](/backend/main.py#L100) | `L100` | Request Model | 2 | `buy_allocation_pct`: Decimal, `enabled`: StrictBool | Request Model |
+| `LoginRequest` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L21) | `L21` | Request Model | 2 | `username`: str, `password`: str | Request Model |
+| `KeysSettingsRequest` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L27) | `L27` | Request Model | 5 | `openrouter_key`: str \| None, `gemini_key`: str \| None, `telegram_bot_token`: str \| None... | Request Model |
+| `CreateThreadRequest` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L20) | `L20` | Request Model | 1 | `title`: str | Request Model |
+| `SwitchModelRequest` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L25) | `L25` | Request Model | 2 | `model`: str, `provider`: str \| None | Request Model |
+| `StockNowSessionActionRequest` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L36) | `L36` | Request Model | 2 | `action`: Literal['launch', 'check_auth', 'close'], `mode`: Literal['ONSCREEN_LIVE', 'BACKGROUND_POLLING'] \| None | Request Model |
+| `StockNowMarketSyncRequest` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L42) | `L42` | Request Model | 1 | `payload`: Any \| None | Request Model |
+| `StockNowPortfolioSyncRequest` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L47) | `L47` | Request Model | 1 | `injected_portfolio`: Any \| None | Request Model |
+| `StockNowExecuteOrderRequest` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L52) | `L52` | Request Model | 10 | `symbol`: str, `side`: Literal['BUY', 'SELL', 'buy', 'sell'], `quantity`: int... | Request Model |
+| `StockNowSchedulerActionRequest` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L74) | `L74` | Request Model | 2 | `action`: Literal['start', 'stop', 'tick_now'], `force`: bool | Request Model |
 
 ---
 
@@ -2092,7 +2609,64 @@ Complete catalog of all **22** registered Hermes tools powering chat commands an
 
 ---
 
-## 7. Code Health & Complexity Radar
+## 7. Hermes Tool ↔ Kernel Route ↔ Skills Graph & Environment Variable Registry
+
+### 7.1 Hermes Plugin Tool ↔ Kernel Endpoint ↔ Skills Matrix (`plugins/humming_bird/tools.py`)
+
+Mapping all **22** Hermes agent tools to their deterministic kernel API endpoints and procedural skill references:
+
+
+| Tool Name | Kernel Endpoint | Associated Skill | Skill Purpose | Tool Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `hb_automation_get` | `/k/automation` | `tradexpress_passive_safety` | Automation & Polling Cadence | Fetch current automation settings from the trading kernel. |
+| `hb_automation_set` | `/k/automation` | `tradexpress_passive_safety` | Master Automation Switch | Configure trading automation switches, ingestion mode, or polling cadence. |
+| `hb_canaries` | `/k/canaries` | `canary_90_10` | Canary Theses & Solvency Monitoring | Retrieve active canary theses from kernel API. |
+| `hb_caps_get` | `/k/caps` | `tradexpress_passive_safety` | Risk Caps & Daily Budget Inspection | Get active risk caps and daily limits from kernel. |
+| `hb_caps_set` | `/k/caps` | `tradexpress_passive_safety` | Autonomous Lowering / Operator Raising | Set or lower risk limits in kernel. Raising a limit requires confirm=true. |
+| `hb_inspect_curve` | *Internal / Engine* | `gsc_tiers` | 7-30 Session Curve Trend & Zones | Inspect price curve and support/resistance analysis for a symbol. |
+| `hb_lots` | `/k/lots` | `sequential_no_regret` | 3-Bucket Rolling Lots & Runner Scaling | Fetch tax lots and T+2 maturity status. |
+| `hb_market_open` | `/k/market-open` | `stocknow_dse_quirks` | DSE Schedule Gate (10:00–14:10) | Check if DSE market is currently open. |
+| `hb_mode_get` | `/k/mode` | `tradexpress_passive_safety` | Trading Mode Inspection | Get active trading mode from kernel. |
+| `hb_mode_set` | `/k/mode` | `tradexpress_passive_safety` | LIVE_HOURS vs TEST_OFFHOURS Toggle | Set trading mode in kernel (TEST_OFFHOURS or LIVE_HOURS). |
+| `hb_place_order` | `/k/order` | `sequential_no_regret` | 2-Step Order Confirmation & Strict No-Loss | Submit virtual BUY or SELL order enforcing constraints and authorization. |
+| `hb_portfolio` | `/k/portfolio` | `sequential_no_regret` | Portfolio Valuation & T+2 State | Fetch current portfolio state from kernel API. |
+| `hb_quarantine_canary` | `/k/quarantine` | `canary_90_10` | 90/10 Emergency Split & Crash Quarantine | Trigger emergency crash quarantine (90% liquidation, 10% canary probe). |
+| `hb_restore_quarantine` | `/k/quarantine` | `canary_90_10` | Quarantine Recovery & Re-listing | Restore a company from crash quarantine back into active status. |
+| `hb_rollback_last` | `/k/rollback` | `sequential_no_regret` | Atomic State Rollback Checkpoint | Roll back the last state checkpoint atomically. |
+| `hb_run_cycle` | `/k/cycle` | `stocknow_dse_quirks` | Deterministic AutoTrader Cycle | Trigger an immediate AutoTrader cycle. |
+| `hb_scheduler` | `/k/scheduler` | `tradexpress_passive_safety` | Trading Operations | Control or inspect the market scheduler background loop. |
+| `hb_set_allocation` | `/k/allocation` | `gsc_tiers` | Per-Symbol Capital Allocation % | Set buy allocation percentage for a symbol. |
+| `hb_set_tier` | `/k/tier` | `gsc_tiers` | Watchlist Tier Allocation & Promotion | Set watchlist tier for a company. |
+| `hb_stocknow_session` | `/k/stocknow/session` | `stocknow_dse_quirks` | Broker Session & Auth Status | Manage live Playwright session for StockNow integration. |
+| `hb_sync` | `/k/sync` | `stocknow_dse_quirks` | Portfolio, Favorites & Market Sync | Trigger sync with StockNow market data. |
+| `hb_watchlist` | `/k/watchlist` | `gsc_tiers` | GSC Master, L1 Turnaround, L2 Scalp Tiers | Fetch watchlist filtered optionally by tier from kernel API. |
+
+
+### 7.2 Repository Environment Variables & Configuration Registry
+
+Complete catalog of environment variables, default settings, and operational scopes across the system:
+
+
+| Environment Variable | Default Value | Required | Operational Scope | Architectural Purpose |
+| :--- | :--- | :--- | :--- | :--- |
+| `KERNEL_TOKEN` | `(random uuid)` | Yes | Kernel API Auth | X-Kernel-Token secret protecting standalone trading kernel |
+| `DATABASE_URL` | `sqlite:///backend/data/hummingbird.db` | No | Persistence | SQLite database path (WAL mode enforced) |
+| `OPERATOR_USERNAME` | `hasib` | No | Cockpit Auth | Cockpit web dashboard operator username |
+| `OPERATOR_PASSWORD` | `admin123` | No | Cockpit Auth | Cockpit web dashboard operator password |
+| `COCKPIT_API_TOKEN` | `` | No | Cockpit Auth | Optional bearer token for external API invocations |
+| `HERMES_GATEWAY_URL` | `http://127.0.0.1:8642` | No | Hermes Bridge | Nous Research Hermes Agent Gateway HTTP/SSE endpoint |
+| `HERMES_PROFILE` | `hummingbird` | No | Hermes Bridge | Hermes profile name enforcing zero-secret tool isolation |
+| `STOCKNOW_LIVE_PORTFOLIO_ID` | `164580` | No | StockNow Broker | LankaBangla Securities target portfolio identifier |
+| `STOCKNOW_TEST_PORTFOLIO_ID` | `164580` | No | StockNow Broker | Test portfolio identifier for write safety validation |
+| `STOCKNOW_USERNAME` | `` | Conditional | StockNow Broker | Operator phone/login for StockNow API re-auth |
+| `STOCKNOW_PASSWORD` | `` | Conditional | StockNow Broker | Operator password for StockNow API re-auth |
+| `TRADEXPRESS_CDP_URL` | `http://127.0.0.1:9222` | No | TradeXpress CDP | Chrome DevTools Protocol port for passive sniffing |
+| `PRICE_MAX_DEVIATION_PCT` | `1.5` | No | Risk Caps | Maximum allowed price deviation % from LTP for sanity guard |
+| `TELEGRAM_BOT_TOKEN` | `` | No | Alerts & Notifications | Telegram bot API token for push trade alerts and dead-man switch |
+| `TELEGRAM_CHAT_ID` | `` | No | Alerts & Notifications | Telegram chat ID for trade notifications and daily summaries |
+
+
+### 7.3 Code Health & Complexity Radar
 
 Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 
@@ -2198,7 +2772,11 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `scan_file` | 50 | 8 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `parse_frontend` | 92 | 11 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `parse_plugin_tools` | 36 | 7 | Acceptable; well-scoped logic |
-| `scripts/generate_code_map.py` | `generate_markdown` | 216 | 6 | Decompose into sub-functions |
+| `scripts/generate_code_map.py` | `compute_blast_radius` | 30 | 6 | Acceptable; well-scoped logic |
+| `scripts/generate_code_map.py` | `parse_sqlalchemy_schema` | 44 | 9 | Acceptable; well-scoped logic |
+| `scripts/generate_code_map.py` | `parse_pydantic_contracts` | 35 | 8 | Acceptable; well-scoped logic |
+| `scripts/generate_code_map.py` | `parse_hermes_skills_graph` | 55 | 7 | Acceptable; well-scoped logic |
+| `scripts/generate_code_map.py` | `generate_markdown` | 265 | 6 | Decompose into sub-functions |
 | `scripts/generate_code_map.py` | `visit_Call` | 10 | 4 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
 | `scripts/inspect_tradexpress_passive.py` | `run_passive_probe` | 264 | 4 | Decompose into sub-functions |
@@ -2211,4 +2789,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/verify_chat_card.py` | `main` | 121 | 3 | Decompose into sub-functions |
 
 
-> **Audit Summary:** 52 Python modules inspected, 65 FastAPI endpoints registered, 115 JS functions mapped, 301 DOM IDs indexed, 22 Hermes tools registered, 94,643 total LOC indexed across 134 repository files.
+> **Knowledge Graph Summary:** 52 Python modules inspected, 65 FastAPI endpoints registered, 17 SQLAlchemy tables mapped, 28 Pydantic contracts indexed, 22 Hermes tools bound to skills, 115 JS functions mapped, 301 DOM IDs indexed, 94,917 total LOC indexed across 135 repository files.

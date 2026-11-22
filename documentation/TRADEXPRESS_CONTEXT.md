@@ -1,9 +1,18 @@
 # LankaBangla Securities TradeXpress 2.0 & iBroker Context, Master Site Map & Execution Blueprint
 
-> **Verification Context & Real Live Execution Milestone:**  
-> Verified live on LankaBangla TradeXpress 2.0 (`https://itrade.lbsbd.com`) and iBroker (`https://ibroker.lbsbd.com/Home`) on Wednesday, November 18, 2026.  
-> **First Live Real DSE Trade Executed & Filled:**  
+> [!CAUTION]
+> **2-Touchpoint Hard Broker Firewall Rule (CRITICAL ZERO-BAN INVARIANT)**  
+> To protect account `H9210` from security lockouts, bans, or unauthorized OMS interference, strictly **TWO** interaction touchpoints are permitted with TradeXpress:  
+> 1. **Passive Sniffing Touchpoint:** Passive Chrome DevTools Protocol (`connect_over_cdp("http://127.0.0.1:9222")`) listening ONLY to already-incoming browser WebSocket frames (`page.on("websocket")`) and read-only DOM text inspection of the operator's manually logged-in session. Zero active requests, zero HTTP scraping, zero polling, zero reload.  
+> 2. **Explicit 2-Step Execution Touchpoint:** Permitted ONLY in Stage 2 (`TRADEXPRESS_LIVE`) mode with mandatory operator confirmation: Step 1 (`New Order` input) -> Step 2 (`Confirm Order` read-back verification) -> Final dispatch.  
+> **ZERO-BAN MANDATE:** NEVER automate login, credential entry, password submission, or active HTTP requests on `itrade.lbsbd.com` or `ibroker.lbsbd.com`. 3–5 failures lock account `H9210`.
+
+> **Verification Context & Real Live Execution Milestones:**  
+> Verified live on LankaBangla TradeXpress 2.0 (`https://itrade.lbsbd.com`) and iBroker (`https://ibroker.lbsbd.com/Home`) on Wednesday, November 18, 2026 and Sunday, November 22, 2026.  
+> **First Live Real DSE Buy Executed & Filled:**  
 > `Buy BANKASIA`PB : 9 @ 17.90 : Filled` at `14:01:35` (Post-Closing Session)  
+> **First Live Real DSE Sell Executed & Filled (Round-Trip Milestone):**  
+> `Sell BANKASIA`PB : 9 @ 18.40 : Filled` at `13:33:36` (Continuous Session, Order Value: `165.60 BDT`)  
 > **Client Code / Cash A/C:** `H9210` · **Market:** DSE Main Public (`PUBLIC`) · **Settlement:** T+2  
 > **Zero Secrets Policy:** All session tokens, IDs, hashes, and secrets in this document are strictly `<REDACTED>`.
 
@@ -294,17 +303,34 @@ flowchart TD
     M --> N["Order List Table Updated with Order ID & Status"]
 ```
 
-### 7.1 Step 1: Input Panel
-1. Side: Verify green `Buy` or red `Sell`.
-2. Purchasing Power: Verify `Order Value <= Buying Power`.
-3. Parameter Entry: Fill `#qtyField-8-1-1-1` and `#orderPriceId-8-1-1-1`.
-4. Submit: Click `button.btn-buy` (or `button.btn-sell`) inside `#executeComp-8-1-1-1`.
+### 7.1 Step 1: Input Panel & Floating Sell Popup
+1. **Side Selection:**
+   - Buy: Green `Buy` button / toggle.
+   - Sell: Click sell button on position or toggle red `Sell`. Opens floating Order Ticket (`New Order - <SYMBOL>`PB (DSE)`).
+2. **Purchasing Power:** Verify `Order Value <= Buying Power` for Buys; verify `Quantity <= Saleable Qty (avaiQtyDSE)` for Sells.
+3. **Parameter Entry:** Fill `#qtyField-8-1-1-1` and `#orderPriceId-8-1-1-1`.
+4. **Intraday Fee Display Quirk:** Note that both the order ticket and confirmation modal display `Commission: 0.00` and `VAT: 0.00` intraday (`Net Value == Order Value`). Real clearing fees are deducted at EOD.
+5. **Submit:** Click `button.btn-buy` (for Buy) or `button.btn-sell` (for Sell) inside `#executeComp-8-1-1-1`.
 
-### 7.2 Step 2: Confirmation Modal
-1. Target: `#confirmationPopup-8-1-1-1`.
-2. Read-back Verification: Adapter reads back `Symbol`, `Side`, `Quantity`, `Price`.
-3. If parameters match engine intent 100%, click `button.btn-confirm` (or button labeled `Confirm Order`).
-4. If any discrepancy is detected, click `button:has-text("Cancel")` and raise an exception.
+### 7.2 Step 2: Confirmation Modal (Green for Buy, Red/Crimson for Sell)
+1. **Target:** `#confirmationPopup-8-1-1-1`.
+2. **Visual Differentiation:**
+   - Buy Modal: Header/accent is green/blue, confirm button is green `button.btn-confirm` / `Confirm Order`.
+   - Sell Modal: Header/accent is red/crimson, confirm button is red `button.btn-confirm` / `Confirm Order`.
+3. **Read-back Verification:**
+   - `Exchange: Dhaka Stock Exchange`
+   - `Symbol: <SYMBOL>`PB`
+   - `Order Type: Limit`
+   - `Side: Buy` or `Side: Sell`
+   - `Quantity: <N>`
+   - `Price: <P>`
+   - `Order Value: <N * P>`
+   - `Commission: 0.00` (intraday display quirk)
+   - `VAT: 0.00` (intraday display quirk)
+   - `Net Value: <Order Value>`
+4. **Action:**
+   - If all parameters match engine intent 100%, click `button.btn-confirm` (or button labeled `Confirm Order`).
+   - If any discrepancy is detected, click `button:has-text("Cancel")` and abort immediately.
 
 ---
 
@@ -314,6 +340,7 @@ flowchart TD
 - Immediate Fill:
   ```text
   Buy BANKASIA`PB : 9 @ 17.90 : Filled
+  Sell BANKASIA`PB : 9 @ 18.40 : Filled
   ```
 - Resting Limit Order:
   ```text
@@ -321,14 +348,29 @@ flowchart TD
   ```
 
 ### 8.2 Real-time Buying Power & Back-Office Ledger Mechanics
-- **Immediate Gross Deduction:**
+- **Immediate Gross Deduction on Buy:**
   TradeXpress deducts the **exact gross order value** upfront from active `Buying Power`:
   $$\text{Buying Power}_{\text{after}} = \text{Buying Power}_{\text{before}} - (\text{Quantity} \times \text{Price})$$
-- **EOD Commission & VAT Settlement:**
-  - LankaBangla standard commission: `0.40%` (`0.0040`).
-  - Government VAT on commission: `15%` (`0.15` on commission, i.e. `0.06%` of gross).
-  - Exchange regulatory charges (Laga/CDBL): `0.05%` (`0.0005`).
-  - Total effective round-trip fee: ~`1.02%`.
+- **Immediate Gross Credit on Sell:**
+  When a sell order fills (e.g. `Sell BANKASIA`PB 9 @ 18.40 = 165.60 BDT`), gross sales proceeds **immediately credit** to active `Buying Power`, allowing instant intraday re-investment before T+2 rolling settlement maturity.
+- **CRITICAL Intraday Commission Display Quirk & Broker Fee Breakdown:**
+  - **Intraday UI Quirk:** Both the Order Ticket and Step 2 Confirmation modal show `Commission: 0.00` and `VAT: 0.00` (`Net Value == Order Value`).
+  - **Actual Broker Clearing Fee:** Real LankaBangla effective fee is **`~0.40%` per side** (`0.64 BDT` verified on `161.10 BDT` buy -> `Cost Value: 161.74`, `Avg. Cost: 17.97`), debited during EOD back-office clearing.
+  - **Humming Bird Conservative Hurdle:** Local kernel strictly enforces its conservative **`0.50%` per side (`1.00%` round trip)** net profit hurdle, guaranteeing zero-loss even with broker fee variations.
+
+### 8.3 Account Summary Tab Mechanics (`a[container-tab-id="accountSummary"]`)
+The `Account Summary` sub-tab inside `#portfolioContainer-8-1-2-3` provides direct visibility into:
+- `Cash Balance`: Settled ledger cash balance.
+- `Buying Power`: Active trading limit (immediately credited upon sell fills).
+- `Receivable / Payable`: Rolling settlement balance awaiting T+2 maturity.
+
+### 8.4 Inactive & SPOT Instrument Protections
+- **SPOT Settlement Stocks:** Attempting to place an order for a SPOT instrument (e.g. `ASIATICLAB`PB) displays a system error modal:
+  ```text
+  Order cannot be placed for SPOT instrument
+  ```
+- **Halted / Inactive Stocks:** Attempting to trade halted securities (e.g. `ATCSLGF`PB) is rejected.
+- **Preflight Filter Invariant:** The trading engine must verify `Settlement Type == 'PUBLIC'` and symbol status is active before generating order tickets.
 
 ---
 
@@ -397,6 +439,11 @@ classDiagram
 - [x] **Verified:** `avaiQtyDSE` provides exact matured T+2 saleable shares natively in TradeXpress.
 - [x] **Verified:** Badge `icon-high-low-52` indicates 52-week high; `icon-jump-up` indicates upper circuit limit.
 - [x] **Verified:** Two-step confirmation (`button.btn-buy` -> `#confirmationPopup-8-1-1-1`) is mandatory.
+- [x] **Verified:** Real live sell round trip executed: `Sell BANKASIA`PB : 9 @ 18.40 : Filled` at `13:33:36` (Order Value: 165.60 BDT).
+- [x] **Verified:** Intraday commission display quirk (`0.00` intraday; real fee is `~0.40%` settled at EOD; Humming Bird 0.50% hurdle enforced).
+- [x] **Verified:** Gross sell proceeds immediately credited to active Buying Power upon fill.
+- [x] **Verified:** SPOT instrument protection modal (`Order cannot be placed for SPOT instrument` on `ASIATICLAB`PB).
+- [x] **Verified:** 2-Touchpoint Hard Broker Firewall rule enforced in documentation and agent guidelines.
 - [x] **Verified:** Midnight maintenance window (`23:45–01:00`) causes `Authentication timed out`.
 - [ ] **Pending (Sprint 5):** Live-Data Dummy Mirror Simulator (`SHADOW_DUMMY` mode).
 - [ ] **Pending (Sprint 6):** Automated 2-step execution harness with live order verification.

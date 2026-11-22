@@ -5,12 +5,20 @@ import pytest
 
 from scripts.generate_code_map import (
     REPO_ROOT,
+    OUTPUT_FILE,
     is_excluded,
     discover_files,
     collect_file_metrics,
+    parse_python_files,
     get_pinned_vendor_commit,
     parse_frontend,
     parse_plugin_tools,
+    generate_ascii_tree,
+    compute_blast_radius,
+    parse_sqlalchemy_schema,
+    parse_pydantic_contracts,
+    parse_hermes_skills_graph,
+    parse_environment_registry,
     MAJOR_EXTENSIONS,
 )
 
@@ -136,4 +144,78 @@ def test_pinned_vendor_commit():
     sha = get_pinned_vendor_commit(REPO_ROOT)
     assert len(sha) == 40
     assert sha == "b777adb7918713e5786cc9d95ad5b854074f2cb6"
+
+
+def test_ascii_file_tree_generation():
+    """Verify automated ASCII file tree correctly reflects repository layout."""
+    files = discover_files(REPO_ROOT)
+    tree = generate_ascii_tree(files, REPO_ROOT)
+    assert tree.startswith("trading-cockpit/")
+    assert "backend/" in tree
+    assert "frontend/" in tree
+    assert "plugins/" in tree
+    assert "scripts/" in tree
+    assert "tests/" in tree
+    assert "documentation/" in tree
+    assert "vendor/" not in tree
+    assert ".venv/" not in tree
+
+
+def test_blast_radius_radar():
+    """Verify reverse dependency blast-radius radar correctly flags critical core modules."""
+    files = discover_files(REPO_ROOT)
+    parsed = parse_python_files(files, REPO_ROOT)
+    blast = compute_blast_radius(parsed)
+
+    # Core foundation modules must be flagged as CRITICAL (> 8 dependents)
+    assert "backend/database.py" in blast
+    assert blast["backend/database.py"]["count"] >= 15
+    assert blast["backend/database.py"]["risk"] == "CRITICAL"
+
+    assert "backend/config.py" in blast
+    assert blast["backend/config.py"]["count"] >= 15
+    assert blast["backend/config.py"]["risk"] == "CRITICAL"
+
+
+def test_sqlalchemy_schema_xray():
+    """Verify SQLAlchemy schema X-ray indexes all 17 ORM entities and column types."""
+    tables = parse_sqlalchemy_schema(REPO_ROOT)
+    assert len(tables) >= 15
+    table_names = {t["table"] for t in tables}
+    assert "portfolio_state" in table_names
+    assert "company_profiles" in table_names
+    assert "tax_lots" in table_names
+    assert "trade_logs" in table_names
+    assert "canary_theses" in table_names
+    assert "kernel_state_checkpoints" in table_names
+
+
+def test_pydantic_contracts_registry():
+    """Verify Pydantic contract registry parses models across backend and plugins."""
+    files = discover_files(REPO_ROOT)
+    models = parse_pydantic_contracts(files, REPO_ROOT)
+    assert len(models) >= 20
+    model_names = {m["name"] for m in models}
+    assert "OrderRequest" in model_names
+    assert "SetTierRequest" in model_names
+    assert "SetTradingModeRequest" in model_names
+
+
+def test_code_map_knowledge_graph_seven_sections():
+    """Verify documentation/CODEBASE_MAP.md exists and contains all 7 Knowledge Graph sections."""
+    assert OUTPUT_FILE.exists()
+    content = OUTPUT_FILE.read_text(encoding="utf-8")
+
+    expected_sections = [
+        "## 1. Repository Topology, Automated ASCII File Tree & Extension Metrics",
+        "## 2. Reverse Dependency & Blast-Radius Radar",
+        "## 3. Python AST X-Ray & Class/Function Registry",
+        "## 4. Full SQLAlchemy Database Schema X-Ray",
+        "## 5. Pydantic Model Contract Registry",
+        "## 6. Frontend DOM, JS Controller, CSS Design & UI Tool Integration",
+        "## 7. Hermes Tool ↔ Kernel Route ↔ Skills Graph & Environment Variable Registry",
+    ]
+    for section in expected_sections:
+        assert section in content, f"Missing section in CODEBASE_MAP.md: {section}"
+
 

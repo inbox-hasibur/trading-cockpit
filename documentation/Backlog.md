@@ -354,7 +354,7 @@ Reconciliation of all audit findings and architectural items from historical MVP
 
 ---
 
-### 🛡️ Sprint 4 (Active): TradeXpress Passive CDP Sniffer, Decoupled Broker Interface & DSE Schedule Lock
+### ✅ Sprint 4 (Completed): TradeXpress Passive CDP Sniffer, Decoupled Broker Interface & DSE Schedule Lock
 
 - [x] **Exact GSC / L1 / L2 Definitions Lock:**
   - Updated `plugins/humming_bird/skills/gsc_tiers/SKILL.md` (v1.2.0) with explicit tier profiles:
@@ -370,20 +370,25 @@ Reconciliation of all audit findings and architectural items from historical MVP
   - Self-learning boundary protecting immutable kernel invariants (No-Loss, T+2, Z/SPOT, Daily Caps, Kill Switch).
 - [x] **Agent Operating Guidelines (`AGENTS.md`):**
   - Added dedicated TradeXpress Passive-Only & Strategy Lock section for all coding agents.
+  - Added 2-Touchpoint Hard Broker Firewall Rule and Changelog hygiene requirement.
 - [x] **Read-Only Passive CDP Inspector Script (`scripts/inspect_tradexpress_passive.py`):**
   - Non-intrusive probe attaching to active `itrade.lbsbd.com` tab over CDP (port 9222).
   - Passive WebSocket frame listener (`page.on("websocket")`) with secret redaction (`SecretGuard.redact_secrets`).
   - Read-only DOM snapshot of Market Watch headers, watchlist tabs, order controls, and `S2` badge tooltips.
-- [ ] **Decoupled Broker Adapter Interface (`backend/adapters/`):**
-  - Modular broker abstraction allowing plug-and-play switching between StockNow virtual and TradeXpress live/shadow.
-- [ ] **DSE Schedule & Commission Math Realignment:**
-  - Align market scheduler to official DSE hours (`10:00–14:10`) and incorporate round-trip Commission + 15% VAT into net profit calculations.
-- [ ] **Strict `PUBLIC` + Category `A`/`B` Order Filter:**
-  - In-kernel preflight rejection of `SPOT` settlement and `Z`-category instruments.
+- [x] **Decoupled Broker Adapter Interface (`backend/adapters/`):**
+  - Modular broker abstraction (`BaseBrokerAdapter`, `TradeXpressAdapter`) allowing plug-and-play switching between StockNow virtual and TradeXpress live/shadow.
+- [x] **DSE Schedule & Commission Math Realignment:**
+  - Aligned market scheduler and pre-tool hooks to official DSE hours (`10:00–14:10 Asia/Dhaka`).
+  - Incorporated round-trip Commission + 15% VAT breakdown math (`calculate_broker_fee_breakdown`, `round_trip_breakeven_price`).
+- [x] **Strict `PUBLIC` + Category `A`/`B` Order Filter:**
+  - `OrderSafetyValidator` enforcing preflight rejection of `SPOT` settlement and `Z`-category instruments, market orders, and circuit violations.
+- [x] **Knowledge Graph Generator & Changelog System (`scripts/generate_code_map.py`, `documentation/CHANGELOG.md`):**
+  - Enriched `CODEBASE_MAP.md` into 7-section Knowledge Graph with automated ASCII file tree, reverse dependency blast-radius radar, full ORM schema x-ray, Pydantic contracts registry, and Hermes-to-Kernel tool graph.
+  - Established project changelog adhering to "Keep a Changelog" standard.
 
 ---
 
-### 🧪 Sprint 5: Live-Data Dummy Mirror Simulator & Post-Market Self-Learning Loop
+### 🧪 Sprint 5 (Active): Live-Data Dummy Mirror Simulator & Post-Market Self-Learning Loop
 
 - [ ] **Live-Data Dummy Mirror Simulator (`SHADOW_DUMMY` Mode):**
   - Ingest live passively sniffed TradeXpress quotes and Level-2 Bid/Offer order depth.

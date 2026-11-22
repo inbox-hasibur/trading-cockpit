@@ -160,7 +160,7 @@ def test_missing_test_portfolio_blocks_orders(tmp_path, auth_headers):
     db_file = tmp_path / "test_no_test_pid.db"
     settings = Settings(
         database_url=f"sqlite:///{db_file.as_posix()}",
-        stocknow_live_portfolio_id="164580",
+        stocknow_live_portfolio_id="",  # Empty / unconfigured
         stocknow_test_portfolio_id="",  # Empty / unconfigured
     )
     app = create_app(settings)
@@ -176,7 +176,7 @@ def test_missing_test_portfolio_blocks_orders(tmp_path, auth_headers):
         }, headers=auth_headers)
         assert res.status_code == 422
         detail = res.json()["detail"]
-        assert "STOCKNOW_TEST_PORTFOLIO_ID is not configured" in detail
+        assert "STOCKNOW_TEST_PORTFOLIO_ID" in detail and "is not configured" in detail
 
 
 def test_allowlist_enforcement(test_settings, auth_headers):

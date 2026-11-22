@@ -248,18 +248,20 @@ The web interface is designed as a **Real-Time Reactive Agentic Trading Cockpit*
       - **Hermes Chat Order Preview Card (Step 10):** Interactive chat cards rendered on `hb_place_order` previews displaying symbol, side badge, quantity, price, 0.5% fee, mode, portfolio, and cap usage breakdown with Confirm / Cancel buttons (zero typed parameters), verified receipt state, and red `live submission failed: <reason>` with guaranteed no ledger change.
 
 13. **Version 0.3 (Live Brokerage Portal Adapters — LankaBangla TradeXpress 2.0 & iBroker):**
-    - **Live Execution Milestone (First DSE Real Trade):** Executed first live DSE order on LankaBangla TradeXpress 2.0 (`https://itrade.lbsbd.com`) for Client Code **`H9210`**: `Buy BANKASIA'PB : 9 @ 17.90 : Filled` at `14:01:35` (Post-Closing session).
+    - **Live Execution Milestones (First Real DSE Trades):** Executed first live DSE orders on LankaBangla TradeXpress 2.0 (`https://itrade.lbsbd.com`) for Client Code **`H9210`**:
+      - Buy: `Buy BANKASIA`PB : 9 @ 17.90 : Filled` at `14:01:35` (Post-Closing session)
+      - Sell: `Sell BANKASIA`PB : 9 @ 18.40 : Filled` at `13:33:36` (Continuous session, Order Value: `165.60 BDT`)
     - **Verified Automation Blueprint:** Complete site map, DOM hierarchy, and passive Playwright adapter architecture documented in [`documentation/TRADEXPRESS_CONTEXT.md`](TRADEXPRESS_CONTEXT.md).
     - **Single-Session Anti-Ban & Auth Rule:** Manual login strictly at 09:55 AM by operator (TradeXpress locks after 3-5 failed attempts and permits only 1 active session). Zero brute-force login automation.
     - **Passive WebSocket Ingestion:** Zero active polling or HTTP scraping on `itrade.lbsbd.com`. Attach to active operator session over CDP (`http://localhost:9222`) and passively sniff `page.on("websocket")` frames and DOM updates.
-    - **Mandatory 2-Step Execution Flow:** Form entry (`New Order - <SYMBOL>'PB`) -> Click `Buy @ <price>` -> Verification modal (`Confirm Order <SYMBOL>'PB`) -> Click green `Confirm Order` button to dispatch to DSE.
-    - **Purchasing Power & Brokerage Math:** Upfront purchasing power deducts gross order value (`350.00 -> 188.90` for 161.10 BDT). Broker commission + VAT settle via clearing into `iBroker` (`https://ibroker.lbsbd.com/Home`).
+    - **Mandatory 2-Step Execution Flow:** Form entry (`New Order - <SYMBOL>`PB`) -> Click `Buy @ <price>` or `Sell @ <price>` -> Verification modal (`Confirm Order <SYMBOL>`PB`) -> Click green/red `Confirm Order` button to dispatch to DSE.
+    - **Purchasing Power & Brokerage Math:** Upfront purchasing power deducts gross order value (`350.00 -> 188.90` for 161.10 BDT). Sells credit gross sales proceeds immediately to Buying Power (`165.60 BDT`). Broker commission + VAT settle via clearing into `iBroker` (`https://ibroker.lbsbd.com/Home`).
 
 14. **The LankaBangla TradeXpress Architectural Pivot:**
     - **Architecture Flow:** `TradeXpress Passive Feed (itrade.lbsbd.com)` -> `Local Dummy Cockpit Simulator (AutoTrader + Hermes Self-Learning + Manual Control)` -> `Live TradeXpress 2-Step Execution`.
     - **Stage 1 (Passive Ingestion to Local Simulator):** Instead of executing immediately against real broker capital, live market prices and Level-2 Bid/Offer order depth are passively tapped via CDP WebSocket listeners from the operator's manually logged-in session (`connect_over_cdp("http://127.0.0.1:9222")`). This real-time market reality feeds our local Humming Bird Dummy Cockpit simulator.
     - **Simulator Orchestration:** AutoTrader, Hermes assistant, and operator manual controls test and refine signals, sequential sells, and 50/50 pullbacks in the local simulator with zero BDT risk, while Hermes continuously learns from outcomes and operator interventions in post-market reflection loops.
-    - **Stage 2 (Graduation to 2-Step Real Execution):** Once the operator graduates the strategy, validated orders execute against LankaBangla TradeXpress via strict 2-step Limit confirmation (`New Order` -> read-back verify -> `Confirm Order`) on DSE Public Board (`'PB`) with Commission + VAT net profit verification.
+    - **Stage 2 (Graduation to 2-Step Real Execution):** Once the operator graduates the strategy, validated orders execute against LankaBangla TradeXpress via strict 2-step Limit confirmation (`New Order` -> read-back verify -> `Confirm Order`) on DSE Public Board (`` `PB ``) with Commission + VAT net profit verification.
 
 ---
 
@@ -393,7 +395,7 @@ Following the official Hermes Agent plugin architecture (`plugin.yaml`, `__init_
 - **Process Supervision:** Restarts Hermes Gateway up to 3 times on unexpected process exit; cleanly terminates child processes on `Ctrl+C` (SIGINT/SIGTERM).
 
 ### Dual Trading Modes (`LIVE_HOURS` vs `TEST_OFFHOURS`)
-- **`LIVE_HOURS` (Default):** Strictly enforces Sunday-Thursday 10:00–14:30 Asia/Dhaka trading gate in plugin pre-tool hooks, kernel `post_order`, and scheduler ticks.
+- **`LIVE_HOURS` (Default):** Strictly enforces Sunday-Thursday 10:00–14:10 Asia/Dhaka trading gate in plugin pre-tool hooks, kernel `post_order`, and scheduler ticks.
 - **`TEST_OFFHOURS`:** Bypasses *only* the market hours gate for continuous off-hours end-to-end integration testing. T+2 maturity, no-loss hurdle, fees, risk caps, and single-writer concurrency locks remain 100% enforced.
 - **Operator Safety Guard:** Switching to `LIVE_HOURS` or `TEST_OFFHOURS` requires explicit operator confirmation via `#trading-mode-toggle` in the UI or `hb_mode_set`.
 
@@ -447,8 +449,8 @@ Following the official Hermes Agent plugin architecture (`plugin.yaml`, `__init_
   - On failure: remains locked in `WAITING`, holding capital safe and sending Telegram alerts.
 - **Watchdogs, Heartbeats & Circuit Breakers:**
   - **Minute Heartbeat:** Every 60 seconds, Cockpit logs a `SystemHeartbeat` record to SQLite (records older than 7 days auto-pruned).
-  - **Dead-Man Alert:** During live DSE market hours (Sunday–Thursday 10:00–14:30 Asia/Dhaka), if heartbeats cease for > 2 minutes, an urgent Telegram dead-man alert is dispatched to the operator.
-  - **Daily 14:45 Summary:** At 14:45 Asia/Dhaka (15 min after market close), a comprehensive summary detailing today's orders, skips breakdown, drift, and errors is sent to Telegram and saved to `DailySummaryLog`.
+  - **Dead-Man Alert:** During live DSE market hours (Sunday–Thursday 10:00–14:10 Asia/Dhaka), if heartbeats cease for > 2 minutes, an urgent Telegram dead-man alert is dispatched to the operator.
+  - **Daily 14:45 Summary:** At 14:45 Asia/Dhaka (35 min after market close), a comprehensive summary detailing today's orders, skips breakdown, drift, and errors is sent to Telegram and saved to `DailySummaryLog`.
   - **Circuit Breaker:** After 3 consecutive critical failures (auth, schema, network, or ledger mismatch), master automation is automatically set to OFF, alerts are dispatched, and manual re-enable is strictly required. A remote kill switch can also be triggered via Telegram.
 
 ---
@@ -460,7 +462,7 @@ Autonomous schedules and long-term memory leverage Hermes' native capabilities r
 ### Hermes Native Cron (`~/.hermes/cron/jobs.json`)
 Scheduled autonomous tasks run via Hermes' native cron engine with timezone `Asia/Dhaka`:
 - **10:00 AM Sun–Thu (`0 10 * * 0-4`):** Morning favorites sync and GSC_L1 turnaround list review (`morning_open_sync_l1`).
-- **Every 5 min 10:00–14:30 Sun–Thu (`*/5 10-14 * * 0-4`):** Active session portfolio sync and canary thesis evaluation (`market_hours_portfolio_canaries`).
+- **Every 5 min 10:00–14:10 Sun–Thu (`*/5 10-14 * * 0-4`):** Active session portfolio sync and canary thesis evaluation (`market_hours_portfolio_canaries`).
 - **12:00 PM Sun–Thu (`0 12 * * 0-4`):** Midday all-shares market quote sync (`midday_all_shares_sync`).
 - **Pre-Execution Hours Gate:** Each job prompt begins by calling `hb_market_open` and halts immediately if the DSE market is closed (weekends, holidays).
 - **Cockpit Management:** The Cockpit Skills drawer inspects `GET /api/hermes/bridge/state` and allows the operator to Pause, Resume, or Delete scheduled jobs via Hermes CLI commands.
@@ -474,155 +476,15 @@ Scheduled autonomous tasks run via Hermes' native cron engine with timezone `Asi
 
 ## 9. Repository Topology & Project File Tree
 
-The following tree represents the complete, clean directory structure of the Humming Bird repository after migrating to the official Nous Research Hermes Agent and removing all legacy imitation agent modules:
+For the complete, dynamically verified file tree, lines-of-code breakdown, and architectural import graph, see the auto-generated Knowledge Graph in:
 
-```text
-trading-cockpit/
-├── .agentignore                             # Coding assistant indexing ignore patterns
-├── .cursorignore                            # Cursor IDE indexing ignore patterns
-├── .env.example                             # Environment variable template
-├── .gitignore                               # Git ignored files & patterns
-├── .opencodeignore                          # OpenCode indexing ignore patterns
-├── AGENTS.md                                # Operator guidelines, commit conventions & operating rules
-├── README.md                                # Project overview, quickstart & setup guide
-├── package.json                             # Root tooling metadata
-├── pyproject.toml                           # Python project configuration & packaging metadata
-├── run.bat                                  # Windows quick-launch script
-├── run.py                                   # Unified supervisor launcher script
-├── run.sh                                   # Linux/macOS launcher script
-│
-├── backend/                                 # Deterministic Trading Kernel & FastAPI Server
-│   ├── .env.example                         # Backend environment variables template
-│   ├── __init__.py                          # Backend package initializer
-│   ├── config.py                            # Application configuration & environment loader
-│   ├── database.py                          # SQLite schema (WAL mode) & SQLAlchemy ORM models
-│   ├── hermes_bridge.py                     # Streaming SSE bridge to official Hermes Gateway API
-│   ├── kernel_api.py                        # Standalone local Trading Kernel API (X-Kernel-Token protected)
-│   ├── logging_config.py                    # Standardized rotating logging configuration
-│   ├── main.py                              # FastAPI entrypoint, middleware & route mounter
-│   ├── market_map.py                        # DSE sector tree, market capitalization & categorization
-│   ├── portfolio.py                         # Portfolio holdings calculation & valuation engine
-│   ├── requirements-dev.txt                 # Development & testing Python dependencies
-│   ├── requirements.txt                     # Production runtime Python dependencies
-│   ├── routes_auth_settings.py              # Settings, auth tokens & system configuration endpoints
-│   ├── routes_hermes.py                     # Hermes chat streaming bridge & bridge state endpoints
-│   ├── routes_stocknow.py                   # StockNow ingestion routes, telemetry & market data endpoints
-│   ├── secret_guard.py                      # Zero-secret isolation & credential redaction utility
-│   ├── seed.py                              # Database seeder for demo fixtures & initial state
-│   │
-│   ├── adapters/                            # External Exchange & Brokerage Adapters
-│   │   ├── __init__.py                      # Adapters package initializer
-│   │   ├── stocknow_adapter.py              # High-level StockNow client adapter & state synchronizer
-│   │   ├── stocknow_api.py                  # HTTP API client, Background mode (direct async httpx client)
-│   │   ├── stocknow_client.py               # Browser session client, Onscreen mode (persistent Playwright browser session)
-│   │   ├── stocknow_executor.py             # StockNowExecutor with ApiTransport and BrowserTransport
-│   │   ├── stocknow_market_sync.py          # Real-time market prices, indices & quotes sync
-│   │   ├── stocknow_portfolio_sync.py       # Portfolio holdings & cash synchronization
-│   │   └── stocknow_write_guard.py          # Write guards restricting test portfolio mutations
-│   │
-│   ├── data/                                # Local runtime database & backup stores (gitignored)
-│   │   ├── backups/                         # Atomic SQLite backups & legacy exports
-│   │   └── hummingbird.db                   # Primary SQLite database file (WAL mode; hummingbird.db is live)
-│   │
-│   └── engine/                              # Core Quantitative & Deterministic Trading Engine
-│       ├── __init__.py                      # Engine package initializer
-│       ├── agent_actions.py                 # Deterministic action dispatcher & rule executor
-│       ├── auto_trader.py                   # Automated evaluation cycle runner & signal executor
-│       ├── checkpoint.py                    # Atomic state snapshot & rollback manager (KernelStateCheckpoint)
-│       ├── circuit_breaker.py               # 3-failure circuit breaker with automatic shutoff & manual re-enable
-│       ├── curve_analyzer.py                # 7-30 day trend slope, support/resistance, & crash detection
-│       ├── heartbeat.py                     # Minute SQLite heartbeat, dead-man alert & daily summary (14:45)
-│       ├── money.py                         # Strict decimal brokerage fee math (1.00% round trip)
-│       ├── preflight_service.py             # Reusable preflight health audit service
-│       ├── price_guard.py                   # Preflight price sanity guard (blocks orders deviating > 1.5% from LTP)
-│       ├── scheduler.py                     # Market calendar engine & session status evaluator
-│       ├── sequential_seller.py             # Multi-tier profit locking & 50/50 pullback seller
-│       ├── signals.py                       # Quantitative trading signal generators & indicators
-│       ├── t2_ledger.py                     # DSE T+2 settlement rolling 3-bucket ledger (A, B, C)
-│       ├── telegram_bot.py                  # Telegram daemon for alerts, summaries & remote kill switch
-│       └── trading_lock.py                  # Single-writer cross-process trading concurrency lock
-│
-├── documentation/                           # System Architecture & Strategy Documentation
-│   ├── About_Project.md                     # Core architecture, system philosophy & repo topology
-│   ├── Backlog.md                           # Implementation roadmap, sprint plans & backlog items
-│   ├── CODEBASE_MAP.md                      # Auto-generated AST map, LOC metrics & endpoint radar
-│   ├── MVP_VERIFICATION.md                  # Structured end-to-end MVP verification plan & test results
-│   ├── STOCKNOW_SITE_MAP.md                 # StockNow site map, write contracts & unauthenticated curl audit
-│   └── TRADEXPRESS_CONTEXT.md               # LankaBangla TradeXpress 2.0 & iBroker site map & execution blueprint
-│
-├── frontend/                                # Cockpit Single-Page Interface
-│   ├── app.js                               # Reactive state manager, DOM updater & telemetry polling
-│   ├── charts.js                            # Canvas chart renderer (trend curves, sparklines, treemap)
-│   ├── favicon.svg                          # Humming Bird brand icon
-│   ├── hermes_ui.js                         # Hermes SSE chat stream, order preview cards, skills & crons
-│   ├── index.html                           # Single-page cockpit dashboard layout & 4 balanced settings cards
-│   ├── styles.css                           # Dark theme styling, terminal aesthetic, card layout & design system
-│   └── theme_light_hermes.css               # WCAG AA compliant light theme design system
-│
-├── plugins/                                 # Official Hermes Agent Plugins
-│   └── humming_bird/                        # Humming Bird Trading Engine Hermes Plugin
-│       ├── __init__.py                      # Plugin lifecycle & tool registration (register(ctx))
-│       ├── hooks.py                         # Pre-tool execution hooks (DSE market hours enforcement)
-│       ├── plugin.yaml                      # Official Hermes plugin manifest & environment declarations
-│       ├── schemas.py                       # Type definitions & Pydantic validation schemas
-│       ├── tools.py                         # 22 Hermes tools (Read, Write, Modes, Caps, Sync, Orders)
-│       └── skills/                          # Official Procedural Skills (agentskills standard)
-│           ├── canary_90_10/
-│           │   └── SKILL.md                 # 90/10 emergency profit lock & canary observation probe
-│           ├── gsc_tiers/
-│           │   └── SKILL.md                 # GSC master observation, L1 turnaround, L2 swing rally tiers
-│           ├── sequential_no_regret/
-│           │   └── SKILL.md                 # Multi-tier profit locking, 50/50 pullback & T+2 capital rolling
-│           ├── stocknow_dse_quirks/
-│           │   └── SKILL.md                 # Virtual portfolio #164580 constraints & DSE session rules
-│           └── tradexpress_passive_safety/
-│               └── SKILL.md                 # Passive-only CDP anti-ban security & two-stage graduation gate
-│
-├── scripts/                                 # Administrative & Automation Scripts
-│   ├── backup_db.py                         # Atomic SQLite database backup utility (auto-prune to 5)
-│   ├── check_dse_market_open.py             # DSE trading hours & session validator
-│   ├── check_heartbeat.py                   # Heartbeat verification & dead-man alert probe
-│   ├── generate_code_map.py                 # Zero-dependency AST inspection & Codebase Map generator
-│   ├── inspect_tradexpress_passive.py       # Read-only passive CDP inspector for itrade.lbsbd.com
-│   ├── install_autostart.ps1                # Windows Task Scheduler logon autostart installer with restart
-│   ├── install_plugin.ps1                   # Hermes plugin installation & linking script
-│   ├── preflight.py                         # Pre-flight environment, auth, ledger & safety check suite
-│   ├── restore_db.py                        # Atomic database restore utility
-│   ├── verify_chat_card.py                  # Playwright visual card renderer & screenshot capture probe
-│   └── verify_step10_ui.py                  # Step 10 UI verification probe
-│
-├── tests/                                   # Pytest Automated Test Suite (211 Tests)
-│   ├── conftest.py                          # Shared test fixtures, mock client & test database setup
-│   ├── fixtures/                            # Test fixtures, recorded JSON responses & HAR captures
-│   ├── test_api.py                          # REST API endpoint tests
-│   ├── test_chat_order_preview_card.py      # Chat order preview card, execution & failure rollback tests
-│   ├── test_code_map.py                     # Codebase map exclude rules & AST indexing tests
-│   ├── test_engine.py                       # Quantitative engine unit tests (T2 ledger, fee math, curves)
-│   ├── test_humming_bird_plugin.py          # Hermes plugin tool handler tests with mock kernel
-│   ├── test_ingestion_switch.py             # Ingestion mode toggle & handoff tests
-│   ├── test_kernel_api.py                   # Local kernel service endpoint, auth & checkpoint tests
-│   ├── test_kernel_caps.py                  # Kernel safety caps, daily budget & operator confirmation tests
-│   ├── test_mvp_rules.py                    # Core MVP trading rules, no-loss & 50/50 pullback tests
-│   ├── test_order_path.py                   # Two-step order preview token & execution path tests
-│   ├── test_portfolio_badge_and_watchlist.py # Portfolio header badge, drift & watchlist status pill tests
-│   ├── test_portfolio_config.py             # Target portfolio configuration, allowlist & budget tests
-│   ├── test_preflight_and_backups.py        # Preflight verification and backup/restore tests
-│   ├── test_reliability_and_safety.py       # Reliability, circuit breaker, heartbeat & dead-man tests
-│   ├── test_run_modes_decisions.py          # Onscreen vs Background run modes & decision stream tests
-│   ├── test_secret_guard.py                 # Secret isolation & credential redaction tests
-│   ├── test_stocknow_api.py                 # Async httpx StockNow API client contract tests
-│   ├── test_stocknow_api_sync.py            # API-based market data, list & portfolio sync tests
-│   ├── test_stocknow_executor.py            # Transport selection (ApiTransport vs BrowserTransport) tests
-│   ├── test_stocknow_portfolio_164580.py    # Portfolio #164580 constraints & skill validation tests
-│   ├── test_stocknow_step2_1.py             # StockNow adapter authentication tests
-│   ├── test_stocknow_step2_2.py             # StockNow portfolio sync & holdings ingestion tests
-│   ├── test_stocknow_step2_3.py             # StockNow order placement & validation tests
-│   ├── test_stocknow_step2_4.py             # StockNow market data sync & quotes ingestion tests
-│   ├── test_stocknow_step2_5.py             # StockNow scheduler & automated cycle runner tests
-│   ├── test_stocknow_write_guard.py         # Hard test-only write contract guards
-│   └── test_trading_mode.py                 # Live Hours vs Test Mode operational gate tests
-│
-└── vendor/                                  # Third-Party Dependencies & Upstream Repositories
-    └── hermes-agent/                        # Official Nous Research Hermes Agent (git submodule)
-```
+👉 [documentation/CODEBASE_MAP.md](CODEBASE_MAP.md#1-repository-topology--file-metrics)
 
+The Knowledge Graph is regenerated via python scripts/generate_code_map.py and provides:
+1. **Automated ASCII File Tree:** Complete repository layout with excluded directories filtered out.
+2. **LOC & Extension Metrics:** Line counts grouped by major file types (.py, .js, .html, .css, .md, .json, etc.).
+3. **Reverse Dependency & Blast-Radius Radar:** Module impact analysis and risk levels.
+4. **SQLAlchemy Schema X-Ray:** Durable tables, columns, and relations.
+5. **Pydantic Contract Registry:** Request and response schemas.
+6. **Frontend ↔ API ↔ Backend Call Graph:** Interactive UI to kernel routing.
+7. **Hermes Plugin Tools & Skills Matrix:** Registered agent tools, kernel endpoints, and skill files.

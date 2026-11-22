@@ -17,14 +17,17 @@ from sqlalchemy import select
 
 from backend.adapters.stocknow_executor import StockNowExecutionError
 from backend.database import CompanyProfile, TaxLot, TradeLog
+from backend.engine.price_guard import clear_market_quotes, set_market_quote
 from backend.kernel_api import clear_order_idempotency_cache
 
 
 @pytest.fixture(autouse=True)
 def clean_cache():
     clear_order_idempotency_cache()
+    clear_market_quotes()
     yield
     clear_order_idempotency_cache()
+    clear_market_quotes()
 
 
 @pytest.fixture
@@ -41,6 +44,7 @@ def auth_headers(kernel_token):
 
 def test_order_preview_contains_caps_and_financials(client, db, auth_headers):
     """Dry run preview contains symbol, side, qty, price, 0.5% fee, mode, portfolio, and cap usage."""
+    set_market_quote("BANKASIA", ltp=20.5, day_low=20.0, day_high=21.0, close=20.5)
     payload = {
         "idempotency_key": "preview-bankasia-001",
         "symbol": "BANKASIA",
@@ -85,6 +89,7 @@ def test_order_preview_contains_caps_and_financials(client, db, auth_headers):
 
 def test_order_preview_sell_cap_usage(client, db, auth_headers):
     """Dry run SELL preview contains mature share usage and strict no-loss validation."""
+    set_market_quote("BANKASIA", ltp=25.0, day_low=24.0, day_high=26.0, close=25.0)
     with db.write() as session:
         for lot in session.query(TaxLot).filter(TaxLot.symbol == "BANKASIA").all():
             lot.matures_on = date(2026, 10, 1)
@@ -115,6 +120,7 @@ def test_order_preview_sell_cap_usage(client, db, auth_headers):
 
 def test_order_confirmation_success(client, db, auth_headers):
     """Confirming preview token executes order and records verified receipt."""
+    set_market_quote("BANKASIA", ltp=20.5, day_low=20.0, day_high=21.0, close=20.5)
     with db.write() as session:
         comp = session.get(CompanyProfile, "BANKASIA")
         if comp:
@@ -184,6 +190,7 @@ def test_order_confirmation_success(client, db, auth_headers):
 
 def test_order_failure_leaves_ledger_unchanged(client, db, auth_headers):
     """Failed live submission rolls back checkpoint with no ledger change."""
+    set_market_quote("BANKASIA", ltp=20.5, day_low=20.0, day_high=21.0, close=20.5)
     # Initial ledger count
     with db.read() as session:
         initial_trades_count = session.query(TradeLog).count()

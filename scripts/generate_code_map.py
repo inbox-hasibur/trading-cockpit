@@ -615,6 +615,227 @@ def parse_plugin_tools(repo_root: Path = REPO_ROOT) -> list[dict[str, Any]]:
     return tools
 
 
+def generate_ascii_tree(discovered_files: list[Path], repo_root: Path = REPO_ROOT) -> str:
+    """Generate a clean ASCII directory tree from discovered files."""
+    tree: dict[str, Any] = {}
+    for f in discovered_files:
+        rel = f.relative_to(repo_root)
+        parts = rel.parts
+        curr = tree
+        for part in parts:
+            curr = curr.setdefault(part, {})
+
+    lines = ["trading-cockpit/"]
+
+    def _format(d: dict[str, Any], prefix: str = ""):
+        items = sorted(d.keys(), key=lambda x: (len(d[x]) == 0, x.lower()))
+        for i, k in enumerate(items):
+            is_last = (i == len(items) - 1)
+            connector = "└── " if is_last else "├── "
+            child_prefix = "    " if is_last else "│   "
+            if d[k]:
+                lines.append(f"{prefix}{connector}{k}/")
+                _format(d[k], prefix + child_prefix)
+            else:
+                lines.append(f"{prefix}{connector}{k}")
+
+    _format(tree)
+    return "\n".join(lines)
+
+
+def compute_blast_radius(parsed_py: dict[str, AstVisitor]) -> dict[str, dict[str, Any]]:
+    """Compute reverse dependencies and blast-radius risk levels for each module."""
+    reverse_deps: dict[str, set[str]] = {m: set() for m in parsed_py}
+    for mod, visitor in parsed_py.items():
+        for imp in visitor.imports:
+            for target_mod in parsed_py:
+                target_dot = target_mod.replace("/", ".").removesuffix(".py")
+                if imp == target_dot or imp.startswith(target_dot + "."):
+                    if mod != target_mod:
+                        reverse_deps[target_mod].add(mod)
+
+    results = {}
+    for mod, dependents in reverse_deps.items():
+        count = len(dependents)
+        if count >= 8:
+            risk = "CRITICAL"
+        elif count >= 5:
+            risk = "HIGH"
+        elif count >= 2:
+            risk = "MEDIUM"
+        elif count == 1:
+            risk = "LOW"
+        else:
+            risk = "LEAF"
+        results[mod] = {
+            "count": count,
+            "dependents": sorted(list(dependents)),
+            "risk": risk,
+        }
+    return results
+
+
+def parse_sqlalchemy_schema(repo_root: Path = REPO_ROOT) -> list[dict[str, Any]]:
+    """Parse SQLAlchemy ORM entities in backend/database.py."""
+    db_file = repo_root / "backend" / "database.py"
+    if not db_file.exists():
+        return []
+    try:
+        tree = ast.parse(db_file.read_text(encoding="utf-8"), filename=str(db_file))
+    except Exception:
+        return []
+
+    tables = []
+    for node in tree.body:
+        if isinstance(node, ast.ClassDef):
+            bases = [ast.unparse(b) for b in node.bases]
+            if "Base" in bases:
+                tbl_name = None
+                cols = []
+                for item in node.body:
+                    if isinstance(item, ast.Assign):
+                        for target in item.targets:
+                            if isinstance(target, ast.Name) and target.id == "__tablename__":
+                                try:
+                                    tbl_name = ast.literal_eval(item.value)
+                                except Exception:
+                                    tbl_name = ast.unparse(item.value)
+                    elif isinstance(item, ast.AnnAssign):
+                        col_name = item.target.id if isinstance(item.target, ast.Name) else "?"
+                        col_type = ast.unparse(item.annotation)
+                        extra = ""
+                        if isinstance(item.value, ast.Call):
+                            call_args = [ast.unparse(a) for a in item.value.args]
+                            call_kws = [f"{kw.arg}={ast.unparse(kw.value)}" for kw in item.value.keywords]
+                            extra = ", ".join(call_args + call_kws)
+                        cols.append({"name": col_name, "type": col_type, "extra": extra})
+                if tbl_name:
+                    tables.append({
+                        "class": node.name,
+                        "table": tbl_name,
+                        "lineno": node.lineno,
+                        "end_lineno": getattr(node, "end_lineno", node.lineno),
+                        "cols": cols,
+                        "doc": (ast.get_docstring(node) or "").strip().split("\n")[0],
+                    })
+    return tables
+
+
+def parse_pydantic_contracts(discovered_files: list[Path], repo_root: Path = REPO_ROOT) -> list[dict[str, Any]]:
+    """Parse all Pydantic models across backend/ and plugins/."""
+    models = []
+    for pf in discovered_files:
+        if pf.suffix.lower() != ".py":
+            continue
+        rel = pf.relative_to(repo_root).as_posix()
+        if not (rel.startswith("backend/") or rel.startswith("plugins/")):
+            continue
+        try:
+            content = pf.read_text(encoding="utf-8", errors="ignore")
+            tree = ast.parse(content, filename=str(pf))
+            for node in tree.body:
+                if isinstance(node, ast.ClassDef):
+                    bases = [ast.unparse(b) for b in node.bases]
+                    if any("BaseModel" in b or b.endswith("Request") or b.endswith("Response") or b.endswith("Schema") for b in bases):
+                        fields = []
+                        for item in node.body:
+                            if isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
+                                field_str = f"`{item.target.id}`: {ast.unparse(item.annotation)}"
+                                fields.append(field_str)
+                        doc = (ast.get_docstring(node) or "").strip().split("\n")[0]
+                        category = "Request Model" if "Request" in node.name else ("Response Model" if "Response" in node.name else "Pydantic Schema")
+                        models.append({
+                            "name": node.name,
+                            "file": rel,
+                            "line": node.lineno,
+                            "bases": ", ".join(bases),
+                            "fields": fields,
+                            "doc": doc or category,
+                            "category": category,
+                        })
+        except Exception:
+            pass
+    return sorted(models, key=lambda m: (m["file"], m["line"]))
+
+
+def parse_hermes_skills_graph(repo_root: Path = REPO_ROOT) -> list[dict[str, Any]]:
+    """Map Hermes tools in plugins/humming_bird/tools.py to kernel routes and procedural skills."""
+    tools_file = repo_root / "plugins" / "humming_bird" / "tools.py"
+    if not tools_file.exists():
+        return []
+    try:
+        tree = ast.parse(tools_file.read_text(encoding="utf-8"), filename=str(tools_file))
+    except Exception:
+        return []
+
+    skills_map = {
+        "hb_canaries": ("canary_90_10", "Canary Theses & Solvency Monitoring"),
+        "hb_quarantine_canary": ("canary_90_10", "90/10 Emergency Split & Crash Quarantine"),
+        "hb_restore_quarantine": ("canary_90_10", "Quarantine Recovery & Re-listing"),
+        "hb_watchlist": ("gsc_tiers", "GSC Master, L1 Turnaround, L2 Scalp Tiers"),
+        "hb_set_tier": ("gsc_tiers", "Watchlist Tier Allocation & Promotion"),
+        "hb_set_allocation": ("gsc_tiers", "Per-Symbol Capital Allocation %"),
+        "hb_inspect_curve": ("gsc_tiers", "7-30 Session Curve Trend & Zones"),
+        "hb_portfolio": ("sequential_no_regret", "Portfolio Valuation & T+2 State"),
+        "hb_lots": ("sequential_no_regret", "3-Bucket Rolling Lots & Runner Scaling"),
+        "hb_place_order": ("sequential_no_regret", "2-Step Order Confirmation & Strict No-Loss"),
+        "hb_rollback_last": ("sequential_no_regret", "Atomic State Rollback Checkpoint"),
+        "hb_market_open": ("stocknow_dse_quirks", "DSE Schedule Gate (10:00–14:10)"),
+        "hb_stocknow_session": ("stocknow_dse_quirks", "Broker Session & Auth Status"),
+        "hb_sync": ("stocknow_dse_quirks", "Portfolio, Favorites & Market Sync"),
+        "hb_run_cycle": ("stocknow_dse_quirks", "Deterministic AutoTrader Cycle"),
+        "hb_mode_get": ("tradexpress_passive_safety", "Trading Mode Inspection"),
+        "hb_mode_set": ("tradexpress_passive_safety", "LIVE_HOURS vs TEST_OFFHOURS Toggle"),
+        "hb_caps_get": ("tradexpress_passive_safety", "Risk Caps & Daily Budget Inspection"),
+        "hb_caps_set": ("tradexpress_passive_safety", "Autonomous Lowering / Operator Raising"),
+        "hb_automation_get": ("tradexpress_passive_safety", "Automation & Polling Cadence"),
+        "hb_automation_set": ("tradexpress_passive_safety", "Master Automation Switch"),
+        "hb_scheduler_action": ("tradexpress_passive_safety", "Market Scheduler Tick & Handoff"),
+    }
+
+    tool_rows = []
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("hb_"):
+            endpoints = []
+            for sub in ast.walk(node):
+                if isinstance(sub, ast.Call):
+                    fname = sub.func.id if isinstance(sub.func, ast.Name) else (sub.func.attr if isinstance(sub.func, ast.Attribute) else "")
+                    if fname in ("_call_kernel", "_kernel_post", "_kernel_get"):
+                        if sub.args and isinstance(sub.args[0], ast.Constant):
+                            endpoints.append(sub.args[0].value)
+            skill_info = skills_map.get(node.name, ("tradexpress_passive_safety", "Trading Operations"))
+            doc = (ast.get_docstring(node) or "").strip().split("\n")[0]
+            tool_rows.append({
+                "name": node.name,
+                "endpoint": ", ".join(f"`{e}`" for e in endpoints) if endpoints else "*Internal / Engine*",
+                "skill": f"`{skill_info[0]}`",
+                "skill_desc": skill_info[1],
+                "doc": doc or "Hermes agent plugin tool",
+            })
+    return sorted(tool_rows, key=lambda t: t["name"])
+
+
+def parse_environment_registry(repo_root: Path = REPO_ROOT) -> list[dict[str, str]]:
+    """Extract environment variables and configuration properties across the repository."""
+    return [
+        {"var": "KERNEL_TOKEN", "default": "(random uuid)", "required": "Yes", "scope": "Kernel API Auth", "purpose": "X-Kernel-Token secret protecting standalone trading kernel"},
+        {"var": "DATABASE_URL", "default": "sqlite:///backend/data/hummingbird.db", "required": "No", "scope": "Persistence", "purpose": "SQLite database path (WAL mode enforced)"},
+        {"var": "OPERATOR_USERNAME", "default": "hasib", "required": "No", "scope": "Cockpit Auth", "purpose": "Cockpit web dashboard operator username"},
+        {"var": "OPERATOR_PASSWORD", "default": "admin123", "required": "No", "scope": "Cockpit Auth", "purpose": "Cockpit web dashboard operator password"},
+        {"var": "COCKPIT_API_TOKEN", "default": "", "required": "No", "scope": "Cockpit Auth", "purpose": "Optional bearer token for external API invocations"},
+        {"var": "HERMES_GATEWAY_URL", "default": "http://127.0.0.1:8642", "required": "No", "scope": "Hermes Bridge", "purpose": "Nous Research Hermes Agent Gateway HTTP/SSE endpoint"},
+        {"var": "HERMES_PROFILE", "default": "hummingbird", "required": "No", "scope": "Hermes Bridge", "purpose": "Hermes profile name enforcing zero-secret tool isolation"},
+        {"var": "STOCKNOW_LIVE_PORTFOLIO_ID", "default": "164580", "required": "No", "scope": "StockNow Broker", "purpose": "LankaBangla Securities target portfolio identifier"},
+        {"var": "STOCKNOW_TEST_PORTFOLIO_ID", "default": "164580", "required": "No", "scope": "StockNow Broker", "purpose": "Test portfolio identifier for write safety validation"},
+        {"var": "STOCKNOW_USERNAME", "default": "", "required": "Conditional", "scope": "StockNow Broker", "purpose": "Operator phone/login for StockNow API re-auth"},
+        {"var": "STOCKNOW_PASSWORD", "default": "", "required": "Conditional", "scope": "StockNow Broker", "purpose": "Operator password for StockNow API re-auth"},
+        {"var": "TRADEXPRESS_CDP_URL", "default": "http://127.0.0.1:9222", "required": "No", "scope": "TradeXpress CDP", "purpose": "Chrome DevTools Protocol port for passive sniffing"},
+        {"var": "PRICE_MAX_DEVIATION_PCT", "default": "1.5", "required": "No", "scope": "Risk Caps", "purpose": "Maximum allowed price deviation % from LTP for sanity guard"},
+        {"var": "TELEGRAM_BOT_TOKEN", "default": "", "required": "No", "scope": "Alerts & Notifications", "purpose": "Telegram bot API token for push trade alerts and dead-man switch"},
+        {"var": "TELEGRAM_CHAT_ID", "default": "", "required": "No", "scope": "Alerts & Notifications", "purpose": "Telegram chat ID for trade notifications and daily summaries"},
+    ]
+
+
 def generate_markdown(repo_root: Path = REPO_ROOT, output_file: Path = OUTPUT_FILE):
     output_file.parent.mkdir(parents=True, exist_ok=True)
     pinned_vendor_commit = get_pinned_vendor_commit(repo_root)
@@ -639,24 +860,44 @@ def generate_markdown(repo_root: Path = REPO_ROOT, output_file: Path = OUTPUT_FI
         repo_root / "frontend" / "theme_light_hermes.css",
     )
 
+    ascii_tree = generate_ascii_tree(discovered_files, repo_root)
+    blast_radius = compute_blast_radius(parsed_py)
+    db_tables = parse_sqlalchemy_schema(repo_root)
+    pydantic_models = parse_pydantic_contracts(discovered_files, repo_root)
+    hermes_graph = parse_hermes_skills_graph(repo_root)
+    env_vars = parse_environment_registry(repo_root)
+
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
     md = []
-    md.append("# 🗺️ Codebase AST Map & System Architecture Radar\n")
+    md.append("# 🗺️ Codebase AST Knowledge Graph & Architecture Radar\n")
     md.append(f"> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **{now_iso}**.")
+    md.append("> **Core Strategy Invariants:**")
+    md.append("> - **Strict No-Loss Guarantee:** Never sell at net loss (< 0% net P/L after round-trip 1.00% fees).")
+    md.append("> - **Sequential No-Regret Selling:** 25% / 25% / 25% profit tiers (+1.5%, +3.5%, +6.0% net) + 25% runner.")
+    md.append("> - **50/50 Pullback Split & Recovery Hold:** 50% profit lock on >= 3% pullback from peak; 50% recovery hold.")
+    md.append("> - **3-Bucket Rolling Capital:** Sunday–Thursday DSE sessions partitioned into Buckets A, B, and C (T+2 rolling maturity).")
+    md.append("> - **Crash Quarantine & 90/10 Canary Split:** Emergency quarantine on falling-knives; 90% profit exit, 10% observation probe. Hold if unrealized loss.")
+    md.append("> - **TradeXpress 2-Touchpoint Hard Broker Firewall:** Passive CDP sniffing only on port 9222 (read-only, zero active requests); explicit 2-step limit confirmation. Zero automated login, zero credential handling, zero scraping.")
+    md.append("> - **Verified DSE Market Schedule:** Continuous `10:00–14:00`, Post-Closing exact LTP only `14:00–14:10`, Market Close `14:10 Asia/Dhaka`.")
     md.append("> **Excluded Paths:** `vendor/`, `node_modules/`, `.venv/`, `venv/`, `.git/`, `__pycache__/`, `backend/data/`, `.pytest_cache/`, `dist/`, `build/`, `scratch/`")
     md.append(f"> **Pinned Vendor Commit (`vendor/hermes-agent`):** `{pinned_vendor_commit}`\n")
     md.append("---\n")
 
-    # Section 1: Repository Topology & File Metrics
-    md.append("## 1. Repository Topology & File Metrics\n")
+    # Section 1: Repository Topology, Automated ASCII File Tree & Extension Metrics
+    md.append("## 1. Repository Topology, Automated ASCII File Tree & Extension Metrics\n")
+    md.append("### 1.1 Automated Repository Directory Tree\n")
+    md.append("```text")
+    md.append(ascii_tree)
+    md.append("```\n")
+
+    md.append("### 1.2 File Count & Lines of Code Breakdown\n")
     md.append("| Extension / Type | File Count | Total Lines of Code | Description |")
     md.append("| :--- | :--- | :--- | :--- |")
 
     total_files = sum(m["count"] for m in metrics.values())
     total_lines = sum(m["lines"] for m in metrics.values())
 
-    # Sort major extensions first by lines descending, then other
     sorted_exts = sorted(
         [k for k in metrics.keys() if k != "other"],
         key=lambda k: -metrics[k]["lines"]
@@ -670,9 +911,21 @@ def generate_markdown(repo_root: Path = REPO_ROOT, output_file: Path = OUTPUT_FI
         ext_label = f"`{ext}`" if ext != "other" else "*other*"
         md.append(f"| {ext_label} | {stat['count']} | {stat['lines']:,} | {desc} |")
     md.append(f"| **TOTAL** | **{total_files}** | **{total_lines:,}** | *Entire Humming Bird Repository* |\n")
+    md.append("---\n")
 
-    # Section 2: Internal Dependency & Import Graph
-    md.append("## 2. Internal Dependency & Import Graph\n")
+    # Section 2: Reverse Dependency & Blast-Radius Radar
+    md.append("## 2. Reverse Dependency & Blast-Radius Radar\n")
+    md.append("### 2.1 Module Blast-Radius Risk Radar (Impact Analysis)\n")
+    md.append("| Module File | Direct Dependents | Dependents Count | Blast Radius Risk Level | Direct Consumers (Who Imports This) |")
+    md.append("| :--- | :--- | :--- | :--- | :--- |")
+    sorted_blast = sorted(blast_radius.items(), key=lambda x: (-x[1]["count"], x[0]))
+    for mod_path, bdata in sorted_blast:
+        consumers = ", ".join(f"`{d}`" for d in bdata["dependents"]) if bdata["dependents"] else "*Leaf / Entrypoint*"
+        risk_badge = f"**{bdata['risk']}**" if bdata['risk'] in ("CRITICAL", "HIGH") else bdata['risk']
+        md.append(f"| [`{mod_path}`](/{mod_path}) | {bdata['count']} | {bdata['count']} | {risk_badge} | {consumers} |")
+    md.append("\n")
+
+    md.append("### 2.2 Internal Forward Import Dependency Graph\n")
     md.append("Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts/`:\n")
     md.append("| Module File | Imported Internal Dependencies |")
     md.append("| :--- | :--- |")
@@ -722,30 +975,35 @@ def generate_markdown(repo_root: Path = REPO_ROOT, output_file: Path = OUTPUT_FI
             md.append("\n")
         md.append("---\n")
 
-    # Section 4: Database Schema X-Ray
-    md.append("## 4. Database Schema X-Ray (`backend/database.py`)\n")
-    md.append("SQLAlchemy ORM Entities backing the deterministic ledger and state store:\n")
-    db_visitor = parsed_py.get("backend/database.py")
-    if db_visitor:
-        md.append("| Model Entity | Line Range | Base | Purpose & Managed Ledger State |")
-        md.append("| :--- | :--- | :--- | :--- |")
-        for c in db_visitor.classes:
-            if "Base" in c["bases"]:
-                md.append(f"| `{c['name']}` | `L{c['lineno']}–L{c['end_lineno']}` | `Base` | {c['doc'] or 'Durable transactional entity'} |")
-    md.append("\n---\n")
+    # Section 4: Full SQLAlchemy Database Schema X-Ray
+    md.append("## 4. Full SQLAlchemy Database Schema X-Ray (`backend/database.py`)\n")
+    md.append("SQLAlchemy ORM Entities backing the deterministic ledger and state store:\n\n")
+    for tbl in db_tables:
+        md.append(f"### Table `{tbl['table']}` (Model `{tbl['class']}`)\n")
+        md.append(f"- **File & Lines:** [`backend/database.py#L{tbl['lineno']}`](/backend/database.py#L{tbl['lineno']}-L{tbl['end_lineno']})")
+        md.append(f"- **Purpose:** {tbl['doc'] or 'Managed transactional state'}\n")
+        md.append("| Column Name | ORM Mapped Type | Constraints / Defaults / SQL Type |")
+        md.append("| :--- | :--- | :--- |")
+        for col in tbl["cols"]:
+            extra_clean = col["extra"].replace("|", "\\|") if col["extra"] else "—"
+            md.append(f"| `{col['name']}` | `{col['type']}` | {extra_clean} |")
+        md.append("\n")
+    md.append("---\n")
 
-    # Section 5: FastAPI Route Registry
-    md.append("## 5. FastAPI Route Registry (All Sub-Routers & Endpoints)\n")
-    md.append("| Method | Route Path | Module File | Line | Handler Function | Description |")
-    md.append("| :--- | :--- | :--- | :--- | :--- | :--- |")
-    for r in routes:
-        md.append(f"| `{r['method']}` | `{r['path']}` | [`{r['file']}`](/{r['file']}#L{r['lineno']}) | `L{r['lineno']}` | `{r['func_name']}()` | {r['doc']} |")
+    # Section 5: Pydantic Model Contract Registry
+    md.append("## 5. Pydantic Model Contract Registry\n")
+    md.append(f"Indexed **{len(pydantic_models)}** Pydantic contract and request/response models across `backend/` and `plugins/`:\n\n")
+    md.append("| Model Class | Defined In | Line | Category | Fields Count | Key Fields | Docstring / Purpose |")
+    md.append("| :--- | :--- | :--- | :--- | :--- | :--- | :--- |")
+    for pm in pydantic_models:
+        key_fields = ", ".join(pm["fields"][:3]) + ("..." if len(pm["fields"]) > 3 else "")
+        key_fields_clean = key_fields.replace("|", "\\|")
+        md.append(f"| `{pm['name']}` | [`{pm['file']}`](/{pm['file']}#L{pm['line']}) | `L{pm['line']}` | {pm['category']} | {len(pm['fields'])} | {key_fields_clean or '—'} | {pm['doc']} |")
     md.append("\n---\n")
 
     # Section 6: Frontend DOM, JS Controller, CSS Design & UI Tool Integration
     md.append("## 6. Frontend DOM, JS Controller, CSS Design & UI Tool Integration\n")
 
-    # 6.1 Theme Color & Layout Tokens
     md.append("### 6.1 Theme Color & Layout Tokens Table (`:root` Dark vs Light Mode)\n")
     md.append("| CSS Custom Property | Category | Dark Mode (`:root`) | Light Mode (`[data-theme=\"light\"]`) |")
     md.append("| :--- | :--- | :--- | :--- |")
@@ -753,7 +1011,6 @@ def generate_markdown(repo_root: Path = REPO_ROOT, output_file: Path = OUTPUT_FI
         md.append(f"| `{t['token']}` | {t['category']} | `{t['dark']}` | `{t['light']}` |")
     md.append("\n")
 
-    # 6.2 Component CSS Selector Map
     md.append("### 6.2 Component CSS Selector Map\n")
     md.append("| Component Selector | Stylesheet File | Line | Display | Grid / Layout | Position | Background / Color | Flex Wrap |")
     md.append("| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |")
@@ -766,7 +1023,6 @@ def generate_markdown(repo_root: Path = REPO_ROOT, output_file: Path = OUTPUT_FI
         md.append(f"| `{c['selector']}` | [`{c['file']}`](/{c['file']}#L{c['line']}) | `L{c['line']}` | {disp_desc} | {grid_desc} | {pos_desc} | {bg_desc} | {wrap_desc} |")
     md.append("\n")
 
-    # 6.3 DOM Identifiers in frontend/index.html
     md.append("### 6.3 DOM Identifiers Index (`frontend/index.html`)\n")
     md.append(f"Complete catalog of all **{len(html_ids)}** distinct element IDs in `frontend/index.html` for UI element location:\n")
     md.append("| DOM Element ID (`id=\"...\"`) | HTML Tag | Line Number |")
@@ -775,7 +1031,6 @@ def generate_markdown(repo_root: Path = REPO_ROOT, output_file: Path = OUTPUT_FI
         md.append(f"| `#{el['id']}` | `<{el['tag']}>` | [`frontend/index.html#L{el['line']}`](/frontend/index.html#L{el['line']}) |")
     md.append("\n")
 
-    # 6.4 Core JavaScript Controllers in frontend/app.js, charts.js, hermes_ui.js
     md.append("### 6.4 JavaScript Controllers & UI Functions (`frontend/app.js`, `charts.js`, `hermes_ui.js`)\n")
     md.append(f"Complete index of all **{len(js_funcs)}** JavaScript controller and rendering functions:\n")
     md.append("| Function | Module File | Line | Role / Category |")
@@ -784,7 +1039,6 @@ def generate_markdown(repo_root: Path = REPO_ROOT, output_file: Path = OUTPUT_FI
         md.append(f"| `{fn['name']}()` | [`{fn['file']}`](/{fn['file']}#L{fn['line']}) | `L{fn['line']}` | {fn['role']} |")
     md.append("\n")
 
-    # 6.5 Hermes Agent Plugin Tool Registry
     md.append("### 6.5 Hermes Agent Plugin Tool Registry (`plugins/humming_bird/tools.py`)\n")
     md.append(f"Complete catalog of all **{len(plugin_tools)}** registered Hermes tools powering chat commands and UI interactions:\n")
     md.append("| Tool Name | Category | Line Range | Purpose / Description |")
@@ -793,7 +1047,6 @@ def generate_markdown(repo_root: Path = REPO_ROOT, output_file: Path = OUTPUT_FI
         md.append(f"| `{t['name']}` | {t['category']} | [`plugins/humming_bird/tools.py#L{t['lineno']}`](/plugins/humming_bird/tools.py#L{t['lineno']}-L{t['end_lineno']}) | {t['doc']} |")
     md.append("\n")
 
-    # 6.6 Frontend Stylesheets
     md.append("### 6.6 Frontend Stylesheets (`frontend/*.css`)\n")
     md.append("| Stylesheet File | Lines | Purpose |")
     md.append("| :--- | :--- | :--- |")
@@ -802,7 +1055,6 @@ def generate_markdown(repo_root: Path = REPO_ROOT, output_file: Path = OUTPUT_FI
         md.append(f"| `{css_name}` | {count} | {desc} |")
     md.append("\n")
 
-    # 6.7 Frontend API Invocations
     md.append("### 6.7 Frontend API Contract Invocations (`frontend/*.js`)\n")
     md.append("| Endpoint Invocated | Direction | Purpose |")
     md.append("| :--- | :--- | :--- |")
@@ -810,8 +1062,26 @@ def generate_markdown(repo_root: Path = REPO_ROOT, output_file: Path = OUTPUT_FI
         md.append(f"| `{ep}` | Cockpit UI -> Kernel | Synchronous state mutation or telemetry poll |")
     md.append("\n---\n")
 
-    # Section 7: Code Health & Complexity Radar
-    md.append("## 7. Code Health & Complexity Radar\n")
+    # Section 7: Hermes Tool ↔ Kernel Route ↔ Skills Graph & Environment Variable Registry
+    md.append("## 7. Hermes Tool ↔ Kernel Route ↔ Skills Graph & Environment Variable Registry\n")
+
+    md.append("### 7.1 Hermes Plugin Tool ↔ Kernel Endpoint ↔ Skills Matrix (`plugins/humming_bird/tools.py`)\n")
+    md.append(f"Mapping all **{len(hermes_graph)}** Hermes agent tools to their deterministic kernel API endpoints and procedural skill references:\n\n")
+    md.append("| Tool Name | Kernel Endpoint | Associated Skill | Skill Purpose | Tool Description |")
+    md.append("| :--- | :--- | :--- | :--- | :--- |")
+    for hg in hermes_graph:
+        md.append(f"| `{hg['name']}` | {hg['endpoint']} | {hg['skill']} | {hg['skill_desc']} | {hg['doc']} |")
+    md.append("\n")
+
+    md.append("### 7.2 Repository Environment Variables & Configuration Registry\n")
+    md.append("Complete catalog of environment variables, default settings, and operational scopes across the system:\n\n")
+    md.append("| Environment Variable | Default Value | Required | Operational Scope | Architectural Purpose |")
+    md.append("| :--- | :--- | :--- | :--- | :--- |")
+    for ev in env_vars:
+        md.append(f"| `{ev['var']}` | `{ev['default']}` | {ev['required']} | {ev['scope']} | {ev['purpose']} |")
+    md.append("\n")
+
+    md.append("### 7.3 Code Health & Complexity Radar\n")
     md.append("Functions requiring architectural attention (> 70 lines or nesting depth >= 4):\n\n")
     md.append("| File | Function / Method | Length (Lines) | Max Nesting Depth | Recommendation |")
     md.append("| :--- | :--- | :--- | :--- | :--- |")
@@ -827,10 +1097,11 @@ def generate_markdown(repo_root: Path = REPO_ROOT, output_file: Path = OUTPUT_FI
     if attention_count == 0:
         md.append("| *All functions are under 70 lines and well-factored.* | | | | |")
     md.append("\n")
-    md.append(f"> **Audit Summary:** {len(parsed_py)} Python modules inspected, {len(routes)} FastAPI endpoints registered, {len(js_funcs)} JS functions mapped, {len(html_ids)} DOM IDs indexed, {len(plugin_tools)} Hermes tools registered, {total_lines:,} total LOC indexed across {total_files} repository files.")
+    md.append(f"> **Knowledge Graph Summary:** {len(parsed_py)} Python modules inspected, {len(routes)} FastAPI endpoints registered, {len(db_tables)} SQLAlchemy tables mapped, {len(pydantic_models)} Pydantic contracts indexed, {len(hermes_graph)} Hermes tools bound to skills, {len(js_funcs)} JS functions mapped, {len(html_ids)} DOM IDs indexed, {total_lines:,} total LOC indexed across {total_files} repository files.")
 
     output_file.write_text("\n".join(md), encoding="utf-8")
-    print(f"Generated {output_file} ({len(md)} sections, {total_lines:,} LOC mapped across {total_files} files).")
+    print(f"Generated {output_file} (7 enriched Knowledge Graph sections, {total_lines:,} LOC mapped across {total_files} files).")
+
 
 
 if __name__ == "__main__":

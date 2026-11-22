@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def check_dse_trading_hours(dt: datetime | None = None) -> tuple[bool, str]:
-    """Check if time falls within DSE trading hours (Sun-Thu 10:00 to 14:30 Asia/Dhaka)."""
+    """Check if time falls within DSE trading hours (Sun-Thu 10:00 to 14:10 Asia/Dhaka)."""
     try:
         from zoneinfo import ZoneInfo
         tz = ZoneInfo("Asia/Dhaka")
