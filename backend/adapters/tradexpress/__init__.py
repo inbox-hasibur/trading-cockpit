@@ -15,6 +15,7 @@ from .passive_feed import (
     parse_ember_portfolio_rows,
 )
 from .shadow_simulator import TradeXpressShadowSimulator
+from .cdp_daemon import TradeXpressPassiveDaemon, get_global_passive_daemon
 
 __all__ = [
     "AccountSummary",
@@ -26,4 +27,6 @@ __all__ = [
     "parse_ember_market_watch_rows",
     "parse_ember_portfolio_rows",
     "TradeXpressShadowSimulator",
+    "TradeXpressPassiveDaemon",
+    "get_global_passive_daemon",
 ]

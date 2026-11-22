@@ -431,6 +431,33 @@ Reconciliation of all audit findings and architectural items from historical MVP
 - [x] **Full Automated Verification:**
   - `tests/test_tradexpress_ui_v1.py` with 100% pass covering HTML structure, enriched snapshots, 2-step limit order execution, and order cancellation.
 
+### ✅ Sprint 5C (Completed): Continuous Read-Only Passive CDP Spy Daemon, 1-Click Safe Browser Launcher & AutoTrader SHADOW_DUMMY Wiring
+
+- [x] **Continuous Read-Only Passive CDP Spy Daemon (`backend/adapters/tradexpress/cdp_daemon.py`):**
+  - Resilient, continuous background task attaching via Chrome DevTools Protocol (`http://127.0.0.1:9222`) to operator's already-logged-in TradeXpress browser tab.
+  - Zero-ban mandate: zero clicks, zero typing, zero page reloads, zero credential handling, and zero active HTTP requests to LankaBangla servers.
+  - Sniffs incoming WebSocket frames and XHR/fetch responses in real time.
+  - Periodic read-only DOM extraction loop (`EXTRACT_READONLY_DOM_SCRIPT`) with SHA256 diff checking to update market quotes, Level-2 depth, and portfolio positions without redundant SQLite writes.
+  - Automatic order reconciliation against resting limit orders in `TradeXpressShadowSimulator`.
+  - Graceful disconnect on shutdown (`browser.close()` detaches CDP client without terminating operator's browser).
+- [x] **Bridge Control API Endpoints (`POST /api/tradexpress/bridge`, `GET /api/tradexpress/status`, `GET /k/feed-status`):**
+  - Instant attach/detach/status control via `POST /api/tradexpress/bridge`.
+  - Enriched telemetry responses reporting CDP connection, active tab title, DOM sync counts, WebSocket frame counts, and XHR response counts.
+- [x] **AutoTrader Execution Venue Wiring (`backend/engine/auto_trader.py`):**
+  - Seamlessly routes automated buy/sell orders through `TradeXpressShadowSimulator.submit_shadow_order(..., confirm=True, actor="AUTOTRADER")` when `state.execution_venue == "SHADOW_DUMMY"`.
+  - Records execution in `ShadowOrder` and reflections in `TradeLearningLog`.
+  - Preserves full backward compatibility with StockNow and DEMO paper execution.
+- [x] **1-Click Safe Browser Launcher Batch Script (`scripts/open_tradexpress_browser.bat`):**
+  - Detects installed Microsoft Edge or Google Chrome executables.
+  - Launches with isolated user data directory (`%LOCALAPPDATA%\HummingBird\TradeXpressBrowser`) and opens `https://itrade.lbsbd.com` on debug port 9222.
+- [x] **Frontend UI 1-Click Control & Data Sync Fixes (`frontend/app.js`, `frontend/tradexpress_ui.js`, `frontend/index.html`, `frontend/styles.css`):**
+  - Added 1-click `#tx-passive-spy-btn` in `#tx-main-nav` (`📡 Passive Spy: OFF / LIVE`) and bridge controls in Settings (`#tx-feed-status-card`).
+  - Fixed ticket data sync: exposed `window.state = state;` and cached `state.lastSnapshot`, resolving real mature saleable shares (`294` for `BANKASIA`) and live LTP.
+  - Verified `snapshot.buying_power_bdt` renders settled cash + unsettled sales.
+- [x] **Comprehensive Test Suite (`tests/test_tradexpress_cdp_daemon.py` & `tests/test_v1_layout_playwright.py`):**
+  - Unit tests for daemon lifecycle, reconnection resilience, zero forbidden methods, bridge API actions, and AutoTrader shadow dispatch.
+  - Strict Playwright visual gates verifying ticket mature quantity and spy button visibility.
+
 ---
 
 ### 🏦 Sprint 6: Production Graduation to Live TradeXpress 2-Step Execution & iBroker EOD Audit

@@ -1868,10 +1868,12 @@ def set_caps(
 
 @router.get("/feed-status")
 def get_feed_status(
+    request: Request,
     db: Database = Depends(get_db),
 ):
-    """Returns TradeXpress passive feed status and operator guidance for Hermes."""
+    """Returns TradeXpress passive feed status, daemon metrics, and operator guidance for Hermes."""
     from backend.adapters.tradexpress.passive_feed import get_global_passive_feed
+    from backend.adapters.tradexpress.cdp_daemon import get_global_passive_daemon
 
     feed = get_global_passive_feed(db)
     guidance = feed.get_health_and_guidance()
@@ -1880,15 +1882,21 @@ def get_feed_status(
         venue = getattr(state, "execution_venue", "SHADOW_DUMMY")
         unsettled = float(getattr(state, "unsettled_sales_bdt", ZERO) or ZERO)
 
+    settings = get_settings(request)
+    broadcaster = get_broadcaster(request)
+    daemon = get_global_passive_daemon(db, settings, broadcaster=broadcaster)
+    daemon_status = daemon.get_status()
+
     acct = feed.get_account_summary()
     return {
-        "status": "ONLINE" if guidance["is_healthy"] else "ATTENTION_REQUIRED",
-        "cdp_connected": guidance["cdp_connected"],
+        "status": "ONLINE" if (guidance["is_healthy"] or daemon_status["cdp_connected"]) else "ATTENTION_REQUIRED",
+        "cdp_connected": guidance["cdp_connected"] or daemon_status["cdp_connected"],
         "execution_venue": venue,
         "buying_power": float(acct.buying_power),
         "unsettled_sales_bdt": unsettled,
         "guidance": guidance,
         "operator_instructions": guidance["operator_instructions"],
+        "daemon": daemon_status,
     }
 
 

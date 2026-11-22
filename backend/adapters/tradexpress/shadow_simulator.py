@@ -153,6 +153,8 @@ class TradeXpressShadowSimulator(BrokerOrderExecutor):
         portfolio_id: str = "H9210_SHADOW",
         allow_offhours_ltp_fill: bool = True,
         session_phase: str = "CONTINUOUS",
+        session: Session | None = None,
+        record_tax_lot: bool = True,
     ) -> dict[str, Any]:
         """Submits an order into the shadow simulator with 2-step verification support."""
         clean_symbol = from_tradexpress_symbol(symbol)
@@ -188,76 +190,133 @@ class TradeXpressShadowSimulator(BrokerOrderExecutor):
             }
 
         # Step 2: Confirmation & Execution
-        with self.database.write() as session:
-            state = portfolio_state(session)
-            today = state.clock_date
-            order_ref = f"SHADOW-{uuid4().hex[:10].upper()}"
-
-            # Preflight validation
-            is_valid, errors = self.validate_order(
-                session,
-                symbol=clean_symbol,
-                side=side_norm,
+        if session is not None:
+            return self._execute_shadow_order_in_session(
+                session=session,
+                clean_symbol=clean_symbol,
+                side_norm=side_norm,
                 quantity=quantity,
                 limit_price=limit_price,
                 order_type=order_type,
                 tif=tif,
+                actor=actor,
+                reason=reason,
+                portfolio_id=portfolio_id,
+                allow_offhours_ltp_fill=allow_offhours_ltp_fill,
                 session_phase=session_phase,
-                allow_offhours_na=True,
+                record_tax_lot=record_tax_lot,
             )
-            if not is_valid:
-                error_msg = "; ".join(errors)
-                logger.warning("Shadow order rejected preflight: %s", error_msg)
-                rejection = ShadowOrder(
-                    order_ref=order_ref,
+
+        with self.database.write() as write_session:
+            return self._execute_shadow_order_in_session(
+                session=write_session,
+                clean_symbol=clean_symbol,
+                side_norm=side_norm,
+                quantity=quantity,
+                limit_price=limit_price,
+                order_type=order_type,
+                tif=tif,
+                actor=actor,
+                reason=reason,
+                portfolio_id=portfolio_id,
+                allow_offhours_ltp_fill=allow_offhours_ltp_fill,
+                session_phase=session_phase,
+                record_tax_lot=record_tax_lot,
+            )
+
+    def _execute_shadow_order_in_session(
+        self,
+        session: Session,
+        clean_symbol: str,
+        side_norm: str,
+        quantity: int,
+        limit_price: Decimal,
+        order_type: str,
+        tif: str,
+        actor: str,
+        reason: str,
+        portfolio_id: str,
+        allow_offhours_ltp_fill: bool,
+        session_phase: str,
+        record_tax_lot: bool,
+    ) -> dict[str, Any]:
+        state = portfolio_state(session)
+        today = state.clock_date
+        order_ref = f"SHADOW-{uuid4().hex[:10].upper()}"
+        gross = money(quantity * limit_price)
+        fee_info = calculate_broker_fee_breakdown(
+            gross,
+            commission_rate=DEFAULT_TRADEXPRESS_COMMISSION_RATE,
+            vat_rate=DEFAULT_VAT_RATE,
+        )
+        estimated_fee = fee_info["total_fee"]
+
+        # Preflight validation
+        is_valid, errors = self.validate_order(
+            session,
+            symbol=clean_symbol,
+            side=side_norm,
+            quantity=quantity,
+            limit_price=limit_price,
+            order_type=order_type,
+            tif=tif,
+            session_phase=session_phase,
+            allow_offhours_na=True,
+        )
+        if not is_valid:
+            error_msg = "; ".join(errors)
+            logger.warning("Shadow order rejected preflight: %s", error_msg)
+            rejection = ShadowOrder(
+                order_ref=order_ref,
+                symbol=clean_symbol,
+                side=side_norm,
+                order_type=order_type,
+                tif=tif,
+                quantity=quantity,
+                filled_qty=0,
+                pending_qty=quantity,
+                limit_price=limit_price,
+                avg_fill_price=ZERO,
+                order_value=gross,
+                estimated_fee=estimated_fee,
+                status="REJECTED",
+                actor=actor,
+                reason=error_msg,
+                session_on=today,
+                portfolio_id=portfolio_id,
+            )
+            session.add(rejection)
+            # Record to TradeLearningLog as SKIP
+            company = session.get(CompanyProfile, clean_symbol)
+            tier = getattr(company, "watchlist_category", "GSC") if company else "GSC"
+            session.add(
+                TradeLearningLog(
                     symbol=clean_symbol,
+                    tier=tier,
                     side=side_norm,
-                    order_type=order_type,
-                    tif=tif,
-                    quantity=quantity,
-                    filled_qty=0,
-                    pending_qty=quantity,
-                    limit_price=limit_price,
-                    avg_fill_price=ZERO,
-                    order_value=gross,
-                    estimated_fee=estimated_fee,
-                    status="REJECTED",
+                    outcome_type="SKIP",
+                    entry_price=limit_price,
                     actor=actor,
-                    reason=error_msg,
+                    lesson_summary=f"Preflight rejection: {error_msg}",
                     session_on=today,
-                    portfolio_id=portfolio_id,
                 )
-                session.add(rejection)
-                # Record to TradeLearningLog as SKIP
-                company = session.get(CompanyProfile, clean_symbol)
-                tier = getattr(company, "watchlist_category", "GSC") if company else "GSC"
-                session.add(
-                    TradeLearningLog(
-                        symbol=clean_symbol,
-                        tier=tier,
-                        side=side_norm,
-                        outcome_type="SKIP",
-                        entry_price=limit_price,
-                        actor=actor,
-                        lesson_summary=f"Preflight rejection: {error_msg}",
-                        session_on=today,
-                    )
-                )
-                session.flush()
-                return {
-                    "status": "REJECTED",
-                    "order_ref": order_ref,
-                    "errors": errors,
-                    "message": f"Preflight check rejected: {error_msg}",
-                }
+            )
+            session.flush()
+            return {
+                "status": "REJECTED",
+                "order_ref": order_ref,
+                "errors": errors,
+                "message": f"Preflight check rejected: {error_msg}",
+            }
 
-            # Check queue depth & matching
-            quote = self.feed.get_all_quotes().get(clean_symbol)
-            can_fill_immediately = False
-            fill_price = limit_price
+        # Check queue depth & matching
+        quote = self.feed.get_all_quotes().get(clean_symbol)
+        can_fill_immediately = False
+        fill_price = limit_price
 
-            if side_norm == "BUY":
-                # Check cash budget in active bucket
+        if side_norm == "BUY":
+            # Check cash budget in active bucket (if record_tax_lot is requested)
+            if record_tax_lot:
                 balances = bucket_balances(session, state, portfolio_id=portfolio_id)
                 active_bucket = self.calendar.bucket_for(today)
                 avail_cash = balances[active_bucket].available_cash
@@ -270,19 +329,20 @@ class TradeXpressShadowSimulator(BrokerOrderExecutor):
                         ],
                     }
 
-                if quote:
-                    if quote.offer > ZERO and quote.offer <= limit_price and quote.offer_qty >= quantity:
-                        can_fill_immediately = True
-                        fill_price = min(limit_price, quote.offer)
-                    elif quote.offer == ZERO and allow_offhours_ltp_fill and quote.ltp <= limit_price:
-                        can_fill_immediately = True
-                        fill_price = limit_price
-                elif allow_offhours_ltp_fill:
+            if quote:
+                if quote.offer > ZERO and quote.offer <= limit_price and quote.offer_qty >= quantity:
+                    can_fill_immediately = True
+                    fill_price = min(limit_price, quote.offer)
+                elif quote.offer == ZERO and allow_offhours_ltp_fill and quote.ltp <= limit_price:
                     can_fill_immediately = True
                     fill_price = limit_price
+            elif allow_offhours_ltp_fill:
+                can_fill_immediately = True
+                fill_price = limit_price
 
-            elif side_norm == "SELL":
-                # Verify mature T+2 shares and strict no-loss
+        elif side_norm == "SELL":
+            # Verify mature T+2 shares and strict no-loss (if record_tax_lot is requested)
+            if record_tax_lot:
                 mature_lots = list(
                     session.scalars(
                         select(TaxLot)
@@ -333,75 +393,76 @@ class TradeXpressShadowSimulator(BrokerOrderExecutor):
                         ],
                     }
 
-                if quote:
-                    if quote.bid > ZERO and quote.bid >= limit_price and quote.bid_qty >= quantity:
-                        can_fill_immediately = True
-                        fill_price = max(limit_price, quote.bid)
-                    elif quote.bid == ZERO and allow_offhours_ltp_fill and quote.ltp >= limit_price:
-                        can_fill_immediately = True
-                        fill_price = limit_price
-                elif allow_offhours_ltp_fill:
+            if quote:
+                if quote.bid > ZERO and quote.bid >= limit_price and quote.bid_qty >= quantity:
+                    can_fill_immediately = True
+                    fill_price = max(limit_price, quote.bid)
+                elif quote.bid == ZERO and allow_offhours_ltp_fill and quote.ltp >= limit_price:
                     can_fill_immediately = True
                     fill_price = limit_price
+            elif allow_offhours_ltp_fill:
+                can_fill_immediately = True
+                fill_price = limit_price
 
-            # If matching queue is not available immediately, store order as QUEUED
-            if not can_fill_immediately:
-                queued_order = ShadowOrder(
-                    order_ref=order_ref,
-                    symbol=clean_symbol,
-                    side=side_norm,
-                    order_type=order_type,
-                    tif=tif,
-                    quantity=quantity,
-                    filled_qty=0,
-                    pending_qty=quantity,
-                    limit_price=limit_price,
-                    avg_fill_price=ZERO,
-                    order_value=gross,
-                    estimated_fee=estimated_fee,
-                    status="QUEUED",
-                    actor=actor,
-                    reason=reason or "Resting in simulated order queue",
-                    session_on=today,
-                    portfolio_id=portfolio_id,
-                )
-                session.add(queued_order)
-                session.flush()
-                return {
-                    "status": "QUEUED",
-                    "order_ref": order_ref,
-                    "symbol": clean_symbol,
-                    "side": side_norm,
-                    "quantity": quantity,
-                    "limit_price": float(limit_price),
-                    "pending_qty": quantity,
-                    "message": f"Order {order_ref} queued in simulated book (awaiting matching depth).",
-                }
-
-            # Immediate Fill: Take atomic state checkpoint before state mutation
-            CheckpointManager.create_checkpoint(
-                session=session,
-                state=state,
-                action=f"SHADOW_{side_norm}_{clean_symbol}",
-                description=f"Shadow {side_norm} fill of {quantity} {clean_symbol} @ {fill_price}",
-                actor=actor,
-            )
-
-            # Process Fill
-            fill_result = self._process_fill(
-                session=session,
-                state=state,
+        # If matching queue is not available immediately, store order as QUEUED
+        if not can_fill_immediately:
+            queued_order = ShadowOrder(
                 order_ref=order_ref,
                 symbol=clean_symbol,
                 side=side_norm,
+                order_type=order_type,
+                tif=tif,
                 quantity=quantity,
-                fill_price=fill_price,
+                filled_qty=0,
+                pending_qty=quantity,
+                limit_price=limit_price,
+                avg_fill_price=ZERO,
+                order_value=gross,
+                estimated_fee=estimated_fee,
+                status="QUEUED",
                 actor=actor,
-                reason=reason,
+                reason=reason or "Resting in simulated order queue",
+                session_on=today,
                 portfolio_id=portfolio_id,
             )
+            session.add(queued_order)
             session.flush()
-            return fill_result
+            return {
+                "status": "QUEUED",
+                "order_ref": order_ref,
+                "symbol": clean_symbol,
+                "side": side_norm,
+                "quantity": quantity,
+                "limit_price": float(limit_price),
+                "pending_qty": quantity,
+                "message": f"Order {order_ref} queued in simulated book (awaiting matching depth).",
+            }
+
+        # Immediate Fill: Take atomic state checkpoint before state mutation
+        CheckpointManager.create_checkpoint(
+            session=session,
+            state=state,
+            action=f"SHADOW_{side_norm}_{clean_symbol}",
+            description=f"Shadow {side_norm} fill of {quantity} {clean_symbol} @ {fill_price}",
+            actor=actor,
+        )
+
+        # Process Fill
+        fill_result = self._process_fill(
+            session=session,
+            state=state,
+            order_ref=order_ref,
+            symbol=clean_symbol,
+            side=side_norm,
+            quantity=quantity,
+            fill_price=fill_price,
+            actor=actor,
+            reason=reason,
+            portfolio_id=portfolio_id,
+            record_tax_lot=record_tax_lot,
+        )
+        session.flush()
+        return fill_result
 
     def _process_fill(
         self,
@@ -415,6 +476,7 @@ class TradeXpressShadowSimulator(BrokerOrderExecutor):
         actor: str,
         reason: str,
         portfolio_id: str,
+        record_tax_lot: bool = True,
     ) -> dict[str, Any]:
         """Executes fill accounting, tax lot adjustments, and trade logs."""
         today = state.clock_date
@@ -434,44 +496,45 @@ class TradeXpressShadowSimulator(BrokerOrderExecutor):
 
         if side == "BUY":
             total_cost = gross + total_fee
-            lot = TaxLot(
-                symbol=symbol,
-                bucket=active_bucket,
-                acquired_on=today,
-                matures_on=matures_on,
-                original_qty=quantity,
-                remaining_qty=quantity,
-                buy_price=fill_price,
-                buy_fee=total_fee,
-                original_cost_basis=total_cost,
-                remaining_cost_basis=total_cost,
-                cycle_base_qty=quantity,
-                peak_price=fill_price,
-                portfolio_id=portfolio_id,
-            )
-            session.add(lot)
-            session.flush()
+            if record_tax_lot:
+                lot = TaxLot(
+                    symbol=symbol,
+                    bucket=active_bucket,
+                    acquired_on=today,
+                    matures_on=matures_on,
+                    original_qty=quantity,
+                    remaining_qty=quantity,
+                    buy_price=fill_price,
+                    buy_fee=total_fee,
+                    original_cost_basis=total_cost,
+                    remaining_cost_basis=total_cost,
+                    cycle_base_qty=quantity,
+                    peak_price=fill_price,
+                    portfolio_id=portfolio_id,
+                )
+                session.add(lot)
+                session.flush()
 
-            trade = TradeLog(
-                portfolio_id=portfolio_id,
-                trade_key=f"SHADOW_BUY:{order_ref}",
-                cycle_id=None,
-                lot_id=lot.id,
-                symbol=symbol,
-                side="BUY",
-                quantity=quantity,
-                price=fill_price,
-                gross_amount=gross,
-                fee=total_fee,
-                net_cash_change=-total_cost,
-                realized_pnl=ZERO,
-                bucket=active_bucket,
-                trade_on=today,
-                settles_on=matures_on,
-                reason=reason or f"Shadow Buy filled @ ৳{fill_price}",
-                source="SHADOW_DUMMY",
-            )
-            session.add(trade)
+                trade = TradeLog(
+                    portfolio_id=portfolio_id,
+                    trade_key=f"SHADOW_BUY:{order_ref}",
+                    cycle_id=None,
+                    lot_id=lot.id,
+                    symbol=symbol,
+                    side="BUY",
+                    quantity=quantity,
+                    price=fill_price,
+                    gross_amount=gross,
+                    fee=total_fee,
+                    net_cash_change=-total_cost,
+                    realized_pnl=ZERO,
+                    bucket=active_bucket,
+                    trade_on=today,
+                    settles_on=matures_on,
+                    reason=reason or f"Shadow Buy filled @ ৳{fill_price}",
+                    source="SHADOW_DUMMY",
+                )
+                session.add(trade)
 
             existing_order = session.scalar(
                 select(ShadowOrder).where(ShadowOrder.order_ref == order_ref)
@@ -520,8 +583,9 @@ class TradeXpressShadowSimulator(BrokerOrderExecutor):
                 )
             )
 
-            state.rules_revision += 1
-            assert_ledger(session, state, portfolio_id=portfolio_id)
+            if record_tax_lot:
+                state.rules_revision += 1
+                assert_ledger(session, state, portfolio_id=portfolio_id)
 
             return {
                 "status": "FILLED",
@@ -555,45 +619,46 @@ class TradeXpressShadowSimulator(BrokerOrderExecutor):
             total_realized_pnl = ZERO
             total_cost_basis_sold = ZERO
 
-            for l in mature_lots:
-                if remaining_to_sell <= 0:
-                    break
-                s_qty = min(l.remaining_qty, remaining_to_sell)
-                cost_slice = allocated_basis(l.remaining_cost_basis, l.remaining_qty, s_qty)
-                lot_net_proceeds = money(net_proceeds * s_qty / quantity)
-                lot_fee = money(total_fee * s_qty / quantity)
-                lot_pnl = max(ZERO, lot_net_proceeds - cost_slice)
+            if record_tax_lot:
+                for l in mature_lots:
+                    if remaining_to_sell <= 0:
+                        break
+                    s_qty = min(l.remaining_qty, remaining_to_sell)
+                    cost_slice = allocated_basis(l.remaining_cost_basis, l.remaining_qty, s_qty)
+                    lot_net_proceeds = money(net_proceeds * s_qty / quantity)
+                    lot_fee = money(total_fee * s_qty / quantity)
+                    lot_pnl = max(ZERO, lot_net_proceeds - cost_slice)
 
-                l.remaining_qty -= s_qty
-                l.remaining_cost_basis -= cost_slice
-                remaining_to_sell -= s_qty
-                total_realized_pnl += lot_pnl
-                total_cost_basis_sold += cost_slice
+                    l.remaining_qty -= s_qty
+                    l.remaining_cost_basis -= cost_slice
+                    remaining_to_sell -= s_qty
+                    total_realized_pnl += lot_pnl
+                    total_cost_basis_sold += cost_slice
 
-                trade = TradeLog(
-                    portfolio_id=portfolio_id,
-                    trade_key=f"SHADOW_SELL:{order_ref}:{l.id}",
-                    cycle_id=None,
-                    lot_id=l.id,
-                    symbol=symbol,
-                    side="SELL",
-                    quantity=s_qty,
-                    price=fill_price,
-                    gross_amount=money(s_qty * fill_price),
-                    fee=lot_fee,
-                    net_cash_change=lot_net_proceeds,
-                    realized_pnl=lot_pnl,
-                    bucket=l.bucket,
-                    trade_on=today,
-                    settles_on=matures_on,
-                    reason=reason or f"Shadow Sell filled @ ৳{fill_price}",
-                    source="SHADOW_DUMMY",
-                )
-                session.add(trade)
+                    trade = TradeLog(
+                        portfolio_id=portfolio_id,
+                        trade_key=f"SHADOW_SELL:{order_ref}:{l.id}",
+                        cycle_id=None,
+                        lot_id=l.id,
+                        symbol=symbol,
+                        side="SELL",
+                        quantity=s_qty,
+                        price=fill_price,
+                        gross_amount=money(s_qty * fill_price),
+                        fee=lot_fee,
+                        net_cash_change=lot_net_proceeds,
+                        realized_pnl=lot_pnl,
+                        bucket=l.bucket,
+                        trade_on=today,
+                        settles_on=matures_on,
+                        reason=reason or f"Shadow Sell filled @ ৳{fill_price}",
+                        source="SHADOW_DUMMY",
+                    )
+                    session.add(trade)
 
-            # Credit gross sales to unsettled_sales_bdt (immediate Buying Power credit!)
-            current_unsettled = getattr(state, "unsettled_sales_bdt", ZERO) or ZERO
-            state.unsettled_sales_bdt = current_unsettled + gross
+                # Credit gross sales to unsettled_sales_bdt (immediate Buying Power credit!)
+                current_unsettled = getattr(state, "unsettled_sales_bdt", ZERO) or ZERO
+                state.unsettled_sales_bdt = current_unsettled + gross
 
             existing_order = session.scalar(
                 select(ShadowOrder).where(ShadowOrder.order_ref == order_ref)
@@ -650,8 +715,9 @@ class TradeXpressShadowSimulator(BrokerOrderExecutor):
                 )
             )
 
-            state.rules_revision += 1
-            assert_ledger(session, state, portfolio_id=portfolio_id)
+            if record_tax_lot:
+                state.rules_revision += 1
+                assert_ledger(session, state, portfolio_id=portfolio_id)
 
             return {
                 "status": "FILLED",
@@ -665,7 +731,7 @@ class TradeXpressShadowSimulator(BrokerOrderExecutor):
                 "net_value": float(net_proceeds),
                 "realized_pnl": float(total_realized_pnl),
                 "net_pnl_pct": float(net_pnl_pct),
-                "unsettled_sales_bdt": float(state.unsettled_sales_bdt),
+                "unsettled_sales_bdt": float(getattr(state, "unsettled_sales_bdt", ZERO) or ZERO),
                 "message": f"Sell filled: {quantity} {symbol} @ ৳{fill_price:.2f} (+৳{total_realized_pnl:.2f})",
             }
 

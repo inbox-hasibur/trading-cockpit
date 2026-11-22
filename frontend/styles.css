@@ -6687,6 +6687,62 @@ button.local-avatar:hover {
   border-bottom-color: #10b981;
 }
 
+.tx-spy-pill-btn {
+  margin-left: auto;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 9999px;
+  background: #1e293b;
+  color: #94a3b8;
+  border: 1px solid #334155;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+  line-height: 1.2;
+}
+
+.tx-spy-pill-btn:hover {
+  border-color: #38bdf8;
+  color: #f8fafc;
+}
+
+.tx-spy-pill-btn.active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+[data-theme="light"] .tx-spy-pill-btn {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .tx-spy-pill-btn:hover {
+  border-color: #0284c7;
+  color: #0f172a;
+}
+
+[data-theme="light"] .tx-spy-pill-btn.active {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.tx-feed-bridge-ctrl {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.tx-feed-bridge-stats {
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+
 .tx-workspace {
   height: 100vh;
   max-height: 100vh;

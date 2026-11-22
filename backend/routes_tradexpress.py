@@ -26,6 +26,11 @@ from backend.engine.money import ZERO, decimal
 logger = logging.getLogger("hummingbird.tradexpress.routes")
 
 
+class BridgeControlRequest(BaseModel):
+    action: str = Field("status", description="attach, detach, or status")
+    cdp_url: str = Field("http://127.0.0.1:9222", description="Chrome DevTools Protocol endpoint")
+
+
 class ShadowOrderRequest(BaseModel):
     symbol: str = Field(..., description="DSE stock symbol (e.g. BANKASIA or BANKASIA`PB)")
     side: str = Field(..., description="BUY or SELL")
@@ -50,6 +55,8 @@ def build_tradexpress_router(
     @router.get("/status")
     def get_tradexpress_status():
         """Returns passive feed connection status, tab freshness, and operator guidance."""
+        from backend.adapters.tradexpress.cdp_daemon import get_global_passive_daemon
+
         feed = get_global_passive_feed(database)
         guidance = feed.get_health_and_guidance()
         with database.read() as session:
@@ -58,15 +65,39 @@ def build_tradexpress_router(
             unsettled = float(getattr(state, "unsettled_sales_bdt", ZERO) or ZERO)
 
         acct = feed.get_account_summary()
+        daemon = get_global_passive_daemon(database, settings, broadcaster=broadcaster)
+        daemon_status = daemon.get_status()
+
         return {
-            "status": "ONLINE" if guidance["is_healthy"] else "ATTENTION_REQUIRED",
-            "cdp_connected": guidance["cdp_connected"],
+            "status": "ONLINE" if (guidance["is_healthy"] or daemon_status["cdp_connected"]) else "ATTENTION_REQUIRED",
+            "cdp_connected": guidance["cdp_connected"] or daemon_status["cdp_connected"],
             "execution_venue": venue,
             "buying_power": float(acct.buying_power),
             "unsettled_sales_bdt": unsettled,
             "guidance": guidance,
             "account_summary": acct.to_dict(),
+            "daemon": daemon_status,
         }
+
+    @router.post("/bridge")
+    async def post_bridge_control(req: BridgeControlRequest):
+        """Controls passive CDP spy daemon: attach, detach, or status."""
+        from backend.adapters.tradexpress.cdp_daemon import get_global_passive_daemon
+
+        daemon = get_global_passive_daemon(database, settings, broadcaster=broadcaster)
+        action = (req.action or "status").strip().lower()
+        if action == "attach":
+            status_data = await daemon.start(cdp_url=req.cdp_url)
+        elif action == "detach":
+            status_data = await daemon.stop()
+        elif action == "status":
+            status_data = daemon.get_status()
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown bridge action: {action}. Expected attach, detach, or status.",
+            )
+        return {"status": "SUCCESS", "action": action, "daemon": status_data}
 
     @router.post("/passive-ingest")
     def post_passive_ingest(payload: dict[str, Any]):

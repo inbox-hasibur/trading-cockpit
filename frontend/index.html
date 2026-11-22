@@ -109,6 +109,7 @@
         <button type="button" class="tx-nav-tab" id="tx-nav-ledger" data-tx-view="ledger">Ledger</button>
         <button type="button" class="tx-nav-tab" id="tx-nav-learning" data-tx-view="learning">Learning</button>
         <button type="button" class="tx-nav-tab" id="tx-nav-settings" data-tx-view="settings">Settings</button>
+        <button type="button" class="tx-spy-pill-btn" id="tx-passive-spy-btn" title="Toggle TradeXpress Passive CDP Spy">📡 Passive Spy: OFF</button>
       </nav>
 
       <div class="test-compat-hidden" style="display:none !important;" hidden aria-hidden="true" data-legacy="Live Hours (virtual) Test Mode 24/7 Background 24/7 Onscreen Live">
@@ -852,6 +853,12 @@
               <h3>TradeXpress Passive Feed Health</h3>
             </div>
             <p class="muted small">Passive sniffer status on port 9222. Zero active requests; read-only incoming frames.</p>
+
+            <div class="tx-feed-bridge-ctrl">
+              <button type="button" class="button secondary small" id="tx-bridge-attach-btn">Attach CDP Spy (Port 9222)</button>
+              <button type="button" class="button secondary small" id="tx-bridge-detach-btn">Detach</button>
+            </div>
+            <div class="tx-feed-bridge-stats" id="tx-feed-bridge-stats"></div>
 
             <div class="tx-feed-tabs-status" id="tx-feed-tabs-status">
               <div class="loading-cell">Inspecting tab freshness…</div>

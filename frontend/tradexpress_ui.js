@@ -150,8 +150,9 @@
     state.selectedSymbol = sym;
 
     let company = null;
-    if (window.state && window.state.snapshot && window.state.snapshot.companies) {
-      company = window.state.snapshot.companies.find((c) => c.symbol === sym);
+    const comps = state.lastSnapshot?.companies || window.state?.snapshot?.companies || [];
+    if (comps && comps.length > 0) {
+      company = comps.find((c) => c.symbol === sym);
     }
 
     const txSym = toTradeXpressSymbol(sym);
@@ -174,9 +175,9 @@
     if (catEl) catEl.textContent = (company && company.symbol_category) || "A";
     if (symEl) symEl.textContent = txSym;
 
-    const ltp = (company && company.price) || 18.40;
+    const ltp = (company && (company.last_price ?? company.price)) || 17.50;
     const chgPct = (company && company.curve && company.curve.day_change_pct) || 0;
-    if (ltpEl) ltpEl.textContent = ltp.toFixed(2);
+    if (ltpEl) ltpEl.textContent = Number(ltp).toFixed(2);
     if (chgEl) {
       chgEl.textContent = formatPct(chgPct);
       chgEl.className = chgPct >= 0 ? "positive" : "negative";
@@ -196,8 +197,8 @@
     const high = (company && company.curve && company.curve.high) || ltp;
     if (lowhighEl) lowhighEl.textContent = `${Number(low).toFixed(2)} / ${Number(high).toFixed(2)}`;
 
-    // Available Saleable Qty
-    const matureQty = (company && company.mature_qty) || 0;
+    // Available Saleable Qty (matured T+2 shares)
+    const matureQty = (company && (company.mature_shares ?? company.mature_qty)) || 0;
     if (availQtyEl) availQtyEl.textContent = String(matureQty);
 
     // Gain/Loss pill
@@ -542,21 +543,70 @@
     }
   }
 
+  async function controlBridge(action) {
+    const spyBtn = document.getElementById("tx-passive-spy-btn");
+    try {
+      if (spyBtn) spyBtn.disabled = true;
+      const resp = await fetch("/api/tradexpress/bridge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, cdp_url: "http://127.0.0.1:9222" }),
+      });
+      const data = await resp.json();
+      showToast(action === "attach" ? "Connecting to Chrome CDP Spy (port 9222)..." : "CDP Spy detached.");
+      await loadFeedStatus();
+    } catch (err) {
+      showToast(`Bridge error: ${err.message}`, true);
+    } finally {
+      if (spyBtn) spyBtn.disabled = false;
+    }
+  }
+
   function renderFeedStatusCard(data) {
     const cdpBadge = document.getElementById("tx-feed-cdp-badge");
     const healthBadge = document.getElementById("tx-feed-health-badge");
     const guidanceList = document.getElementById("tx-feed-guidance-list");
     const tabsStatus = document.getElementById("tx-feed-tabs-status");
+    const spyBtn = document.getElementById("tx-passive-spy-btn");
+    const bridgeStats = document.getElementById("tx-feed-bridge-stats");
+
+    const daemon = data.daemon || {};
+    const isSpyLive = daemon.running && daemon.cdp_connected;
+
+    if (spyBtn) {
+      if (isSpyLive) {
+        spyBtn.textContent = "📡 Passive Spy: LIVE";
+        spyBtn.classList.add("active");
+        spyBtn.title = `CDP Connected (${daemon.active_tab || "TradeXpress"}). Click to detach.`;
+      } else if (daemon.running) {
+        spyBtn.textContent = "📡 Passive Spy: CONNECTING";
+        spyBtn.classList.remove("active");
+        spyBtn.title = "Attempting to connect to CDP port 9222... Click to detach.";
+      } else {
+        spyBtn.textContent = "📡 Passive Spy: OFF";
+        spyBtn.classList.remove("active");
+        spyBtn.title = "Click to attach read-only passive CDP spy (port 9222)";
+      }
+    }
 
     if (cdpBadge) {
-      cdpBadge.textContent = data.cdp_connected ? "CDP: ONLINE" : "CDP: OFFLINE";
-      cdpBadge.className = `sys-badge ${data.cdp_connected ? "teal-badge" : "amber-badge"}`;
+      cdpBadge.textContent = (data.cdp_connected || isSpyLive) ? "CDP: ONLINE" : "CDP: OFFLINE";
+      cdpBadge.className = `sys-badge ${(data.cdp_connected || isSpyLive) ? "teal-badge" : "amber-badge"}`;
     }
 
     if (healthBadge) {
       const isHealthy = data.guidance && data.guidance.is_healthy;
       healthBadge.textContent = isHealthy ? "FEED HEALTHY" : "ATTENTION REQUIRED";
       healthBadge.className = `sys-badge ${isHealthy ? "teal-badge" : "red-badge"}`;
+    }
+
+    if (bridgeStats) {
+      bridgeStats.innerHTML = `
+        <div class="tx-tab-status-row"><span>CDP Port 9222</span><span>${isSpyLive ? '<span class="positive">● CONNECTED</span>' : (daemon.running ? '<span class="amber">Connecting...</span>' : '<span class="muted">DETACHED</span>')}</span></div>
+        <div class="tx-tab-status-row"><span>Active Tab</span><span>${daemon.active_tab || '<span class="muted">None</span>'}</span></div>
+        <div class="tx-tab-status-row"><span>Telemetry Sniffed</span><span><small>${daemon.dom_syncs_count || 0} DOM · ${daemon.ws_frames_count || 0} WS · ${daemon.xhr_responses_count || 0} XHR</small></span></div>
+        ${daemon.last_error ? `<div class="tx-tab-status-row negative"><small>${daemon.last_error}</small></div>` : ""}
+      `;
     }
 
     if (tabsStatus && data.guidance && data.guidance.freshness) {
@@ -626,6 +676,7 @@
   // --- 10. Update From Global Snapshot ---
   function updateFromSnapshot(snapshot) {
     if (!snapshot) return;
+    state.lastSnapshot = snapshot;
 
     // Buying Power in Topbar & Ticket
     const bp = snapshot.buying_power_bdt !== undefined ? snapshot.buying_power_bdt : ((snapshot.metrics && snapshot.metrics.available_cash) || 0);
@@ -787,21 +838,37 @@
       });
     }
 
+    // Passive Spy & Bridge Control buttons
+    const spyBtn = document.getElementById("tx-passive-spy-btn");
+    if (spyBtn) {
+      spyBtn.addEventListener("click", () => {
+        const isLive = spyBtn.classList.contains("active");
+        controlBridge(isLive ? "detach" : "attach");
+      });
+    }
+
+    const attachBtn = document.getElementById("tx-bridge-attach-btn");
+    const detachBtn = document.getElementById("tx-bridge-detach-btn");
+    if (attachBtn) attachBtn.addEventListener("click", () => controlBridge("attach"));
+    if (detachBtn) detachBtn.addEventListener("click", () => controlBridge("detach"));
+
     // Quick-qty buttons (25%, 50%, 100%)
     document.querySelectorAll(".tx-quick-qty-strip button[data-pct]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const pct = parseInt(btn.dataset.pct, 10) || 100;
         let baseQty = 10;
         let company = null;
-        if (window.state && window.state.snapshot && window.state.snapshot.companies) {
-          company = window.state.snapshot.companies.find((c) => c.symbol === state.selectedSymbol);
+        const comps = state.lastSnapshot?.companies || window.state?.snapshot?.companies || [];
+        if (comps && comps.length > 0) {
+          company = comps.find((c) => c.symbol === state.selectedSymbol);
         }
         if (state.selectedSide === "SELL") {
-          const mature = (company && company.mature_qty) || (company && company.holding_qty) || 0;
+          const mature = (company && (company.mature_shares ?? company.mature_qty)) || (company && company.holding_qty) || 0;
           baseQty = Math.max(1, Math.round((mature * pct) / 100));
         } else {
-          const bp = (window.state && window.state.snapshot && (window.state.snapshot.buying_power_bdt || (window.state.snapshot.metrics && window.state.snapshot.metrics.available_cash))) || 10000;
-          const p = parseFloat(priceInput?.value) || (company && company.price) || 17.50;
+          const bp = (state.lastSnapshot && (state.lastSnapshot.buying_power_bdt || (state.lastSnapshot.metrics && state.lastSnapshot.metrics.available_cash))) ||
+                     (window.state && window.state.snapshot && (window.state.snapshot.buying_power_bdt || (window.state.snapshot.metrics && window.state.snapshot.metrics.available_cash))) || 10000;
+          const p = parseFloat(priceInput?.value) || (company && (company.last_price ?? company.price)) || 17.50;
           if (p > 0) {
             const maxShares = Math.floor(bp / p);
             baseQty = Math.max(1, Math.floor((maxShares * pct) / 100));
@@ -814,12 +881,14 @@
       });
     });
 
-    // Initial load of orders & depth table auto-population
+    // Initial load of orders, feed status & depth table auto-population
     loadOrders();
+    loadFeedStatus();
     selectSymbolForTicket(state.selectedSymbol || "BANKASIA");
 
-    // Auto poll orders every 10s
+    // Auto poll orders and feed status
     setInterval(loadOrders, 10000);
+    setInterval(loadFeedStatus, 10000);
   }
 
   // Expose global controller

@@ -118,6 +118,20 @@ def test_tradexpress_v1_layout_and_interactions(cockpit_server):
             assert aon_box["y"] + aon_box["height"] <= t_box["y"] + t_box["height"] + 2, f"[{theme}] All-or-none clipped"
             assert sub_box["y"] + sub_box["height"] <= t_box["y"] + t_box["height"] + 2, f"[{theme}] Submit button clipped"
 
+            # 7. Available saleable quantity in ticket (>= 0, and > 0 for BANKASIA)
+            avail_text = page.locator("#tx-ticket-avail-qty").inner_text()
+            assert int(avail_text) >= 0, f"[{theme}] Available saleable quantity is negative: {avail_text}"
+            curr_sym = page.locator("#tx-ticket-sym").inner_text()
+            if "BANKASIA" in curr_sym:
+                assert int(avail_text) > 0, f"[{theme}] Available saleable quantity for BANKASIA is zero: {avail_text}"
+
+            # 8. LTP in ticket must match real price
+            ticket_ltp = page.locator("#tx-ticket-ltp").inner_text()
+            assert float(ticket_ltp) > 0, f"[{theme}] Ticket LTP is non-positive: {ticket_ltp}"
+
+            # 9. Passive spy button must be visible in main nav
+            assert page.locator("#tx-passive-spy-btn").is_visible(), f"[{theme}] Passive spy button missing in main nav"
+
         # Assert visual gates in Dark Theme
         assert_strict_visual_gates("dark")
 
@@ -203,8 +217,11 @@ def test_tradexpress_v1_layout_and_interactions(cockpit_server):
             assert page.locator(f"#{wrap_id}").is_visible(), f"View #{wrap_id} not visible after clicking #{nav_id}"
 
         # 5. Order Ticket Row Selection & Step-2 Confirmation Modal
-        first_row = page.locator("#watchlist-body tr").first
-        first_row.click()
+        bank_row = page.locator('#watchlist-body tr[data-symbol="BANKASIA"]')
+        if bank_row.count() > 0:
+            bank_row.click()
+        else:
+            page.locator("#watchlist-body tr").first.click()
         time.sleep(0.3)
         sym_val = page.locator("#tx-ticket-sym").inner_text()
         assert sym_val != "", "Order ticket symbol was not populated on row click"

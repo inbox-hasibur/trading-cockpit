@@ -170,6 +170,11 @@ def create_app(settings: Settings | None = None, database: Database | None = Non
             if hb_task and not hb_task.done():
                 hb_task.cancel()
             tg_daemon.stop()
+            try:
+                from backend.adapters.tradexpress.cdp_daemon import get_global_passive_daemon
+                await get_global_passive_daemon(database, settings, broadcaster).stop()
+            except Exception:
+                pass
             database.engine.dispose()
             try:
                 await scheduler.stop()

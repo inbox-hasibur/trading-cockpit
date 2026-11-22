@@ -53,6 +53,7 @@ const state = {
   toastTimer: null,
 };
 try { state.token = sessionStorage.getItem("humming-bird-token") || ""; } catch { /* Storage is optional. */ }
+window.state = state;
 
 let decisionFilter = "all";
 

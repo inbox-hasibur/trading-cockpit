@@ -75,18 +75,58 @@ class AutoTrader:
         price: Decimal,
         portfolio_id: str,
         trade_date: Any,
+        session: Session | None = None,
+        reason: str = "",
     ) -> dict | None:
-        if not hasattr(self.adapter, "execute_order"):
-            return None
-        res = self.adapter.execute_order(
-            symbol=symbol,
-            side=side,
-            quantity=quantity,
-            price=price,
-            portfolio_id=portfolio_id,
-            trade_date=trade_date,
-            commission_pct=Decimal("0.5"),
-        )
+        adapter_res = None
+        if hasattr(self.adapter, "execute_order"):
+            res = self.adapter.execute_order(
+                symbol=symbol,
+                side=side,
+                quantity=quantity,
+                price=price,
+                portfolio_id=portfolio_id,
+                trade_date=trade_date,
+                commission_pct=Decimal("0.5"),
+            )
+            if asyncio.iscoroutine(res):
+                try:
+                    loop = asyncio.get_running_loop()
+                    if loop.is_running():
+                        import concurrent.futures
+                        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                            adapter_res = pool.submit(asyncio.run, res).result()
+                    else:
+                        adapter_res = loop.run_until_complete(res)
+                except RuntimeError:
+                    adapter_res = asyncio.run(res)
+            else:
+                adapter_res = res
+
+        # TradeXpress SHADOW_DUMMY Execution Venue
+        if session is not None:
+            state = portfolio_state(session)
+            if getattr(state, "execution_venue", "") == "SHADOW_DUMMY":
+                from backend.adapters.tradexpress.passive_feed import get_global_passive_feed
+                from backend.adapters.tradexpress.shadow_simulator import TradeXpressShadowSimulator
+
+                feed = get_global_passive_feed(self.database)
+                simulator = TradeXpressShadowSimulator(self.database, self.settings, feed=feed)
+                shadow_res = simulator.submit_shadow_order(
+                    symbol=symbol,
+                    side=side,
+                    quantity=quantity,
+                    limit_price=price,
+                    confirm=True,
+                    actor="AUTOTRADER",
+                    reason=reason or f"AutoTrader {side} execution",
+                    portfolio_id=portfolio_id or "H9210_SHADOW",
+                    session=session,
+                    record_tax_lot=False,
+                )
+                return shadow_res or adapter_res
+
+        return adapter_res
         if asyncio.iscoroutine(res):
             try:
                 loop = asyncio.get_running_loop()
@@ -418,6 +458,8 @@ class AutoTrader:
                             price=fill_price,
                             portfolio_id=active_pid or "164580",
                             trade_date=state.clock_date,
+                            session=session,
+                            reason=plan.reason,
                         )
                         record_circuit_success(self.database)
                     except Exception as exc:
@@ -493,6 +535,8 @@ class AutoTrader:
                             price=fill_price,
                             portfolio_id=active_pid or "164580",
                             trade_date=state.clock_date,
+                            session=session,
+                            reason=plan.reason,
                         )
                     except Exception as exc:
                         logger.debug("AutoTrader demo sell dispatch error: %s", exc)
@@ -693,6 +737,8 @@ class AutoTrader:
                         price=fill_price,
                         portfolio_id=active_pid or "164580",
                         trade_date=state.clock_date,
+                        session=session,
+                        reason=analysis.reason,
                     )
                     record_circuit_success(self.database)
                 except Exception as exc:
@@ -766,6 +812,8 @@ class AutoTrader:
                         price=fill_price,
                         portfolio_id=active_pid or "164580",
                         trade_date=state.clock_date,
+                        session=session,
+                        reason=analysis.reason,
                     )
                 except Exception as exc:
                     logger.debug("AutoTrader demo buy dispatch error: %s", exc)
