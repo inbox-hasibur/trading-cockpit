@@ -7,6 +7,7 @@
 - Do NOT use conventional commit prefixes such as `feat:`, `fix:`, `chore:`, etc.
 - Keep messages lowercase or sentence case, direct, concise, and natural.
 - Changelog Hygiene: Keep `documentation/CHANGELOG.md` updated with every sprint following the "Keep a Changelog" standard.
+- Branch Conventions: `stocknow-automation` is the permanent frozen archive of the StockNow virtual automation baseline. `trading-cockpit-v1` is the active development branch for TradeXpress V1. Never delete `main` or force-push to archives.
 
 ## Hermes Trading Assistant Operating Context
 - Strict No-Loss: Never sell at net loss (< 0% net P/L after round-trip 1% fees).

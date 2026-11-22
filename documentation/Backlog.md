@@ -388,16 +388,36 @@ Reconciliation of all audit findings and architectural items from historical MVP
 
 ---
 
-### 🧪 Sprint 5 (Active): Live-Data Dummy Mirror Simulator & Post-Market Self-Learning Loop
+### 🧪 Sprint 5A (Active): TradeXpress Passive Feed Bridge, Realistic SHADOW_DUMMY Simulator, L1/L2 Strategy & Hermes TradeReflectionLog
 
-- [ ] **Live-Data Dummy Mirror Simulator (`SHADOW_DUMMY` Mode):**
-  - Ingest live passively sniffed TradeXpress quotes and Level-2 Bid/Offer order depth.
-  - Simulate realistic limit fills against real exchange depth with 0 real BDT capital risk.
-- [ ] **Dual Manual & Hermes Control Harness:**
-  - Support operator manual order tickets and conversational Hermes order preview cards executing in the mirror simulator.
-- [ ] **Post-Market Hermes Reflection Loop:**
+- [ ] **TradeXpress Passive Feed Bridge:**
+  - Ingest live passively sniffed TradeXpress quotes and Level-2 Bid/Offer order depth via CDP sniffer into local memory cache and SQLite.
+  - Real-time tick updates with zero active polling, zero HTTP requests, and zero page reloads on LankaBangla portals.
+- [ ] **Realistic `SHADOW_DUMMY` Mirror Simulator:**
+  - Simulate realistic limit order fills against real passively sniffed exchange Level-2 depth with 0 real BDT capital risk.
+  - Full T+2 settlement tracking, conservative `0.50%` round-trip commission math, and zero-drift ledger balancing.
+- [ ] **L1 / L2 Strategy Pipeline:**
+  - Prioritize `GSC_L1` (safe multi-week recovery curves) as Priority #1 and `GSC_L2` (early green swing scalps) as Priority #2.
+  - Base `GSC` preserved strictly in observation-only mode (`WAIT_OBSERVATION_ONLY`, no blind buys).
+- [ ] **Post-Market Hermes Reflection Loop & `TradeReflectionLog`:**
   - Automated post-14:10 reflection cycle analyzing daily signal performance, execution slippage, and canary theses.
-  - Self-learning memory updates in `memories/MEMORY.md` and proposed allocation refinements.
+  - Structured storage in SQLite `trade_reflections` table (`TradeReflectionLog`) and self-learning memory updates in `memories/MEMORY.md`.
+
+---
+
+### 🎨 Sprint 5B: Trading Cockpit V1 TradeXpress 3-Pane Redesign, Resizable Hermes Sidebar & Safety Badging
+
+- [ ] **TradeXpress 3-Pane Cockpit Layout:**
+  - Professional DSE workstation layout mirroring TradeXpress NetPlus structure:
+    - Top/Left: Market Watch, Watchlist Tiers (`GSC`, `L1`, `L2`), and Heatmap.
+    - Bottom Left: New Order Entry Ticket with 2-step verification preview.
+    - Bottom Right: Order List, Active Portfolio, and Account Summary tabs.
+- [ ] **Resizable Hermes Copilot Sidebar:**
+  - Interactive draggable/resizable chat sidebar with docked, collapsed, and expanded split states.
+  - Conversational order preview cards with 1-click Confirm / Cancel interaction tokens.
+- [ ] **Safety Badging & Risk Meter Visualizations:**
+  - Prominent visual badges for active mode (`SHADOW_DUMMY` vs `TRADEXPRESS_LIVE`) and 2-Touchpoint Hard Broker Firewall status.
+  - Real-time DSE session clock badge (`CONTINUOUS 10:00-14:00`, `POST_CLOSING 14:00-14:10`, `CLOSED`) and daily risk budget gauge meters.
 
 ---
 

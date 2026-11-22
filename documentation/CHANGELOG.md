@@ -7,9 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [v0.2.0-dev] - Unreleased (Sprints 4A, 4B, 4C)
+## [v1.0.0-dev] - Unreleased (Trading Cockpit V1 Branch - Sprints 4A, 4B, 4C)
 
 ### Added
+- **Archive Branch Setup:** Archived StockNow virtual automation baseline permanently to branch `stocknow-automation`. Active development transitioned to branch `trading-cockpit-v1`.
 - **Master TradeXpress 2.0 & iBroker Context Blueprint (`documentation/TRADEXPRESS_CONTEXT.md`):** Complete site map, Ember.js DOM hierarchy, dual WebSockets (`streaming-api` and `wsqs`), and operational protocols.
 - **First Real Live DSE Trade Milestones (Client Code `H9210`):**
   - First Live Buy: `Buy BANKASIA`PB : 9 @ 17.90 : Filled` at `14:01:35` (Post-Closing session).

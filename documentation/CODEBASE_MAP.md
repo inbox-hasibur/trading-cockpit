@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Knowledge Graph & Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-22 09:16:55 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-22 09:35:35 UTC**.
 > **Core Strategy Invariants:**
 > - **Strict No-Loss Guarantee:** Never sell at net loss (< 0% net P/L after round-trip 1.00% fees).
 > - **Sequential No-Regret Selling:** 25% / 25% / 25% profit tiers (+1.5%, +3.5%, +6.0% net) + 25% runner.
@@ -179,11 +179,11 @@ trading-cockpit/
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 85 | 24,860 | Python Core Kernel, Engine, Tests & Plugins |
+| `.py` | 85 | 24,942 | Python Core Kernel, Engine, Tests & Plugins |
 | `.css` | 2 | 9,568 | Custom Dark / Light / Terminal Design System |
 | `.json` | 13 | 5,659 | Fixtures & Configuration |
 | `.js` | 3 | 5,452 | Vanilla ES6+ Reactive Terminal Controller & UI |
-| `.md` | 14 | 4,620 | Architecture & Strategy Documentation |
+| `.md` | 14 | 5,227 | Architecture & Strategy Documentation |
 | `.html` | 1 | 1,103 | Single Page Application DOM Structure |
 | `.ps1` | 2 | 199 | Windows PowerShell Automation |
 | `.yaml` | 1 | 32 | Manifest & Plugin Configuration |
@@ -192,7 +192,7 @@ trading-cockpit/
 | `.sh` | 1 | 9 | Shell Scripts |
 | `.bat` | 1 | 8 | Batch Launchers |
 | *other* | 9 | 43,383 | Other Configuration, Assets & Dotfiles |
-| **TOTAL** | **135** | **94,917** | *Entire Humming Bird Repository* |
+| **TOTAL** | **135** | **95,606** | *Entire Humming Bird Repository* |
 
 ---
 
@@ -2789,4 +2789,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/verify_chat_card.py` | `main` | 121 | 3 | Decompose into sub-functions |
 
 
-> **Knowledge Graph Summary:** 52 Python modules inspected, 65 FastAPI endpoints registered, 17 SQLAlchemy tables mapped, 28 Pydantic contracts indexed, 22 Hermes tools bound to skills, 115 JS functions mapped, 301 DOM IDs indexed, 94,917 total LOC indexed across 135 repository files.
+> **Knowledge Graph Summary:** 52 Python modules inspected, 65 FastAPI endpoints registered, 17 SQLAlchemy tables mapped, 28 Pydantic contracts indexed, 22 Hermes tools bound to skills, 115 JS functions mapped, 301 DOM IDs indexed, 95,606 total LOC indexed across 135 repository files.

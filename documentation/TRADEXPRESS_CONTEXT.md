@@ -2,17 +2,17 @@
 
 > [!CAUTION]
 > **2-Touchpoint Hard Broker Firewall Rule (CRITICAL ZERO-BAN INVARIANT)**  
-> To protect account `H9210` from security lockouts, bans, or unauthorized OMS interference, strictly **TWO** interaction touchpoints are permitted with TradeXpress:  
-> 1. **Passive Sniffing Touchpoint:** Passive Chrome DevTools Protocol (`connect_over_cdp("http://127.0.0.1:9222")`) listening ONLY to already-incoming browser WebSocket frames (`page.on("websocket")`) and read-only DOM text inspection of the operator's manually logged-in session. Zero active requests, zero HTTP scraping, zero polling, zero reload.  
+> Strictly **TWO** interaction touchpoints are permitted with `itrade.lbsbd.com`:  
+> 1. **Passive Sniffing Touchpoint:** Passive network and read-only DOM text inspection over local Chrome DevTools Protocol (`connect_over_cdp("http://127.0.0.1:9222")`) listening ONLY to incoming browser WebSocket frames (`page.on("websocket")`) from the operator's manually logged-in session. Zero active requests, zero HTTP scraping, zero polling, zero reload.  
 > 2. **Explicit 2-Step Execution Touchpoint:** Permitted ONLY in Stage 2 (`TRADEXPRESS_LIVE`) mode with mandatory operator confirmation: Step 1 (`New Order` input) -> Step 2 (`Confirm Order` read-back verification) -> Final dispatch.  
-> **ZERO-BAN MANDATE:** NEVER automate login, credential entry, password submission, or active HTTP requests on `itrade.lbsbd.com` or `ibroker.lbsbd.com`. 3–5 failures lock account `H9210`.
+> **LOCAL-ONLY COCKPIT MANDATE:** All AI, Hermes agent reasoning, signal analysis, paper simulation, and learning run 100% locally in our cockpit. NEVER automate login, credential entry, password submission, or active HTTP requests on `itrade.lbsbd.com` or `ibroker.lbsbd.com`. 3–5 failures lock account `H9210`.
 
 > **Verification Context & Real Live Execution Milestones:**  
 > Verified live on LankaBangla TradeXpress 2.0 (`https://itrade.lbsbd.com`) and iBroker (`https://ibroker.lbsbd.com/Home`) on Wednesday, November 18, 2026 and Sunday, November 22, 2026.  
 > **First Live Real DSE Buy Executed & Filled:**  
 > `Buy BANKASIA`PB : 9 @ 17.90 : Filled` at `14:01:35` (Post-Closing Session)  
 > **First Live Real DSE Sell Executed & Filled (Round-Trip Milestone):**  
-> `Sell BANKASIA`PB : 9 @ 18.40 : Filled` at `13:33:36` (Continuous Session, Order Value: `165.60 BDT`)  
+> `Sell BANKASIA`PB : 9 @ 18.40 : Filled` at `13:33:36` (Continuous Session, Order Value: `165.60 BDT`; `Order List` confirmed `Filled | Sell | 9 | 18.40 | 165.60`)  
 > **Client Code / Cash A/C:** `H9210` · **Market:** DSE Main Public (`PUBLIC`) · **Settlement:** T+2  
 > **Zero Secrets Policy:** All session tokens, IDs, hashes, and secrets in this document are strictly `<REDACTED>`.
 
@@ -351,26 +351,33 @@ flowchart TD
 - **Immediate Gross Deduction on Buy:**
   TradeXpress deducts the **exact gross order value** upfront from active `Buying Power`:
   $$\text{Buying Power}_{\text{after}} = \text{Buying Power}_{\text{before}} - (\text{Quantity} \times \text{Price})$$
-- **Immediate Gross Credit on Sell:**
-  When a sell order fills (e.g. `Sell BANKASIA`PB 9 @ 18.40 = 165.60 BDT`), gross sales proceeds **immediately credit** to active `Buying Power`, allowing instant intraday re-investment before T+2 rolling settlement maturity.
+- **Immediate Gross Credit on Sell (Unsettled Sales Immediate Credit):**
+  When a sell order fills (e.g. `Sell BANKASIA`PB 9 @ 18.40 = 165.60 BDT`), gross sales proceeds **immediately credit** to active `Buying Power`:
+  $$\text{Buying Power}_{\text{after}} = \text{Buying Power}_{\text{before}} + (\text{Quantity} \times \text{Price})$$
+  Confirmed live on `22-11-2026`: Buying Power increased immediately from `188.00 BDT -> 353.60 BDT` upon fill, allowing instant intraday re-investment before T+2 rolling settlement maturity.
 - **CRITICAL Intraday Commission Display Quirk & Broker Fee Breakdown:**
-  - **Intraday UI Quirk:** Both the Order Ticket and Step 2 Confirmation modal show `Commission: 0.00` and `VAT: 0.00` (`Net Value == Order Value`).
+  - **Intraday UI Quirk:** Both the Order Ticket (`New Order`) and Step 2 Confirmation modal show `Commission: 0.00` and `VAT: 0.00` (`Net Value == Order Value`).
   - **Actual Broker Clearing Fee:** Real LankaBangla effective fee is **`~0.40%` per side** (`0.64 BDT` verified on `161.10 BDT` buy -> `Cost Value: 161.74`, `Avg. Cost: 17.97`), debited during EOD back-office clearing.
-  - **Humming Bird Conservative Hurdle:** Local kernel strictly enforces its conservative **`0.50%` per side (`1.00%` round trip)** net profit hurdle, guaranteeing zero-loss even with broker fee variations.
+  - **Local Kernel Mandate:** Local Humming Bird kernel MUST compute the `~0.40%` fee independently and strictly enforces its conservative **`0.50%` per side (`1.00%` round trip)** net profit hurdle, guaranteeing zero-loss even with broker fee variations.
 
 ### 8.3 Account Summary Tab Mechanics (`a[container-tab-id="accountSummary"]`)
-The `Account Summary` sub-tab inside `#portfolioContainer-8-1-2-3` provides direct visibility into:
-- `Cash Balance`: Settled ledger cash balance.
-- `Buying Power`: Active trading limit (immediately credited upon sell fills).
-- `Receivable / Payable`: Rolling settlement balance awaiting T+2 maturity.
+The `Account Summary` sub-tab inside `#portfolioContainer-8-1-2-3` provides direct visibility into verified balance fields:
+- `Customer Number`: Client Code `H9210`.
+- `Cash Balance`: Settled ledger cash balance (`188.00 BDT`).
+- `Available Cash Balance`: Real-time trading purchasing power (`353.60 BDT`).
+- `Blocked Amount`: Active order reserves (`0.00 BDT`).
+- `Cash Available For Withdrawal`: Matured funds eligible for BEFTN/NPSB.
+- `Unsettled Sales`: Unmatured T+1/T+2 sales proceeds (`165.60 BDT`).
+- `Payable Amount`: Pending broker clearing charges (`0.00 BDT`).
+- **Live Invariant Verified:** Unsettled sales are immediately added to `Available Cash Balance / Buying Power`, permitting seamless intraday redeployment.
 
 ### 8.4 Inactive & SPOT Instrument Protections
 - **SPOT Settlement Stocks:** Attempting to place an order for a SPOT instrument (e.g. `ASIATICLAB`PB) displays a system error modal:
   ```text
   Order cannot be placed for SPOT instrument
   ```
-- **Halted / Inactive Stocks:** Attempting to trade halted securities (e.g. `ATCSLGF`PB) is rejected.
-- **Preflight Filter Invariant:** The trading engine must verify `Settlement Type == 'PUBLIC'` and symbol status is active before generating order tickets.
+- **Halted / Inactive Stocks (`N/A` / `LTP = 0.00`):** Attempting to trade halted securities (e.g. `ATCSLGF`PB with `LTP = 0.00` or `Status: N/A`) is rejected.
+- **Preflight Filter Invariant:** The trading engine must verify `Settlement Type == 'PUBLIC'`, `Category != 'Z'`, and `LTP > 0.00` before generating order tickets.
 
 ---
 
