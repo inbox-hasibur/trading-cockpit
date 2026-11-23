@@ -460,6 +460,28 @@ Reconciliation of all audit findings and architectural items from historical MVP
 
 ---
 
+### ✅ Sprint 5D (Completed): 100% Read-Only Edge/Chrome Extension Passive Mirror, Loopback Extension Auth, Off-Hours 0.00 Cash Guard & Instant SSE Push
+
+- [x] **Zero-Dependency Manifest V3 Extension (`extension/tradexpress_mirror/`):**
+  - Scoped strictly to `https://itrade.lbsbd.com/*` (content script) and `http://127.0.0.1:8000/*` (background service worker).
+  - 100% read-only anti-bot security: zero clicks, zero typing, zero DOM mutations, zero reloads, zero credential reading.
+  - Critical Ember virtual table row pairing by `style.top` to guarantee symbol and cell alignment during virtualized scrolling.
+  - Extracts `Min / Max` limits from order ticket and updates `CompanyProfile.min_limit` & `max_limit`.
+  - Forwards passive snapshots to `POST http://127.0.0.1:8000/api/tradexpress/passive-ingest` with `X-Hummingbird-Source: EDGE_EXTENSION_PASSIVE`.
+  - Compact 280px dark popup (`popup.html`, `popup.js`) with live connection dot, ON/OFF toggle, and telemetry counters.
+- [x] **Backend Extension Support & Off-Hours 0.00 Cash Guard (`backend/main.py`, `backend/adapters/tradexpress/passive_feed.py`):**
+  - Updated `local_security` middleware to allow local loopback requests from `chrome-extension://` and `extension://` origins with full CORS support.
+  - Implemented Off-Hours `0.00` Cash Guard preserving positive cash balances during market close while continuing quote ingestion.
+  - Enriched `TradeXpressPassiveFeed` tracking `bridge_source`, `last_ingest_utc`, `dse_status`, `active_tab`, `total_ingests_count`, and `is_bridge_connected()`.
+- [x] **Instant SSE Push & Live UI Indicators (`backend/routes_tradexpress.py`, `frontend/tradexpress_ui.js`, `frontend/index.html`):**
+  - Emits real-time SSE `"portfolio"` update immediately after passive ingest.
+  - Dynamic `#tx-passive-spy-btn` & `#tx-feed-cdp-badge` displaying `🟢 Passive Mirror: LIVE (Edge Ext · <tab>)`.
+  - 3-line "Edge Extension 1-Time Setup" hint inside `#tx-feed-status-card` in Settings.
+- [x] **Automated Test Suite (`tests/test_tradexpress_extension_mirror.py`):**
+  - 5 tests verifying MV3 manifest validity, static code safety (zero forbidden methods), extension ingest endpoints, off-hours cash preservation, and loopback security.
+
+---
+
 ### 🏦 Sprint 6: Production Graduation to Live TradeXpress 2-Step Execution & iBroker EOD Audit
 
 - [ ] **Production TradeXpress 2-Step Executor (`TRADEXPRESS_LIVE` Mode):**

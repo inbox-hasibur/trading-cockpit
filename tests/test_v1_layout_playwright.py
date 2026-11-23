@@ -16,7 +16,7 @@ from playwright.sync_api import sync_playwright
 from backend.config import Settings
 from backend.database import Database
 from backend.main import create_app
-from backend.seed import seed_demo
+from backend.seed import migrate_real_stocknow_market, seed_demo
 
 
 def find_free_port() -> int:
@@ -37,7 +37,7 @@ def cockpit_server(tmp_path_factory):
 
     import uvicorn
     tmp_dir = tmp_path_factory.mktemp("playwright_db")
-    db_file = tmp_dir / "test_cockpit_playwright.db"
+    db_file = tmp_dir / "test_hummingbird.db"
     settings = Settings(
         database_url=f"sqlite:///{db_file.resolve()}",
         initial_capital=Decimal("100000.00"),
@@ -46,6 +46,7 @@ def cockpit_server(tmp_path_factory):
     db.create_schema()
     with db.write() as session:
         seed_demo(session, settings)
+        migrate_real_stocknow_market(session, settings)
 
     app = create_app(settings)
     port = find_free_port()
@@ -78,6 +79,10 @@ def test_tradexpress_v1_layout_and_interactions(cockpit_server):
         page.wait_for_selector("#tx-trade-workspace", state="visible", timeout=6000)
         page.wait_for_selector("#watchlist-body tr[data-symbol]", state="visible", timeout=8000)
         time.sleep(0.5)
+        bank_row = page.locator('#watchlist-body tr[data-symbol="BANKASIA"]')
+        if bank_row.count() > 0:
+            bank_row.click()
+            time.sleep(0.3)
 
         def assert_strict_visual_gates(theme: str):
             """Assert strict layout integrity, zero clipping, zero errors, and full depth."""

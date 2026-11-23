@@ -67,10 +67,18 @@ def build_tradexpress_router(
         acct = feed.get_account_summary()
         daemon = get_global_passive_daemon(database, settings, broadcaster=broadcaster)
         daemon_status = daemon.get_status()
+        telem = feed.get_telemetry()
+        is_connected = bool(guidance.get("bridge_connected") or telem.get("bridge_connected") or daemon_status.get("cdp_connected"))
 
         return {
-            "status": "ONLINE" if (guidance["is_healthy"] or daemon_status["cdp_connected"]) else "ATTENTION_REQUIRED",
-            "cdp_connected": guidance["cdp_connected"] or daemon_status["cdp_connected"],
+            "status": "ONLINE" if (guidance.get("is_healthy") or is_connected) else "ATTENTION_REQUIRED",
+            "cdp_connected": guidance.get("cdp_connected") or daemon_status.get("cdp_connected"),
+            "bridge_connected": is_connected,
+            "bridge_source": telem.get("bridge_source", "OFFLINE"),
+            "dse_status": telem.get("dse_status", "UNKNOWN"),
+            "active_tab": telem.get("active_tab", "none"),
+            "last_ingest_utc": telem.get("last_ingest_utc", ""),
+            "total_ingests_count": telem.get("total_ingests_count", 0),
             "execution_venue": venue,
             "buying_power": float(acct.buying_power),
             "unsettled_sales_bdt": unsettled,
@@ -100,10 +108,17 @@ def build_tradexpress_router(
         return {"status": "SUCCESS", "action": action, "daemon": status_data}
 
     @router.post("/passive-ingest")
-    def post_passive_ingest(payload: dict[str, Any]):
+    def post_passive_ingest(payload: dict[str, Any], request: Request):
         """Ingests passively sniffed WebSocket / DOM snapshot and reconciles order queue."""
+        x_source = request.headers.get("X-Hummingbird-Source") or payload.get("source") or "MANUAL_INGEST"
         feed = get_global_passive_feed(database)
-        result = ingest_passive_snapshot(database, payload, feed=feed, broadcaster=broadcaster)
+        result = ingest_passive_snapshot(
+            database,
+            payload,
+            feed=feed,
+            broadcaster=broadcaster,
+            bridge_source=x_source,
+        )
 
         # Run shadow queue order reconciliation
         phase = payload.get("session_phase", "CONTINUOUS")
@@ -111,6 +126,15 @@ def build_tradexpress_router(
             simulator = TradeXpressShadowSimulator(database, settings, feed=feed)
             reconciled = simulator.reconcile_queued_orders(session, feed.get_all_quotes(), session_phase=phase)
             result["reconciled_orders"] = reconciled
+
+        # Immediately publish live SSE "portfolio" update so http://127.0.0.1:8000 updates in real time with zero reload!
+        if broadcaster:
+            try:
+                from backend.portfolio import build_snapshot
+                snap = build_snapshot(database, settings)
+                broadcaster.publish("portfolio", snap)
+            except Exception as b_err:
+                logger.debug("Failed publishing live SSE portfolio update after passive ingest: %s", b_err)
 
         return result
 

@@ -219,8 +219,10 @@ def get_feed_health_and_guidance(
     cdp_connected: bool,
     now_utc: float | None = None,
     stale_threshold_sec: float = 120.0,
+    bridge_connected: bool = False,
+    bridge_source: str = "",
 ) -> dict[str, Any]:
-    """Evaluates freshness of CDP connection & each tab, generating operator guidance."""
+    """Evaluates freshness of CDP/extension connection & each tab, generating operator guidance."""
     now = now_utc if now_utc is not None else time.time()
     tabs_to_check = [
         ("market_watch", "Market Watch"),
@@ -232,9 +234,11 @@ def get_feed_health_and_guidance(
     freshness: dict[str, dict[str, Any]] = {}
     instructions: list[str] = []
 
-    if not cdp_connected:
+    is_connected = cdp_connected or bridge_connected
+
+    if not is_connected:
         instructions.append(
-            "CDP connection offline. Launch Edge/Chrome with --remote-debugging-port=9222 and log in to https://itrade.lbsbd.com."
+            "CDP connection offline / Passive feed offline. Launch Edge/Chrome with extension or CDP port 9222 and log in to https://itrade.lbsbd.com."
         )
 
     for tab_key, tab_label in tabs_to_check:
@@ -259,13 +263,15 @@ def get_feed_health_and_guidance(
             elif tab_key == "account_summary":
                 instructions.append("Click 'Account Summary' sub-tab inside Portfolio container to update Buying Power and Unsettled Sales.")
 
-    if cdp_connected and not instructions:
+    if is_connected and not instructions:
         instructions.append("All TradeXpress passive data feeds are fresh and active. No action needed.")
 
-    is_healthy = cdp_connected and all(f["is_fresh"] for f in freshness.values())
+    is_healthy = is_connected and all(f["is_fresh"] for f in freshness.values())
 
     return {
         "cdp_connected": cdp_connected,
+        "bridge_connected": is_connected,
+        "bridge_source": bridge_source,
         "is_healthy": is_healthy,
         "freshness": freshness,
         "operator_instructions": instructions,
@@ -282,11 +288,53 @@ class TradeXpressPassiveFeed(MarketFeedAdapter):
         self._account_summary = AccountSummary()
         self._tab_timestamps: dict[str, float] = {}
         self._cdp_connected: bool = False
+        self._bridge_source: str = "OFFLINE"
+        self._last_ingest_utc: str = ""
+        self._last_ingest_epoch: float = 0.0
+        self._dse_status: str = "UNKNOWN"
+        self._active_tab: str = "none"
+        self._total_ingests_count: int = 0
         self._lock = RLock()
 
     def set_cdp_connected(self, connected: bool) -> None:
         with self._lock:
             self._cdp_connected = connected
+
+    def update_ingest_telemetry(
+        self,
+        source: str,
+        dse_status: str = "",
+        active_tab: str = "",
+        ingest_epoch: float | None = None,
+    ) -> None:
+        with self._lock:
+            if source:
+                self._bridge_source = source
+            self._total_ingests_count += 1
+            self._last_ingest_epoch = ingest_epoch if ingest_epoch is not None else time.time()
+            self._last_ingest_utc = utc_now_iso()
+            if dse_status:
+                self._dse_status = dse_status
+            if active_tab:
+                self._active_tab = active_tab
+
+    def is_bridge_connected(self, now_utc: float | None = None) -> bool:
+        with self._lock:
+            if self._cdp_connected:
+                return True
+            now = now_utc if now_utc is not None else time.time()
+            return self._last_ingest_epoch > 0.0 and (now - self._last_ingest_epoch <= 20.0)
+
+    def get_telemetry(self) -> dict[str, Any]:
+        with self._lock:
+            return {
+                "bridge_source": self._bridge_source,
+                "bridge_connected": self.is_bridge_connected(),
+                "dse_status": self._dse_status,
+                "active_tab": self._active_tab,
+                "last_ingest_utc": self._last_ingest_utc,
+                "total_ingests_count": self._total_ingests_count,
+            }
 
     def update_tab_timestamp(self, tab: str, timestamp: float | None = None) -> None:
         with self._lock:
@@ -367,6 +415,8 @@ class TradeXpressPassiveFeed(MarketFeedAdapter):
                 self._tab_timestamps,
                 self._cdp_connected,
                 now_utc=now_utc,
+                bridge_connected=self.is_bridge_connected(now_utc=now_utc),
+                bridge_source=self._bridge_source,
             )
 
 
@@ -388,6 +438,7 @@ def ingest_passive_snapshot(
     snapshot_payload: dict[str, Any],
     feed: TradeXpressPassiveFeed | None = None,
     broadcaster: Any = None,
+    bridge_source: str | None = None,
 ) -> dict[str, Any]:
     """Ingests passively sniffed snapshot payload into SQLite and in-memory feed.
 
@@ -403,6 +454,18 @@ def ingest_passive_snapshot(
     if cdp_conn is not None:
         active_feed.set_cdp_connected(bool(cdp_conn))
 
+    dse_status = str(snapshot_payload.get("dse_status") or "").strip()
+    resolved_source = bridge_source or snapshot_payload.get("source") or (
+        "EDGE_EXTENSION_PASSIVE"
+        if (cdp_conn is None and "source" in snapshot_payload)
+        else ("CDP_DAEMON" if cdp_conn else "MANUAL_INGEST")
+    )
+    active_feed.update_ingest_telemetry(
+        source=resolved_source,
+        dse_status=dse_status or "UNKNOWN",
+        active_tab=tab or "market_watch",
+    )
+
     quotes_updated = 0
     holdings_updated = 0
     summary_updated = False
@@ -411,11 +474,17 @@ def ingest_passive_snapshot(
     mw_rows = snapshot_payload.get("market_watch_rows") or snapshot_payload.get("rows")
     parsed_quotes: list[MarketQuote] = []
     if mw_rows and isinstance(mw_rows, list):
-        # Fetch existing company profiles for fallback caching
-        existing_profiles: dict[str, Any] = {}
+        # Fetch existing company profiles for fallback caching (as pure dicts to prevent DetachedInstanceError)
+        existing_profiles: dict[str, dict[str, Any]] = {}
         with db.read() as read_session:
             profiles = list(read_session.scalars(select(CompanyProfile)))
-            existing_profiles = {p.symbol: p for p in profiles}
+            existing_profiles = {
+                p.symbol: {
+                    "settlement_type": p.settlement_type,
+                    "symbol_category": p.symbol_category,
+                }
+                for p in profiles
+            }
 
         parsed_quotes = parse_ember_market_watch_rows(mw_rows, existing_profiles)
         active_feed.update_quotes(parsed_quotes)
@@ -480,6 +549,26 @@ def ingest_passive_snapshot(
 
             session.flush()
 
+    # 1.5. Ingest order ticket limits if present
+    ot_limits = snapshot_payload.get("order_ticket_limits")
+    if ot_limits and isinstance(ot_limits, dict):
+        raw_sym = str(ot_limits.get("symbol") or "").strip()
+        if raw_sym:
+            sym = from_tradexpress_symbol(raw_sym)
+            min_l = ot_limits.get("min_limit")
+            max_l = ot_limits.get("max_limit")
+            min_val = decimal(min_l) if min_l is not None and str(min_l).strip() != "" else None
+            max_val = decimal(max_l) if max_l is not None and str(max_l).strip() != "" else None
+            if min_val is not None or max_val is not None:
+                with db.write() as session:
+                    cp = session.get(CompanyProfile, sym)
+                    if cp:
+                        if min_val is not None and min_val > ZERO:
+                            cp.min_limit = min_val
+                        if max_val is not None and max_val > ZERO:
+                            cp.max_limit = max_val
+                        session.flush()
+
     # 2. Parse & Ingest Portfolio rows
     pf_rows = snapshot_payload.get("portfolio_rows")
     if pf_rows and isinstance(pf_rows, list):
@@ -489,13 +578,40 @@ def ingest_passive_snapshot(
 
     # 3. Parse & Ingest Account Summary
     acct_data = snapshot_payload.get("account_summary")
+    is_offhours_closed = dse_status.upper() in ("CLOSE", "CLOSED")
     if acct_data and isinstance(acct_data, dict):
         summary = parse_account_summary_dict(acct_data)
+        prev_summary = active_feed.get_account_summary()
+
+        # Off-Hours 0.00 Cash Guard:
+        # When dse_status is "Close"/"CLOSED" AND incoming account_summary has
+        # buying_power == 0 and cash_balance == 0, preserve previously cached
+        # positive buying_power / cash_balance instead of overwriting with 0.00!
+        if (
+            is_offhours_closed
+            and summary.cash_balance <= ZERO
+            and summary.buying_power <= ZERO
+            and (prev_summary.cash_balance > ZERO or prev_summary.buying_power > ZERO)
+        ):
+            logger.info(
+                "Off-Hours 0.00 Cash Guard: Preserving cached cash balances (buying_power=%s)",
+                prev_summary.buying_power,
+            )
+            summary.cash_balance = prev_summary.cash_balance
+            summary.available_cash_balance = prev_summary.available_cash_balance
+            summary.buying_power = prev_summary.buying_power
+            summary.cash_available_for_withdrawal = prev_summary.cash_available_for_withdrawal
+            if summary.unsettled_sales <= ZERO and prev_summary.unsettled_sales > ZERO:
+                summary.unsettled_sales = prev_summary.unsettled_sales
+            if summary.blocked_amount <= ZERO and prev_summary.blocked_amount > ZERO:
+                summary.blocked_amount = prev_summary.blocked_amount
+
         active_feed.update_account_summary(summary)
         summary_updated = True
         with db.write() as session:
             state = portfolio_state(session)
-            state.unsettled_sales_bdt = summary.unsettled_sales
+            if summary.unsettled_sales > ZERO or not is_offhours_closed:
+                state.unsettled_sales_bdt = summary.unsettled_sales
             session.flush()
 
     # 4. SSE broadcast if available
@@ -508,6 +624,8 @@ def ingest_passive_snapshot(
                     "quotes_count": quotes_updated,
                     "holdings_count": holdings_updated,
                     "summary_updated": summary_updated,
+                    "bridge_source": resolved_source,
+                    "dse_status": dse_status,
                     "timestamp": utc_now_iso(),
                 },
             )
@@ -520,5 +638,8 @@ def ingest_passive_snapshot(
         "quotes_updated": quotes_updated,
         "holdings_updated": holdings_updated,
         "summary_updated": summary_updated,
+        "bridge_source": resolved_source,
+        "dse_status": dse_status,
+        "bridge_connected": active_feed.is_bridge_connected(),
         "guidance": active_feed.get_health_and_guidance(),
     }

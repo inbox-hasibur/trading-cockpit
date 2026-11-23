@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Humming Bird — TradeXpress Passive Mirror",
+  "version": "1.0.0",
+  "description": "100% read-only passive DOM mirror from itrade.lbsbd.com to local Humming Bird Cockpit (127.0.0.1:8000). Zero broker requests.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:8000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://itrade.lbsbd.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

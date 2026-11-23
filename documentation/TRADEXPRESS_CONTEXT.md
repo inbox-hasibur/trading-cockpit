@@ -434,6 +434,13 @@ classDiagram
     TradeXpressLiveClient --> TradeXpressExecutor : delegates order to
 ```
 
+### 10.1 Edge / Chrome Extension Passive Mirror (`extension/tradexpress_mirror/`)
+- **Zero-Dependency Manifest V3 Extension:** Runs as a 100% read-only passive content script on `https://itrade.lbsbd.com/*` and background service worker reporting strictly to `http://127.0.0.1:8000/api/tradexpress/passive-ingest`.
+- **Zero-Ban Anti-Bot Guarantees:** Strictly forbidden from clicking, typing/filling, mutating DOM, reloading/navigating, reading credentials/cookies, or communicating with any non-localhost URL.
+- **Ember Virtual Table Top-Alignment (`style.top`):** Maps `.ember-table-left-table-block .ember-table-table-row` to `.ember-table-right-table-block .ember-table-table-row` by matching `row.style.top` to prevent virtual scroll row-shifting.
+- **Off-Hours 0.00 Cash Guard:** When `dse_status` is `Close`/`CLOSED` and incoming `account_summary` has `buying_power == 0` and `cash_balance == 0`, preserves cached positive buying power & cash balance while continuing to ingest quotes and portfolio rows.
+- **Instant SSE Push:** Every ingested snapshot triggers an atomic shadow order queue reconciliation and an instant SSE `"portfolio"` push so the local terminal updates in real time with zero reload.
+
 ---
 
 ## 11. Operational Risk Checklist
@@ -449,5 +456,5 @@ classDiagram
 - [x] **Verified:** SPOT instrument protection modal (`Order cannot be placed for SPOT instrument` on `ASIATICLAB`PB).
 - [x] **Verified:** 2-Touchpoint Hard Broker Firewall rule enforced in documentation and agent guidelines.
 - [x] **Verified:** Midnight maintenance window (`23:45–01:00`) causes `Authentication timed out`.
-- [ ] **Pending (Sprint 5):** Live-Data Dummy Mirror Simulator (`SHADOW_DUMMY` mode).
+- [x] **Verified (Sprint 5):** Live-Data Dummy Mirror Simulator (`SHADOW_DUMMY` mode) and 100% Read-Only Passive Extension Mirror (`extension/tradexpress_mirror/`).
 - [ ] **Pending (Sprint 6):** Automated 2-step execution harness with live order verification.

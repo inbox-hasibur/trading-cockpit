@@ -572,9 +572,14 @@
 
     const daemon = data.daemon || {};
     const isSpyLive = daemon.running && daemon.cdp_connected;
+    const isExtLive = data.bridge_connected && data.bridge_source === "EDGE_EXTENSION_PASSIVE";
 
     if (spyBtn) {
-      if (isSpyLive) {
+      if (isExtLive) {
+        spyBtn.textContent = `🟢 Passive Mirror: LIVE (Edge Ext · ${data.active_tab || "MW"})`;
+        spyBtn.classList.add("active");
+        spyBtn.title = `Edge Extension Passive Mirror active (${data.active_tab || "market_watch"}). Click to toggle CDP fallback.`;
+      } else if (isSpyLive) {
         spyBtn.textContent = "📡 Passive Spy: LIVE";
         spyBtn.classList.add("active");
         spyBtn.title = `CDP Connected (${daemon.active_tab || "TradeXpress"}). Click to detach.`;
@@ -590,8 +595,16 @@
     }
 
     if (cdpBadge) {
-      cdpBadge.textContent = (data.cdp_connected || isSpyLive) ? "CDP: ONLINE" : "CDP: OFFLINE";
-      cdpBadge.className = `sys-badge ${(data.cdp_connected || isSpyLive) ? "teal-badge" : "amber-badge"}`;
+      if (isExtLive) {
+        cdpBadge.textContent = `MIRROR: LIVE (Edge Ext · ${data.active_tab || "MW"})`;
+        cdpBadge.className = "sys-badge teal-badge";
+      } else if (data.cdp_connected || isSpyLive) {
+        cdpBadge.textContent = "CDP: ONLINE";
+        cdpBadge.className = "sys-badge teal-badge";
+      } else {
+        cdpBadge.textContent = "FEED: OFFLINE";
+        cdpBadge.className = "sys-badge amber-badge";
+      }
     }
 
     if (healthBadge) {
@@ -602,9 +615,10 @@
 
     if (bridgeStats) {
       bridgeStats.innerHTML = `
-        <div class="tx-tab-status-row"><span>CDP Port 9222</span><span>${isSpyLive ? '<span class="positive">● CONNECTED</span>' : (daemon.running ? '<span class="amber">Connecting...</span>' : '<span class="muted">DETACHED</span>')}</span></div>
-        <div class="tx-tab-status-row"><span>Active Tab</span><span>${daemon.active_tab || '<span class="muted">None</span>'}</span></div>
-        <div class="tx-tab-status-row"><span>Telemetry Sniffed</span><span><small>${daemon.dom_syncs_count || 0} DOM · ${daemon.ws_frames_count || 0} WS · ${daemon.xhr_responses_count || 0} XHR</small></span></div>
+        <div class="tx-tab-status-row"><span>Active Source</span><span>${isExtLive ? '<span class="positive">● EDGE EXTENSION PASSIVE</span>' : (isSpyLive ? '<span class="positive">● CDP SPY (PORT 9222)</span>' : '<span class="muted">OFFLINE</span>')}</span></div>
+        <div class="tx-tab-status-row"><span>Active Tab</span><span>${data.active_tab || daemon.active_tab || '<span class="muted">None</span>'}</span></div>
+        <div class="tx-tab-status-row"><span>DSE Status</span><span><strong>${data.dse_status || "UNKNOWN"}</strong></span></div>
+        <div class="tx-tab-status-row"><span>Telemetry Ingested</span><span><small>${data.total_ingests_count || 0} Ingests · ${daemon.dom_syncs_count || 0} DOM · ${daemon.ws_frames_count || 0} WS</small></span></div>
         ${daemon.last_error ? `<div class="tx-tab-status-row negative"><small>${daemon.last_error}</small></div>` : ""}
       `;
     }

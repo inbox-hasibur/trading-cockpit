@@ -245,13 +245,35 @@ def create_app(settings: Settings | None = None, database: Database | None = Non
     @app.middleware("http")
     async def local_security(request: Request, call_next):
         is_api = request.url.path.startswith("/api/")
+        origin = request.headers.get("origin")
+        expected_origin = str(request.base_url).rstrip("/")
+        client_host = request.client.host if request.client else "127.0.0.1"
+        is_loopback = client_host in ("127.0.0.1", "::1", "localhost", "testclient")
+        is_extension_passive_ingest = (
+            request.url.path == "/api/tradexpress/passive-ingest"
+            and is_loopback
+            and (
+                not origin
+                or origin.lower().startswith("chrome-extension://")
+                or origin.lower().startswith("extension://")
+                or origin.lower().rstrip("/") == expected_origin.lower()
+            )
+        )
+
         if is_api and request.url.path != "/api/health":
-            origin = request.headers.get("origin")
-            expected_origin = str(request.base_url).rstrip("/")
-            if (
-                origin and origin.lower().rstrip("/") != expected_origin.lower()
-            ) or request.headers.get("sec-fetch-site") == "cross-site":
-                return JSONResponse({"error": "FORBIDDEN", "detail": "Cross-origin API access is not allowed."}, status_code=403)
+            if request.method == "OPTIONS" and is_extension_passive_ingest:
+                res = JSONResponse({"status": "ok"}, status_code=200)
+                if origin:
+                    res.headers["Access-Control-Allow-Origin"] = origin
+                    res.headers["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS"
+                    res.headers["Access-Control-Allow-Headers"] = "*"
+                return res
+
+            if not is_extension_passive_ingest:
+                if (
+                    origin and origin.lower().rstrip("/") != expected_origin.lower()
+                ) or request.headers.get("sec-fetch-site") == "cross-site":
+                    return JSONResponse({"error": "FORBIDDEN", "detail": "Cross-origin API access is not allowed."}, status_code=403)
             if settings.cockpit_api_token:
                 supplied = request.headers.get("authorization", "")
                 expected = f"Bearer {settings.cockpit_api_token}"
@@ -264,6 +286,10 @@ def create_app(settings: Settings | None = None, database: Database | None = Non
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "same-origin"
         response.headers["X-Frame-Options"] = "DENY"
+        if is_api and origin and (origin.lower().startswith("chrome-extension://") or origin.lower().startswith("extension://")):
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "*"
         # The cockpit is entirely local. FastAPI's optional Swagger page loads
         # its standard CDN assets and needs a separate, documentation-only CSP.
         if request.url.path.startswith("/docs"):
