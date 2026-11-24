@@ -597,6 +597,7 @@ class TradeXpressShadowSimulator(BrokerOrderExecutor):
                 "order_value": float(gross),
                 "fee": float(total_fee),
                 "net_value": float(total_cost),
+                "actor": actor,
                 "message": f"Buy filled: {quantity} {symbol} @ ৳{fill_price:.2f}",
             }
 
@@ -729,6 +730,7 @@ class TradeXpressShadowSimulator(BrokerOrderExecutor):
                 "order_value": float(gross),
                 "fee": float(total_fee),
                 "net_value": float(net_proceeds),
+                "actor": actor,
                 "realized_pnl": float(total_realized_pnl),
                 "net_pnl_pct": float(net_pnl_pct),
                 "unsettled_sales_bdt": float(getattr(state, "unsettled_sales_bdt", ZERO) or ZERO),

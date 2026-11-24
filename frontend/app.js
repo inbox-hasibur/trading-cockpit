@@ -874,7 +874,8 @@ function renderWatchlist() {
     const ltpCell = cell(numberFormat.format(company.price), "align-right tabular-nums");
 
     // 4. % Chg
-    const day = cell(percentage(company.curve.day_change_pct), `align-right tabular-nums ${company.curve.day_change_pct >= 0 ? "positive" : "negative"}`);
+    const pctVal = company.pct_change !== undefined ? Number(company.pct_change) : Number(company.curve.day_change_pct || 0);
+    const day = cell(percentage(pctVal), `align-right tabular-nums ${pctVal >= 0 ? "positive" : "negative"}`);
 
     // 5. Bid / Qty
     const bidPriceStr = company.bid ? numberFormat.format(company.bid) : numberFormat.format(company.price);
@@ -955,8 +956,8 @@ function renderWatchlist() {
 
     signalWrap.append(sigBadge);
 
-    // Provide a retry link for any data-fallback state (NO DATA, LAST CLOSE, STALE, LIVE when recovering)
-    if (isDataFallback || displaySignal === "NO_DATA" || displaySignal === "STALE" || displaySignal === "LAST_CLOSE") {
+    // Provide a retry link for any data-fallback state (NO DATA, LAST CLOSE, STALE) on StockNow feeds; hide when LIVE or passive
+    if ((isDataFallback || displaySignal === "NO_DATA" || displaySignal === "STALE" || displaySignal === "LAST_CLOSE") && displaySignal !== "LIVE" && !company.source?.includes("PASSIVE")) {
       const retryLink = element("a", "retry-sync-link", "Retry");
       retryLink.href = "#";
       retryLink.title = `Retry live quote sync for ${company.symbol} from StockNow`;

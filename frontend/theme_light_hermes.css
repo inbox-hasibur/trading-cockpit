@@ -3176,3 +3176,99 @@ body.is-resizing-hermes .app-shell {
 [data-theme="light"] .hermes-quick-chip:hover {
   background: #e0f2fe;
 }
+
+[data-theme="light"] #tx-order-ticket {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .tx-ticket-strip {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .tx-side-toggle {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+[data-theme="light"] .tx-side-btn {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .tx-side-btn.tx-side-buy.active {
+  background: #10b981 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .tx-side-btn.tx-side-sell.active {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .tx-strip-meta {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .tx-ticket-body {
+  background: #ffffff !important;
+}
+
+[data-theme="light"] .tx-field-group label {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .tx-ticket-footer {
+  background: #f8fafc !important;
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .tx-ticket-metrics {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .tx-depth-pane {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .tx-depth-pane-header {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .tx-depth-table th {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+}
+
+[data-theme="light"] .tx-depth-table td {
+  color: #0f172a !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+[data-theme="light"] .tx-depth-bid {
+  color: #059669 !important;
+  background: rgba(16, 185, 129, 0.08) !important;
+}
+
+[data-theme="light"] .tx-depth-offer {
+  color: #dc2626 !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+}
+
+[data-theme="light"] .tx-depth-qty {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .tx-acc-kv-table td {
+  color: #0f172a !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+[data-theme="light"] .tx-acc-kv-table tr:hover td {
+  background: #f8fafc !important;
+}

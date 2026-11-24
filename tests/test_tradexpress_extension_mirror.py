@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
@@ -21,7 +22,8 @@ from backend.seed import seed_demo
 
 
 @pytest.fixture
-def test_db_and_settings(tmp_path: Path):
+def test_db_and_settings(tmp_path: Path, monkeypatch):
+    monkeypatch.setenv("KERNEL_TOKEN", "test-kernel-ext-token")
     db_file = tmp_path / "test_ext.db"
     settings = Settings(
         database_url=f"sqlite:///{db_file}",
@@ -429,3 +431,236 @@ def test_passive_net_tap_endpoints_and_telemetry(client: TestClient, test_db_and
     status_data = status_resp.json()
     assert "net_tap" in status_data
     assert status_data["net_tap"]["total_events"] >= 3
+
+
+def test_tab_isolation_and_gsc_pollution_guard(client: TestClient, test_db_and_settings):
+    """Verifies that sniffing 'Dhaka Stock Exchange' creates new stocks as ALL_DSE (not GSC),
+
+    and does not pollute or overwrite existing GSC/L1/L2 symbols.
+    """
+    test_db, _ = test_db_and_settings
+    ext_origin = {"Origin": "chrome-extension://testabc123"}
+
+    # 1. Ingest full DSE tab with a new symbol and an existing foundational symbol (GP)
+    dse_payload = {
+        "source": "EDGE_EXTENSION_PASSIVE",
+        "dse_status": "Trading",
+        "tab": "Dhaka Stock Exchange",
+        "market_watch_rows": [
+            {
+                "sDes": "NEWSTOCK1",
+                "ltp": "25.00",
+                "chg": "0.50",
+                "pctChg": "2.04",
+                "vol": "10000",
+                "dispSettType": "PUBLIC",
+                "dispSymCat": "A",
+            },
+            {
+                "sDes": "GP",
+                "ltp": "265.00",
+                "chg": "1.00",
+                "pctChg": "0.38",
+                "vol": "50000",
+                "dispSettType": "PUBLIC",
+                "dispSymCat": "A",
+            },
+        ],
+    }
+    resp = client.post("/api/tradexpress/passive-ingest", json=dse_payload, headers=ext_origin)
+    assert resp.status_code == 200
+
+    with test_db.read() as session:
+        # New symbol must be ALL_DSE and favorite=False (GSC not polluted)
+        new_cp = session.get(CompanyProfile, "NEWSTOCK1")
+        assert new_cp is not None
+        assert new_cp.watchlist_category == "ALL_DSE"
+        assert new_cp.favorite is False
+
+        # Existing GP must stay GSC and favorite=True
+        gp_cp = session.get(CompanyProfile, "GP")
+        assert gp_cp is not None
+        assert gp_cp.watchlist_category == "GSC"
+        assert gp_cp.favorite is True
+
+    # 2. Ingest L1 specific tab -> new symbol tags as GSC_L1 and favorite=True
+    l1_payload = {
+        "source": "EDGE_EXTENSION_PASSIVE",
+        "dse_status": "Trading",
+        "tab": "l1",
+        "market_watch_rows": [
+            {
+                "sDes": "L1STOCK",
+                "ltp": "50.00",
+                "chg": "1.50",
+                "pctChg": "3.09",
+                "vol": "20000",
+                "dispSettType": "PUBLIC",
+                "dispSymCat": "A",
+            }
+        ],
+    }
+    resp2 = client.post("/api/tradexpress/passive-ingest", json=l1_payload, headers=ext_origin)
+    assert resp2.status_code == 200
+
+    with test_db.read() as session:
+        l1_cp = session.get(CompanyProfile, "L1STOCK")
+        assert l1_cp is not None
+        assert l1_cp.watchlist_category == "GSC_L1"
+        assert l1_cp.favorite is True
+
+
+def test_cleanup_polluted_gsc_symbols(test_db_and_settings):
+    """Verifies that non-foundational unallocated stocks tagged as GSC are safely cleaned up."""
+    from backend.adapters.tradexpress.passive_feed import cleanup_polluted_gsc_symbols
+
+    test_db, _ = test_db_and_settings
+
+    # Artificially pollute DB with an accidental GSC stock
+    with test_db.write() as session:
+        polluted = CompanyProfile(
+            symbol="ACCIDENTAL_CO",
+            name="Accidental Co",
+            sector="DSE",
+            favorite=True,
+            settlement_days=2,
+            last_price=Decimal("15.00"),
+            watchlist_category="GSC",
+            price_history=[],
+            quote_on=date.today(),
+        )
+        session.add(polluted)
+        session.flush()
+
+    with test_db.write() as session:
+        cleaned = cleanup_polluted_gsc_symbols(session)
+        assert cleaned >= 1
+        session.flush()
+
+    with test_db.read() as session:
+        cp = session.get(CompanyProfile, "ACCIDENTAL_CO")
+        assert cp.watchlist_category == "ALL_DSE"
+        assert cp.favorite is False
+
+        # Foundational stock GP must remain GSC
+        gp = session.get(CompanyProfile, "GP")
+        assert gp.watchlist_category == "GSC"
+
+
+def test_order_ticket_depth_and_market_index_pipeline(client: TestClient, test_db_and_settings):
+    """Verifies ingestion of real 5-level Order Depth and DSEX Market Index into feed and snapshot."""
+    test_db, settings = test_db_and_settings
+    ext_origin = {"Origin": "chrome-extension://testabc123"}
+
+    depth_payload = {
+        "source": "EDGE_EXTENSION_PASSIVE",
+        "dse_status": "Trading",
+        "tab": "Dhaka Stock Exchange",
+        "order_ticket_depth": {
+            "symbol": "BANKASIA",
+            "levels": [
+                {"bid_qty": 5000, "bid_price": 18.40, "offer_price": 18.50, "offer_qty": 3200},
+                {"bid_qty": 4200, "bid_price": 18.30, "offer_price": 18.60, "offer_qty": 2800},
+                {"bid_qty": 3000, "bid_price": 18.20, "offer_price": 18.70, "offer_qty": 2100},
+                {"bid_qty": 2500, "bid_price": 18.10, "offer_price": 18.80, "offer_qty": 1900},
+                {"bid_qty": 1800, "bid_price": 18.00, "offer_price": 18.90, "offer_qty": 1500},
+            ],
+        },
+        "market_index": {
+            "dsex_value": "5245.30",
+            "dsex_chg": "15.40",
+            "dsex_pct_chg": "0.30",
+            "up_count": 180,
+            "down_count": 120,
+            "unchanged_count": 80,
+        },
+        "account_summary": {
+            "customer_number": "H9210",
+            "cash_balance": 353.00,
+            "available_cash_balance": 353.00,
+            "buying_power": 353.00,
+            "unsettled_sales": 0.0,
+        },
+    }
+
+    resp = client.post("/api/tradexpress/passive-ingest", json=depth_payload, headers=ext_origin)
+    assert resp.status_code == 200
+    res_data = resp.json()
+    assert res_data.get("order_ticket_depth") is not None
+    assert len(res_data["order_ticket_depth"]["levels"]) == 5
+    assert res_data.get("market_index") is not None
+    assert res_data["market_index"]["dsex_value"] == "5245.30"
+
+    # Verify build_snapshot attaches order_book_depth, dse_index, and broker_mirror_account
+    from backend.portfolio import build_snapshot
+
+    snap = build_snapshot(test_db, settings)
+    assert "dse_index" in snap
+    assert snap["dse_index"].get("dsex_value") == "5245.30"
+
+    assert "broker_mirror_account" in snap
+    assert snap["broker_mirror_account"].get("cash_balance") == 353.00
+
+    bankasia = next((c for c in snap["companies"] if c["symbol"] == "BANKASIA"), None)
+    assert bankasia is not None
+    assert bankasia.get("order_book_depth") is not None
+    assert len(bankasia["order_book_depth"]["levels"]) == 5
+
+
+def test_shadow_reset_endpoint(client: TestClient, test_db_and_settings):
+    """Verifies POST /api/tradexpress/shadow/reset resets portfolio and records checkpoint."""
+    resp = client.post("/api/tradexpress/shadow/reset", json={"portfolio_id": "H9210_SHADOW", "initial_capital": 100000.0})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data.get("status") == "RESET_SUCCESS"
+    assert data.get("portfolio_id") == "H9210_SHADOW"
+    assert data.get("checkpoint_id") is not None
+
+
+def test_hermes_order_routing_to_shadow_simulator(client: TestClient, test_db_and_settings):
+    """Verifies that /k/order with portfolio_id='H9210_SHADOW' dispatches to TradeXpressShadowSimulator."""
+    _, settings = test_db_and_settings
+    auth = {"X-Kernel-Token": "test-kernel-ext-token"}
+
+    # 1. Step 1 (dry_run) returns preview token & shadow fee
+    prev_req = {
+        "idempotency_key": "hermes_shadow_test_prev_001",
+        "symbol": "BANKASIA",
+        "side": "BUY",
+        "quantity": 100,
+        "price": 18.40,
+        "portfolio_id": "H9210_SHADOW",
+        "dry_run": True,
+        "confirm": False,
+    }
+    prev_res = client.post("/k/order", json=prev_req, headers=auth)
+    assert prev_res.status_code == 200, prev_res.text
+    prev_data = prev_res.json()
+    assert prev_data.get("dry_run") is True
+    assert prev_data.get("status") == "VALIDATED"
+    assert prev_data.get("preview_token") is not None
+    assert prev_data.get("execution_venue") == "SHADOW_DUMMY"
+
+    # 2. Step 2 (confirm=True) commits to shadow simulator
+    exec_req = {
+        "idempotency_key": "hermes_shadow_test_exec_001",
+        "symbol": "BANKASIA",
+        "side": "BUY",
+        "quantity": 100,
+        "price": 18.40,
+        "portfolio_id": "H9210_SHADOW",
+        "dry_run": False,
+        "confirm": True,
+        "preview_token": prev_data.get("preview_token"),
+    }
+    exec_res = client.post("/k/order", json=exec_req, headers=auth)
+    assert exec_res.status_code == 200, exec_res.text
+    exec_data = exec_res.json()
+    assert exec_data.get("status") in ("FILLED", "QUEUED")
+    assert exec_data.get("actor") == "HERMES"
+
+    # 3. Order is visible in /api/tradexpress/orders
+    orders_res = client.get("/api/tradexpress/orders?portfolio_id=H9210_SHADOW")
+    assert orders_res.status_code == 200
+    orders = orders_res.json()
+    assert any(o.get("symbol") == "BANKASIA" for o in orders)

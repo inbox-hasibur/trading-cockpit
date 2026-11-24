@@ -6863,6 +6863,34 @@ button.local-avatar:hover {
   justify-content: flex-end;
 }
 
+@media (max-width: 1180px) {
+  .tx-top-header,
+  .tx-topbar {
+    padding: 3px 6px !important;
+    gap: 4px !important;
+  }
+
+  .tx-topbar-telemetry {
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    gap: 4px !important;
+  }
+
+  .tx-topbar-telemetry::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .tx-tele-item {
+    padding: 2px 5px !important;
+    font-size: 10px !important;
+  }
+
+  .tx-tele-label {
+    font-size: 8.5px !important;
+  }
+}
+
 .tx-tele-item {
   display: flex;
   align-items: center;

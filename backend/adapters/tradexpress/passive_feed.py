@@ -314,6 +314,26 @@ class TradeXpressPassiveFeed(MarketFeedAdapter):
         self._net_tap_file_path = (
             Path(__file__).resolve().parent.parent.parent / "data" / "tradexpress_net_tap.jsonl"
         )
+        self._order_ticket_depth: dict[str, dict[str, Any]] = {}
+        self._market_index: dict[str, Any] = {}
+
+    def update_order_ticket_depth(self, symbol: str, depth_data: dict[str, Any]) -> None:
+        clean = from_tradexpress_symbol(symbol)
+        with self._lock:
+            self._order_ticket_depth[clean] = depth_data
+
+    def get_order_ticket_depth(self, symbol: str) -> dict[str, Any] | None:
+        clean = from_tradexpress_symbol(symbol)
+        with self._lock:
+            return self._order_ticket_depth.get(clean)
+
+    def update_market_index(self, index_data: dict[str, Any]) -> None:
+        with self._lock:
+            self._market_index = dict(index_data)
+
+    def get_market_index(self) -> dict[str, Any]:
+        with self._lock:
+            return dict(self._market_index)
 
     def set_cdp_connected(self, connected: bool) -> None:
         with self._lock:
@@ -510,6 +530,77 @@ class TradeXpressPassiveFeed(MarketFeedAdapter):
 
 _GLOBAL_PASSIVE_FEED: TradeXpressPassiveFeed | None = None
 
+FOUNDATIONAL_GSC_SYMBOLS: set[str] = {
+    "GP",
+    "SQURPHARMA",
+    "BANKASIA",
+    "MATINSPINN",
+    "DHAKABANK",
+    "ACI",
+    "IBNSINA",
+    "BXPHARMA",
+    "EXIM1STMF",
+    "FUWANGCER",
+    "IFIC",
+    "NPOLYMER",
+    "PRIMEBANK",
+    "PUBALIBANK",
+    "SPCERAMICS",
+    "BRACBANK",
+    "BATBC",
+    "RENATA",
+    "BEXIMCO",
+    "ISLAMIBANK",
+}
+
+
+def cleanup_polluted_gsc_symbols(session: Session) -> int:
+    """Resets accidental non-GSC symbols to watchlist_category='ALL_DSE' and favorite=False.
+
+    Symbols are cleaned up ONLY if:
+    1. Their watchlist_category is 'GSC'
+    2. They are NOT in FOUNDATIONAL_GSC_SYMBOLS
+    3. They have zero open tax lots and zero trade logs
+    4. Their CustomRule has enabled=False and buy_allocation_pct=0 (or no rule)
+    """
+    from backend.database import TaxLot, TradeLog
+
+    cleaned_count = 0
+    gsc_profiles = list(
+        session.scalars(
+            select(CompanyProfile).where(CompanyProfile.watchlist_category == "GSC")
+        )
+    )
+    for cp in gsc_profiles:
+        if cp.symbol in FOUNDATIONAL_GSC_SYMBOLS:
+            continue
+
+        # Check if held in lots
+        has_lots = session.scalar(
+            select(TaxLot.id).where(TaxLot.symbol == cp.symbol, TaxLot.remaining_qty > 0).limit(1)
+        )
+        if has_lots is not None:
+            continue
+
+        # Check if traded
+        has_trades = session.scalar(
+            select(TradeLog.id).where(TradeLog.symbol == cp.symbol).limit(1)
+        )
+        if has_trades is not None:
+            continue
+
+        # Check if rule enabled
+        rule = session.get(CustomRule, cp.symbol)
+        if rule and (rule.enabled or (rule.buy_allocation_pct or ZERO) > ZERO):
+            continue
+
+        # This symbol was passively ingested without explicit operator allocation to GSC
+        cp.watchlist_category = "ALL_DSE"
+        cp.favorite = False
+        cleaned_count += 1
+
+    return cleaned_count
+
 
 def get_global_passive_feed(database: Database | None = None) -> TradeXpressPassiveFeed:
     """Singleton getter for the global passive market feed adapter."""
@@ -554,6 +645,19 @@ def ingest_passive_snapshot(
         active_tab=tab or "market_watch",
     )
 
+    # Ingest real 5-level order ticket depth if present
+    ot_depth = snapshot_payload.get("order_ticket_depth")
+    raw_depth_sym = ""
+    if ot_depth and isinstance(ot_depth, dict):
+        raw_depth_sym = str(ot_depth.get("symbol") or "").strip()
+        if raw_depth_sym:
+            active_feed.update_order_ticket_depth(raw_depth_sym, ot_depth)
+
+    # Ingest real market index (DSEX, breadth) if present
+    mkt_index = snapshot_payload.get("market_index")
+    if mkt_index and isinstance(mkt_index, dict):
+        active_feed.update_market_index(mkt_index)
+
     quotes_updated = 0
     holdings_updated = 0
     summary_updated = False
@@ -577,6 +681,22 @@ def ingest_passive_snapshot(
         parsed_quotes = parse_ember_market_watch_rows(mw_rows, existing_profiles)
         active_feed.update_quotes(parsed_quotes)
 
+        # Determine tab category: only tag GSC/L1/L2 when specifically viewing that tab
+        tab_category = "ALL_DSE"
+        is_fav = False
+        if "gsc" in tab:
+            tab_category = "GSC"
+            is_fav = True
+        elif "l1" in tab:
+            tab_category = "GSC_L1"
+            is_fav = True
+        elif "l2" in tab:
+            tab_category = "GSC_L2"
+            is_fav = True
+        elif "favorite" in tab:
+            tab_category = "GSC"
+            is_fav = True
+
         with db.write() as session:
             state = portfolio_state(session)
             today_str = state.clock_date.isoformat()
@@ -589,15 +709,20 @@ def ingest_passive_snapshot(
                         symbol=q.symbol,
                         name=q.symbol,
                         sector="DSE",
-                        favorite=True,
+                        favorite=is_fav,
                         settlement_days=2,
                         last_price=q.ltp if q.ltp > ZERO else Decimal("0.00"),
                         price_history=[],
                         quote_on=state.clock_date,
                         source="TRADEXPRESS_PASSIVE",
-                        watchlist_category="GSC",
+                        watchlist_category=tab_category,
                     )
                     session.add(cp)
+                else:
+                    # For existing company: ONLY update category if operator is viewing a specific GSC/L1/L2 tab
+                    if tab_category in ("GSC", "GSC_L1", "GSC_L2"):
+                        cp.watchlist_category = tab_category
+                        cp.favorite = True
 
                 # Ensure a CustomRule exists for the symbol so no KeyError can ever occur
                 rule = session.get(CustomRule, q.symbol)
@@ -653,6 +778,8 @@ def ingest_passive_snapshot(
                     cp.price_history = history[-30:]
                 quotes_updated += 1
 
+            # Run cleanup migration for non-GSC symbols accidentally tagged as GSC
+            cleanup_polluted_gsc_symbols(session)
             session.flush()
 
     # 1.5. Ingest order ticket limits if present
@@ -754,4 +881,6 @@ def ingest_passive_snapshot(
         "bridge_connected": active_feed.is_bridge_connected(),
         "guidance": active_feed.get_health_and_guidance(),
         "net_tap": active_feed.get_net_tap_summary(),
+        "order_ticket_depth": active_feed.get_order_ticket_depth(raw_depth_sym) if raw_depth_sym else None,
+        "market_index": active_feed.get_market_index(),
     }

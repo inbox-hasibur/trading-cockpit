@@ -216,7 +216,7 @@
       priceInput.value = Number(targetP).toFixed(2);
     }
 
-    renderMarketDepthTable(bid, offer);
+    renderMarketDepthTable(bid, offer, company ? company.order_book_depth : null, company);
     updateOrderTicketCalculations();
   }
 
@@ -248,33 +248,70 @@
   }
 
   // --- 4. 5-Level Market Depth Table ---
-  function renderMarketDepthTable(baseBid, baseOffer) {
+  function renderMarketDepthTable(baseBid, baseOffer, customDepth, company) {
     const tableBody = document.getElementById("tx-depth-body");
     if (!tableBody) return;
 
-    const b = Number(baseBid) || 18.30;
-    const o = Number(baseOffer) || 18.40;
-
-    let rowsHtml = "";
-    for (let i = 0; i < 5; i++) {
-      const bidP = Math.max(0.10, b - i * 0.10).toFixed(2);
-      const offerP = (o + i * 0.10).toFixed(2);
-      const bidQty = Math.round(500 * (5 - i) * 0.8);
-      const offerQty = Math.round(400 * (5 - i) * 0.7);
-
-      rowsHtml += `
-        <tr>
-          <td class="align-right tx-depth-qty">${bidQty.toLocaleString()}</td>
-          <td class="align-right tx-depth-bid" data-price="${bidP}" title="Click to fill price">${bidP}</td>
-          <td class="align-right tx-depth-offer" data-price="${offerP}" title="Click to fill price">${offerP}</td>
-          <td class="align-right tx-depth-qty">${offerQty.toLocaleString()}</td>
-        </tr>
-      `;
+    // Check if real 5-level depth captured from TradeXpress Order Ticket
+    if (customDepth && Array.isArray(customDepth.levels) && customDepth.levels.length > 0) {
+      let rowsHtml = "";
+      customDepth.levels.forEach((lvl) => {
+        const bQty = Number(lvl.bid_qty || 0);
+        const bP = Number(lvl.bid_price || 0).toFixed(2);
+        const oP = Number(lvl.offer_price || 0).toFixed(2);
+        const oQty = Number(lvl.offer_qty || 0);
+        rowsHtml += `
+          <tr>
+            <td class="align-right tx-depth-qty">${bQty > 0 ? bQty.toLocaleString() : "—"}</td>
+            <td class="align-right tx-depth-bid" data-price="${bP}" title="Click to fill price">${bP !== "0.00" ? bP : "—"}</td>
+            <td class="align-right tx-depth-offer" data-price="${oP}" title="Click to fill price">${oP !== "0.00" ? oP : "—"}</td>
+            <td class="align-right tx-depth-qty">${oQty > 0 ? oQty.toLocaleString() : "—"}</td>
+          </tr>
+        `;
+      });
+      tableBody.innerHTML = rowsHtml;
+      _attachDepthClickToFill(tableBody);
+      return;
     }
 
-    tableBody.innerHTML = rowsHtml;
+    // Single L1 BBO (No fake generated quantities)
+    const b = Number(baseBid) || 0;
+    const o = Number(baseOffer) || 0;
+    const bQty = (company && company.bid_qty) ? Number(company.bid_qty).toLocaleString() : "—";
+    const oQty = (company && company.offer_qty) ? Number(company.offer_qty).toLocaleString() : "—";
+    const sym = (company && company.symbol) || state.selectedSymbol || "symbol";
 
-    // Attach click-to-fill
+    if (b > 0 || o > 0) {
+      const bStr = b > 0 ? b.toFixed(2) : "—";
+      const oStr = o > 0 ? o.toFixed(2) : "—";
+      tableBody.innerHTML = `
+        <tr>
+          <td class="align-right tx-depth-qty">${bQty}</td>
+          <td class="align-right tx-depth-bid" data-price="${b > 0 ? b.toFixed(2) : ''}" title="Click to fill price">${bStr}</td>
+          <td class="align-right tx-depth-offer" data-price="${o > 0 ? o.toFixed(2) : ''}" title="Click to fill price">${oStr}</td>
+          <td class="align-right tx-depth-qty">${oQty}</td>
+        </tr>
+        <tr>
+          <td colspan="4" class="align-center muted small" style="padding: 6px 4px; font-size: 10px;">
+            Live L1 BBO · Select ${sym} in TradeXpress for 5-level depth
+          </td>
+        </tr>
+      `;
+      _attachDepthClickToFill(tableBody);
+      return;
+    }
+
+    // Off-hours / SOD
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="4" class="align-center muted small" style="padding: 12px 4px; font-size: 10.5px;">
+          Market depth waiting for session open / quotes…
+        </td>
+      </tr>
+    `;
+  }
+
+  function _attachDepthClickToFill(tableBody) {
     tableBody.querySelectorAll("td[data-price]").forEach((td) => {
       td.addEventListener("click", () => {
         const p = parseFloat(td.dataset.price);
@@ -707,6 +744,17 @@
       glEl.className = `tx-tele-val tabular-nums ${unPnl >= 0 ? "positive" : "negative"}`;
     }
 
+    // Topbar DSEX index
+    const dseIdx = snapshot.dse_index;
+    const dsexItem = document.getElementById("tx-hdr-dsex-item");
+    const dsexVal = document.getElementById("tx-hdr-dsex-val");
+    if (dseIdx && dseIdx.dsex_value && dsexItem && dsexVal) {
+      dsexItem.style.display = "flex";
+      const chgStr = dseIdx.dsex_chg !== undefined ? ` (${Number(dseIdx.dsex_chg) >= 0 ? "+" : ""}${Number(dseIdx.dsex_chg).toFixed(2)})` : "";
+      dsexVal.textContent = `${Number(dseIdx.dsex_value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${chgStr}`;
+      dsexVal.className = `tx-tele-val tabular-nums ${Number(dseIdx.dsex_chg || 0) >= 0 ? "positive" : "negative"}`;
+    }
+
     // Account Summary values
     setText("tx-acc-settled-cash", formatMoney(metrics.available_cash || 0));
     setText("tx-acc-buying-power", formatMoney(bp));
@@ -714,6 +762,19 @@
     setText("tx-acc-unsettled-sales", formatMoney(snapshot.unsettled_sales_bdt || metrics.unsettled_proceeds || 0));
     setText("tx-acc-realized-pnl", formatMoney(metrics.realized_pnl || 0));
     setText("tx-acc-unrealized-pnl", formatMoney(metrics.unrealized_pnl || 0));
+
+    // Live Broker Mirror (H9210) Card values
+    const bm = snapshot.broker_mirror_account || {};
+    setText("tx-bm-cash", formatMoney(bm.cash_balance || 0));
+    setText("tx-bm-bp", formatMoney(bm.buying_power || 0));
+    setText("tx-bm-unsettled", formatMoney(bm.unsettled_sales || 0));
+    setText("tx-bm-withdrawable", formatMoney(bm.cash_available_for_withdrawal || 0));
+    if (bm.last_updated) {
+      try {
+        const d = new Date(bm.last_updated);
+        setText("tx-broker-mirror-time", `Updated: ${d.toLocaleTimeString()}`);
+      } catch (_) {}
+    }
 
     // Donut chart
     renderAccountDonut(

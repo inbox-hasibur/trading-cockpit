@@ -63,6 +63,10 @@
             <span class="tx-tele-label">GAIN / LOSS</span>
             <span class="tx-tele-val tabular-nums positive" id="tx-hdr-gain-loss">+৳0.00 (+0.00%)</span>
           </div>
+          <div class="tx-tele-item" id="tx-hdr-dsex-item" style="display:none;">
+            <span class="tx-tele-label">DSEX</span>
+            <span class="tx-tele-val tabular-nums" id="tx-hdr-dsex-val">5,200.00</span>
+          </div>
 
           <!-- Market Status Clock Widget -->
           <button class="topbar-market-pill" id="topbar-clock-widget" type="button" title="DSE Trading Session & Trading Mode (Click to open Settings)">
@@ -435,6 +439,20 @@
                   </div>
                   <div class="tx-acc-donut-wrap" id="tx-account-donut">
                     <!-- SVG Donut rendered by tradexpress_ui.js -->
+                  </div>
+                </div>
+
+                <!-- Live Broker Mirror Card (H9210 Real Account) -->
+                <div class="tx-broker-mirror-card" id="tx-broker-mirror-card" style="margin-top: 10px; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--line, #1e293b); background: rgba(15, 23, 42, 0.4);">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 11px; font-weight: 700; color: #10b981;">● LIVE BROKER MIRROR (H9210)</span>
+                    <span id="tx-broker-mirror-time" style="font-size: 10px; color: #64748b;">Passive Sniff Active</span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 11px;">
+                    <div><span class="muted" style="font-size: 9.5px; display: block;">CASH BALANCE</span><strong id="tx-bm-cash">৳0.00</strong></div>
+                    <div><span class="muted" style="font-size: 9.5px; display: block;">BUYING POWER</span><strong id="tx-bm-bp">৳0.00</strong></div>
+                    <div><span class="muted" style="font-size: 9.5px; display: block;">UNSETTLED SALES</span><strong id="tx-bm-unsettled">৳0.00</strong></div>
+                    <div><span class="muted" style="font-size: 9.5px; display: block;">WITHDRAWABLE</span><strong id="tx-bm-withdrawable">৳0.00</strong></div>
                   </div>
                 </div>
               </div>

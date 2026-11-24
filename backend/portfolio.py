@@ -379,6 +379,9 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
     state = portfolio_state(session)
     calendar = TradingCalendar(settings.holidays, settings.bucket_anchor)
     adapter = StockNowAdapter()
+    from backend.adapters.tradexpress.passive_feed import get_global_passive_feed
+    passive_feed = get_global_passive_feed()
+    passive_quotes = passive_feed.get_all_quotes() if passive_feed else {}
     companies = list(session.scalars(select(CompanyProfile).order_by(CompanyProfile.symbol)))
     rules = {rule.symbol: rule for rule in session.scalars(select(CustomRule))}
     active_pid = (
@@ -456,6 +459,13 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             estimated_exit_fees += exit_fee
         fundamentals = COMPANY_FUNDAMENTALS.get(company.symbol, DEFAULT_FUNDAMENTALS)
         curve_dict = analysis.to_dict()
+        live_q = passive_quotes.get(company.symbol) if passive_quotes else None
+        live_chg = float(live_q.change) if (live_q and live_q.change is not None) else None
+        live_pct_chg = float(live_q.pct_change) if (live_q and live_q.pct_change is not None) else None
+        if live_pct_chg is not None and live_pct_chg != 0.0:
+            curve_dict["day_change_pct"] = live_pct_chg
+        order_book_depth = passive_feed.get_order_ticket_depth(company.symbol) if passive_feed else None
+
         curve_dict["support"] = float(analysis.low)
         curve_dict["resistance"] = float(analysis.high)
         buy_frac = getattr(rule, "buy_zone_fraction", None)
@@ -564,6 +574,9 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             "hit_upper_circuit": bool(getattr(company, "hit_upper_circuit", False)),
             "last_trade_time": getattr(company, "last_trade_time", "") or "",
             "tradexpress_symbol": to_tradexpress_symbol(company.symbol),
+            "change": live_chg if live_chg is not None else (float(company.last_price - decimal(company.price_history[-2]["close"])) if (company.price_history and len(company.price_history) >= 2) else 0.0),
+            "pct_change": live_pct_chg if live_pct_chg is not None else float(curve_dict.get("day_change_pct") or 0.0),
+            "order_book_depth": order_book_depth,
             "avg_bought_price": avg_bought_price,
             "bought_total": bought_total,
             "sell_total_net": sell_total_net,
@@ -758,6 +771,8 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
         "execution_venue": getattr(state, "execution_venue", "SHADOW_DUMMY") or "SHADOW_DUMMY",
         "unsettled_sales_bdt": float(getattr(state, "unsettled_sales_bdt", ZERO) or ZERO),
         "buying_power_bdt": float(cash + (getattr(state, "unsettled_sales_bdt", ZERO) or ZERO)),
+        "dse_index": passive_feed.get_market_index() if passive_feed else {},
+        "broker_mirror_account": passive_feed.get_account_summary().to_dict() if passive_feed else {},
         "notice": "All prices/scenarios/trades are synthetic. No live orders. No guaranteed recovery or returns.",
     }
 

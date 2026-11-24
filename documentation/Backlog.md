@@ -513,6 +513,34 @@ Reconciliation of all audit findings and architectural items from historical MVP
 
 ---
 
+### ✅ Sprint 5F (Completed): 0.35s MutationObserver Realtime Sniffing, Real % Chg & 5-Level Depth, Stop GSC Tab Pollution, Wire Hermes `/k/order` to `SHADOW_DUMMY` & Fix Light/Split-Screen UI
+
+- [x] **0.35s Trailing Debounce MutationObserver Realtime Sniffing (`extension/tradexpress_mirror/content.js`):**
+  - Replaced 2500ms polling with a lightweight `MutationObserver` on `#table-8-1-1-2-cached` and `#order-ticket-landscape-id` with a 350ms trailing debounce and 5000ms fallback heartbeat.
+- [x] **Accurate Active Tab Detection & Real 5-Level Depth:**
+  - Detects visible active tab (`"Dhaka Stock Exchange"`, `"My Favorites"`, `"GSC"`, `"L1"`, `"L2"`).
+  - Sniffs real 5-level Bid/Offer depth from `#order-ticket-landscape-id` without guessing or fabricating quantities.
+  - Sniffs topbar DSEX index and breadth (advances/declines/unchanged).
+- [x] **Popup Telemetry & Unified LocalStorage (`background.js`, `popup.js`):**
+  - Unified local storage keys (`domRowsSent`, `wsFramesIn`, `wsFramesOut`, `xhrCaptured`, `activeTab`, `dseStatus`, `connected`).
+  - Added continuous 1s auto-refresh interval and fallback active probe against `http://127.0.0.1:8000/api/tradexpress/status` on popup open to guarantee the popup never falsely shows offline when the cockpit server is live.
+- [x] **Stop GSC Tab Pollution Guard & Cleanup Migration (`backend/adapters/tradexpress/passive_feed.py`):**
+  - Sniffing `"Dhaka Stock Exchange"` defaults new stocks to `watchlist_category="ALL_DSE"` and `favorite=False`, leaving existing GSC/L1/L2 stocks untouched.
+  - Implemented `cleanup_polluted_gsc_symbols` to reset accidental non-foundational stocks back to `"ALL_DSE"`.
+- [x] **Wire Hermes `/k/order` to `SHADOW_DUMMY` (`backend/kernel_api.py`):**
+  - Wired `POST /k/order` to `TradeXpressShadowSimulator` when `portfolio_id in ("H9210_SHADOW", "H9210")` or `execution_venue == "SHADOW_DUMMY"`.
+  - Dry-run returns preview token and estimated fees; confirmed execution commits to shadow queue and logs to `TradeLearningLog`.
+- [x] **Microstructure Telemetry on Kernel Endpoints (`/k/watchlist`, `/k/curve/{symbol}`):**
+  - Exposes live `bid`, `bid_qty`, `offer`, `offer_qty`, `pct_chg`, `min_limit`, `max_limit`, `settlement_type`, `symbol_category`, `hit_52w_high`, and `hit_upper_circuit`.
+- [x] **Shadow Capital Reset Endpoint (`POST /api/tradexpress/shadow/reset`):**
+  - Atomic reset for `H9210_SHADOW` with `KernelStateCheckpoint` snapshot and SSE broadcast.
+- [x] **Live Broker Mirror Card (`frontend/tradexpress_ui.js`, `frontend/index.html`):**
+  - Renders real `H9210` cash balance (`৳353.00`), buying power, and unsettled sales inside Account Summary.
+- [x] **Light Mode & Split-Screen UI Polish (`frontend/theme_light_hermes.css`, `frontend/styles.css`, `frontend/app.js`):**
+  - Full contrast styling for `#tx-order-ticket`, `.tx-ticket-strip`, `.tx-side-toggle`, `.tx-depth-pane`; added `@media (max-width: 1180px)` responsive topbar telemetry rules; removed `Retry` link when quotes are `LIVE` or passive.
+
+---
+
 ### 🏦 Sprint 6: Production Graduation to Live TradeXpress 2-Step Execution & iBroker EOD Audit
 
 - [ ] **Production TradeXpress 2-Step Executor (`TRADEXPRESS_LIVE` Mode):**

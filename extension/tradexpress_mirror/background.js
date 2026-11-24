@@ -16,12 +16,16 @@ chrome.runtime.onInstalled.addListener(() => {
     mirrorEnabled: true,
     connected: false,
     lastSyncAt: null,
+    domRowsSent: 0,
     rowsSent: 0,
     activeTab: 'none',
     dseStatus: 'UNKNOWN',
     lastError: null,
+    wsFramesIn: 0,
     wsInCount: 0,
+    wsFramesOut: 0,
     wsOutCount: 0,
+    xhrCaptured: 0,
     xhrCount: 0,
     netTapEventsSent: 0,
   });
@@ -44,11 +48,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           throw new Error(`Cockpit returned HTTP ${response.status}`);
         }
         const data = await response.json();
+        const rowsCount = (payload.market_watch_rows || []).length;
         const telemetry = {
           connected: true,
           lastSyncAt: new Date().toLocaleTimeString(),
-          rowsSent: (payload.market_watch_rows || []).length,
-          activeTab: payload.tab || 'market_watch',
+          domRowsSent: rowsCount,
+          rowsSent: rowsCount,
+          activeTab: payload.tab || 'Dhaka Stock Exchange',
           dseStatus: payload.dse_status || 'UNKNOWN',
           lastError: null,
         };
@@ -88,11 +94,19 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         }
         const data = await response.json();
         chrome.storage.local.get(
-          ['wsInCount', 'wsOutCount', 'xhrCount', 'netTapEventsSent'],
+          [
+            'wsFramesIn',
+            'wsInCount',
+            'wsFramesOut',
+            'wsOutCount',
+            'xhrCaptured',
+            'xhrCount',
+            'netTapEventsSent',
+          ],
           (current) => {
-            let wsIn = current.wsInCount || 0;
-            let wsOut = current.wsOutCount || 0;
-            let xhr = current.xhrCount || 0;
+            let wsIn = current.wsFramesIn || current.wsInCount || 0;
+            let wsOut = current.wsFramesOut || current.wsOutCount || 0;
+            let xhr = current.xhrCaptured || current.xhrCount || 0;
             events.forEach((e) => {
               const t = (e.type || '').toLowerCase();
               if (t === 'ws_in') wsIn++;
@@ -100,10 +114,16 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
               else if (t === 'xhr' || t === 'fetch') xhr++;
             });
             chrome.storage.local.set({
+              connected: true,
+              wsFramesIn: wsIn,
               wsInCount: wsIn,
+              wsFramesOut: wsOut,
               wsOutCount: wsOut,
+              xhrCaptured: xhr,
               xhrCount: xhr,
               netTapEventsSent: (current.netTapEventsSent || 0) + events.length,
+              lastSyncAt: new Date().toLocaleTimeString(),
+              lastError: null,
             });
           }
         );

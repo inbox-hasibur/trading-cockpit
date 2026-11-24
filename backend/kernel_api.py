@@ -163,7 +163,12 @@ def get_watchlist(
     tier: str | None = Query(None, description="Optional tier filter (e.g. GSC, GSC_L1, GSC_L2)"),
     db: Database = Depends(get_db),
 ) -> list[dict[str, Any]]:
-    """Returns watchlist companies, optionally filtered by tier."""
+    """Returns watchlist companies, optionally filtered by tier, with live microstructure."""
+    from backend.adapters.tradexpress.passive_feed import get_global_passive_feed
+
+    passive_feed = get_global_passive_feed()
+    quotes = passive_feed.get_all_quotes() if passive_feed else {}
+
     with db.read() as session:
         query = select(CompanyProfile).order_by(CompanyProfile.symbol)
         if tier:
@@ -174,6 +179,19 @@ def get_watchlist(
             closes = [float(p["close"]) for p in (c.price_history or []) if isinstance(p, dict) and "close" in p]
             sup = min(closes) if closes else float(c.last_price)
             res = max(closes) if closes else float(c.last_price)
+            q = quotes.get(c.symbol)
+            pct_chg = float(q.pct_change) if (q and q.pct_change is not None) else 0.0
+            bid = float(q.bid) if (q and q.bid is not None) else float(getattr(c, "bid", Decimal("0")) or Decimal("0"))
+            bid_qty = int(q.bid_qty) if (q and q.bid_qty is not None) else int(getattr(c, "bid_qty", 0) or 0)
+            offer = float(q.offer) if (q and q.offer is not None) else float(getattr(c, "offer", Decimal("0")) or Decimal("0"))
+            offer_qty = int(q.offer_qty) if (q and q.offer_qty is not None) else int(getattr(c, "offer_qty", 0) or 0)
+            min_limit = float(q.min_limit) if (q and q.min_limit is not None) else (float(c.min_limit) if getattr(c, "min_limit", None) is not None else None)
+            max_limit = float(q.max_limit) if (q and q.max_limit is not None) else (float(c.max_limit) if getattr(c, "max_limit", None) is not None else None)
+            settlement_type = (q.settlement_type if (q and q.settlement_type) else getattr(c, "settlement_type", "PUBLIC")) or "PUBLIC"
+            symbol_category = (q.symbol_category if (q and q.symbol_category) else getattr(c, "symbol_category", "A")) or "A"
+            hit_52w_high = bool(q.hit_52w_high if q else getattr(c, "hit_52w_high", False))
+            hit_upper_circuit = bool(q.hit_upper_circuit if q else getattr(c, "hit_upper_circuit", False))
+
             result.append({
                 "symbol": c.symbol,
                 "name": c.name,
@@ -184,6 +202,17 @@ def get_watchlist(
                 "resistance": res,
                 "quarantined": c.quarantined,
                 "quarantine_reason": c.quarantine_reason,
+                "bid": bid,
+                "bid_qty": bid_qty,
+                "offer": offer,
+                "offer_qty": offer_qty,
+                "pct_chg": pct_chg,
+                "min_limit": min_limit,
+                "max_limit": max_limit,
+                "settlement_type": settlement_type,
+                "symbol_category": symbol_category,
+                "hit_52w_high": hit_52w_high,
+                "hit_upper_circuit": hit_upper_circuit,
             })
         return result
 
@@ -195,7 +224,12 @@ def get_curve(
     settings: Settings = Depends(get_settings),
 ) -> dict[str, Any]:
     """Returns price curve analysis, support floor, resistance ceiling, and sparkline points."""
+    from backend.adapters.tradexpress.passive_feed import get_global_passive_feed
+
     sym = symbol.strip().upper()
+    passive_feed = get_global_passive_feed()
+    q = passive_feed.get_all_quotes().get(sym) if passive_feed else None
+
     with db.read() as session:
         comp = session.get(CompanyProfile, sym)
         if not comp:
@@ -213,6 +247,19 @@ def get_curve(
                 buy_fee_rate=settings.buy_fee_rate,
                 sell_fee_rate=settings.sell_fee_rate,
             )
+
+        pct_chg = float(q.pct_change) if (q and q.pct_change is not None) else 0.0
+        bid = float(q.bid) if (q and q.bid is not None) else float(getattr(comp, "bid", Decimal("0")) or Decimal("0"))
+        bid_qty = int(q.bid_qty) if (q and q.bid_qty is not None) else int(getattr(comp, "bid_qty", 0) or 0)
+        offer = float(q.offer) if (q and q.offer is not None) else float(getattr(comp, "offer", Decimal("0")) or Decimal("0"))
+        offer_qty = int(q.offer_qty) if (q and q.offer_qty is not None) else int(getattr(comp, "offer_qty", 0) or 0)
+        min_limit = float(q.min_limit) if (q and q.min_limit is not None) else (float(comp.min_limit) if getattr(comp, "min_limit", None) is not None else None)
+        max_limit = float(q.max_limit) if (q and q.max_limit is not None) else (float(comp.max_limit) if getattr(comp, "max_limit", None) is not None else None)
+        settlement_type = (q.settlement_type if (q and q.settlement_type) else getattr(comp, "settlement_type", "PUBLIC")) or "PUBLIC"
+        symbol_category = (q.symbol_category if (q and q.symbol_category) else getattr(comp, "symbol_category", "A")) or "A"
+        hit_52w_high = bool(q.hit_52w_high if q else getattr(comp, "hit_52w_high", False))
+        hit_upper_circuit = bool(q.hit_upper_circuit if q else getattr(comp, "hit_upper_circuit", False))
+
         return {
             "symbol": comp.symbol,
             "last_price": float(comp.last_price),
@@ -221,6 +268,17 @@ def get_curve(
             "watchlist_category": comp.watchlist_category,
             "analysis": analysis.to_dict() if analysis else None,
             "history_points": len(history),
+            "bid": bid,
+            "bid_qty": bid_qty,
+            "offer": offer,
+            "offer_qty": offer_qty,
+            "pct_chg": pct_chg,
+            "min_limit": min_limit,
+            "max_limit": max_limit,
+            "settlement_type": settlement_type,
+            "symbol_category": symbol_category,
+            "hit_52w_high": hit_52w_high,
+            "hit_upper_circuit": hit_upper_circuit,
         }
 
 
@@ -758,7 +816,122 @@ async def post_order(
                 )
 
             # Resolve target portfolio ID
-            target_pid = str(body.portfolio_id or active_pid or "").strip()
+            default_pid = settings.stocknow_live_portfolio_id or "164580"
+            raw_pid = str(body.portfolio_id).strip() if body.portfolio_id else ""
+            target_pid = str(body.portfolio_id or active_pid or default_pid).strip()
+
+            is_shadow_venue = (
+                raw_pid in ("H9210_SHADOW", "H9210")
+                or target_pid in ("H9210_SHADOW", "H9210")
+            )
+
+            if is_shadow_venue:
+                shadow_pid = target_pid if target_pid in ("H9210_SHADOW", "H9210") else "H9210_SHADOW"
+
+                # 2. SQLite Idempotency Deduplication Check
+                existing_key = session.get(OrderIdempotencyKey, body.idempotency_key)
+                if existing_key:
+                    cached = dict(existing_key.response_payload)
+                    cached["duplicate"] = True
+                    cached["status"] = "ALREADY_EXECUTED"
+                    return cached
+
+                if body.idempotency_key in _EXECUTED_ORDER_KEYS:
+                    cached = dict(_EXECUTED_ORDER_KEYS[body.idempotency_key])
+                    cached["duplicate"] = True
+                    cached["status"] = "ALREADY_EXECUTED"
+                    return cached
+
+                comp = session.get(CompanyProfile, sym)
+                if not comp:
+                    raise HTTPException(status_code=404, detail=f"Company '{sym}' not found in database.")
+
+                unit_price = body.price if body.price is not None and body.price > ZERO else comp.last_price
+                if unit_price <= ZERO:
+                    raise HTTPException(status_code=422, detail=f"Invalid unit price '{unit_price}'.")
+
+                if getattr(state, "kill_switch_active", False):
+                    reason = "Order rejected: Global kill switch is active."
+                    _record_order_rejection(session, state, sym, "KILL_SWITCH", reason, trading_mode, body.model_dump(mode="json"))
+                    raise HTTPException(status_code=422, detail=reason)
+
+                from backend.adapters.tradexpress.shadow_simulator import TradeXpressShadowSimulator
+
+                simulator = TradeXpressShadowSimulator(db, settings)
+
+                if body.dry_run or not body.operator_confirmed:
+                    sim_res = simulator.submit_shadow_order(
+                        symbol=sym,
+                        side=side,
+                        quantity=body.quantity,
+                        limit_price=unit_price,
+                        confirm=False,
+                        actor="HERMES",
+                        reason="Hermes Copilot Order",
+                        portfolio_id=shadow_pid,
+                        session=session,
+                    )
+                    token = f"prev_{uuid4().hex[:12]}"
+                    _ORDER_PREVIEW_TOKENS[token] = {
+                        "symbol": sym,
+                        "side": side,
+                        "quantity": body.quantity,
+                        "price": float(unit_price),
+                        "portfolio_id": shadow_pid,
+                        "created_at": time.time(),
+                        "expires_at": time.time() + 300,
+                    }
+                    return {
+                        "dry_run": True,
+                        "status": "VALIDATED",
+                        "preview_token": token,
+                        "idempotency_key": body.idempotency_key,
+                        "portfolio_id": shadow_pid,
+                        "portfolio_name": f"TradeXpress Shadow ({shadow_pid})",
+                        "symbol": sym,
+                        "side": side,
+                        "quantity": body.quantity,
+                        "price": float(unit_price),
+                        "commission_pct": 0.40,
+                        "estimated_fee": sim_res.get("estimated_fee", 0.0),
+                        "estimated_net": sim_res.get("net_value", 0.0),
+                        "trading_mode": trading_mode,
+                        "execution_venue": "SHADOW_DUMMY",
+                        "cap_usage": {
+                            "side": side,
+                            "summary": f"TradeXpress Shadow Simulator · Est Fee: ৳{sim_res.get('estimated_fee', 0.0):.2f}",
+                        },
+                        "shadow_preview": sim_res,
+                        "note": "Dry run validated against TradeXpress Shadow Simulator. Operator confirmation required to commit.",
+                    }
+                else:
+                    sim_res = simulator.submit_shadow_order(
+                        symbol=sym,
+                        side=side,
+                        quantity=body.quantity,
+                        limit_price=unit_price,
+                        confirm=True,
+                        actor="HERMES",
+                        reason="Hermes Copilot Order",
+                        portfolio_id=shadow_pid,
+                        session=session,
+                    )
+                    if sim_res.get("status") == "REJECTED":
+                        reason = sim_res.get("message") or "Order rejected by shadow simulator constraints."
+                        _record_order_rejection(session, state, sym, "SHADOW_REJECTED", reason, trading_mode, body.model_dump(mode="json"))
+                        raise HTTPException(status_code=422, detail=reason)
+
+                    session.add(OrderIdempotencyKey(
+                        idempotency_key=body.idempotency_key,
+                        symbol=sym,
+                        side=side,
+                        quantity=body.quantity,
+                        price=unit_price,
+                        response_payload=sim_res,
+                    ))
+                    session.flush()
+                    sim_res["dry_run"] = False
+                    return sim_res
 
             # Enforce allowlist (Requirement 1)
             allowed_portfolios = get_allowed_portfolios(settings)

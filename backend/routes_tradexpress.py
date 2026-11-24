@@ -196,6 +196,45 @@ def build_tradexpress_router(
             raise HTTPException(status_code=400, detail=res.get("message"))
         return res
 
+    @router.post("/shadow/reset")
+    def post_shadow_reset(req: dict[str, Any] | None = None):
+        """Resets H9210_SHADOW tax lots, orders, trades, and restores initial capital with checkpoint."""
+        from backend.database import KernelStateCheckpoint, ShadowOrder, TaxLot, TradeLog
+        from backend.engine.checkpoint import CheckpointManager
+
+        target_pid = str((req or {}).get("portfolio_id") or "H9210_SHADOW")
+        initial_cap = decimal((req or {}).get("initial_capital") or settings.initial_capital)
+
+        with database.write() as session:
+            state = portfolio_state(session)
+            cp = CheckpointManager.create_checkpoint(
+                session,
+                state,
+                "SHADOW_RESET",
+                f"Resetting {target_pid} to initial capital ৳{initial_cap}",
+            )
+            session.query(TradeLog).filter(TradeLog.portfolio_id == target_pid).delete()
+            session.query(TaxLot).filter(TaxLot.portfolio_id == target_pid).delete()
+            session.query(ShadowOrder).filter(ShadowOrder.portfolio_id == target_pid).delete()
+            state.unsettled_sales_bdt = ZERO
+            session.flush()
+
+        if broadcaster:
+            try:
+                from backend.portfolio import build_snapshot
+
+                snap = build_snapshot(database, settings)
+                broadcaster.publish("portfolio", snap)
+            except Exception as b_err:
+                logger.debug("Failed publishing live SSE portfolio update after shadow reset: %s", b_err)
+
+        return {
+            "status": "RESET_SUCCESS",
+            "portfolio_id": target_pid,
+            "initial_capital": float(initial_cap),
+            "checkpoint_id": cp.id if cp else None,
+        }
+
     @router.get("/learning")
     def get_learning_logs(tier: str | None = None, limit: int = 50):
         """Returns recent TradeLearningLog records and aggregated win-rate telemetry."""
