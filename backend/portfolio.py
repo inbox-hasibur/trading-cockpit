@@ -537,6 +537,35 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             hold_sessions = None
             hold_day_label = "—"
 
+        # Sparkline points & intraday curve synthesis for live TradeXpress quotes
+        history_list = list(company.price_history or [])
+        intraday_ticks = passive_feed.get_intraday_series(company.symbol) if passive_feed else []
+        effective_pct_chg = live_pct_chg if live_pct_chg is not None else float(curve_dict.get("day_change_pct") or 0.0)
+        effective_chg = live_chg if live_chg is not None else (
+            float(company.last_price - decimal(company.price_history[-2]["close"]))
+            if (company.price_history and len(company.price_history) >= 2)
+            else 0.0
+        )
+
+        sparkline_pts: list[float] = []
+        if len(history_list) >= 2:
+            sparkline_pts = [float(p["close"]) for p in history_list if isinstance(p, dict) and "close" in p]
+        elif len(intraday_ticks) >= 2:
+            sparkline_pts = [float(t["price"]) for t in intraday_ticks]
+        elif len(intraday_ticks) == 1:
+            curr_p = float(intraday_ticks[0]["price"])
+            prev_p = curr_p - effective_chg if (curr_p - effective_chg) > 0 else curr_p * 0.99
+            sparkline_pts = [prev_p, curr_p]
+        else:
+            curr_p = float(company.last_price)
+            if curr_p > 0:
+                prev_p = curr_p - effective_chg if (curr_p - effective_chg) > 0 else curr_p * 0.99
+                sparkline_pts = [prev_p, curr_p] if prev_p != curr_p else [prev_p * 0.998, curr_p]
+            else:
+                sparkline_pts = [10.0, 10.0]
+
+        effective_history = history_list if len(history_list) >= 2 else [{"close": pt} for pt in sparkline_pts]
+
         company_views.append({
             "symbol": company.symbol,
             "name": company.name,
@@ -547,7 +576,8 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             "price": float(company.last_price),
             "quote_on": company.quote_on.isoformat(),
             "source": company.source,
-            "history": company.price_history,
+            "history": effective_history,
+            "sparkline_points": sparkline_pts,
             "extended_history": generate_extended_history(company.price_history, fundamentals, calendar, state.clock_date, session_dates=session_dates_240),
             "fundamentals": fundamentals,
             "curve": curve_dict,
@@ -574,8 +604,10 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             "hit_upper_circuit": bool(getattr(company, "hit_upper_circuit", False)),
             "last_trade_time": getattr(company, "last_trade_time", "") or "",
             "tradexpress_symbol": to_tradexpress_symbol(company.symbol),
-            "change": live_chg if live_chg is not None else (float(company.last_price - decimal(company.price_history[-2]["close"])) if (company.price_history and len(company.price_history) >= 2) else 0.0),
-            "pct_change": live_pct_chg if live_pct_chg is not None else float(curve_dict.get("day_change_pct") or 0.0),
+            "change": effective_chg,
+            "change_pct": effective_pct_chg,
+            "day_change_pct": effective_pct_chg,
+            "pct_change": effective_pct_chg,
             "order_book_depth": order_book_depth,
             "avg_bought_price": avg_bought_price,
             "bought_total": bought_total,

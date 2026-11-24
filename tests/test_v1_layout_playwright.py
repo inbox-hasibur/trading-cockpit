@@ -253,7 +253,46 @@ def test_tradexpress_v1_layout_and_interactions(cockpit_server):
         # Visual gates in Light Theme
         assert_strict_visual_gates("light")
 
-        # 7. Zero JS Console Errors
+        # Sprint 5G Light Theme Computed Background Brightness assertions (RGB brightness > 180)
+        light_selectors = [
+            "#company-search",
+            "#tx-order-qty",
+            "#tx-order-price",
+            "#tx-depth-table thead",
+            ".tx-depth-hint",
+            "#tx-broker-mirror-card",
+            ".tx-top-header",
+        ]
+        for sel in light_selectors:
+            brightness = page.evaluate(f"""() => {{
+                const el = document.querySelector('{sel}');
+                if (!el) return 255;
+                const bg = window.getComputedStyle(el).backgroundColor;
+                const m = bg.match(/\\d+/g);
+                if (!m || m.length < 3) return 255;
+                return 0.299 * Number(m[0]) + 0.587 * Number(m[1]) + 0.114 * Number(m[2]);
+            }}""")
+            assert brightness >= 180, f"Element {sel} failed Light Theme brightness check (expected >= 180, got {brightness})"
+
+        # 7. Split-Screen 800x900 assertion: zero bounding box overlap between children of .tx-top-header
+        page.set_viewport_size({"width": 800, "height": 900})
+        time.sleep(0.3)
+        theme_btn_800 = page.locator("#theme-toggle-btn").bounding_box()
+        assert theme_btn_800 is not None
+        assert theme_btn_800["x"] + theme_btn_800["width"] <= 800 + 4, (
+            f"Theme toggle button right edge ({theme_btn_800['x'] + theme_btn_800['width']}) clipped beyond 800px"
+        )
+        brand_box = page.locator(".tx-topbar-brand").bounding_box()
+        tele_box = page.locator(".tx-topbar-telemetry").bounding_box()
+        if brand_box and tele_box:
+            h_overlap = not (brand_box["x"] + brand_box["width"] <= tele_box["x"] or tele_box["x"] + tele_box["width"] <= brand_box["x"])
+            v_overlap = not (brand_box["y"] + brand_box["height"] <= tele_box["y"] or tele_box["y"] + tele_box["height"] <= brand_box["y"])
+            assert not (h_overlap and v_overlap), "Brand and telemetry items overlap in split-screen 800px!"
+
+        page.set_viewport_size({"width": 1440, "height": 900})
+        time.sleep(0.2)
+
+        # 8. Zero JS Console Errors
         assert len(js_errors) == 0, f"Encountered uncaught JS errors: {js_errors}"
 
         browser.close()

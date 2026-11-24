@@ -868,14 +868,14 @@ function renderWatchlist() {
     button.append(name); companyCell.append(button);
 
     // 2. Curve sparkline
-    const chart = cell(); chart.append(sparkline(company.history));
+    const chart = cell(); chart.append(sparkline(company.sparkline_points || company.history));
 
     // 3. LTP
     const ltpCell = cell(numberFormat.format(company.price), "align-right tabular-nums");
 
     // 4. % Chg
-    const pctVal = company.pct_change !== undefined ? Number(company.pct_change) : Number(company.curve.day_change_pct || 0);
-    const day = cell(percentage(pctVal), `align-right tabular-nums ${pctVal >= 0 ? "positive" : "negative"}`);
+    const pctVal = company.change_pct !== undefined ? Number(company.change_pct) : (company.pct_change !== undefined ? Number(company.pct_change) : Number(company.curve?.day_change_pct || 0));
+    const day = cell(percentage(pctVal), `align-right tabular-nums ${pctVal > 0 ? "positive" : (pctVal < 0 ? "negative" : "muted")}`);
 
     // 5. Bid / Qty
     const bidPriceStr = company.bid ? numberFormat.format(company.bid) : numberFormat.format(company.price);

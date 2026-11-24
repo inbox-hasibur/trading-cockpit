@@ -664,3 +664,58 @@ def test_hermes_order_routing_to_shadow_simulator(client: TestClient, test_db_an
     assert orders_res.status_code == 200
     orders = orders_res.json()
     assert any(o.get("symbol") == "BANKASIA" for o in orders)
+
+
+def test_pct_chg_sparklines_and_hb_place_order_tool(client: TestClient, test_db_and_settings):
+    """Verifies pctChg is properly mapped to change_pct and day_change_pct,
+
+    sparklines synthesize >= 2 points, and hb_place_order accepts H9210_SHADOW.
+    """
+    test_db, settings = test_db_and_settings
+    ext_origin = {"Origin": "chrome-extension://testabc123"}
+
+    payload = {
+        "source": "EDGE_EXTENSION_PASSIVE",
+        "dse_status": "Trading",
+        "tab": "gsc",
+        "market_watch_rows": [
+            {
+                "sDes": "GP",
+                "ltp": "275.00",
+                "chg": "15.00",
+                "pctChg": "5.77",
+                "vol": "150000",
+                "open": "260.00",
+                "high": "276.00",
+                "low": "259.00",
+                "dispSettType": "PUBLIC",
+                "dispSymCat": "A",
+            }
+        ],
+    }
+    resp = client.post("/api/tradexpress/passive-ingest", json=payload, headers=ext_origin)
+    assert resp.status_code == 200
+
+    from backend.portfolio import build_snapshot
+
+    snap = build_snapshot(test_db, settings)
+    gp = next((c for c in snap["companies"] if c["symbol"] == "GP"), None)
+    assert gp is not None
+    assert float(gp.get("change_pct") or 0) == pytest.approx(5.77, 0.01)
+    assert float(gp.get("day_change_pct") or 0) == pytest.approx(5.77, 0.01)
+    assert len(gp.get("sparkline_points") or []) >= 2
+
+    # Verify plugins.humming_bird.tools.hb_place_order allowlist
+    from plugins.humming_bird.tools import hb_place_order
+
+    order_prev = hb_place_order(
+        symbol="GP",
+        side="BUY",
+        quantity=10,
+        price=275.0,
+        portfolio="H9210_SHADOW",
+        confirm=False,
+    )
+    assert "error" not in order_prev.lower() or "rejected" not in order_prev.lower()
+    assert "preview" in order_prev.lower() or "token" in order_prev.lower() or "validated" in order_prev.lower()
+

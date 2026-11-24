@@ -137,6 +137,8 @@ def create_app(settings: Settings | None = None, database: Database | None = Non
         with database.write() as session:
             seed_demo(session, settings)
             migrate_real_stocknow_market(session, settings)
+            from backend.adapters.tradexpress.passive_feed import cleanup_polluted_gsc_symbols
+            cleanup_polluted_gsc_symbols(session)
             state = portfolio_state(session)
             state.startup_health_status = "READY"
             state.startup_health_passed = True

@@ -28,7 +28,37 @@
 
   function cleanNum(str) {
     if (!str) return '';
-    return String(str).replace(/,/g, '').replace(/%/g, '').trim();
+    return String(str)
+      .replace(/,/g, '')
+      .replace(/%/g, '')
+      .replace(/\+/g, '')
+      .replace(/BDT/gi, '')
+      .replace(/৳/g, '')
+      .trim();
+  }
+
+  function extractGlobalBuyingPower() {
+    // 1. Order ticket top panel: #order-top-panel-8-1-1-1 [data-id="bp-short"] .holding-trade-bp
+    const bpPanelEl = document.querySelector(
+      '#order-top-panel-8-1-1-1 [data-id="bp-short"] .holding-trade-bp, ' +
+      '#order-ticket-landscape-id [data-id="bp-short"] .holding-trade-bp, ' +
+      '[data-id="bp-short"] .holding-trade-bp, ' +
+      '.holding-trade-bp'
+    );
+    if (bpPanelEl) {
+      const v = parseFloat(cleanNum(safeText(bpPanelEl)));
+      if (!isNaN(v) && v > 0) return v;
+    }
+
+    // 2. Top navbar / header Buying Power
+    const topNavText = (document.querySelector('header, .app-header, #app-header, .top-bar, .tx-topbar, #top-bar') || document.body || {}).innerText || '';
+    const bpMatch = topNavText.match(/Buying\s*Power[:\s\t]+(?:BDT|৳)?\s*([0-9,]+(?:\.[0-9]{1,2})?)/i);
+    if (bpMatch) {
+      const v = parseFloat(bpMatch[1].replace(/,/g, ''));
+      if (!isNaN(v) && v > 0) return v;
+    }
+
+    return null;
   }
 
   function parseMoneyValue(text, pattern) {
@@ -235,12 +265,25 @@
 
     // Extract Real 5-Level Market Depth from Order Ticket depth rows
     let depth = null;
-    const depthContainer = ticket.querySelector(
-      '.order-ticket-depth, .order-ticket-depth-table, [data-id="depth-table"], table.depth-table, .order-depth, #order-depth, table'
-    );
-    const rows = (depthContainer || ticket).querySelectorAll('tbody tr, .depth-row, tr');
+    let depthTable = null;
+
+    // Locate the depth table whose thead or header rows contain Quantity + Bid + Offer
+    const candidateTables = ticket.querySelectorAll('table, .order-ticket-depth, [data-id="depth-table"], .depth-table');
+    for (const t of candidateTables) {
+      const headerText = (t.querySelector('thead') || t).innerText.toLowerCase();
+      if ((headerText.includes('bid') || headerText.includes('buy')) && (headerText.includes('offer') || headerText.includes('ask') || headerText.includes('sell'))) {
+        depthTable = t;
+        break;
+      }
+    }
+    if (!depthTable) {
+      depthTable = ticket.querySelector('.order-ticket-depth-table, [data-id="depth-table"], table.depth-table, .order-depth, #order-depth');
+    }
+
+    const rows = (depthTable || ticket).querySelectorAll('tbody tr, .depth-row, tr');
     const levels = [];
     rows.forEach((r) => {
+      if (r.querySelector('th')) return; // skip thead rows
       const cells = r.querySelectorAll('td, .depth-cell, [cell-id]');
       if (cells.length >= 4) {
         const bQty = parseInt(cleanNum(safeText(cells[0]))) || 0;
@@ -328,83 +371,141 @@
       active_tab: 'portfolio',
     };
 
-    if (!portContainer) return result;
+    const globalBp = extractGlobalBuyingPower();
 
-    const activeTabEl = portContainer.querySelector(
-      'a.active[container-tab-id], .nav-tabs .active a, [role="tab"].active, [aria-selected="true"]'
-    );
-    const activeTabAttr = activeTabEl ? (activeTabEl.getAttribute('container-tab-id') || safeText(activeTabEl)).toLowerCase() : '';
+    let summaryScope = null;
+    if (portContainer) {
+      const activeTabEl = portContainer.querySelector(
+        'a.active[container-tab-id], .nav-tabs .active a, [role="tab"].active, [aria-selected="true"]'
+      );
+      const activeTabAttr = activeTabEl ? (activeTabEl.getAttribute('container-tab-id') || safeText(activeTabEl)).toLowerCase() : '';
 
-    if (activeTabAttr.includes('account')) {
-      result.active_tab = 'account_summary';
-    } else if (activeTabAttr.includes('order')) {
-      result.active_tab = 'order_list';
-    } else {
-      result.active_tab = 'portfolio';
-    }
+      if (activeTabAttr.includes('account')) {
+        result.active_tab = 'account_summary';
+      } else if (activeTabAttr.includes('order')) {
+        result.active_tab = 'order_list';
+      } else {
+        result.active_tab = 'portfolio';
+      }
 
-    // 1. Portfolio Rows if portfolio tab or rows exist
-    const leftRows = portContainer.querySelectorAll('.ember-table-left-table-block .ember-table-table-row');
-    const rightRows = portContainer.querySelectorAll('.ember-table-right-table-block .ember-table-table-row');
+      // 1. Portfolio Rows if portfolio tab or rows exist
+      const leftRows = portContainer.querySelectorAll('.ember-table-left-table-block .ember-table-table-row');
+      const rightRows = portContainer.querySelectorAll('.ember-table-right-table-block .ember-table-table-row');
 
-    if (leftRows.length > 0 && rightRows.length > 0) {
-      const leftMap = new Map();
-      leftRows.forEach((r) => {
-        const topKey = r.style.top || (r.offsetTop + 'px');
-        const symEl = r.querySelector('[cell-id="dataObj.symbolInfo.dSym"], [cell-id="dataObj.sDes"], .symbol-fore-color');
-        const sym = safeText(symEl);
-        if (sym) leftMap.set(topKey, sym);
-      });
-
-      rightRows.forEach((r) => {
-        const topKey = r.style.top || (r.offsetTop + 'px');
-        const sym = leftMap.get(topKey);
-        if (!sym) return;
-
-        const totalQtyEl = r.querySelector('[cell-id="dataObj.profLossQty"]');
-        const avaiQtyEl = r.querySelector('[cell-id="dataObj.avaiQtyDSE"]');
-        const penHoldingEl = r.querySelector('[cell-id="dataObj.penHolding"]');
-        const pendBuyEl = r.querySelector('[cell-id="dataObj.pendBuy"]');
-        const pendSellEl = r.querySelector('[cell-id="dataObj.pendSell"]');
-        const avgCstEl = r.querySelector('[cell-id="dataObj.avgCst"]');
-        const mktPriceEl = r.querySelector('[cell-id="dataObj.mktPrice"]');
-
-        result.portfolio_rows.push({
-          symbol: sym,
-          total_qty: parseInt(cleanNum(safeText(totalQtyEl))) || 0,
-          available_dse_qty: parseInt(cleanNum(safeText(avaiQtyEl))) || 0,
-          pending_holding_qty: parseInt(cleanNum(safeText(penHoldingEl))) || 0,
-          buy_pending_qty: parseInt(cleanNum(safeText(pendBuyEl))) || 0,
-          sell_pending_qty: parseInt(cleanNum(safeText(pendSellEl))) || 0,
-          avg_cost: cleanNum(safeText(avgCstEl)),
-          market_price: cleanNum(safeText(mktPriceEl)),
+      if (leftRows.length > 0 && rightRows.length > 0) {
+        const leftMap = new Map();
+        leftRows.forEach((r) => {
+          const topKey = r.style.top || (r.offsetTop + 'px');
+          const symEl = r.querySelector('[cell-id="dataObj.symbolInfo.dSym"], [cell-id="dataObj.sDes"], .symbol-fore-color');
+          const sym = safeText(symEl);
+          if (sym) leftMap.set(topKey, sym);
         });
-      });
+
+        rightRows.forEach((r) => {
+          const topKey = r.style.top || (r.offsetTop + 'px');
+          const sym = leftMap.get(topKey);
+          if (!sym) return;
+
+          const totalQtyEl = r.querySelector('[cell-id="dataObj.profLossQty"]');
+          const avaiQtyEl = r.querySelector('[cell-id="dataObj.avaiQtyDSE"]');
+          const penHoldingEl = r.querySelector('[cell-id="dataObj.penHolding"]');
+          const pendBuyEl = r.querySelector('[cell-id="dataObj.pendBuy"]');
+          const pendSellEl = r.querySelector('[cell-id="dataObj.pendSell"]');
+          const avgCstEl = r.querySelector('[cell-id="dataObj.avgCst"]');
+          const mktPriceEl = r.querySelector('[cell-id="dataObj.mktPrice"]');
+
+          result.portfolio_rows.push({
+            symbol: sym,
+            total_qty: parseInt(cleanNum(safeText(totalQtyEl))) || 0,
+            available_dse_qty: parseInt(cleanNum(safeText(avaiQtyEl))) || 0,
+            pending_holding_qty: parseInt(cleanNum(safeText(penHoldingEl))) || 0,
+            buy_pending_qty: parseInt(cleanNum(safeText(pendBuyEl))) || 0,
+            sell_pending_qty: parseInt(cleanNum(safeText(pendSellEl))) || 0,
+            avg_cost: cleanNum(safeText(avgCstEl)),
+            market_price: cleanNum(safeText(mktPriceEl)),
+          });
+        });
+      }
+
+      summaryScope = portContainer.querySelector(
+        '.account-summary-container, [container-id="accountSummary"], .account-summary, #account-summary, [data-id="account-summary"]'
+      ) || portContainer;
+    } else {
+      summaryScope = document.querySelector(
+        '.account-summary-container, [container-id="accountSummary"], .account-summary, #account-summary'
+      );
     }
 
-    // 2. Account Summary extraction
-    const summaryContainer = portContainer.querySelector(
-      '.account-summary-container, [container-id="accountSummary"], .account-summary, #account-summary'
+    // 2. Resilient Label-Based Account Summary Extraction
+    const labelValues = {};
+    const candidateRows = (summaryScope || document).querySelectorAll(
+      'tr, .ember-table-table-row, .account-row, .kv-row, div.row, div'
     );
-    const summaryScope = summaryContainer || portContainer;
-    const summaryText = summaryScope ? summaryScope.innerText : '';
 
-    const cash = parseMoneyValue(summaryText, '(?:Cash\\s*Balance|Ledger\\s*Balance)');
-    const availCash = parseMoneyValue(summaryText, 'Available\\s*Cash\\s*Balance') || cash;
-    const blocked = parseMoneyValue(summaryText, 'Blocked\\s*Amount');
-    const unsettled = parseMoneyValue(summaryText, 'Unsettled\\s*Sales');
-    const payable = parseMoneyValue(summaryText, 'Payable\\s*Amount');
-    const buyingPower = parseMoneyValue(summaryText, 'Buying\\s*Power');
+    const patterns = [
+      { key: 'customer_number', regex: /Customer\s*Number/i },
+      { key: 'cash_balance', regex: /Cash\s*Balance|Ledger\s*Balance/i },
+      { key: 'available_cash_balance', regex: /Available\s*Cash(?:\s*Balance)?/i },
+      { key: 'blocked_amount', regex: /Blocked\s*Amount/i },
+      { key: 'cash_available_for_withdrawal', regex: /Cash\s*Available\s*For\s*Withdrawal/i },
+      { key: 'unsettled_sales', regex: /Unsettled\s*Sales/i },
+      { key: 'payable_amount', regex: /Payable\s*Amount/i },
+      { key: 'buying_power', regex: /Buying\s*Power/i },
+    ];
 
-    if (cash > 0 || availCash > 0 || buyingPower > 0 || unsettled > 0 || blocked > 0) {
+    candidateRows.forEach((row) => {
+      const text = safeText(row);
+      if (!text || text.length > 200) return;
+
+      patterns.forEach(({ key, regex }) => {
+        if (labelValues[key] !== undefined) return;
+        if (regex.test(text)) {
+          const cells = row.querySelectorAll('td, .table-cell, .col, span, div');
+          if (cells.length >= 2) {
+            for (let i = 0; i < cells.length; i++) {
+              if (regex.test(safeText(cells[i]))) {
+                for (let j = i + 1; j < cells.length; j++) {
+                  const valTxt = cleanNum(safeText(cells[j]));
+                  if (valTxt && /^[0-9]+(?:\.[0-9]{1,2})?$/.test(valTxt)) {
+                    labelValues[key] = key === 'customer_number' ? valTxt : parseFloat(valTxt);
+                    break;
+                  }
+                }
+                break;
+              }
+            }
+          }
+          if (labelValues[key] === undefined) {
+            const m = text.match(new RegExp(regex.source + '[:\\s\\t]+(?:BDT|৳)?\\s*([0-9,]+(?:\\.[0-9]{1,2})?)', 'i'));
+            if (m) {
+              const numStr = m[1].replace(/,/g, '');
+              labelValues[key] = key === 'customer_number' ? numStr : parseFloat(numStr);
+            }
+          }
+        }
+      });
+    });
+
+    const cash = labelValues.cash_balance !== undefined ? labelValues.cash_balance : 0.0;
+    const availCash = labelValues.available_cash_balance !== undefined ? labelValues.available_cash_balance : cash;
+    const blocked = labelValues.blocked_amount !== undefined ? labelValues.blocked_amount : 0.0;
+    const unsettled = labelValues.unsettled_sales !== undefined ? labelValues.unsettled_sales : 0.0;
+    const payable = labelValues.payable_amount !== undefined ? labelValues.payable_amount : 0.0;
+    const withdrawable = labelValues.cash_available_for_withdrawal !== undefined ? labelValues.cash_available_for_withdrawal : cash;
+    const bp = labelValues.buying_power !== undefined && labelValues.buying_power > 0
+      ? labelValues.buying_power
+      : (globalBp !== null && globalBp > 0 ? globalBp : (availCash > 0 ? availCash : (cash + unsettled)));
+
+    if (bp > 0 || cash > 0 || availCash > 0 || unsettled > 0 || blocked > 0 || (globalBp !== null && globalBp > 0)) {
       result.account_summary = {
+        customer_number: labelValues.customer_number || 'H9210',
         cash_balance: cash,
         available_cash_balance: availCash,
         blocked_amount: blocked,
-        cash_available_for_withdrawal: cash,
+        cash_available_for_withdrawal: withdrawable,
         unsettled_sales: unsettled,
         payable_amount: payable,
-        buying_power: buyingPower > 0 ? buyingPower : (cash + unsettled),
+        buying_power: bp,
       };
     }
 
@@ -426,17 +527,23 @@
         // Effective active tab
         const activeTab = portData.active_tab !== 'portfolio' ? portData.active_tab : mwTab;
 
-        // Account summary fallback to ticket buying power if present
+        // Account summary fallback to ticket buying power or globalBp if present
         let acctSummary = portData.account_summary;
-        if (!acctSummary && ticketLimits && ticketLimits.buying_power !== null && ticketLimits.buying_power > 0) {
+        const globalBp = extractGlobalBuyingPower();
+        const effectiveBp = (ticketLimits && ticketLimits.buying_power !== null && ticketLimits.buying_power > 0) ? ticketLimits.buying_power : globalBp;
+        if (!acctSummary && effectiveBp !== null && effectiveBp > 0) {
           acctSummary = {
-            cash_balance: ticketLimits.buying_power,
-            available_cash_balance: ticketLimits.buying_power,
-            buying_power: ticketLimits.buying_power,
+            customer_number: 'H9210',
+            cash_balance: effectiveBp,
+            available_cash_balance: effectiveBp,
+            buying_power: effectiveBp,
             blocked_amount: 0,
             unsettled_sales: 0,
             payable_amount: 0,
+            cash_available_for_withdrawal: effectiveBp,
           };
+        } else if (acctSummary && (!acctSummary.buying_power || acctSummary.buying_power === 0) && effectiveBp !== null && effectiveBp > 0) {
+          acctSummary.buying_power = effectiveBp;
         }
 
         const payload = {

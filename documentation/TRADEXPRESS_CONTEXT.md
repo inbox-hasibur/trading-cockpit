@@ -376,6 +376,18 @@ The `Account Summary` sub-tab inside `#portfolioContainer-8-1-2-3` provides dire
 - **Halted / Inactive Stocks (`N/A` / `LTP = 0.00`):** Attempting to trade halted securities (e.g. `ATCSLGF`PB with `LTP = 0.00` or `Status: N/A`) is rejected.
 - **Preflight Filter Invariant:** The trading engine must verify `Settlement Type == 'PUBLIC'`, `Category != 'Z'`, and `LTP > 0.00` before generating order tickets.
 
+### 8.5 Sprint 5G DOM Extraction Patterns (Account Summary & 5-Level Depth)
+- **Resilient Label-Based Account Summary Parsing:** Rather than hardcoded table indices, `content.js` matches row labels across `#portfolioContainer-8-1-2-3` using case-insensitive regex patterns:
+  - `Customer Number` -> client code `H9210`
+  - `Cash Balance` -> settled ledger cash (`353.00 BDT`)
+  - `Available Cash Balance` / `Available Cash` -> real-time trading power
+  - `Blocked Amount` -> reserved capital
+  - `Cash Available For Withdrawal` -> withdrawable balance
+  - `Unsettled Sales` -> unmatured sales proceeds
+  - `Payable Amount` -> clearing payable
+- **Order Ticket Header Buying Power Fallback:** Order ticket header and `#order-ticket-landscape-id` top panel display `Buying Power: ৳353.00` even before the Account Summary tab is clicked. `content.js` scrapes this fallback so `LIVE BROKER MIRROR (H9210)` never displays `৳0.00`.
+- **Real 5-Level Bid/Offer Depth Parsing:** Targets the depth table inside `#order-ticket-landscape-id` containing `Bid` and `Offer` column headers, extracting up to 5 non-empty rows with numeric quantities and prices.
+
 ---
 
 ## 9. Verified Operational Tips, Tricks & Gotchas

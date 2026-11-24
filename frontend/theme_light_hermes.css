@@ -3272,3 +3272,106 @@ body.is-resizing-hermes .app-shell {
 [data-theme="light"] .tx-acc-kv-table tr:hover td {
   background: #f8fafc !important;
 }
+
+/* Sprint 5G Light Theme Completeness Fixes */
+[data-theme="light"] #company-search {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] #company-search::placeholder {
+  color: #64748b !important;
+}
+
+[data-theme="light"] #tx-order-qty,
+[data-theme="light"] #tx-order-price,
+[data-theme="light"] #tx-order-disclosed-qty,
+[data-theme="light"] #tx-order-min-fill,
+[data-theme="light"] #tx-order-type,
+[data-theme="light"] #tx-order-tif,
+[data-theme="light"] .tx-input-sm,
+[data-theme="light"] .tx-stepper-btn,
+[data-theme="light"] .tx-step-btn {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] #tx-order-qty:disabled,
+[data-theme="light"] #tx-order-price:disabled,
+[data-theme="light"] #tx-order-disclosed-qty:disabled,
+[data-theme="light"] #tx-order-min-fill:disabled,
+[data-theme="light"] .tx-input-sm:disabled,
+[data-theme="light"] .tx-input-sm[readonly] {
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+}
+
+[data-theme="light"] #tx-depth-table thead,
+[data-theme="light"] #tx-depth-table th,
+[data-theme="light"] .tx-depth-table thead,
+[data-theme="light"] .tx-depth-table th {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+}
+
+[data-theme="light"] .tx-depth-hint {
+  background: #f8fafc !important;
+  color: #64748b !important;
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] #tx-broker-mirror-card,
+[data-theme="light"] .tx-broker-mirror-card {
+  background: #f0fdf4 !important;
+  border: 1px solid #86efac !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] #tx-broker-mirror-card strong,
+[data-theme="light"] .tx-broker-mirror-card strong {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] #tx-broker-mirror-card .muted,
+[data-theme="light"] .tx-broker-mirror-card .muted {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .tx-top-header,
+[data-theme="light"] .tx-topbar {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .tx-top-header span,
+[data-theme="light"] .tx-top-header strong,
+[data-theme="light"] .tx-topbar span,
+[data-theme="light"] .tx-topbar strong {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .tx-tele-label {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .tx-tele-item {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .tx-tele-val {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .tx-tele-val.positive {
+  color: #059669 !important;
+}
+
+[data-theme="light"] .tx-tele-val.negative {
+  color: #dc2626 !important;
+}
+

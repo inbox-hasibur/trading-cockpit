@@ -6868,26 +6868,24 @@ button.local-avatar:hover {
   .tx-topbar {
     padding: 3px 6px !important;
     gap: 4px !important;
+    min-height: 38px !important;
+    max-height: none !important;
+    flex-wrap: wrap !important;
   }
 
   .tx-topbar-telemetry {
-    overflow-x: auto !important;
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
+    flex-wrap: wrap !important;
     gap: 4px !important;
-  }
-
-  .tx-topbar-telemetry::-webkit-scrollbar {
-    display: none !important;
+    overflow: visible !important;
   }
 
   .tx-tele-item {
-    padding: 2px 5px !important;
-    font-size: 10px !important;
+    padding: 2px 4px !important;
+    font-size: 9.5px !important;
   }
 
   .tx-tele-label {
-    font-size: 8.5px !important;
+    font-size: 8px !important;
   }
 }
 

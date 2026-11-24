@@ -316,6 +316,7 @@ class TradeXpressPassiveFeed(MarketFeedAdapter):
         )
         self._order_ticket_depth: dict[str, dict[str, Any]] = {}
         self._market_index: dict[str, Any] = {}
+        self._intraday_series: dict[str, list[dict[str, Any]]] = {}
 
     def update_order_ticket_depth(self, symbol: str, depth_data: dict[str, Any]) -> None:
         clean = from_tradexpress_symbol(symbol)
@@ -452,6 +453,26 @@ class TradeXpressPassiveFeed(MarketFeedAdapter):
         with self._lock:
             for q in quotes:
                 self._quotes[q.symbol] = q
+                if q.ltp and q.ltp > ZERO:
+                    series = self._intraday_series.setdefault(q.symbol, [])
+                    if not series:
+                        chg_val = q.change or ZERO
+                        open_val = q.open_price if (q.open_price and q.open_price > ZERO) else q.ltp
+                        prev_close = q.ltp - chg_val if chg_val != ZERO else open_val
+                        if prev_close > ZERO:
+                            series.append({"time": "prev_close", "price": float(prev_close)})
+                        if open_val > ZERO and open_val != prev_close:
+                            series.append({"time": "open", "price": float(open_val)})
+                    ltp_f = float(q.ltp)
+                    if not series or series[-1]["price"] != ltp_f or len(series) < 3:
+                        series.append({"time": q.last_trade_time or utc_now_iso(), "price": ltp_f})
+                    if len(series) > 40:
+                        self._intraday_series[q.symbol] = series[-40:]
+
+    def get_intraday_series(self, symbol: str) -> list[dict[str, Any]]:
+        clean = from_tradexpress_symbol(symbol)
+        with self._lock:
+            return list(self._intraday_series.get(clean, []))
 
     def update_holdings(self, holdings: list[PortfolioHolding]) -> None:
         with self._lock:
@@ -566,12 +587,12 @@ def cleanup_polluted_gsc_symbols(session: Session) -> int:
     from backend.database import TaxLot, TradeLog
 
     cleaned_count = 0
-    gsc_profiles = list(
+    profiles = list(
         session.scalars(
             select(CompanyProfile).where(CompanyProfile.watchlist_category == "GSC")
         )
     )
-    for cp in gsc_profiles:
+    for cp in profiles:
         if cp.symbol in FOUNDATIONAL_GSC_SYMBOLS:
             continue
 
@@ -682,24 +703,32 @@ def ingest_passive_snapshot(
         active_feed.update_quotes(parsed_quotes)
 
         # Determine tab category: only tag GSC/L1/L2 when specifically viewing that tab
-        tab_category = "ALL_DSE"
+        tab_norm = (tab or "").strip().lower()
+        tab_category: str | None = "ALL_DSE"
         is_fav = False
-        if "gsc" in tab:
+        if tab_norm == "gsc" or tab_norm.endswith(" gsc"):
             tab_category = "GSC"
             is_fav = True
-        elif "l1" in tab:
+        elif tab_norm in ("l1", "gsc_l1") or " l1" in tab_norm:
             tab_category = "GSC_L1"
             is_fav = True
-        elif "l2" in tab:
+        elif tab_norm in ("l2", "gsc_l2") or " l2" in tab_norm:
             tab_category = "GSC_L2"
             is_fav = True
-        elif "favorite" in tab:
-            tab_category = "GSC"
+        elif "my favorites" in tab_norm or tab_norm == "favorites":
             is_fav = True
+            tab_category = None  # preserve existing category
+        else:
+            tab_category = "ALL_DSE"
+            is_fav = False
 
         with db.write() as session:
             state = portfolio_state(session)
             today_str = state.clock_date.isoformat()
+
+            # Automatic purge of polluted GSC rows on full DSE view
+            if tab_norm in ("dhaka stock exchange", "market_watch", "all", "all_dse", ""):
+                cleanup_polluted_gsc_symbols(session)
 
             for q in parsed_quotes:
                 cp = session.get(CompanyProfile, q.symbol)
@@ -778,8 +807,6 @@ def ingest_passive_snapshot(
                     cp.price_history = history[-30:]
                 quotes_updated += 1
 
-            # Run cleanup migration for non-GSC symbols accidentally tagged as GSC
-            cleanup_polluted_gsc_symbols(session)
             session.flush()
 
     # 1.5. Ingest order ticket limits if present

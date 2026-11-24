@@ -7,9 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [v1.0.0-dev] - Unreleased (Trading Cockpit V1 Branch - Sprints 4A, 4B, 4C, 5A, 5B, 5C, 5D, 5E, 5F)
+## [v1.0.0-dev] - Unreleased (Trading Cockpit V1 Branch - Sprints 4A, 4B, 4C, 5A, 5B, 5C, 5D, 5E, 5F, 5G)
 
 ### Added
+- **Sprint 5G: Live Visual & Data Sync Fixes + Google Gemini Discovery & Tool-Calling Benchmark:**
+  - `extension/tradexpress_mirror/content.js`: Resilient label-based extraction of `Account Summary` (`Customer Number`, `Cash Balance`, `Available Cash`, `Blocked Amount`, `Withdrawable`, `Unsettled Sales`, `Payable Amount`) with topbar Buying Power fallback. Fixed real 5-level depth table targeting and cleaned numeric `% Chg` / `Chg` parser.
+  - `backend/adapters/tradexpress/passive_feed.py` & `backend/portfolio.py`: Case-insensitive tab normalization, isolation of full DSE views to `ALL_DSE` (`favorite=False`), retention of `GSC`, `GSC_L1`, `GSC_L2`, and automated `cleanup_polluted_gsc_symbols` on startup and full DSE views. Added rolling intraday tick series `_intraday_series[symbol]` ensuring sparklines synthesize >= 2 points so 7-15d curves never render blank.
+  - `frontend/tradexpress_ui.js` & `frontend/index.html`: Added 1-click Shadow reset buttons (`Mirror H9210 (৳353)` and `Clean Dummy (৳50,000)`) connected to `POST /api/tradexpress/shadow/reset`. Donut chart renders solid green `100.0% Cash` ring when holdings cost is zero.
+  - `frontend/theme_light_hermes.css` & `frontend/styles.css`: Complete Light Mode styling with RGB background brightness > 180 across search, ticket inputs, depth table, mirror card, and top header; responsive topbar wrapping below 1100px ensuring zero clipping/overlap at 800px split-screen.
+  - `plugins/humming_bird/tools.py`: Added `"H9210_SHADOW"` and `"H9210"` to tool allowed portfolios.
+  - `scripts/test_google_models.py` & `backend/routes_hermes.py`: Live benchmark tool evaluating Google Generative Language v1beta chat models (`gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`, etc.) for basic generation and structured function calling with `hb_place_order`.
 - **0.35s MutationObserver Realtime Sniffing (`extension/tradexpress_mirror/content.js`):** Upgraded from 2500ms polling to a lightweight trailing debounce `MutationObserver` on `#table-8-1-1-2-cached`, `#order-ticket-landscape-id`, and `#portfolioContainer-8-1-2-3` with a 350ms trailing debounce and 5000ms fallback heartbeat.
 - **Accurate Active Tab Detection & Real 5-Level Depth (`content.js`, `passive_feed.py`):** Detects visible active tab (`"Dhaka Stock Exchange"`, `"My Favorites"`, `"GSC"`, `"L1"`, `"L2"`), extracts real 5-level Bid/Offer depth from `#order-ticket-landscape-id` without guessing or fabricating quantities, and captures topbar DSEX index and breadth (advances/declines/unchanged).
 - **GSC Tab Pollution Guard & Cleanup Migration (`backend/adapters/tradexpress/passive_feed.py`):** Sniffing the full `"Dhaka Stock Exchange"` tab defaults newly discovered stocks to `watchlist_category="ALL_DSE"` and `favorite=False`, leaving existing GSC/L1/L2 symbols untouched. Added `cleanup_polluted_gsc_symbols` to reset unallocated non-foundational stocks back to `"ALL_DSE"`.

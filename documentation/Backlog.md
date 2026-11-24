@@ -541,6 +541,29 @@ Reconciliation of all audit findings and architectural items from historical MVP
 
 ---
 
+### ✅ Sprint 5G (Completed): Fix Live Visual & Data Sync Bugs + Real Account Summary & 5-Level Depth DOM Parsing + Google Gemini Benchmark
+
+- [x] **Resilient Label-Based Account Summary & Global Buying Power (`extension/tradexpress_mirror/content.js`):**
+  - Scans candidate rows for `Customer Number`, `Cash Balance`, `Available Cash`, `Blocked Amount`, `Withdrawable`, `Unsettled Sales`, and `Payable Amount`.
+  - Added global Buying Power fallback from order ticket header so `LIVE BROKER MIRROR (H9210)` never displays `৳0.00` when `353.00` is visible.
+  - Targeted real 5-level Bid/Offer depth table with header matching and filtered blank rows. Cleaned `% Chg` / `Chg` parser.
+- [x] **Case-Insensitive Active Tab Isolation & GSC Pollution Cleanup (`backend/adapters/tradexpress/passive_feed.py`):**
+  - Normalized `tab_norm`, strictly assigned `tab_category` for `"gsc"`, `"l1"`, `"l2"`, preserved tier for `"my favorites"`, defaulted full DSE to `ALL_DSE` (`favorite=False`), and automatically executed `cleanup_polluted_gsc_symbols(session)` on startup and full DSE views.
+- [x] **Rolling Intraday Series & Live Curve Generation (`backend/portfolio.py`, `backend/adapters/tradexpress/passive_feed.py`):**
+  - Added `_intraday_series[symbol]` in `TradeXpressPassiveFeed` capturing up to 40 intraday ticks.
+  - Populated `sparkline_points` with `>= 2` points, ensuring `Curve 7–15d` never displays blank `—` in Market Watch.
+- [x] **Clean Shadow Reset UI & Donut Chart Optimization (`frontend/tradexpress_ui.js`, `frontend/index.html`):**
+  - Added 1-click action buttons `Mirror H9210 (৳353)` and `Clean Dummy (৳50,000)` wired to `POST /api/tradexpress/shadow/reset`.
+  - `#tx-account-donut` renders crisp solid green `100.0% CASH` ring when invested capital is zero.
+- [x] **Light-Mode Contrast & Split-Screen Topbar Wrap (`frontend/theme_light_hermes.css`, `frontend/styles.css`):**
+  - Enforced Light Mode overrides with computed background brightness > 180 on `#company-search`, `#tx-order-qty`, `#tx-order-price`, `#tx-depth-table thead`, `.tx-depth-hint`, `#tx-broker-mirror-card`, and `.tx-top-header`.
+  - Added responsive `.tx-top-header` / `.tx-topbar` wrapping below 1100px with zero element overlap at 800px split-screen.
+- [x] **Hermes `H9210_SHADOW` Tool Allowlist & Direct Gemini Benchmark (`plugins/humming_bird/tools.py`, `scripts/test_google_models.py`):**
+  - Added `"H9210_SHADOW"` and `"H9210"` to allowed portfolio IDs for `hb_*` tools.
+  - Built live Google Generative Language v1beta chat model discovery and tool-calling benchmark verifying `gemini-3.5-flash-lite` and `gemini-3.1-flash-lite` for function calling.
+
+---
+
 ### 🏦 Sprint 6: Production Graduation to Live TradeXpress 2-Step Execution & iBroker EOD Audit
 
 - [ ] **Production TradeXpress 2-Step Executor (`TRADEXPRESS_LIVE` Mode):**

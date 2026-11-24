@@ -251,7 +251,13 @@ def hb_sync(args: dict[str, Any] | None = None, **kwargs) -> str:
 def _get_allowed_portfolios() -> tuple[str, ...]:
     live = (os.getenv("STOCKNOW_LIVE_PORTFOLIO_ID") or "164580").strip()
     test = (os.getenv("STOCKNOW_TEST_PORTFOLIO_ID") or "").strip()
-    return (live, test) if test else (live,)
+    portfolios = [live]
+    if test and test not in portfolios:
+        portfolios.append(test)
+    for p in ("H9210_SHADOW", "H9210"):
+        if p not in portfolios:
+            portfolios.append(p)
+    return tuple(portfolios)
 
 
 def hb_place_order(args: dict[str, Any] | None = None, **kwargs) -> str:

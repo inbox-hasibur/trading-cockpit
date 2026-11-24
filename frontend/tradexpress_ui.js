@@ -689,26 +689,39 @@
       return;
     }
 
-    const sAngle = (settled / total) * 360;
-    const uAngle = (unsettled / total) * 360;
-    const iAngle = (invested / total) * 360;
-
     const r = 36;
     const c = 50;
     const circ = 2 * Math.PI * r;
 
-    const sOffset = 0;
+    // Crisp 100% Cash Donut when invested == 0
+    if (invested <= 0) {
+      container.innerHTML = `
+        <svg viewBox="0 0 100 100" class="tx-donut-svg">
+          <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--tx-border, #1c2837)" stroke-width="12" />
+          <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="#22c55e" stroke-width="12"
+            stroke-dasharray="${circ} 0" stroke-dashoffset="0" />
+          <text x="${c}" y="${c - 2}" text-anchor="middle" font-size="9" font-weight="700" fill="#22c55e">100.0%</text>
+          <text x="${c}" y="${c + 9}" text-anchor="middle" font-size="7" font-weight="600" fill="var(--tx-muted, #64748b)">CASH</text>
+        </svg>
+        <div class="tx-donut-legend">
+          <div><i class="mini-dot green" style="background:#22c55e;"></i> Settled Cash: ৳${settled.toFixed(0)}</div>
+          ${unsettled > 0 ? `<div><i class="mini-dot blue"></i> Unsettled: ৳${unsettled.toFixed(0)}</div>` : ''}
+          <div class="muted small">0 Holdings (Clean Slate)</div>
+        </div>
+      `;
+      return;
+    }
+
     const sLen = (settled / total) * circ;
-
-    const uOffset = -sLen;
     const uLen = (unsettled / total) * circ;
-
-    const iOffset = -(sLen + uLen);
     const iLen = (invested / total) * circ;
+    const sOffset = 0;
+    const uOffset = -sLen;
+    const iOffset = -(sLen + uLen);
 
     container.innerHTML = `
       <svg viewBox="0 0 100 100" class="tx-donut-svg">
-        <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="#1c2837" stroke-width="12" />
+        <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--tx-border, #1c2837)" stroke-width="12" />
         <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="#5de4c7" stroke-width="12"
           stroke-dasharray="${sLen} ${circ - sLen}" stroke-dashoffset="${sOffset}" />
         <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="#60a5fa" stroke-width="12"
@@ -765,10 +778,11 @@
 
     // Live Broker Mirror (H9210) Card values
     const bm = snapshot.broker_mirror_account || {};
+    const liveBp = (bm.buying_power !== undefined && bm.buying_power > 0) ? bm.buying_power : (bm.cash_balance || 0);
     setText("tx-bm-cash", formatMoney(bm.cash_balance || 0));
-    setText("tx-bm-bp", formatMoney(bm.buying_power || 0));
+    setText("tx-bm-bp", formatMoney(liveBp || 0));
     setText("tx-bm-unsettled", formatMoney(bm.unsettled_sales || 0));
-    setText("tx-bm-withdrawable", formatMoney(bm.cash_available_for_withdrawal || 0));
+    setText("tx-bm-withdrawable", formatMoney(bm.cash_available_for_withdrawal || bm.cash_balance || 0));
     if (bm.last_updated) {
       try {
         const d = new Date(bm.last_updated);
@@ -893,6 +907,51 @@
     }
     if (heldOnly && typeof window.renderWatchlist === "function") {
       heldOnly.addEventListener("change", () => window.renderWatchlist());
+    }
+
+    // Shadow Simulator Reset Buttons
+    const resetMirrorBtn = document.getElementById("tx-btn-reset-mirror");
+    const reset50kBtn = document.getElementById("tx-btn-reset-50k");
+
+    async function handleShadowReset(initialCash, label) {
+      try {
+        const res = await fetch("/api/tradexpress/shadow/reset", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ portfolio_id: "H9210_SHADOW", initial_cash: initialCash }),
+        });
+        const data = await res.json();
+        if (data.status === "RESET_OK") {
+          if (typeof window.notify === "function") {
+            window.notify(`Shadow Dummy reset: ${label} (৳${initialCash.toLocaleString()})`, false);
+          }
+          if (typeof window.refreshSnapshot === "function") {
+            window.refreshSnapshot();
+          }
+        } else {
+          if (typeof window.notify === "function") {
+            window.notify(`Shadow reset failed: ${data.detail || data.error}`, true);
+          }
+        }
+      } catch (err) {
+        if (typeof window.notify === "function") {
+          window.notify(`Reset error: ${err.message}`, true);
+        }
+      }
+    }
+
+    if (resetMirrorBtn) {
+      resetMirrorBtn.addEventListener("click", () => {
+        const bm = state.lastSnapshot?.broker_mirror_account;
+        const liveCash = (bm && bm.buying_power > 0) ? bm.buying_power : ((bm && bm.cash_balance > 0) ? bm.cash_balance : 353.00);
+        handleShadowReset(liveCash, "Mirror H9210 Cash");
+      });
+    }
+
+    if (reset50kBtn) {
+      reset50kBtn.addEventListener("click", () => {
+        handleShadowReset(50000.00, "Clean Dummy Capital");
+      });
     }
 
     // Quick prompt chip for Passive Sync Guide
