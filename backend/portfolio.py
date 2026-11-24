@@ -33,6 +33,7 @@ from backend.database import (
     TradeLog,
     portfolio_state,
 )
+from backend.engine.curve_analyzer import CurveAnalysis
 from backend.engine.money import HUNDRED, ZERO, decimal, money, sale_amount
 from backend.engine.signals import assess_company
 from backend.engine.t2_ledger import TradingCalendar, bucket_balances
@@ -290,16 +291,32 @@ def generate_extended_history(
     }
 
 
+def default_custom_rule(symbol: str) -> CustomRule:
+    return CustomRule(
+        symbol=symbol,
+        enabled=False,
+        buy_allocation_pct=ZERO,
+        profit_tiers=["1.5", "3.5", "6.0"],
+        tier_slices=["25", "25", "25"],
+        pullback_pct=Decimal("3.0"),
+        buy_zone_fraction=Decimal("0.35"),
+        crash_daily_pct=Decimal("8.0"),
+        crash_drawdown_pct=Decimal("15.0"),
+    )
+
+
 def rule_view(rule: CustomRule) -> dict:
+    pt = getattr(rule, "profit_tiers", None) or ["1.5", "3.5", "6.0"]
+    ts = getattr(rule, "tier_slices", None) or ["25", "25", "25"]
     return {
-        "enabled": rule.enabled,
-        "buy_allocation_pct": float(rule.buy_allocation_pct),
-        "profit_tiers": [float(decimal(value)) for value in rule.profit_tiers],
-        "tier_slices": [float(decimal(value)) for value in rule.tier_slices],
-        "pullback_pct": float(rule.pullback_pct),
-        "buy_zone_fraction": float(rule.buy_zone_fraction),
-        "crash_daily_pct": float(rule.crash_daily_pct),
-        "crash_drawdown_pct": float(rule.crash_drawdown_pct),
+        "enabled": bool(getattr(rule, "enabled", True)),
+        "buy_allocation_pct": float(getattr(rule, "buy_allocation_pct", ZERO) or ZERO),
+        "profit_tiers": [float(decimal(value)) for value in pt],
+        "tier_slices": [float(decimal(value)) for value in ts],
+        "pullback_pct": float(getattr(rule, "pullback_pct", Decimal("3.0")) or Decimal("3.0")),
+        "buy_zone_fraction": float(getattr(rule, "buy_zone_fraction", Decimal("0.35")) or Decimal("0.35")),
+        "crash_daily_pct": float(getattr(rule, "crash_daily_pct", Decimal("8.0")) or Decimal("8.0")),
+        "crash_drawdown_pct": float(getattr(rule, "crash_drawdown_pct", Decimal("15.0")) or Decimal("15.0")),
     }
 
 
@@ -390,8 +407,14 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
     company_views = []
     lot_views = []
     for company in companies:
-        rule = rules[company.symbol]
-        analysis, _quote = assess_company(company, rule, settings, state.clock_date, adapter)
+        rule = rules.get(company.symbol)
+        if rule is None:
+            rule = default_custom_rule(company.symbol)
+        if company.last_price <= ZERO or not company.price_history:
+            analysis = CurveAnalysis("WAIT_SOD", "Waiting for market open (LTP 0.00 / SOD phase)...")
+            _quote = None
+        else:
+            analysis, _quote = assess_company(company, rule, settings, state.clock_date, adapter)
         company_lots = []
         company_basis = ZERO
         company_net = ZERO
@@ -435,7 +458,10 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
         curve_dict = analysis.to_dict()
         curve_dict["support"] = float(analysis.low)
         curve_dict["resistance"] = float(analysis.high)
-        buy_ceiling = float(analysis.low + (analysis.high - analysis.low) * decimal(rule.buy_zone_fraction))
+        buy_frac = getattr(rule, "buy_zone_fraction", None)
+        if buy_frac is None:
+            buy_frac = Decimal("0.35")
+        buy_ceiling = float(analysis.low + (analysis.high - analysis.low) * decimal(buy_frac))
         curve_dict["buy_zone_ceiling"] = buy_ceiling
 
         # Multi-session drawdown session count
@@ -451,7 +477,9 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
         # Accurate support position wording: below vs at vs near vs above
         price_val = float(company.last_price)
         sup_val = float(analysis.low)
-        if price_val < sup_val:
+        if price_val <= 0:
+            pos_label = "— (SOD reset)"
+        elif price_val < sup_val:
             pos_label = f"below support (৳{sup_val:,.2f})"
         elif sup_val > 0 and abs(price_val - sup_val) / sup_val <= 0.002:
             pos_label = f"at support (৳{sup_val:,.2f})"

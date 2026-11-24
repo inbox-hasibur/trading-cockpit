@@ -59,8 +59,9 @@ def test_manifest_mv3_structure():
 
     content_scripts = data.get("content_scripts", [])
     assert len(content_scripts) > 0
-    assert "https://itrade.lbsbd.com/*" in content_scripts[0].get("matches", [])
-    assert "content.js" in content_scripts[0].get("js", [])
+    assert any("https://itrade.lbsbd.com/*" in cs.get("matches", []) for cs in content_scripts)
+    assert any("content.js" in cs.get("js", []) for cs in content_scripts)
+    assert any("network_tap.js" in cs.get("js", []) for cs in content_scripts)
 
     bg = data.get("background", {})
     assert bg.get("service_worker") == "background.js"
@@ -212,3 +213,219 @@ def test_cross_origin_security_blocking(client: TestClient):
         headers={"Origin": "chrome-extension://trustedextensionid123"},
     )
     assert ext_resp.status_code == 200
+
+
+def test_unseen_symbol_1janatamf_sod_no_keyerror(client: TestClient, test_db_and_settings):
+    """Verifies that an unseen symbol (e.g. 1JANATAMF) arriving during SOD with ltp=0.00
+
+    automatically creates a CustomRule and causes ZERO KeyErrors in build_snapshot.
+    """
+    test_db, settings = test_db_and_settings
+
+    # Verify 1JANATAMF does not exist initially
+    with test_db.read() as session:
+        from backend.database import CustomRule
+
+        assert session.get(CompanyProfile, "1JANATAMF") is None
+        assert session.get(CustomRule, "1JANATAMF") is None
+
+    # Ingest passive SOD snapshot with 1JANATAMF at ltp=0.00
+    sod_payload = {
+        "source": "EDGE_EXTENSION_PASSIVE",
+        "dse_status": "SOD",
+        "tab": "market_watch",
+        "market_watch_rows": [
+            {
+                "sDes": "1JANATAMF",
+                "ltp": "0.00",
+                "chg": "0.00",
+                "pctChg": "0.00",
+                "vol": "0",
+                "open": "0.00",
+                "high": "0.00",
+                "low": "0.00",
+                "dispSettType": "PUBLIC",
+                "dispSymCat": "A",
+            }
+        ],
+    }
+    resp = client.post(
+        "/api/tradexpress/passive-ingest",
+        json=sod_payload,
+        headers={"Origin": "chrome-extension://testextension123"},
+    )
+    assert resp.status_code == 200, resp.text
+
+    # Verify CompanyProfile and CustomRule were both created
+    with test_db.read() as session:
+        cp = session.get(CompanyProfile, "1JANATAMF")
+        assert cp is not None
+        assert cp.last_price == Decimal("0.00")
+        assert cp.price_history == []
+
+        rule = session.get(CustomRule, "1JANATAMF")
+        assert rule is not None
+        assert rule.enabled is False
+        assert rule.buy_allocation_pct == Decimal("0.00")
+
+    # Critical Assertion: build_snapshot MUST NOT raise KeyError: '1JANATAMF'
+    from backend.portfolio import build_snapshot
+
+    snap = build_snapshot(test_db, settings)
+    assert snap is not None
+    assert "companies" in snap
+    janata_view = next((c for c in snap["companies"] if c["symbol"] == "1JANATAMF"), None)
+    assert janata_view is not None
+    assert janata_view["price"] == 0.0
+    assert janata_view["curve"]["signal"] == "WAIT_SOD"
+    assert "SOD reset" in janata_view["curve"]["support_position"]
+
+
+def test_sod_zero_price_protection_preserves_positive_price(client: TestClient, test_db_and_settings):
+    """Verifies that SOD 0.00 quotes do NOT overwrite last_price or append 0.00 candles."""
+    test_db, settings = test_db_and_settings
+
+    # 1. Establish positive price and candle on BANKASIA
+    with test_db.write() as session:
+        cp = session.get(CompanyProfile, "BANKASIA")
+        cp.last_price = Decimal("18.40")
+        cp.price_history = [
+            {"date": "2026-11-20", "close": "18.30", "open": "18.20", "high": "18.40", "low": "18.10", "volume": "1000"},
+            {"date": "2026-11-22", "close": "18.40", "open": "18.30", "high": "18.50", "low": "18.20", "volume": "1200"},
+        ]
+        session.flush()
+
+    # 2. Incoming SOD snapshot with ltp=0.00
+    sod_payload = {
+        "source": "EDGE_EXTENSION_PASSIVE",
+        "dse_status": "SOD",
+        "tab": "gsc",
+        "market_watch_rows": [
+            {
+                "sDes": "BANKASIA",
+                "ltp": "0.00",
+                "chg": "0.00",
+                "pctChg": "0.00",
+                "vol": "0",
+                "open": "0.00",
+                "high": "0.00",
+                "low": "0.00",
+            }
+        ],
+    }
+    resp = client.post(
+        "/api/tradexpress/passive-ingest",
+        json=sod_payload,
+        headers={"Origin": "chrome-extension://testextension123"},
+    )
+    assert resp.status_code == 200
+
+    # 3. Verify BANKASIA last_price is preserved at 18.40 and NO 0.00 candle was added
+    with test_db.read() as session:
+        cp = session.get(CompanyProfile, "BANKASIA")
+        assert cp.last_price == Decimal("18.40"), f"Expected 18.40 preserved, got {cp.last_price}"
+        assert len(cp.price_history) == 2
+        assert cp.price_history[-1]["close"] == "18.40"
+
+
+def test_manifest_icons_and_network_tap_registration():
+    """Verifies that extension manifest declares icons and registers network_tap.js in MAIN world."""
+    manifest_path = Path("extension/tradexpress_mirror/manifest.json")
+    with open(manifest_path, "r", encoding="utf-8") as f:
+        manifest = json.load(f)
+
+    # 1. Icons check
+    icons = manifest.get("icons", {})
+    for sz in ["16", "32", "48", "128"]:
+        assert sz in icons, f"Icon {sz} missing in manifest"
+        icon_path = Path("extension/tradexpress_mirror") / icons[sz]
+        assert icon_path.exists(), f"Icon file {icon_path} does not exist"
+        assert icon_path.stat().st_size > 0, f"Icon file {icon_path} is empty"
+
+    action_icons = manifest.get("action", {}).get("default_icon", {})
+    for sz in ["16", "32", "48", "128"]:
+        assert sz in action_icons, f"Action icon {sz} missing in manifest"
+
+    # 2. Network tap content script check
+    content_scripts = manifest.get("content_scripts", [])
+    tap_script = next((cs for cs in content_scripts if "network_tap.js" in cs.get("js", [])), None)
+    assert tap_script is not None, "network_tap.js must be registered in manifest content_scripts"
+    assert tap_script.get("world") == "MAIN", "network_tap.js must run in MAIN world to intercept WebSocket/XHR"
+    assert tap_script.get("run_at") == "document_start", "network_tap.js must run at document_start"
+
+
+def test_network_tap_static_safety_and_redaction():
+    """Ensures network_tap.js is 100% passive, fail-safe, and redacts sensitive credentials."""
+    tap_path = Path("extension/tradexpress_mirror/network_tap.js")
+    assert tap_path.exists(), "network_tap.js must exist"
+    code = tap_path.read_text(encoding="utf-8")
+
+    # Anti-bot and passive guarantees
+    assert ".click(" not in code, "network_tap.js must NEVER click"
+    assert ".reload(" not in code, "network_tap.js must NEVER reload"
+    assert "location.href" not in code, "network_tap.js must NEVER navigate"
+    assert "itrade.lbsbd.com" not in code, "network_tap.js must NEVER send external requests"
+    assert "ibroker.lbsbd.com" not in code, "network_tap.js must NEVER send external requests"
+
+    # Redaction checks
+    assert "redactString" in code
+    assert "sesnId" in code
+    assert "SSOTOK" in code or "ssotok" in code
+    assert "AUTH_REDACTED" in code
+
+
+def test_passive_net_tap_endpoints_and_telemetry(client: TestClient, test_db_and_settings):
+    """Verifies POST /api/tradexpress/passive-net-tap and GET /api/tradexpress/net-tap/summary."""
+    ext_origin = {"Origin": "chrome-extension://testabcdef123456"}
+
+    # 1. Ingest simulated net tap batch
+    batch_payload = {
+        "events": [
+            {
+                "type": "ws_in",
+                "endpoint": "wss://itrade.lbsbd.com/price_feed",
+                "channel": "market_depth",
+                "payload": {"symbol": "BANKASIA", "bid": 18.40, "offer": 18.50},
+                "timestamp": 1700000000000,
+            },
+            {
+                "type": "ws_out",
+                "endpoint": "wss://itrade.lbsbd.com/price_feed",
+                "channel": "client_send",
+                "payload": {"subscribe": "BANKASIA"},
+                "timestamp": 1700000000050,
+            },
+            {
+                "type": "xhr",
+                "method": "GET",
+                "url": "https://itrade.lbsbd.com/web/price?symbol=BANKASIA",
+                "endpoint": "https://itrade.lbsbd.com/web/price",
+                "status": 200,
+                "payload": {"lastPrice": 18.40},
+                "timestamp": 1700000000100,
+            },
+        ]
+    }
+
+    resp = client.post("/api/tradexpress/passive-net-tap", json=batch_payload, headers=ext_origin)
+    assert resp.status_code == 200, resp.text
+    res_data = resp.json()
+    assert res_data.get("status") == "INGESTED"
+    assert res_data.get("count") == 3
+
+    # 2. Verify summary endpoint
+    summary_resp = client.get("/api/tradexpress/net-tap/summary")
+    assert summary_resp.status_code == 200
+    summary = summary_resp.json()
+    assert summary.get("ws_in_count") >= 1
+    assert summary.get("ws_out_count") >= 1
+    assert summary.get("xhr_count") >= 1
+    assert "market_depth" in summary.get("channels_seen", [])
+    assert any("itrade.lbsbd.com" in ep for ep in summary.get("endpoints_seen", []))
+
+    # 3. Verify status endpoint includes net_tap
+    status_resp = client.get("/api/tradexpress/status")
+    assert status_resp.status_code == 200
+    status_data = status_resp.json()
+    assert "net_tap" in status_data
+    assert status_data["net_tap"]["total_events"] >= 3

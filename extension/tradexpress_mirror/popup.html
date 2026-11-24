@@ -20,7 +20,7 @@
       padding: 0;
     }
     body {
-      width: 280px;
+      width: 290px;
       padding: 14px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 12px;
@@ -38,10 +38,15 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 7px;
       font-weight: 700;
       font-size: 13px;
       letter-spacing: 0.3px;
+    }
+    .brand img {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
     }
     .status-badge {
       display: inline-flex;
@@ -150,7 +155,7 @@
 <body>
   <div class="header">
     <div class="brand">
-      <span>🐦</span>
+      <img src="icons/icon32.png" alt="HB">
       <span>Humming Bird</span>
     </div>
     <div class="status-badge" id="status-pill">
@@ -181,8 +186,20 @@
       <span class="val" id="dse-status">—</span>
     </div>
     <div class="row">
-      <span class="label">Rows Synced</span>
+      <span class="label">DOM Rows Sent</span>
       <span class="val" id="rows-sent">0</span>
+    </div>
+    <div class="row">
+      <span class="label">WS Frames In</span>
+      <span class="val" id="ws-in">0</span>
+    </div>
+    <div class="row">
+      <span class="label">WS Frames Out</span>
+      <span class="val" id="ws-out">0</span>
+    </div>
+    <div class="row">
+      <span class="label">XHR / Fetch</span>
+      <span class="val" id="xhr-count">0</span>
     </div>
     <div class="row">
       <span class="label">Last Sync</span>

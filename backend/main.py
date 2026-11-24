@@ -250,7 +250,7 @@ def create_app(settings: Settings | None = None, database: Database | None = Non
         client_host = request.client.host if request.client else "127.0.0.1"
         is_loopback = client_host in ("127.0.0.1", "::1", "localhost", "testclient")
         is_extension_passive_ingest = (
-            request.url.path == "/api/tradexpress/passive-ingest"
+            request.url.path in ("/api/tradexpress/passive-ingest", "/api/tradexpress/passive-net-tap")
             and is_loopback
             and (
                 not origin

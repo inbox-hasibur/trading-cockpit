@@ -8,10 +8,13 @@ from the operator's manually authenticated browser session via Chrome DevTools P
 
 from __future__ import annotations
 
+import json
 import logging
 import time
+from collections import deque
 from dataclasses import dataclass, field
 from decimal import Decimal
+from pathlib import Path
 from threading import RLock
 from typing import Any
 
@@ -25,7 +28,13 @@ from backend.adapters.base import (
     to_tradexpress_symbol,
 )
 from backend.config import Settings, utc_now_iso
-from backend.database import CompanyProfile, Database, PortfolioState, portfolio_state
+from backend.database import (
+    CompanyProfile,
+    CustomRule,
+    Database,
+    PortfolioState,
+    portfolio_state,
+)
 from backend.engine.money import ZERO, decimal, money, price
 
 logger = logging.getLogger("hummingbird.tradexpress.passive_feed")
@@ -295,6 +304,16 @@ class TradeXpressPassiveFeed(MarketFeedAdapter):
         self._active_tab: str = "none"
         self._total_ingests_count: int = 0
         self._lock = RLock()
+        # Network Tap Ring Buffer & Telemetry
+        self._net_tap_events: deque[dict[str, Any]] = deque(maxlen=500)
+        self._net_tap_ws_in: int = 0
+        self._net_tap_ws_out: int = 0
+        self._net_tap_xhr: int = 0
+        self._net_tap_channels: set[str] = set()
+        self._net_tap_endpoints: set[str] = set()
+        self._net_tap_file_path = (
+            Path(__file__).resolve().parent.parent.parent / "data" / "tradexpress_net_tap.jsonl"
+        )
 
     def set_cdp_connected(self, connected: bool) -> None:
         with self._lock:
@@ -334,6 +353,75 @@ class TradeXpressPassiveFeed(MarketFeedAdapter):
                 "active_tab": self._active_tab,
                 "last_ingest_utc": self._last_ingest_utc,
                 "total_ingests_count": self._total_ingests_count,
+                "net_tap": {
+                    "total_events": self._net_tap_ws_in + self._net_tap_ws_out + self._net_tap_xhr,
+                    "ws_in_count": self._net_tap_ws_in,
+                    "ws_out_count": self._net_tap_ws_out,
+                    "xhr_count": self._net_tap_xhr,
+                    "channels_count": len(self._net_tap_channels),
+                    "endpoints_count": len(self._net_tap_endpoints),
+                },
+            }
+
+    def record_net_tap_events(self, events: list[dict[str, Any]]) -> dict[str, Any]:
+        """Ingests a batch of passive network tap events, updates stats, and logs to JSONL."""
+        with self._lock:
+            lines_to_write: list[str] = []
+            for ev in events:
+                if not isinstance(ev, dict):
+                    continue
+                ev_type = str(ev.get("type") or "unknown").lower()
+                if "ws_in" in ev_type:
+                    self._net_tap_ws_in += 1
+                elif "ws_out" in ev_type:
+                    self._net_tap_ws_out += 1
+                elif "xhr" in ev_type or "fetch" in ev_type:
+                    self._net_tap_xhr += 1
+
+                channel = ev.get("channel")
+                if channel:
+                    self._net_tap_channels.add(str(channel))
+                endpoint = ev.get("endpoint") or ev.get("url")
+                if endpoint:
+                    clean_ep = str(endpoint).split("?")[0]
+                    self._net_tap_endpoints.add(clean_ep)
+
+                self._net_tap_events.append(ev)
+                try:
+                    lines_to_write.append(json.dumps(ev, default=str))
+                except Exception:
+                    pass
+
+            if lines_to_write:
+                try:
+                    self._net_tap_file_path.parent.mkdir(parents=True, exist_ok=True)
+                    if self._net_tap_file_path.exists() and self._net_tap_file_path.stat().st_size > 5 * 1024 * 1024:
+                        try:
+                            with open(self._net_tap_file_path, "r", encoding="utf-8") as f:
+                                keep_lines = f.readlines()[-2000:]
+                            with open(self._net_tap_file_path, "w", encoding="utf-8") as f:
+                                f.writelines(keep_lines)
+                        except Exception:
+                            pass
+                    with open(self._net_tap_file_path, "a", encoding="utf-8") as f:
+                        for l in lines_to_write:
+                            f.write(l + "\n")
+                except Exception as file_err:
+                    logger.debug("Failed writing net tap events to file: %s", file_err)
+
+            return self.get_net_tap_summary()
+
+    def get_net_tap_summary(self) -> dict[str, Any]:
+        with self._lock:
+            return {
+                "total_events": self._net_tap_ws_in + self._net_tap_ws_out + self._net_tap_xhr,
+                "ws_in_count": self._net_tap_ws_in,
+                "ws_out_count": self._net_tap_ws_out,
+                "xhr_count": self._net_tap_xhr,
+                "channels_seen": sorted(list(self._net_tap_channels)),
+                "endpoints_seen": sorted(list(self._net_tap_endpoints)),
+                "recent_events_count": len(self._net_tap_events),
+                "recent_events": list(self._net_tap_events)[-50:],
             }
 
     def update_tab_timestamp(self, tab: str, timestamp: float | None = None) -> None:
@@ -503,13 +591,29 @@ def ingest_passive_snapshot(
                         sector="DSE",
                         favorite=True,
                         settlement_days=2,
-                        last_price=q.ltp,
+                        last_price=q.ltp if q.ltp > ZERO else Decimal("0.00"),
                         price_history=[],
                         quote_on=state.clock_date,
                         source="TRADEXPRESS_PASSIVE",
                         watchlist_category="GSC",
                     )
                     session.add(cp)
+
+                # Ensure a CustomRule exists for the symbol so no KeyError can ever occur
+                rule = session.get(CustomRule, q.symbol)
+                if rule is None:
+                    rule = CustomRule(
+                        symbol=q.symbol,
+                        enabled=False,
+                        buy_allocation_pct=ZERO,
+                        profit_tiers=["1.5", "3.5", "6.0"],
+                        tier_slices=["25", "25", "25"],
+                        pullback_pct=Decimal("3.0"),
+                        buy_zone_fraction=Decimal("0.35"),
+                        crash_daily_pct=Decimal("8.0"),
+                        crash_drawdown_pct=Decimal("15.0"),
+                    )
+                    session.add(rule)
 
                 # Update live microstructure telemetry
                 if q.ltp > ZERO:
@@ -530,21 +634,23 @@ def ingest_passive_snapshot(
                 cp.source = "TRADEXPRESS_PASSIVE"
                 cp.quote_on = state.clock_date
 
-                # Organically maintain closing candle bar in price_history
-                candle = {
-                    "date": today_str,
-                    "close": str(q.ltp),
-                    "open": str(q.open_price),
-                    "high": str(q.high),
-                    "low": str(q.low),
-                    "volume": str(q.volume),
-                }
-                history = list(cp.price_history or [])
-                if history and history[-1].get("date") == today_str:
-                    history[-1] = candle
-                else:
-                    history.append(candle)
-                cp.price_history = history[-30:]
+                # Organically maintain closing candle bar in price_history ONLY if q.ltp > ZERO
+                # In SOD phase (q.ltp == 0.00), do NOT overwrite last_price or append 0.00 candle!
+                if q.ltp > ZERO:
+                    candle = {
+                        "date": today_str,
+                        "close": str(q.ltp),
+                        "open": str(q.open_price if q.open_price > ZERO else q.ltp),
+                        "high": str(q.high if q.high > ZERO else q.ltp),
+                        "low": str(q.low if q.low > ZERO else q.ltp),
+                        "volume": str(q.volume),
+                    }
+                    history = list(cp.price_history or [])
+                    if history and history[-1].get("date") == today_str:
+                        history[-1] = candle
+                    else:
+                        history.append(candle)
+                    cp.price_history = history[-30:]
                 quotes_updated += 1
 
             session.flush()
@@ -614,6 +720,11 @@ def ingest_passive_snapshot(
                 state.unsettled_sales_bdt = summary.unsettled_sales
             session.flush()
 
+    # 3.5. Ingest net tap events if present in snapshot
+    net_events = snapshot_payload.get("net_tap_events")
+    if net_events and isinstance(net_events, list):
+        active_feed.record_net_tap_events(net_events)
+
     # 4. SSE broadcast if available
     if broadcaster:
         try:
@@ -642,4 +753,5 @@ def ingest_passive_snapshot(
         "dse_status": dse_status,
         "bridge_connected": active_feed.is_bridge_connected(),
         "guidance": active_feed.get_health_and_guidance(),
+        "net_tap": active_feed.get_net_tap_summary(),
     }

@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Knowledge Graph & Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-23 14:52:21 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-24 04:05:26 UTC**.
 > **Core Strategy Invariants:**
 > - **Strict No-Loss Guarantee:** Never sell at net loss (< 0% net P/L after round-trip 1.00% fees).
 > - **Sequential No-Regret Selling:** 25% / 25% / 25% profit tiers (+1.5%, +3.5%, +6.0% net) + 25% runner.
@@ -76,13 +76,20 @@ trading-cockpit/
 │   ├── Backlog.md
 │   ├── CHANGELOG.md
 │   ├── CODEBASE_MAP.md
+│   ├── MVP_VERIFICATION.md
 │   ├── STOCKNOW_SITE_MAP.md
 │   └── TRADEXPRESS_CONTEXT.md
 ├── extension/
 │   └── tradexpress_mirror/
+│       ├── icons/
+│       │   ├── icon128.png
+│       │   ├── icon16.png
+│       │   ├── icon32.png
+│       │   └── icon48.png
 │       ├── background.js
 │       ├── content.js
 │       ├── manifest.json
+│       ├── network_tap.js
 │       ├── popup.html
 │       └── popup.js
 ├── frontend/
@@ -198,20 +205,20 @@ trading-cockpit/
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 95 | 29,287 | Python Core Kernel, Engine, Tests & Plugins |
+| `.py` | 95 | 29,685 | Python Core Kernel, Engine, Tests & Plugins |
 | `.css` | 2 | 10,892 | Custom Dark / Light / Terminal Design System |
-| `.js` | 7 | 7,039 | Vanilla ES6+ Reactive Terminal Controller & UI |
-| `.md` | 13 | 5,726 | Architecture & Strategy Documentation |
-| `.json` | 14 | 5,688 | Fixtures & Configuration |
-| `.html` | 2 | 1,659 | Single Page Application DOM Structure |
+| `.js` | 8 | 7,413 | Vanilla ES6+ Reactive Terminal Controller & UI |
+| `.md` | 14 | 5,853 | Architecture & Strategy Documentation |
+| `.json` | 14 | 5,710 | Fixtures & Configuration |
+| `.html` | 2 | 1,676 | Single Page Application DOM Structure |
 | `.ps1` | 2 | 199 | Windows PowerShell Automation |
 | `.bat` | 2 | 73 | Batch Launchers |
 | `.yaml` | 1 | 34 | Manifest & Plugin Configuration |
 | `.toml` | 1 | 13 | PyProject Configuration |
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.sh` | 1 | 9 | Shell Scripts |
-| *other* | 9 | 43,383 | Other Configuration, Assets & Dotfiles |
-| **TOTAL** | **151** | **104,013** | *Entire Humming Bird Repository* |
+| *other* | 13 | 43,575 | Other Configuration, Assets & Dotfiles |
+| **TOTAL** | **157** | **105,143** | *Entire Humming Bird Repository* |
 
 ---
 
@@ -239,6 +246,7 @@ trading-cockpit/
 | [`backend/adapters/tradexpress/shadow_simulator.py`](/backend/adapters/tradexpress/shadow_simulator.py) | 3 | 3 | MEDIUM | `backend/adapters/tradexpress/cdp_daemon.py`, `backend/engine/auto_trader.py`, `backend/routes_tradexpress.py` |
 | [`backend/engine/auto_trader.py`](/backend/engine/auto_trader.py) | 3 | 3 | MEDIUM | `backend/engine/scheduler.py`, `backend/kernel_api.py`, `backend/main.py` |
 | [`backend/engine/circuit_breaker.py`](/backend/engine/circuit_breaker.py) | 3 | 3 | MEDIUM | `backend/engine/auto_trader.py`, `backend/kernel_api.py`, `backend/main.py` |
+| [`backend/engine/curve_analyzer.py`](/backend/engine/curve_analyzer.py) | 3 | 3 | MEDIUM | `backend/engine/signals.py`, `backend/kernel_api.py`, `backend/portfolio.py` |
 | [`backend/engine/telegram_bot.py`](/backend/engine/telegram_bot.py) | 3 | 3 | MEDIUM | `backend/engine/circuit_breaker.py`, `backend/engine/heartbeat.py`, `backend/main.py` |
 | [`backend/engine/trading_lock.py`](/backend/engine/trading_lock.py) | 3 | 3 | MEDIUM | `backend/engine/auto_trader.py`, `backend/kernel_api.py`, `backend/main.py` |
 | [`backend/secret_guard.py`](/backend/secret_guard.py) | 3 | 3 | MEDIUM | `backend/adapters/stocknow_client.py`, `backend/adapters/tradexpress/cdp_daemon.py`, `scripts/inspect_tradexpress_passive.py` |
@@ -246,7 +254,6 @@ trading-cockpit/
 | [`backend/adapters/stocknow_portfolio_sync.py`](/backend/adapters/stocknow_portfolio_sync.py) | 2 | 2 | MEDIUM | `backend/kernel_api.py`, `backend/routes_stocknow.py` |
 | [`backend/adapters/stocknow_write_guard.py`](/backend/adapters/stocknow_write_guard.py) | 2 | 2 | MEDIUM | `backend/adapters/stocknow_api.py`, `backend/adapters/stocknow_executor.py` |
 | [`backend/engine/agent_actions.py`](/backend/engine/agent_actions.py) | 2 | 2 | MEDIUM | `backend/engine/auto_trader.py`, `backend/kernel_api.py` |
-| [`backend/engine/curve_analyzer.py`](/backend/engine/curve_analyzer.py) | 2 | 2 | MEDIUM | `backend/engine/signals.py`, `backend/kernel_api.py` |
 | [`backend/engine/heartbeat.py`](/backend/engine/heartbeat.py) | 2 | 2 | MEDIUM | `backend/main.py`, `scripts/check_heartbeat.py` |
 | [`backend/engine/preflight_service.py`](/backend/engine/preflight_service.py) | 2 | 2 | MEDIUM | `backend/kernel_api.py`, `backend/main.py` |
 | [`backend/engine/signals.py`](/backend/engine/signals.py) | 2 | 2 | MEDIUM | `backend/engine/auto_trader.py`, `backend/portfolio.py` |
@@ -298,7 +305,7 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 | [`backend/adapters/stocknow_write_guard.py`](/backend/adapters/stocknow_write_guard.py) | `backend.config.test_portfolio_configured` |
 | [`backend/adapters/tradexpress/__init__.py`](/backend/adapters/tradexpress/__init__.py) | *Independent Core Module* |
 | [`backend/adapters/tradexpress/cdp_daemon.py`](/backend/adapters/tradexpress/cdp_daemon.py) | `backend.adapters.tradexpress.passive_feed.TradeXpressPassiveFeed`, `backend.adapters.tradexpress.passive_feed.get_global_passive_feed`, `backend.adapters.tradexpress.passive_feed.ingest_passive_snapshot`, `backend.adapters.tradexpress.shadow_simulator.TradeXpressShadowSimulator`, `backend.config.Settings`, `backend.config.utc_now_iso`, `backend.database.Database`, `backend.secret_guard.SecretGuard` |
-| [`backend/adapters/tradexpress/passive_feed.py`](/backend/adapters/tradexpress/passive_feed.py) | `backend.adapters.base.MarketFeedAdapter`, `backend.adapters.base.MarketQuote`, `backend.adapters.base.PortfolioHolding`, `backend.adapters.base.from_tradexpress_symbol`, `backend.adapters.base.to_tradexpress_symbol`, `backend.config.Settings`, `backend.config.utc_now_iso`, `backend.database.CompanyProfile`, `backend.database.Database`, `backend.database.PortfolioState`, `backend.database.portfolio_state`, `backend.engine.money.ZERO`, `backend.engine.money.decimal`, `backend.engine.money.money`, `backend.engine.money.price` |
+| [`backend/adapters/tradexpress/passive_feed.py`](/backend/adapters/tradexpress/passive_feed.py) | `backend.adapters.base.MarketFeedAdapter`, `backend.adapters.base.MarketQuote`, `backend.adapters.base.PortfolioHolding`, `backend.adapters.base.from_tradexpress_symbol`, `backend.adapters.base.to_tradexpress_symbol`, `backend.config.Settings`, `backend.config.utc_now_iso`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.PortfolioState`, `backend.database.portfolio_state`, `backend.engine.money.ZERO`, `backend.engine.money.decimal`, `backend.engine.money.money`, `backend.engine.money.price` |
 | [`backend/adapters/tradexpress/shadow_simulator.py`](/backend/adapters/tradexpress/shadow_simulator.py) | `backend.adapters.base.BrokerOrderExecutor`, `backend.adapters.base.MarketQuote`, `backend.adapters.base.from_tradexpress_symbol`, `backend.adapters.base.to_tradexpress_symbol`, `backend.adapters.base.validate_tradexpress_order_safety`, `backend.adapters.tradexpress.passive_feed.TradeXpressPassiveFeed`, `backend.adapters.tradexpress.passive_feed.get_global_passive_feed`, `backend.config.Settings`, `backend.config.utc_now_iso`, `backend.database.CompanyProfile`, `backend.database.Database`, `backend.database.KernelStateCheckpoint`, `backend.database.PortfolioState`, `backend.database.ShadowOrder`, `backend.database.TaxLot`, `backend.database.TradeLearningLog`, `backend.database.TradeLog`, `backend.database.portfolio_state`, `backend.engine.checkpoint.CheckpointManager`, `backend.engine.money.ZERO`, `backend.engine.money.allocated_basis`, `backend.engine.money.calculate_broker_fee_breakdown`, `backend.engine.money.decimal`, `backend.engine.money.money`, `backend.engine.money.price`, `backend.engine.money.whole_shares`, `backend.engine.t2_ledger.TradingCalendar`, `backend.engine.t2_ledger.assert_ledger`, `backend.engine.t2_ledger.bucket_balances` |
 | [`backend/config.py`](/backend/config.py) | *Independent Core Module* |
 | [`backend/database.py`](/backend/database.py) | `backend.config.utc_now_iso` |
@@ -323,7 +330,7 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 | [`backend/logging_config.py`](/backend/logging_config.py) | *Independent Core Module* |
 | [`backend/main.py`](/backend/main.py) | `backend.adapters.stocknow_adapter.StockNowAdapter`, `backend.adapters.stocknow_client.StockNowLiveClient`, `backend.adapters.stocknow_market_sync.extract_quotes_from_stocknow`, `backend.adapters.stocknow_market_sync.fetch_stocknow_live_market_data`, `backend.adapters.stocknow_market_sync.sync_live_market_to_db`, `backend.adapters.tradexpress.cdp_daemon.get_global_passive_daemon`, `backend.config.ROOT`, `backend.config.Settings`, `backend.config.VERSION`, `backend.config.get_active_target_portfolio`, `backend.config.get_allowed_portfolios`, `backend.config.get_portfolio_name`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.DecisionLog`, `backend.database.KernelAuditLog`, `backend.database.RuleAudit`, `backend.database.TradeLog`, `backend.database.portfolio_state`, `backend.engine.auto_trader.AutoTrader`, `backend.engine.auto_trader.AutomationPaused`, `backend.engine.checkpoint.CheckpointManager`, `backend.engine.circuit_breaker.reset_circuit_breaker`, `backend.engine.heartbeat.check_dead_man_switch`, `backend.engine.heartbeat.record_system_heartbeat`, `backend.engine.heartbeat.send_daily_summary_if_due`, `backend.engine.money.ZERO`, `backend.engine.preflight_service.are_caps_set`, `backend.engine.preflight_service.has_passing_preflight_within_24h`, `backend.engine.preflight_service.run_cockpit_preflight`, `backend.engine.scheduler.DSEMarketScheduler`, `backend.engine.scheduler.get_active_scheduler`, `backend.engine.telegram_bot.TelegramBotDaemon`, `backend.engine.trading_lock.acquire_trading_lock`, `backend.hermes_bridge.build_hermes_bridge_router`, `backend.kernel_api.CapsUpdateRequest`, `backend.kernel_api.build_kernel_router`, `backend.logging_config.setup_logging`, `backend.market_map.build_market_map_payload`, `backend.portfolio.build_snapshot`, `backend.portfolio.rule_view`, `backend.routes_auth_settings.KeysSettingsRequest`, `backend.routes_auth_settings.LoginRequest`, `backend.routes_auth_settings.build_auth_settings_router`, `backend.routes_hermes.CreateThreadRequest`, `backend.routes_hermes.build_hermes_router`, `backend.routes_stocknow.build_stocknow_router`, `backend.routes_tradexpress.build_tradexpress_router`, `backend.seed.migrate_real_stocknow_market`, `backend.seed.seed_demo` |
 | [`backend/market_map.py`](/backend/market_map.py) | *Independent Core Module* |
-| [`backend/portfolio.py`](/backend/portfolio.py) | `backend.adapters.base.to_tradexpress_symbol`, `backend.adapters.stocknow_adapter.StockNowAdapter`, `backend.adapters.stocknow_market_sync._ALL_DSE_SHARES_CACHE`, `backend.config.DHAKA`, `backend.config.Settings`, `backend.config.VERSION`, `backend.config.get_active_target_portfolio`, `backend.config.get_allowed_portfolios`, `backend.config.get_portfolio_name`, `backend.database.AutomationCycle`, `backend.database.CanaryThesis`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.DecisionLog`, `backend.database.KernelStateCheckpoint`, `backend.database.RuleAudit`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.database.portfolio_state`, `backend.engine.money.HUNDRED`, `backend.engine.money.ZERO`, `backend.engine.money.decimal`, `backend.engine.money.money`, `backend.engine.money.sale_amount`, `backend.engine.signals.assess_company`, `backend.engine.t2_ledger.TradingCalendar`, `backend.engine.t2_ledger.bucket_balances`, `backend.hermes_bridge.read_hermes_state`, `backend.market_map.build_market_map_payload` |
+| [`backend/portfolio.py`](/backend/portfolio.py) | `backend.adapters.base.to_tradexpress_symbol`, `backend.adapters.stocknow_adapter.StockNowAdapter`, `backend.adapters.stocknow_market_sync._ALL_DSE_SHARES_CACHE`, `backend.config.DHAKA`, `backend.config.Settings`, `backend.config.VERSION`, `backend.config.get_active_target_portfolio`, `backend.config.get_allowed_portfolios`, `backend.config.get_portfolio_name`, `backend.database.AutomationCycle`, `backend.database.CanaryThesis`, `backend.database.CompanyProfile`, `backend.database.CustomRule`, `backend.database.Database`, `backend.database.DecisionLog`, `backend.database.KernelStateCheckpoint`, `backend.database.RuleAudit`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.database.portfolio_state`, `backend.engine.curve_analyzer.CurveAnalysis`, `backend.engine.money.HUNDRED`, `backend.engine.money.ZERO`, `backend.engine.money.decimal`, `backend.engine.money.money`, `backend.engine.money.sale_amount`, `backend.engine.signals.assess_company`, `backend.engine.t2_ledger.TradingCalendar`, `backend.engine.t2_ledger.bucket_balances`, `backend.hermes_bridge.read_hermes_state`, `backend.market_map.build_market_map_payload` |
 | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py) | `backend.config.DHAKA`, `backend.config.Settings`, `backend.database.Database`, `backend.database.portfolio_state`, `backend.engine.checkpoint.CheckpointManager` |
 | [`backend/routes_hermes.py`](/backend/routes_hermes.py) | `backend.config.Settings`, `backend.database.Database`, `backend.database.KernelStateCheckpoint`, `backend.database.RuleAudit`, `backend.engine.checkpoint.CheckpointManager`, `backend.hermes_bridge.get_hermes_cmd`, `backend.hermes_bridge.get_hermes_dir`, `backend.hermes_bridge.read_hermes_state`, `backend.portfolio.portfolio_state` |
 | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py) | `backend.adapters.stocknow_api.StockNowError`, `backend.adapters.stocknow_client.StockNowLiveClient`, `backend.adapters.stocknow_market_sync.extract_quotes_from_stocknow`, `backend.adapters.stocknow_market_sync.fetch_stocknow_live_market_data`, `backend.adapters.stocknow_market_sync.get_or_fetch_all_dse_shares`, `backend.adapters.stocknow_market_sync.sync_live_market_to_db`, `backend.adapters.stocknow_portfolio_sync.extract_hummingbird_portfolio`, `backend.adapters.stocknow_portfolio_sync.extract_hummingbird_portfolio_from_browser`, `backend.adapters.stocknow_portfolio_sync.reconcile_portfolio_to_db`, `backend.adapters.stocknow_portfolio_sync.sync_stocknow_portfolio_via_api`, `backend.config.Settings`, `backend.config.get_active_target_portfolio`, `backend.database.CompanyProfile`, `backend.database.Database`, `backend.database.PortfolioState`, `backend.database.TaxLot`, `backend.database.TradeLog`, `backend.engine.scheduler.DSEMarketScheduler`, `backend.engine.scheduler.get_active_scheduler`, `backend.kernel_api.OrderRequest`, `backend.kernel_api.post_order`, `backend.portfolio.build_snapshot` |
@@ -744,48 +751,50 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `AccountSummary` | `L35–L59` | `object` | Live account balance telemetry from TradeXpress Account Summary tab. | 1 |
-| `TradeXpressPassiveFeed` | `L281–L420` | `MarketFeedAdapter` | Thread-safe in-memory cache and feed adapter for TradeXpress passive market data. | 15 |
+| `AccountSummary` | `L44–L68` | `object` | Live account balance telemetry from TradeXpress Account Summary tab. | 1 |
+| `TradeXpressPassiveFeed` | `L290–L508` | `MarketFeedAdapter` | Thread-safe in-memory cache and feed adapter for TradeXpress passive market data. | 17 |
 
 
 **Methods in `AccountSummary`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `to_dict` | `L48–L59` | `(self...)` | `dict[str, Any]` | — | `float` |
+| `to_dict` | `L57–L68` | `(self...)` | `dict[str, Any]` | — | `float` |
 
 
 **Methods in `TradeXpressPassiveFeed`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__init__` | `L284–L297` | `(self, database: Database | None=Non...)` | `None` | — | `AccountSummary`, `RLock` |
-| `set_cdp_connected` | `L299–L301` | `(self, connected: bool...)` | `None` | — | — |
-| `update_ingest_telemetry` | `L303–L319` | `(self, source: str, dse_status: str=...)` | `None` | — | `time`, `utc_now_iso` |
-| `is_bridge_connected` | `L321–L326` | `(self, now_utc: float | None=None...)` | `bool` | — | `time` |
-| `get_telemetry` | `L328–L337` | `(self...)` | `dict[str, Any]` | — | `is_bridge_connected` |
-| `update_tab_timestamp` | `L339–L341` | `(self, tab: str, timestamp: float | ...)` | `None` | — | `lower`, `time` |
-| `update_quotes` | `L343–L346` | `(self, quotes: list[MarketQuote]...)` | `None` | — | — |
-| `update_holdings` | `L348–L351` | `(self, holdings: list[PortfolioHoldi...)` | `None` | — | — |
-| `update_account_summary` | `L353–L355` | `(self, summary: AccountSummary...)` | `None` | — | — |
-| `get_account_summary` | `L357–L359` | `(self...)` | `AccountSummary` | — | — |
-| `get_all_holdings` | `L361–L363` | `(self...)` | `dict[str, PortfolioHolding]` | — | `dict` |
-| `get_all_quotes` | `L365–L367` | `(self...)` | `dict[str, MarketQuote]` | — | `dict` |
-| `get_quote` | `L369–L402` | `(self, symbol: str...)` | `MarketQuote | None` | — | `Decimal`, `MarketQuote`, `from_tradexpress_symbol`, `get` |
-| `get_quotes` | `L404–L410` | `(self, symbols: list[str]...)` | `dict[str, MarketQuote]` | — | `get_quote` |
-| `get_health_and_guidance` | `L412–L420` | `(self, now_utc: float | None=None...)` | `dict[str, Any]` | — | `get_feed_health_and_guidance`, `is_bridge_connected` |
+| `__init__` | `L293–L316` | `(self, database: Database | None=Non...)` | `None` | — | `AccountSummary`, `Path`, `RLock`, `deque` |
+| `set_cdp_connected` | `L318–L320` | `(self, connected: bool...)` | `None` | — | — |
+| `update_ingest_telemetry` | `L322–L338` | `(self, source: str, dse_status: str=...)` | `None` | — | `time`, `utc_now_iso` |
+| `is_bridge_connected` | `L340–L345` | `(self, now_utc: float | None=None...)` | `bool` | — | `time` |
+| `get_telemetry` | `L347–L364` | `(self...)` | `dict[str, Any]` | — | `is_bridge_connected`, `len` |
+| `record_net_tap_events` | `L366–L412` | `(self, events: list[dict[str, Any]]...)` | `dict[str, Any]` | Ingests a batch of passive network tap events, updates stats, and logs to JSONL. | `add`, `append`, `debug`, `dumps` |
+| `get_net_tap_summary` | `L414–L425` | `(self...)` | `dict[str, Any]` | — | `len`, `list`, `sorted` |
+| `update_tab_timestamp` | `L427–L429` | `(self, tab: str, timestamp: float | ...)` | `None` | — | `lower`, `time` |
+| `update_quotes` | `L431–L434` | `(self, quotes: list[MarketQuote]...)` | `None` | — | — |
+| `update_holdings` | `L436–L439` | `(self, holdings: list[PortfolioHoldi...)` | `None` | — | — |
+| `update_account_summary` | `L441–L443` | `(self, summary: AccountSummary...)` | `None` | — | — |
+| `get_account_summary` | `L445–L447` | `(self...)` | `AccountSummary` | — | — |
+| `get_all_holdings` | `L449–L451` | `(self...)` | `dict[str, PortfolioHolding]` | — | `dict` |
+| `get_all_quotes` | `L453–L455` | `(self...)` | `dict[str, MarketQuote]` | — | `dict` |
+| `get_quote` | `L457–L490` | `(self, symbol: str...)` | `MarketQuote | None` | — | `Decimal`, `MarketQuote`, `from_tradexpress_symbol`, `get` |
+| `get_quotes` | `L492–L498` | `(self, symbols: list[str]...)` | `dict[str, MarketQuote]` | — | `get_quote` |
+| `get_health_and_guidance` | `L500–L508` | `(self, now_utc: float | None=None...)` | `dict[str, Any]` | — | `get_feed_health_and_guidance`, `is_bridge_connected` |
 
 
 #### Standalone Functions
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `parse_ember_market_watch_rows` | `L62–L158` | `(rows: list[dict[str, Any]], existin...)` | `list[MarketQuote]` | Pure parser mapping Ember.js dataObj rows to MarketQuote instances. | `MarketQuote`, `append`, `bool`, `decimal` |
-| `parse_ember_portfolio_rows` | `L161–L191` | `(rows: list[dict[str, Any]]...)` | `list[PortfolioHolding]` | Pure parser mapping Ember.js portfolio rows to PortfolioHolding instances. | `PortfolioHolding`, `append`, `decimal`, `from_tradexpress_symbol` |
-| `parse_account_summary_dict` | `L194–L214` | `(data: dict[str, Any]...)` | `AccountSummary` | Parses raw Account Summary payload into an AccountSummary dataclass. | `AccountSummary`, `decimal`, `get`, `str` |
-| `get_feed_health_and_guidance` | `L217–L278` | `(tab_timestamps: dict[str, float], c...)` | `dict[str, Any]` | Evaluates freshness of CDP/extension connection & each tab, generating operator guidance. | `all`, `append`, `get`, `round` |
-| `get_global_passive_feed` | `L426–L433` | `(database: Database | None=None...)` | `TradeXpressPassiveFeed` | Singleton getter for the global passive market feed adapter. | `TradeXpressPassiveFeed` |
-| `ingest_passive_snapshot` | `L436–L645` | `(db: Database, snapshot_payload: dic...)` | `dict[str, Any]` | Ingests passively sniffed snapshot payload into SQLite and in-memory feed. | `CompanyProfile`, `add`, `append`, `bool` |
+| `parse_ember_market_watch_rows` | `L71–L167` | `(rows: list[dict[str, Any]], existin...)` | `list[MarketQuote]` | Pure parser mapping Ember.js dataObj rows to MarketQuote instances. | `MarketQuote`, `append`, `bool`, `decimal` |
+| `parse_ember_portfolio_rows` | `L170–L200` | `(rows: list[dict[str, Any]]...)` | `list[PortfolioHolding]` | Pure parser mapping Ember.js portfolio rows to PortfolioHolding instances. | `PortfolioHolding`, `append`, `decimal`, `from_tradexpress_symbol` |
+| `parse_account_summary_dict` | `L203–L223` | `(data: dict[str, Any]...)` | `AccountSummary` | Parses raw Account Summary payload into an AccountSummary dataclass. | `AccountSummary`, `decimal`, `get`, `str` |
+| `get_feed_health_and_guidance` | `L226–L287` | `(tab_timestamps: dict[str, float], c...)` | `dict[str, Any]` | Evaluates freshness of CDP/extension connection & each tab, generating operator guidance. | `all`, `append`, `get`, `round` |
+| `get_global_passive_feed` | `L514–L521` | `(database: Database | None=None...)` | `TradeXpressPassiveFeed` | Singleton getter for the global passive market feed adapter. | `TradeXpressPassiveFeed` |
+| `ingest_passive_snapshot` | `L524–L757` | `(db: Database, snapshot_payload: dic...)` | `dict[str, Any]` | Ingests passively sniffed snapshot payload into SQLite and in-memory feed. | `CompanyProfile`, `CustomRule`, `Decimal`, `add` |
 
 
 ---
@@ -925,29 +934,36 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
 | `AutomationPaused` | `L39–L40` | `ValueError` | — | 0 |
-| `CycleResult` | `L43–L48` | `dict` | Dictionary subclass that equals [] when trades are empty, ensuring backward compatibility with tests asserting trades == []. | 1 |
-| `AutoTrader` | `L51–L885` | `object` | — | 8 |
+| `CycleResult` | `L57–L62` | `dict` | Dictionary subclass that equals [] when trades are empty, ensuring backward compatibility with tests asserting trades == []. | 1 |
+| `AutoTrader` | `L65–L905` | `object` | — | 8 |
 
 
 **Methods in `CycleResult`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__eq__` | `L45–L48` | `(self, other...)` | — | — | `__eq__`, `get`, `isinstance`, `super` |
+| `__eq__` | `L59–L62` | `(self, other...)` | — | — | `__eq__`, `get`, `isinstance`, `super` |
 
 
 **Methods in `AutoTrader`:**
 
 | Method | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `__init__` | `L52–L56` | `(self, database: Database, settings:...)` | — | — | `StockNowAdapter`, `TradingCalendar` |
-| `run_cycle` | `L58–L68` | `(self, request_id: str | None=None, ...)` | `dict` | — | `_run_cycle_internal`, `acquire_trading_lock`, `write` |
-| `_dispatch_order` | `L70–L141` | `(self, symbol: str, side: str, quant...)` | `dict | None` | — | `Decimal`, `ThreadPoolExecutor`, `TradeXpressShadowSimulator`, `execute_order` |
-| `_run_cycle_internal` | `L143–L837` | `(self, session: Session, request_id:...)` | `dict` | — | `AutomationCycle`, `CycleRequestKey`, `CycleResult`, `Decimal` |
-| `record` | `L351–L367` | `(symbol: str, action: str, reason: s...)` | — | — | `DecisionLog`, `add`, `append`, `startswith` |
-| `buy_priority` | `L554–L560` | `(comp: CompanyProfile...)` | `tuple[int, str]` | — | `getattr` |
-| `_trade_result` | `L840–L846` | `(trade: TradeLog, action: str...)` | `dict` | — | `float` |
-| `advance_demo` | `L848–L885` | `(self, scenario: str...)` | `dict` | — | `Decimal`, `ValueError`, `add_sessions`, `assert_ledger` |
+| `__init__` | `L66–L70` | `(self, database: Database, settings:...)` | — | — | `StockNowAdapter`, `TradingCalendar` |
+| `run_cycle` | `L72–L82` | `(self, request_id: str | None=None, ...)` | `dict` | — | `_run_cycle_internal`, `acquire_trading_lock`, `write` |
+| `_dispatch_order` | `L84–L155` | `(self, symbol: str, side: str, quant...)` | `dict | None` | — | `Decimal`, `ThreadPoolExecutor`, `TradeXpressShadowSimulator`, `execute_order` |
+| `_run_cycle_internal` | `L157–L857` | `(self, session: Session, request_id:...)` | `dict` | — | `AutomationCycle`, `CycleRequestKey`, `CycleResult`, `Decimal` |
+| `record` | `L365–L381` | `(symbol: str, action: str, reason: s...)` | — | — | `DecisionLog`, `add`, `append`, `startswith` |
+| `buy_priority` | `L572–L578` | `(comp: CompanyProfile...)` | `tuple[int, str]` | — | `getattr` |
+| `_trade_result` | `L860–L866` | `(trade: TradeLog, action: str...)` | `dict` | — | `float` |
+| `advance_demo` | `L868–L905` | `(self, scenario: str...)` | `dict` | — | `Decimal`, `ValueError`, `add_sessions`, `assert_ledger` |
+
+
+#### Standalone Functions
+
+| Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `default_custom_rule` | `L43–L54` | `(symbol: str...)` | `CustomRule` | — | `CustomRule`, `Decimal` |
 
 
 ---
@@ -1420,13 +1436,14 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `generate_extended_history` | `L238–L290` | `(history: list[dict[str, str]], fund...)` | `dict[str, list[dict[str, Any]]]` | Generates 7d, 1m, 6m, 1y series for TradingView-style deep trend views. | `add_sessions`, `append`, `cos`, `float` |
-| `rule_view` | `L293–L303` | `(rule: CustomRule...)` | `dict` | — | `decimal`, `float` |
-| `trade_view` | `L306–L335` | `(trade: TradeLog...)` | `dict` | — | `float`, `getattr`, `isoformat` |
-| `period_totals` | `L338–L353` | `(trades: list[TradeLog], start: date...)` | `dict` | — | `float`, `isoformat`, `len`, `sum` |
-| `build_snapshot` | `L356–L358` | `(database: Database, settings: Setti...)` | `dict` | — | `read`, `snapshot_from_session` |
-| `snapshot_from_session` | `L361–L734` | `(session: Session, settings: Setting...)` | `dict` | — | `Decimal`, `StockNowAdapter`, `TradingCalendar`, `abs` |
-| `normalized_watchlist` | `L737–L756` | `(companies: list[dict]...)` | `list[dict]` | Equal-weight normalized PRICE index, explicitly not portfolio performance. | `any`, `append`, `decimal`, `float` |
+| `generate_extended_history` | `L239–L291` | `(history: list[dict[str, str]], fund...)` | `dict[str, list[dict[str, Any]]]` | Generates 7d, 1m, 6m, 1y series for TradingView-style deep trend views. | `add_sessions`, `append`, `cos`, `float` |
+| `default_custom_rule` | `L294–L305` | `(symbol: str...)` | `CustomRule` | — | `CustomRule`, `Decimal` |
+| `rule_view` | `L308–L320` | `(rule: CustomRule...)` | `dict` | — | `Decimal`, `bool`, `decimal`, `float` |
+| `trade_view` | `L323–L352` | `(trade: TradeLog...)` | `dict` | — | `float`, `getattr`, `isoformat` |
+| `period_totals` | `L355–L370` | `(trades: list[TradeLog], start: date...)` | `dict` | — | `float`, `isoformat`, `len`, `sum` |
+| `build_snapshot` | `L373–L375` | `(database: Database, settings: Setti...)` | `dict` | — | `read`, `snapshot_from_session` |
+| `snapshot_from_session` | `L378–L762` | `(session: Session, settings: Setting...)` | `dict` | — | `CurveAnalysis`, `Decimal`, `StockNowAdapter`, `TradingCalendar` |
+| `normalized_watchlist` | `L765–L784` | `(companies: list[dict]...)` | `list[dict]` | Equal-weight normalized PRICE index, explicitly not portfolio performance. | `any`, `append`, `decimal`, `float` |
 
 
 ---
@@ -1537,14 +1554,16 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `build_tradexpress_router` | `L48–L226` | `(database: Database, settings: Setti...)` | `APIRouter` | — | `APIRouter` |
-| `get_tradexpress_status` | `L56–L88` | `(...)` | — | Returns passive feed connection status, tab freshness, and operator guidance. | `bool`, `float`, `get`, `get_account_summary` |
-| `post_bridge_control` | `L91–L108` | `(req: BridgeControlRequest...)` | — | Controls passive CDP spy daemon: attach, detach, or status. | `HTTPException`, `get_global_passive_daemon`, `get_status`, `lower` |
-| `post_passive_ingest` | `L111–L139` | `(payload: dict[str, Any], request: R...)` | — | Ingests passively sniffed WebSocket / DOM snapshot and reconciles order queue. | `TradeXpressShadowSimulator`, `build_snapshot`, `debug`, `get` |
-| `list_orders` | `L142–L149` | `(status: str | None=None, portfolio_...)` | — | Lists simulated shadow orders mirroring TradeXpress Order List. | `TradeXpressShadowSimulator`, `get`, `get_orders` |
-| `submit_shadow_order` | `L152–L167` | `(req: ShadowOrderRequest...)` | — | Submits 2-step limit order into shadow simulator (confirm=False preview, True commit). | `TradeXpressShadowSimulator`, `decimal`, `post`, `submit_shadow_order` |
-| `cancel_shadow_order` | `L170–L176` | `(order_ref: str...)` | — | Cancels a resting QUEUED shadow order. | `HTTPException`, `TradeXpressShadowSimulator`, `cancel_order`, `get` |
-| `get_learning_logs` | `L179–L224` | `(tier: str | None=None, limit: int=5...)` | — | Returns recent TradeLearningLog records and aggregated win-rate telemetry. | `desc`, `float`, `get`, `in_` |
+| `build_tradexpress_router` | `L48–L247` | `(database: Database, settings: Setti...)` | `APIRouter` | — | `APIRouter` |
+| `get_tradexpress_status` | `L56–L89` | `(...)` | — | Returns passive feed connection status, tab freshness, and operator guidance. | `bool`, `float`, `get`, `get_account_summary` |
+| `post_bridge_control` | `L92–L109` | `(req: BridgeControlRequest...)` | — | Controls passive CDP spy daemon: attach, detach, or status. | `HTTPException`, `get_global_passive_daemon`, `get_status`, `lower` |
+| `post_passive_ingest` | `L112–L140` | `(payload: dict[str, Any], request: R...)` | — | Ingests passively sniffed WebSocket / DOM snapshot and reconciles order queue. | `TradeXpressShadowSimulator`, `build_snapshot`, `debug`, `get` |
+| `post_passive_net_tap` | `L143–L154` | `(payload: dict[str, Any], request: R...)` | — | Ingests a batch of passive WebSocket / XHR / Fetch network tap events. | `get`, `get_global_passive_feed`, `isinstance`, `len` |
+| `get_net_tap_summary` | `L157–L160` | `(...)` | — | Returns in-memory network tap telemetry, seen channels, endpoints, and recent events. | `get`, `get_global_passive_feed`, `get_net_tap_summary` |
+| `list_orders` | `L163–L170` | `(status: str | None=None, portfolio_...)` | — | Lists simulated shadow orders mirroring TradeXpress Order List. | `TradeXpressShadowSimulator`, `get`, `get_orders` |
+| `submit_shadow_order` | `L173–L188` | `(req: ShadowOrderRequest...)` | — | Submits 2-step limit order into shadow simulator (confirm=False preview, True commit). | `TradeXpressShadowSimulator`, `decimal`, `post`, `submit_shadow_order` |
+| `cancel_shadow_order` | `L191–L197` | `(order_ref: str...)` | — | Cancels a resting QUEUED shadow order. | `HTTPException`, `TradeXpressShadowSimulator`, `cancel_order`, `get` |
+| `get_learning_logs` | `L200–L245` | `(tier: str | None=None, limit: int=5...)` | — | Returns recent TradeLearningLog records and aggregated win-rate telemetry. | `desc`, `float`, `get`, `in_` |
 
 
 ---
@@ -3146,7 +3165,8 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/adapters/tradexpress/cdp_daemon.py` | `_run_loop` | 142 | 6 | Decompose into sub-functions |
 | `backend/adapters/tradexpress/passive_feed.py` | `parse_ember_market_watch_rows` | 97 | 4 | Acceptable; well-scoped logic |
 | `backend/adapters/tradexpress/passive_feed.py` | `get_feed_health_and_guidance` | 62 | 8 | Acceptable; well-scoped logic |
-| `backend/adapters/tradexpress/passive_feed.py` | `ingest_passive_snapshot` | 210 | 7 | Decompose into sub-functions |
+| `backend/adapters/tradexpress/passive_feed.py` | `ingest_passive_snapshot` | 234 | 7 | Decompose into sub-functions |
+| `backend/adapters/tradexpress/passive_feed.py` | `record_net_tap_events` | 47 | 7 | Acceptable; well-scoped logic |
 | `backend/adapters/tradexpress/passive_feed.py` | `get_quote` | 34 | 4 | Acceptable; well-scoped logic |
 | `backend/adapters/tradexpress/shadow_simulator.py` | `submit_shadow_order` | 85 | 2 | Acceptable; well-scoped logic |
 | `backend/adapters/tradexpress/shadow_simulator.py` | `_execute_shadow_order_in_session` | 239 | 6 | Decompose into sub-functions |
@@ -3160,7 +3180,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/engine/agent_actions.py` | `execute_agentic_buy` | 93 | 3 | Acceptable; well-scoped logic |
 | `backend/engine/agent_actions.py` | `execute_agentic_sell` | 111 | 3 | Decompose into sub-functions |
 | `backend/engine/auto_trader.py` | `_dispatch_order` | 72 | 6 | Acceptable; well-scoped logic |
-| `backend/engine/auto_trader.py` | `_run_cycle_internal` | 695 | 7 | Decompose into sub-functions |
+| `backend/engine/auto_trader.py` | `_run_cycle_internal` | 701 | 7 | Decompose into sub-functions |
 | `backend/engine/auto_trader.py` | `advance_demo` | 38 | 5 | Acceptable; well-scoped logic |
 | `backend/engine/checkpoint.py` | `rollback_last` | 110 | 3 | Decompose into sub-functions |
 | `backend/engine/circuit_breaker.py` | `record_circuit_failure` | 94 | 4 | Acceptable; well-scoped logic |
@@ -3203,7 +3223,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/main.py` | `event_stream` | 26 | 4 | Acceptable; well-scoped logic |
 | `backend/main.py` | `generator` | 13 | 4 | Acceptable; well-scoped logic |
 | `backend/market_map.py` | `build_market_map_payload` | 72 | 5 | Acceptable; well-scoped logic |
-| `backend/portfolio.py` | `snapshot_from_session` | 374 | 5 | Decompose into sub-functions |
+| `backend/portfolio.py` | `snapshot_from_session` | 385 | 6 | Decompose into sub-functions |
 | `backend/portfolio.py` | `normalized_watchlist` | 20 | 4 | Acceptable; well-scoped logic |
 | `backend/routes_auth_settings.py` | `build_auth_settings_router` | 134 | 2 | Decompose into sub-functions |
 | `backend/routes_hermes.py` | `build_hermes_router` | 175 | 5 | Decompose into sub-functions |
@@ -3212,7 +3232,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/routes_stocknow.py` | `build_stocknow_router` | 223 | 6 | Decompose into sub-functions |
 | `backend/routes_stocknow.py` | `post_stocknow_session` | 57 | 6 | Acceptable; well-scoped logic |
 | `backend/routes_stocknow.py` | `post_stocknow_scheduler` | 9 | 4 | Acceptable; well-scoped logic |
-| `backend/routes_tradexpress.py` | `build_tradexpress_router` | 179 | 5 | Decompose into sub-functions |
+| `backend/routes_tradexpress.py` | `build_tradexpress_router` | 200 | 5 | Decompose into sub-functions |
 | `backend/routes_tradexpress.py` | `post_bridge_control` | 18 | 4 | Acceptable; well-scoped logic |
 | `backend/routes_tradexpress.py` | `get_learning_logs` | 46 | 5 | Acceptable; well-scoped logic |
 | `backend/secret_guard.py` | `redact_secrets` | 11 | 4 | Acceptable; well-scoped logic |
@@ -3247,4 +3267,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/verify_chat_card.py` | `main` | 121 | 3 | Decompose into sub-functions |
 
 
-> **Knowledge Graph Summary:** 57 Python modules inspected, 67 FastAPI endpoints registered, 19 SQLAlchemy tables mapped, 30 Pydantic contracts indexed, 24 Hermes tools bound to skills, 143 JS functions mapped, 434 DOM IDs indexed, 104,013 total LOC indexed across 151 repository files.
+> **Knowledge Graph Summary:** 57 Python modules inspected, 67 FastAPI endpoints registered, 19 SQLAlchemy tables mapped, 30 Pydantic contracts indexed, 24 Hermes tools bound to skills, 143 JS functions mapped, 434 DOM IDs indexed, 105,143 total LOC indexed across 157 repository files.

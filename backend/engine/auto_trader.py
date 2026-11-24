@@ -40,6 +40,20 @@ class AutomationPaused(ValueError):
     pass
 
 
+def default_custom_rule(symbol: str) -> CustomRule:
+    return CustomRule(
+        symbol=symbol,
+        enabled=False,
+        buy_allocation_pct=ZERO,
+        profit_tiers=["1.5", "3.5", "6.0"],
+        tier_slices=["25", "25", "25"],
+        pullback_pct=Decimal("3.0"),
+        buy_zone_fraction=Decimal("0.35"),
+        crash_daily_pct=Decimal("8.0"),
+        crash_drawdown_pct=Decimal("15.0"),
+    )
+
+
 class CycleResult(dict):
     """Dictionary subclass that equals [] when trades are empty, ensuring backward compatibility with tests asserting trades == []."""
     def __eq__(self, other):
@@ -370,7 +384,9 @@ class AutoTrader:
         rules = {rule.symbol: rule for rule in session.scalars(select(CustomRule))}
         assessments = {}
         for company in companies:
-            rule = rules[company.symbol]
+            rule = rules.get(company.symbol)
+            if rule is None:
+                rule = default_custom_rule(company.symbol)
             analysis, quote = assess_company(
                 company, rule, self.settings, state.clock_date, self.adapter
             )
@@ -401,7 +417,9 @@ class AutoTrader:
             lots_q = lots_q.where(TaxLot.portfolio_id == active_pid)
         lots = list(session.scalars(lots_q.order_by(TaxLot.id)))
         for lot in lots:
-            rule = rules[lot.symbol]
+            rule = rules.get(lot.symbol)
+            if rule is None:
+                rule = default_custom_rule(lot.symbol)
             analysis, quote = assessments[lot.symbol]
             if not rule.enabled:
                 record(lot.symbol, "AUTOMATION_DISABLED", "Company automation is disabled.", lot_id=lot.id)
@@ -561,7 +579,9 @@ class AutoTrader:
 
         sorted_buy_companies = sorted(companies, key=buy_priority)
         for company in sorted_buy_companies:
-            rule = rules[company.symbol]
+            rule = rules.get(company.symbol)
+            if rule is None:
+                rule = default_custom_rule(company.symbol)
             analysis, quote = assessments[company.symbol]
             cat = getattr(company, "watchlist_category", "GSC")
             sym_cat = getattr(company, "symbol_category", "A")

@@ -76,8 +76,8 @@ def test_discover_files_sanity():
         assert "__pycache__" not in p, f"Discovered __pycache__ path: {p}"
         assert not p.startswith("scratch/"), f"Discovered scratch path: {p}"
 
-    # 2. .png count is 0
-    png_files = [p for p in rel_paths if p.lower().endswith(".png")]
+    # 2. .png count is 0 (excluding extension icons)
+    png_files = [p for p in rel_paths if p.lower().endswith(".png") and not p.startswith("extension/")]
     assert len(png_files) == 0, f"Found unexpected .png files: {png_files}"
 
     # 3. .py file count is in the low hundreds (< 150, typically ~77)

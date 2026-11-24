@@ -441,6 +441,21 @@ classDiagram
 - **Off-Hours 0.00 Cash Guard:** When `dse_status` is `Close`/`CLOSED` and incoming `account_summary` has `buying_power == 0` and `cash_balance == 0`, preserves cached positive buying power & cash balance while continuing to ingest quotes and portfolio rows.
 - **Instant SSE Push:** Every ingested snapshot triggers an atomic shadow order queue reconciliation and an instant SSE `"portfolio"` push so the local terminal updates in real time with zero reload.
 
+### 10.2 Full Passive WebSocket & XHR Network Tap (`network_tap.js`)
+- **MAIN World Passive Tap:** Injected at `document_start` into the webpage's `MAIN` execution world. Intercepts `window.WebSocket`, `XMLHttpRequest.prototype`, and `window.fetch` using non-intrusive transparent wrappers wrapped in `try/catch`.
+- **Zero Secrets Redaction Protocol:** Strips or masks `sesnId`, `SSOTOK`, `token`, `password`, `Authorization`, and cookies before sending. URLs matching login/auth/password/sso/otp are NEVER recorded with request bodies (`[AUTH_REDACTED]`).
+- **SOD (Start of Day) Phase Protection:**
+  - Between ~09:00 and 09:59 Asia/Dhaka, TradeXpress resets quotes (`LTP`, `Bid`, `Offer`, `Vol`) to `0.00`.
+  - When incoming `q.ltp <= ZERO` and existing `CompanyProfile.last_price > ZERO`, the engine preserves positive price and refuses to append `0.00` candle bars to `price_history`.
+  - Portfolio snapshot generator marks SOD symbols as `WAIT_SOD` (`"Waiting for market open (LTP 0.00 / SOD phase)..."`), suppressing `QuoteError` while rendering `" — (SOD reset)"` in support position labels.
+- **Unseen Symbol Auto-Rule Provisioning:**
+  - Full market ingestion of previously unseen symbols (e.g., `1JANATAMF`) automatically provisions a default disabled `CustomRule(symbol=..., enabled=False, buy_allocation_pct=0.00)`.
+  - Portfolio snapshot and AutoTrader enforce defensive `rules.get(symbol)` lookups with fallback to default disabled `CustomRule`, eliminating `KeyError` crashes permanently.
+- **Verified Real DSE T+2 Settlement Milestone (Nov 24, 2026 09:18 AM):**
+  - Nov 22 Sell (`165.60 BDT` gross) matured and settled at SOD Nov 24:
+  - Account summary updated: `Cash Balance: 353.00 BDT`, `Unsettled Sales: 0.00 BDT`.
+  - Verified back-office net fee: `0.60 BDT` (approx `0.36%` total brokerage + exchange fee).
+
 ---
 
 ## 11. Operational Risk Checklist

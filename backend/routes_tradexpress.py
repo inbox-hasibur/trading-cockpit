@@ -85,6 +85,7 @@ def build_tradexpress_router(
             "guidance": guidance,
             "account_summary": acct.to_dict(),
             "daemon": daemon_status,
+            "net_tap": feed.get_net_tap_summary(),
         }
 
     @router.post("/bridge")
@@ -137,6 +138,26 @@ def build_tradexpress_router(
                 logger.debug("Failed publishing live SSE portfolio update after passive ingest: %s", b_err)
 
         return result
+
+    @router.post("/passive-net-tap")
+    def post_passive_net_tap(payload: dict[str, Any], request: Request):
+        """Ingests a batch of passive WebSocket / XHR / Fetch network tap events."""
+        events = payload.get("events") if isinstance(payload.get("events"), list) else (
+            [payload] if payload.get("type") else []
+        )
+        feed = get_global_passive_feed(database)
+        summary = feed.record_net_tap_events(events)
+        return {
+            "status": "INGESTED",
+            "count": len(events),
+            "summary": summary,
+        }
+
+    @router.get("/net-tap/summary")
+    def get_net_tap_summary():
+        """Returns in-memory network tap telemetry, seen channels, endpoints, and recent events."""
+        feed = get_global_passive_feed(database)
+        return feed.get_net_tap_summary()
 
     @router.get("/orders")
     def list_orders(

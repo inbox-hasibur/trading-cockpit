@@ -38,13 +38,15 @@
     );
     if (statusEl) {
       const txt = safeText(statusEl).toUpperCase();
-      if (txt.includes('TRADING') || txt.includes('OPEN')) return 'Trading';
+      if (txt.includes('SOD') || txt.includes('START OF DAY') || txt.includes('PRE-OPEN') || txt.includes('PRE OPEN')) return 'SOD';
+      if (txt.includes('TRADING') || txt.includes('OPEN') || txt.includes('CONTINUOUS')) return 'Trading';
       if (txt.includes('POST') || txt.includes('POST CLOSE') || txt.includes('POST_CLOSE')) return 'Post Close';
       if (txt.includes('CLOSE') || txt.includes('CLOSED')) return 'Close';
     }
 
     // Fallback regex search on body header
     const headerText = (document.querySelector('header, .app-header, #app-header') || document.body || {}).innerText || '';
+    if (/\b(?:SOD|Start\s*of\s*Day|Pre-Open|Pre\s*Open)\b/i.test(headerText)) return 'SOD';
     if (/\b(?:Post\s*Close|Post-Closing)\b/i.test(headerText)) return 'Post Close';
     if (/\b(?:Trading|Continuous\s*Trading)\b/i.test(headerText)) return 'Trading';
     if (/\b(?:Market\s*Closed|Closed|Close)\b/i.test(headerText)) return 'Close';
@@ -403,4 +405,39 @@
   // Initial read and periodic loop
   setTimeout(runPassiveRead, 1000);
   setInterval(runPassiveRead, READ_INTERVAL_MS);
+
+  // Passive Network Tap Event Queue (relayed from MAIN world network_tap.js)
+  const netTapQueue = [];
+  let netTapFlushTimer = null;
+
+  function flushNetTapQueue() {
+    if (netTapQueue.length === 0) return;
+    const batch = netTapQueue.splice(0, netTapQueue.length);
+    try {
+      chrome.runtime.sendMessage({
+        type: 'PASSIVE_NET_BATCH',
+        events: batch,
+      });
+    } catch (_) {}
+  }
+
+  window.addEventListener('message', function (evt) {
+    if (evt.source !== window || !evt.data || !evt.data.__hbPassiveNet) return;
+    try {
+      const event = evt.data.event;
+      if (event) {
+        netTapQueue.push(event);
+        if (netTapQueue.length >= 25) {
+          if (netTapFlushTimer) clearTimeout(netTapFlushTimer);
+          netTapFlushTimer = null;
+          flushNetTapQueue();
+        } else if (!netTapFlushTimer) {
+          netTapFlushTimer = setTimeout(function () {
+            netTapFlushTimer = null;
+            flushNetTapQueue();
+          }, 1500);
+        }
+      }
+    } catch (_) {}
+  });
 })();

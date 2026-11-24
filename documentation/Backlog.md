@@ -482,6 +482,37 @@ Reconciliation of all audit findings and architectural items from historical MVP
 
 ---
 
+### ✅ Sprint 5E (Completed): Fix '1JANATAMF' KeyError & SOD (0.00) Crash, Full Passive WebSocket/XHR Network Tap (`network_tap.js`), Humming Bird Extension Icons & Real T+2 Settlement
+
+- [x] **Live '1JANATAMF' KeyError Elimination & Auto-Provisioning Custom Rules:**
+  - Auto-provisions disabled `CustomRule(symbol=..., enabled=False)` records when unseen symbols arrive in full market watch feeds.
+  - Enforced defensive `rules.get()` with default disabled `CustomRule` fallback across `backend/portfolio.py` and `backend/engine/auto_trader.py`, eliminating `KeyError` crashes permanently.
+- [x] **Start of Day (SOD) Phase & Zero Price Protection:**
+  - Protects positive `last_price` against SOD `0.00` quotes during 09:00–09:59 Asia/Dhaka.
+  - Refuses to append `0.00` candle bars to `price_history` when incoming LTP is zero.
+  - In `backend/portfolio.py`, maps SOD symbols to `WAIT_SOD` curve signals with `" — (SOD reset)"` support position labels without throwing `QuoteError`.
+- [x] **Full Passive WebSocket & XHR Network Tap (`extension/tradexpress_mirror/network_tap.js`):**
+  - MAIN world transparent tap running at `document_start` intercepting `window.WebSocket`, `XMLHttpRequest.prototype`, and `window.fetch`.
+  - Zero-ban & zero secrets mandate: wraps all hooks in `try/catch` and redacts `sesnId`, `SSOTOK`, `password`, `token`, `Authorization`, and cookies.
+  - URLs containing auth/login/password/sso/otp are never recorded with request bodies (`[AUTH_REDACTED]`).
+  - Relays frames via `window.postMessage` to `content.js` and `background.js`.
+- [x] **Pixel-Perfect Humming Bird PNG Icons:**
+  - Generated `icon16.png`, `icon32.png`, `icon48.png`, and `icon128.png` in `extension/tradexpress_mirror/icons/` from `frontend/favicon.svg`.
+  - Declared in Manifest V3 `"icons"` and `"action.default_icon"`.
+- [x] **Backend Passive Network Firehose Endpoints:**
+  - Implemented `POST /api/tradexpress/passive-net-tap` and `GET /api/tradexpress/net-tap/summary`.
+  - In-memory 500-event ring buffer and capped JSONL logging in `backend/data/tradexpress_net_tap.jsonl`.
+  - Live WebSocket frame in/out counts and XHR counts exposed in `GET /api/tradexpress/status`.
+- [x] **Extension Popup Polish:**
+  - Rendered official Humming Bird icon in `popup.html`.
+  - Added live counters for WS Frames In/Out and XHR/Fetch calls in `popup.html` and `popup.js`.
+- [x] **Verified DSE Real T+2 Settlement Milestone (Nov 24, 2026):**
+  - Confirmed Nov 22 Sell (`165.60 BDT` gross) settlement at SOD Nov 24: `Cash Balance: 353.00 BDT`, `Unsettled Sales: 0.00 BDT` with exact `0.60 BDT` fee (`~0.36%`).
+- [x] **Comprehensive Automated Test Suite (`tests/test_tradexpress_extension_mirror.py`):**
+  - 10 automated unit tests with 100% pass covering MV3 manifest structure, static code safety, extension ingest endpoints, off-hours cash preservation, loopback security, unseen symbol rule creation, zero price SOD protection, manifest icon integrity, network tap static safety, and net tap firehose endpoints.
+
+---
+
 ### 🏦 Sprint 6: Production Graduation to Live TradeXpress 2-Step Execution & iBroker EOD Audit
 
 - [ ] **Production TradeXpress 2-Step Executor (`TRADEXPRESS_LIVE` Mode):**
