@@ -351,12 +351,13 @@ function renderMainChart() {
 
 function sparkline(history) {
   if (!history || !history.length) return element("span", "muted small", "—");
-  const values = history.map((point) => Number(point && typeof point === "object" ? point.close : point));
+  const values = history.map((point) => Number(point && typeof point === "object" ? (point.close ?? point.price ?? point.value) : point));
   if (values.length < 2 || values.some((value) => !Number.isFinite(value) || value <= 0)) return element("span", "muted small", "—");
   const low = Math.min(...values), high = Math.max(...values);
+  const diff = high - low;
   const coords = values.map((val, i) => ({
     x: 2 + (i / (values.length - 1)) * 92,
-    y: 25 - ((val - low) / (high - low || 1)) * 22,
+    y: diff === 0 ? 14 : 25 - ((val - low) / diff) * 22,
   }));
   const path = smoothCurvePath(coords);
   const svg = svgElement("svg", { viewBox: "0 0 96 28", class: "sparkline", role: "img", "aria-label": "Recent price curve" });

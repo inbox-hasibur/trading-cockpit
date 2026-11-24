@@ -564,6 +564,26 @@ Reconciliation of all audit findings and architectural items from historical MVP
 
 ---
 
+### ✅ Sprint 5H (Completed): Auto-Generated FRONTEND_MAP.md, Light-Mode Dark Box & Left-Clip Fixes, % Chg & Sparkline Curves, Favorites Isolation & Bulletproof Buying Power Sniffing
+
+- [x] **Auto-Generated Frontend & Extension Knowledge Map (`scripts/generate_frontend_map.py` -> `documentation/FRONTEND_MAP.md`):**
+  - Built zero-dependency knowledge map generator integrated into `scripts/generate_code_map.py`.
+  - Audits 5 core sections: UI DOM hierarchy, Dark vs Light CSS parity table (0 missing overrides), Backend ↔ Frontend Field Contract Matrix (0 mismatches), JS functions → DOM IDs/endpoints, and Extension passive sniffer map.
+- [x] **Light-Mode Dark Box Elimination & Split-Screen Left-Clip Fix (`frontend/theme_light_hermes.css`, `frontend/styles.css`):**
+  - Styled `.tx-search-wrap`, `.tx-mw-search-box`, `#company-search`, `.tx-ticket-header`, `.tx-panel-header`, `#tx-depth-table thead`, `.tx-depth-foot`, `.tx-depth-hint`, `.tx-confirm-banner.buy/sell` in Light Mode.
+  - Fixed `@media (max-width: 1200px)` for `.tx-top-header` / `.tx-topbar` (`justify-content: flex-start`, `min-height: 40px`, zero negative margins), ensuring brand badge starts at `rect.left >= 0` with zero left clipping.
+- [x] **Market Watch % Chg, Sparklines & Favorites Filter Isolation (`frontend/charts.js`, `frontend/app.js`, `backend/portfolio.py`):**
+  - Upgraded `sparkline()` to accept multiple point shapes and center flat lines; seeded `_intraday_series` with >= 2 points so 7–15d curves never render blank.
+  - Filtered `cat === "ALL"` strictly to `c.favorite === true` in `renderWatchlist()`, leaving `ALL_DSE` for the full market view; rendered 13 columns consistently across all tabs.
+- [x] **Bulletproof 3-Tier Buying Power Sniffing (`extension/tradexpress_mirror/content.js`):**
+  - 3-tier fallback (topbar regex -> Account Summary table -> DOM selectors) ensuring `H9210` ৳353.00 Buying Power is captured accurately and preserved across off-hours cash resets.
+- [x] **Verified Google Gemini Models Dropdown (`backend/routes_hermes.py`):**
+  - Placed the 4 verified tool-calling models (`gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`, `gemini-3-flash-preview`, `gemini-3.1-flash-lite-preview`) at the top of the Hermes model selector.
+- [x] **Playwright Visual Gates & Full Regression Verification (`tests/test_v1_layout_playwright.py`):**
+  - Verified Light Mode RGB brightness > 180 across all panels, non-clipping split-screen viewports (760px, 800px), and passive ingest sync with 280+ tests passing 100%.
+
+---
+
 ### 🏦 Sprint 6: Production Graduation to Live TradeXpress 2-Step Execution & iBroker EOD Audit
 
 - [ ] **Production TradeXpress 2-Step Executor (`TRADEXPRESS_LIVE` Mode):**

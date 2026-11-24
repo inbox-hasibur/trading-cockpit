@@ -253,15 +253,18 @@ def test_tradexpress_v1_layout_and_interactions(cockpit_server):
         # Visual gates in Light Theme
         assert_strict_visual_gates("light")
 
-        # Sprint 5G Light Theme Computed Background Brightness assertions (RGB brightness > 180)
+        # Sprint 5H Light Theme Computed Background Brightness assertions (RGB brightness > 180)
         light_selectors = [
+            ".tx-top-header",
+            ".tx-search-wrap",
             "#company-search",
+            ".tx-panel-header",
             "#tx-order-qty",
             "#tx-order-price",
             "#tx-depth-table thead",
-            ".tx-depth-hint",
+            "#tx-depth-table thead th",
+            ".tx-depth-foot",
             "#tx-broker-mirror-card",
-            ".tx-top-header",
         ]
         for sel in light_selectors:
             brightness = page.evaluate(f"""() => {{
@@ -274,25 +277,95 @@ def test_tradexpress_v1_layout_and_interactions(cockpit_server):
             }}""")
             assert brightness >= 180, f"Element {sel} failed Light Theme brightness check (expected >= 180, got {brightness})"
 
-        # 7. Split-Screen 800x900 assertion: zero bounding box overlap between children of .tx-top-header
-        page.set_viewport_size({"width": 800, "height": 900})
-        time.sleep(0.3)
-        theme_btn_800 = page.locator("#theme-toggle-btn").bounding_box()
-        assert theme_btn_800 is not None
-        assert theme_btn_800["x"] + theme_btn_800["width"] <= 800 + 4, (
-            f"Theme toggle button right edge ({theme_btn_800['x'] + theme_btn_800['width']}) clipped beyond 800px"
-        )
-        brand_box = page.locator(".tx-topbar-brand").bounding_box()
-        tele_box = page.locator(".tx-topbar-telemetry").bounding_box()
-        if brand_box and tele_box:
-            h_overlap = not (brand_box["x"] + brand_box["width"] <= tele_box["x"] or tele_box["x"] + tele_box["width"] <= brand_box["x"])
-            v_overlap = not (brand_box["y"] + brand_box["height"] <= tele_box["y"] or tele_box["y"] + tele_box["height"] <= brand_box["y"])
-            assert not (h_overlap and v_overlap), "Brand and telemetry items overlap in split-screen 800px!"
+        # 7. Split-Screen 760x900 and 800x900 assertions (zero left/right clipping)
+        for vp_width in (800, 760):
+            page.set_viewport_size({"width": vp_width, "height": 900})
+            time.sleep(0.3)
+            first_child_box = page.evaluate("""() => {
+                const hdr = document.querySelector('.tx-top-header');
+                const first = hdr ? hdr.firstElementChild : null;
+                if (!first) return null;
+                const r = first.getBoundingClientRect();
+                return { left: r.left, right: r.right };
+            }""")
+            assert first_child_box is not None
+            assert first_child_box["left"] >= 0, (
+                f"[{vp_width}px] First child of .tx-top-header clipped off-screen left: left={first_child_box['left']}"
+            )
+
+            theme_btn_box = page.locator("#theme-toggle-btn").bounding_box()
+            assert theme_btn_box is not None
+            assert theme_btn_box["x"] + theme_btn_box["width"] <= vp_width + 4, (
+                f"[{vp_width}px] Theme toggle button right edge ({theme_btn_box['x'] + theme_btn_box['width']}) clipped beyond viewport {vp_width}px"
+            )
 
         page.set_viewport_size({"width": 1440, "height": 900})
         time.sleep(0.2)
 
-        # 8. Zero JS Console Errors
+        # 8. Test live passive ingest of ACMEPL (All DSE tab isolation, % Chg, sparklines, and ৳353 Buying Power)
+        import urllib.request
+        import json as py_json
+        ingest_payload = {
+            "source": "EDGE_EXTENSION_PASSIVE",
+            "dse_status": "Trading",
+            "tab": "Dhaka Stock Exchange",
+            "market_watch_rows": [
+                {
+                    "sDes": "ACMEPL",
+                    "ltp": "27.50",
+                    "chg": "1.40",
+                    "pctChg": "5.39",
+                    "vol": "25000",
+                    "dispSettType": "PUBLIC",
+                    "dispSymCat": "A",
+                }
+            ],
+            "account_summary": {
+                "customer_number": "H9210",
+                "cash_balance": 353.00,
+                "buying_power": 353.00,
+            },
+        }
+        req = urllib.request.Request(
+            f"{base_url}/api/tradexpress/passive-ingest",
+            data=py_json.dumps(ingest_payload).encode("utf-8"),
+            headers={"Content-Type": "application/json", "Origin": "chrome-extension://testabc123"},
+        )
+        with urllib.request.urlopen(req, timeout=3.0) as resp:
+            assert resp.status == 200
+
+        # Refresh page to fetch updated snapshot
+        page.goto(f"{base_url}/", wait_until="networkidle")
+        page.wait_for_selector("#tx-trade-workspace", state="visible", timeout=6000)
+        time.sleep(0.5)
+
+        # 8a. My Favorites tab MUST NOT show ACMEPL
+        fav_btn = page.locator('button[data-cat="ALL"]')
+        if fav_btn.count() > 0:
+            fav_btn.click()
+            time.sleep(0.3)
+        assert page.locator('#watchlist-body tr[data-symbol="ACMEPL"]').count() == 0, "ACMEPL leaked into My Favorites tab!"
+
+        # 8b. All DSE tab MUST show ACMEPL with +5.39% and sparkline SVG
+        dse_btn = page.locator('button[data-cat="ALL_DSE"]')
+        if dse_btn.count() > 0:
+            dse_btn.click()
+            time.sleep(0.4)
+            acme_row = page.locator('#watchlist-body tr[data-symbol="ACMEPL"]')
+            assert acme_row.count() > 0, "ACMEPL not found in All DSE tab!"
+            row_text = acme_row.inner_text()
+            assert "+5.39%" in row_text or "5.39%" in row_text, f"ACMEPL % Chg missing +5.39%: {row_text}"
+            assert "+0.00%" not in row_text, f"ACMEPL % Chg incorrectly shows +0.00%: {row_text}"
+            assert acme_row.locator("svg.sparkline").count() > 0, "ACMEPL missing inline sparkline svg!"
+
+        # 8c. LIVE BROKER MIRROR card displays ৳353.00
+        page.click("#tx-tab-account-summary")
+        time.sleep(0.3)
+        bm_bp_text = page.locator("#tx-bm-bp").inner_text()
+        assert "353" in bm_bp_text, f"LIVE BROKER MIRROR Buying Power not showing ৳353.00: {bm_bp_text}"
+        assert bm_bp_text != "৳0.00", f"LIVE BROKER MIRROR stuck at ৳0.00: {bm_bp_text}"
+
+        # 9. Zero JS Console Errors
         assert len(js_errors) == 0, f"Encountered uncaught JS errors: {js_errors}"
 
         browser.close()

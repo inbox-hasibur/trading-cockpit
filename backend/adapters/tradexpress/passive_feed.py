@@ -97,8 +97,8 @@ def parse_ember_market_watch_rows(
             continue
         symbol = from_tradexpress_symbol(raw_sym)
         ltp = decimal(d.get("ltp") or d.get("lastTradedPrice") or d.get("lastPrice") or 0)
-        chg = decimal(d.get("chg") or d.get("change") or 0)
-        pct_chg = decimal(d.get("pctChg") or d.get("pctChange") or 0)
+        chg = decimal(d.get("chg") or d.get("change") or d.get("net_change") or 0)
+        pct_chg = decimal(d.get("pctChg") or d.get("pctChange") or d.get("pct_chg") or d.get("pct_change") or 0)
         vol = int(d.get("vol") or d.get("volume") or 0)
         open_price = decimal(d.get("open") or d.get("openPrice") or ltp)
         high = decimal(d.get("high") or ltp)
@@ -455,17 +455,26 @@ class TradeXpressPassiveFeed(MarketFeedAdapter):
                 self._quotes[q.symbol] = q
                 if q.ltp and q.ltp > ZERO:
                     series = self._intraday_series.setdefault(q.symbol, [])
+                    ltp_f = float(q.ltp)
                     if not series:
                         chg_val = q.change or ZERO
                         open_val = q.open_price if (q.open_price and q.open_price > ZERO) else q.ltp
-                        prev_close = q.ltp - chg_val if chg_val != ZERO else open_val
-                        if prev_close > ZERO:
-                            series.append({"time": "prev_close", "price": float(prev_close)})
-                        if open_val > ZERO and open_val != prev_close:
-                            series.append({"time": "open", "price": float(open_val)})
-                    ltp_f = float(q.ltp)
-                    if not series or series[-1]["price"] != ltp_f or len(series) < 3:
-                        series.append({"time": q.last_trade_time or utc_now_iso(), "price": ltp_f})
+                        if chg_val != ZERO:
+                            prev_close = round(float(q.ltp - chg_val), 2)
+                            if prev_close > 0:
+                                series.append({"time": "prev_close", "price": prev_close})
+                            if open_val > ZERO and round(float(open_val), 2) != prev_close:
+                                series.append({"time": "open", "price": round(float(open_val), 2)})
+                            series.append({"time": q.last_trade_time or utc_now_iso(), "price": ltp_f})
+                        elif open_val > ZERO and round(float(open_val), 2) != ltp_f:
+                            series.append({"time": "open", "price": round(float(open_val), 2)})
+                            series.append({"time": q.last_trade_time or utc_now_iso(), "price": ltp_f})
+                        elif ltp_f > 0:
+                            series.append({"time": "base", "price": ltp_f})
+                            series.append({"time": q.last_trade_time or utc_now_iso(), "price": ltp_f})
+                    else:
+                        if series[-1]["price"] != ltp_f or len(series) < 2:
+                            series.append({"time": q.last_trade_time or utc_now_iso(), "price": ltp_f})
                     if len(series) > 40:
                         self._intraday_series[q.symbol] = series[-40:]
 

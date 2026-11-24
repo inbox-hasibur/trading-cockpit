@@ -3273,15 +3273,45 @@ body.is-resizing-hermes .app-shell {
   background: #f8fafc !important;
 }
 
-/* Sprint 5G Light Theme Completeness Fixes */
+/* Sprint 5G & 5H Light Theme Completeness & Parity Fixes */
+[data-theme="light"] .tx-search-wrap,
+[data-theme="light"] .tx-mw-search-box {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .tx-search-wrap svg,
+[data-theme="light"] .tx-mw-search-box svg {
+  stroke: #64748b !important;
+}
+
+[data-theme="light"] .tx-search-wrap input,
 [data-theme="light"] #company-search {
   background: #ffffff !important;
   border: 1px solid #cbd5e1 !important;
   color: #0f172a !important;
 }
 
+[data-theme="light"] .tx-search-wrap input::placeholder,
 [data-theme="light"] #company-search::placeholder {
   color: #64748b !important;
+}
+
+[data-theme="light"] .tx-ticket-header,
+[data-theme="light"] .tx-panel-header,
+[data-theme="light"] #tx-order-ticket > header,
+[data-theme="light"] #tx-order-ticket .tx-panel-header,
+[data-theme="light"] .tx-pane-bottom-left .tx-panel-header {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+}
+
+[data-theme="light"] .tx-ticket-header-title,
+[data-theme="light"] #tx-ticket-header-title,
+[data-theme="light"] .tx-panel-title {
+  color: #0f172a !important;
 }
 
 [data-theme="light"] #tx-order-qty,
@@ -3309,18 +3339,46 @@ body.is-resizing-hermes .app-shell {
 }
 
 [data-theme="light"] #tx-depth-table thead,
+[data-theme="light"] #tx-depth-table thead tr,
+[data-theme="light"] #tx-depth-table thead th,
 [data-theme="light"] #tx-depth-table th,
 [data-theme="light"] .tx-depth-table thead,
+[data-theme="light"] .tx-depth-table thead tr,
+[data-theme="light"] .tx-depth-table thead th,
 [data-theme="light"] .tx-depth-table th {
   background: #f1f5f9 !important;
   color: #334155 !important;
   border-bottom: 1px solid #cbd5e1 !important;
+  border-color: #cbd5e1 !important;
 }
 
+[data-theme="light"] .tx-spy-pill-btn {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .tx-depth-head {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+  border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .tx-depth-foot,
 [data-theme="light"] .tx-depth-hint {
   background: #f8fafc !important;
   color: #64748b !important;
   border-top: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .tx-confirm-banner.buy {
+  background: #dcfce7 !important;
+  color: #166534 !important;
+}
+
+[data-theme="light"] .tx-confirm-banner.sell {
+  background: #fee2e2 !important;
+  color: #991b1b !important;
 }
 
 [data-theme="light"] #tx-broker-mirror-card,

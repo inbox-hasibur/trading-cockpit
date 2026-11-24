@@ -6863,19 +6863,30 @@ button.local-avatar:hover {
   justify-content: flex-end;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1200px) {
   .tx-top-header,
   .tx-topbar {
-    padding: 3px 6px !important;
-    gap: 4px !important;
-    min-height: 38px !important;
-    max-height: none !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
     flex-wrap: wrap !important;
+    height: auto !important;
+    min-height: 40px !important;
+    max-height: none !important;
+    padding: 4px 8px !important;
+    gap: 6px !important;
+    overflow: visible !important;
+  }
+
+  .tx-topbar-brand {
+    flex-shrink: 0 !important;
+    margin-right: 4px !important;
+    overflow: visible !important;
   }
 
   .tx-topbar-telemetry {
     flex-wrap: wrap !important;
-    gap: 4px !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
     overflow: visible !important;
   }
 

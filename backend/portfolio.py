@@ -564,7 +564,9 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             else:
                 sparkline_pts = [10.0, 10.0]
 
-        effective_history = history_list if len(history_list) >= 2 else [{"close": pt} for pt in sparkline_pts]
+        today_str = state.clock_date.isoformat()
+        effective_history = history_list if len(history_list) >= 2 else [{"close": str(round(pt, 2))} for pt in sparkline_pts]
+        formatted_sparkline = [{"date": today_str, "close": str(round(pt, 2))} for pt in sparkline_pts]
 
         company_views.append({
             "symbol": company.symbol,
@@ -577,7 +579,7 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             "quote_on": company.quote_on.isoformat(),
             "source": company.source,
             "history": effective_history,
-            "sparkline_points": sparkline_pts,
+            "sparkline_points": formatted_sparkline,
             "extended_history": generate_extended_history(company.price_history, fundamentals, calendar, state.clock_date, session_dates=session_dates_240),
             "fundamentals": fundamentals,
             "curve": curve_dict,
@@ -617,6 +619,8 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             "hold_sessions": hold_sessions,
             "hold_day_label": hold_day_label,
             "lots": company_lots,
+            "last_price": float(company.last_price),
+            "mature_shares": mature_qty,
         })
 
     cash = sum((balance.available_cash for balance in balances.values()), ZERO)
@@ -697,6 +701,25 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
     from backend.adapters.stocknow_market_sync import _ALL_DSE_SHARES_CACHE
     all_shares_total = len(_ALL_DSE_SHARES_CACHE) if _ALL_DSE_SHARES_CACHE else 473
 
+    metrics_dict = {
+        "initial_capital": float(state.initial_capital),
+        "available_cash": float(cash), "unsettled_proceeds": float(unsettled),
+        "open_cost_basis": float(total_basis), "gross_market_value": float(total_gross_value),
+        "estimated_exit_fees": float(estimated_exit_fees),
+        "gross_equity": float(cash + unsettled + total_gross_value),
+        "net_liquidation_equity": float(net_equity),
+        "realized_pnl": float(realized), "unrealized_pnl": float(unrealized),
+        "total_gain": float(realized + unrealized),
+        "total_gain_pct": float((net_equity / state.initial_capital - 1) * HUNDRED),
+        "fees_paid": float(sum((trade.fee for trade in trades), ZERO)),
+        "mature_shares": sum(lot["remaining_qty"] for lot in lot_views if lot["is_mature"]),
+        "locked_shares": sum(lot["remaining_qty"] for lot in lot_views if not lot["is_mature"]),
+        "quarantined_count": sum(company["quarantined"] for company in company_views),
+        "book_reconciled": money(cash + unsettled + total_basis) == money(state.initial_capital + realized),
+        "equity_reconciled": money(net_equity - state.initial_capital) == money(realized + unrealized),
+        "drift": float(getattr(state, "drift_bdt", ZERO) or abs(money(cash + unsettled + total_basis) - money(state.initial_capital + realized))),
+    }
+
     return {
         "all_shares_count": all_shares_total,
         "trading_mode": getattr(state, "trading_mode", "LIVE_HOURS"),
@@ -735,24 +758,7 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             "schedule_verified": False, "calendar_verified": False,
             "holidays": sorted(day.isoformat() for day in settings.holidays),
         },
-        "metrics": {
-            "initial_capital": float(state.initial_capital),
-            "available_cash": float(cash), "unsettled_proceeds": float(unsettled),
-            "open_cost_basis": float(total_basis), "gross_market_value": float(total_gross_value),
-            "estimated_exit_fees": float(estimated_exit_fees),
-            "gross_equity": float(cash + unsettled + total_gross_value),
-            "net_liquidation_equity": float(net_equity),
-            "realized_pnl": float(realized), "unrealized_pnl": float(unrealized),
-            "total_gain": float(realized + unrealized),
-            "total_gain_pct": float((net_equity / state.initial_capital - 1) * HUNDRED),
-            "fees_paid": float(sum((trade.fee for trade in trades), ZERO)),
-            "mature_shares": sum(lot["remaining_qty"] for lot in lot_views if lot["is_mature"]),
-            "locked_shares": sum(lot["remaining_qty"] for lot in lot_views if not lot["is_mature"]),
-            "quarantined_count": sum(company["quarantined"] for company in company_views),
-            "book_reconciled": money(cash + unsettled + total_basis) == money(state.initial_capital + realized),
-            "equity_reconciled": money(net_equity - state.initial_capital) == money(realized + unrealized),
-            "drift": float(getattr(state, "drift_bdt", ZERO) or abs(money(cash + unsettled + total_basis) - money(state.initial_capital + realized))),
-        },
+        "metrics": metrics_dict,
         "periods": periods,
         "companies": company_views,
         "lots": lot_views,
@@ -805,6 +811,8 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
         "buying_power_bdt": float(cash + (getattr(state, "unsettled_sales_bdt", ZERO) or ZERO)),
         "dse_index": passive_feed.get_market_index() if passive_feed else {},
         "broker_mirror_account": passive_feed.get_account_summary().to_dict() if passive_feed else {},
+        "summary": metrics_dict,
+        "last_market_sync": state.clock_date.isoformat(),
         "notice": "All prices/scenarios/trades are synthetic. No live orders. No guaranteed recovery or returns.",
     }
 

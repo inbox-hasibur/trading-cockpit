@@ -38,7 +38,7 @@
   }
 
   function extractGlobalBuyingPower() {
-    // 1. Order ticket top panel: #order-top-panel-8-1-1-1 [data-id="bp-short"] .holding-trade-bp
+    // Tier 1: Order ticket top panel Buying Power box
     const bpPanelEl = document.querySelector(
       '#order-top-panel-8-1-1-1 [data-id="bp-short"] .holding-trade-bp, ' +
       '#order-ticket-landscape-id [data-id="bp-short"] .holding-trade-bp, ' +
@@ -50,12 +50,30 @@
       if (!isNaN(v) && v > 0) return v;
     }
 
-    // 2. Top navbar / header Buying Power
-    const topNavText = (document.querySelector('header, .app-header, #app-header, .top-bar, .tx-topbar, #top-bar') || document.body || {}).innerText || '';
-    const bpMatch = topNavText.match(/Buying\s*Power[:\s\t]+(?:BDT|৳)?\s*([0-9,]+(?:\.[0-9]{1,2})?)/i);
-    if (bpMatch) {
-      const v = parseFloat(bpMatch[1].replace(/,/g, ''));
-      if (!isNaN(v) && v > 0) return v;
+    // Tier 2: Top header navbar - find element matching "Buying Power" and grab numeric value in parent/sibling container
+    const headerContainers = document.querySelectorAll(
+      'header, .app-header, #app-header, .top-bar, .tx-topbar, #top-bar, nav, .header, #header'
+    );
+    for (const h of headerContainers) {
+      const allDescendants = h.querySelectorAll('*');
+      for (const el of allDescendants) {
+        if (/^Buying\s*Power$/i.test(safeText(el))) {
+          const parent = el.parentElement;
+          if (parent) {
+            const m = safeText(parent).match(/([0-9,]+(?:\.[0-9]{1,2})?)/);
+            if (m) {
+              const num = parseFloat(m[1].replace(/,/g, ''));
+              if (!isNaN(num) && num > 0) return num;
+            }
+          }
+        }
+      }
+      const text = safeText(h);
+      const bpMatch = text.match(/Buying\s*Power[:\s\t]+(?:BDT|৳)?\s*([0-9,]+(?:\.[0-9]{1,2})?)/i);
+      if (bpMatch) {
+        const v = parseFloat(bpMatch[1].replace(/,/g, ''));
+        if (!isNaN(v) && v > 0) return v;
+      }
     }
 
     return null;
@@ -542,8 +560,13 @@
             payable_amount: 0,
             cash_available_for_withdrawal: effectiveBp,
           };
-        } else if (acctSummary && (!acctSummary.buying_power || acctSummary.buying_power === 0) && effectiveBp !== null && effectiveBp > 0) {
-          acctSummary.buying_power = effectiveBp;
+        } else if (acctSummary) {
+          if ((!acctSummary.buying_power || acctSummary.buying_power === 0) && effectiveBp !== null && effectiveBp > 0) {
+            acctSummary.buying_power = effectiveBp;
+          }
+          if ((!acctSummary.cash_balance || acctSummary.cash_balance === 0) && effectiveBp !== null && effectiveBp > 0) {
+            acctSummary.buying_power = effectiveBp;
+          }
         }
 
         const payload = {

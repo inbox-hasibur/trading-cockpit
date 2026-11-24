@@ -696,135 +696,20 @@ function renderWatchlist() {
   const all = state.snapshot.companies;
   const cat = state.category || "ALL";
 
+  const favCount = all.filter((c) => c.favorite === true).length;
   const gscCount = all.filter((c) => (c.watchlist_category || "GSC") === "GSC").length;
   const l1Count = all.filter((c) => c.watchlist_category === "GSC_L1").length;
   const l2Count = all.filter((c) => c.watchlist_category === "GSC_L2").length;
-  if ($("cat-all-count")) setText("cat-all-count", all.length);
+  if ($("cat-all-count")) setText("cat-all-count", favCount);
   if ($("cat-gsc-count")) setText("cat-gsc-count", gscCount);
   if ($("cat-l1-count")) setText("cat-l1-count", l1Count);
   if ($("cat-l2-count")) setText("cat-l2-count", l2Count);
-  if ($("cat-dse-count") && state.allDseShares) setText("cat-dse-count", state.allDseShares.length);
+  if ($("cat-dse-count")) setText("cat-dse-count", state.allDseShares?.length || all.length);
 
   const thead = $("watchlist-thead");
   const paginationBar = $("watchlist-pagination");
 
-  if (cat === "ALL_DSE") {
-    if (thead) {
-      thead.innerHTML = '<tr><th scope="col">COMPANY</th><th scope="col" class="align-right">PRICE ৳</th><th scope="col" class="align-right">DAY</th><th scope="col">7–15 SESSION CURVE</th><th scope="col">VOL / VALUE</th><th scope="col" class="align-center">CAT</th><th scope="col" class="align-right">HIGH / LOW</th><th scope="col" class="align-center">ACTION</th></tr>';
-    }
-    if (paginationBar) paginationBar.hidden = false;
-
-    if (!state.allDseShares) {
-      if (!state.loadingAllDse) {
-        state.loadingAllDse = true;
-        api("/api/stocknow/all-shares")
-          .then((res) => {
-            state.allDseShares = res.shares || [];
-            state.loadingAllDse = false;
-            if ($("cat-dse-count")) setText("cat-dse-count", state.allDseShares.length);
-            renderWatchlist();
-          })
-          .catch((err) => {
-            state.loadingAllDse = false;
-            notify(`Failed loading All DSE Shares: ${err.message}`, true);
-            const row = element("tr");
-            const td = cell(`Failed loading All DSE Shares: ${err.message}`, "loading-cell");
-            td.colSpan = 8;
-            row.append(td);
-            $("watchlist-body").replaceChildren(row);
-          });
-      }
-      const row = element("tr");
-      const td = cell("Loading 470+ live DSE shares catalog from StockNow…", "loading-cell");
-      td.colSpan = 8;
-      row.append(td);
-      $("watchlist-body").replaceChildren(row);
-      return;
-    }
-
-    const filtered = (state.allDseShares || []).filter((s) => {
-      const haystack = `${s.symbol} ${s.name} ${s.sector} ${s.category || ""}`.toLowerCase();
-      return haystack.includes(query);
-    });
-    setText("company-count", query ? `${filtered.length}/${state.allDseShares.length}` : state.allDseShares.length);
-
-    const pageSize = 50;
-    const totalPages = Math.ceil(filtered.length / pageSize) || 1;
-    state.dsePage = Math.max(1, Math.min(state.dsePage || 1, totalPages));
-    const paged = filtered.slice((state.dsePage - 1) * pageSize, state.dsePage * pageSize);
-
-    setText("watchlist-page-info", `Page ${state.dsePage} of ${totalPages} (${filtered.length} shares)`);
-    const prevBtn = $("watchlist-prev-page");
-    const nextBtn = $("watchlist-next-page");
-    if (prevBtn) prevBtn.disabled = state.dsePage <= 1;
-    if (nextBtn) nextBtn.disabled = state.dsePage >= totalPages;
-
-    const rows = paged.map((s) => {
-      const row = element("tr", s.symbol === state.selectedSymbol ? "selected" : "");
-      row.dataset.symbol = s.symbol;
-      const companyCell = cell();
-      const button = element("button", "company-button");
-      button.type = "button";
-      button.setAttribute("aria-label", `Inspect ${s.symbol}`);
-      const secClass = (s.sector || "other").toLowerCase().replace(/[^a-z0-9]/g, "_");
-      button.append(element("span", `company-icon sector-${secClass}`, s.symbol[0]));
-      const name = element("span");
-      const symSpan = element("span", "company-symbol", s.symbol);
-      name.append(symSpan, element("span", "company-subtitle", (s.name || s.sector || "").slice(0, 26)));
-      button.append(name);
-      companyCell.append(button);
-
-      const priceCell = cell(numberFormat.format(s.ltp), "align-right");
-      const day = cell(percentage(s.change_pct), `align-right ${s.change_pct >= 0 ? "positive" : "negative"}`);
-      const chart = cell();
-      chart.append(sparkline(s.sparkline || [s.ltp]));
-
-      const volVal = cell(undefined, "vol-val-cell");
-      const volStr = formatCompactNumber(s.volume);
-      const valStr = s.value_cr ? `৳${Number(s.value_cr).toFixed(2)} Cr` : "—";
-      volVal.append(element("span", "volume-text", volStr), element("span", "muted small", ` · ${valStr}`));
-
-      const catBadgeCell = cell(undefined, "align-center");
-      if (s.category) {
-        catBadgeCell.append(element("span", `cat-tag cat-${s.category.toLowerCase()}`, s.category));
-      } else {
-        catBadgeCell.append(element("span", "muted", "—"));
-      }
-
-      const hlCell = cell(undefined, "align-right");
-      hlCell.append(
-        element("span", "small positive", `H: ${s.high || s.ltp}`),
-        element("span", "muted small", " / "),
-        element("span", "small negative", `L: ${s.low || s.ltp}`)
-      );
-
-      const actionCell = cell(undefined, "align-center");
-      const trendBtn = element("button", "button secondary small-button deep-trend-btn", "Trend ⤢");
-      trendBtn.type = "button";
-      trendBtn.title = `View ${s.symbol} Deep Trend & Real 400-Candle History`;
-      trendBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        openDeepTrendModal(s.symbol);
-      });
-      actionCell.append(trendBtn);
-
-      row.append(companyCell, priceCell, day, chart, volVal, catBadgeCell, hlCell, actionCell);
-      row.addEventListener("click", () => selectCompany(s.symbol));
-      return row;
-    });
-
-    if (!rows.length) {
-      const row = element("tr");
-      const td = cell("No matching DSE shares found for this search.", "loading-cell");
-      td.colSpan = 8;
-      row.append(td);
-      rows.push(row);
-    }
-    $("watchlist-body").replaceChildren(...rows);
-    return;
-  }
-
-  // Standard TradeXpress 2.0 Market Watch View
+  // Standard TradeXpress 2.0 Market Watch View for all tabs (including ALL_DSE)
   if (thead) {
     thead.innerHTML = '<tr><th scope="col">Symbol</th><th scope="col">Curve (7–15d)</th><th scope="col" class="align-right">LTP ৳</th><th scope="col" class="align-right">% Chg</th><th scope="col" class="align-right tx-col-bid">Bid / Qty</th><th scope="col" class="align-right tx-col-offer">Offer / Qty</th><th scope="col" class="align-center" id="col-curve-signal">Cat / Signal</th><th scope="col" class="align-center">Day</th><th scope="col" class="align-right" id="col-held-mature">Matured / Qty</th><th scope="col" class="align-right">Bought Avg</th><th scope="col" class="align-right" id="col-buy-cap">Bought Total</th><th scope="col" class="align-right">Sell Total</th><th scope="col" class="align-right">Net Profit</th></tr>';
   }
@@ -840,11 +725,18 @@ function renderWatchlist() {
     if (heldOnly && (company.holding_qty || 0) === 0) {
       return false;
     }
-    const matchesQuery = `${company.symbol} ${company.name} ${company.sector}`.toLowerCase().includes(query);
-    const matchesCat = cat === "ALL" || (company.watchlist_category || "GSC") === cat;
+    const matchesQuery = `${company.symbol} ${company.name || ""} ${company.sector || ""}`.toLowerCase().includes(query);
+    let matchesCat = true;
+    if (cat === "ALL" || cat === "FAVORITES") {
+      matchesCat = company.favorite === true;
+    } else if (cat === "ALL_DSE") {
+      matchesCat = true;
+    } else {
+      matchesCat = (company.watchlist_category || "GSC") === cat;
+    }
     return matchesQuery && matchesCat;
   });
-  setText("company-count", query || cat !== "ALL" ? `${companies.length}/${all.length}` : all.length);
+  setText("company-count", query || cat !== "ALL_DSE" ? `${companies.length}/${all.length}` : all.length);
   const rows = companies.map((company) => {
     const row = element("tr", company.symbol === state.selectedSymbol ? "selected" : "");
     row.dataset.symbol = company.symbol;
@@ -868,14 +760,20 @@ function renderWatchlist() {
     button.append(name); companyCell.append(button);
 
     // 2. Curve sparkline
-    const chart = cell(); chart.append(sparkline(company.sparkline_points || company.history));
+    const chart = cell();
+    const curvePoints = (company.sparkline_points && company.sparkline_points.length >= 2)
+      ? company.sparkline_points
+      : (company.history && company.history.length >= 2 ? company.history : [company.price, company.price]);
+    chart.append(sparkline(curvePoints));
 
     // 3. LTP
     const ltpCell = cell(numberFormat.format(company.price), "align-right tabular-nums");
 
     // 4. % Chg
-    const pctVal = company.change_pct !== undefined ? Number(company.change_pct) : (company.pct_change !== undefined ? Number(company.pct_change) : Number(company.curve?.day_change_pct || 0));
-    const day = cell(percentage(pctVal), `align-right tabular-nums ${pctVal > 0 ? "positive" : (pctVal < 0 ? "negative" : "muted")}`);
+    const rawPct = company.day_change_pct ?? company.change_pct ?? company.pct_change ?? company.curve?.day_change_pct ?? 0;
+    const pctVal = Number(rawPct) || 0;
+    const pctSign = pctVal > 0 ? "+" : "";
+    const day = cell(`${pctSign}${pctVal.toFixed(2)}%`, `align-right tabular-nums ${pctVal > 0 ? "positive" : (pctVal < 0 ? "negative" : "muted")}`);
 
     // 5. Bid / Qty
     const bidPriceStr = company.bid ? numberFormat.format(company.bid) : numberFormat.format(company.price);

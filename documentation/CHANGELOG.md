@@ -7,9 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [v1.0.0-dev] - Unreleased (Trading Cockpit V1 Branch - Sprints 4A, 4B, 4C, 5A, 5B, 5C, 5D, 5E, 5F, 5G)
+## [v1.0.0-dev] - Unreleased (Trading Cockpit V1 Branch - Sprints 4A, 4B, 4C, 5A, 5B, 5C, 5D, 5E, 5F, 5G, 5H)
 
 ### Added
+- **Sprint 5H: Auto-Generated FRONTEND_MAP.md + Light-Mode Dark Box & Left-Clip Elimination + Sparklines, % Chg, Favorites Tab Isolation & 3-Tier Buying Power:**
+  - `scripts/generate_frontend_map.py` & `documentation/FRONTEND_MAP.md`: Created standalone knowledge map generator and chained it into `scripts/generate_code_map.py`. Maps UI DOM component hierarchy, dark vs light CSS parity (0 missing overrides), backend ↔ frontend field contract matrix (0 mismatches), JS functions → DOM IDs/endpoints, and extension passive sniffer map.
+  - `frontend/theme_light_hermes.css`: Eliminated all remaining dark boxes in Light Mode: `.tx-search-wrap`, `.tx-mw-search-box`, `#company-search`, `.tx-ticket-header`, `.tx-panel-header`, `#tx-order-ticket > header`, `#tx-ticket-header-title`, `.tx-panel-title`, `#tx-depth-table thead tr th`, `.tx-depth-table th`, `.tx-depth-foot`, `.tx-depth-hint`, `.tx-spy-pill-btn`, `.tx-confirm-banner.buy` (`#dcfce7`), and `.tx-confirm-banner.sell` (`#fee2e2`).
+  - `frontend/styles.css`: Resolved topbar left-edge clipping on <= 1200px and 800px split-screen viewports (`justify-content: flex-start`, `min-height: 40px`, zero negative margin/clipping), verified brand badge `rect.left >= 0`.
+  - `frontend/charts.js` & `frontend/app.js`: Upgraded `sparkline()` to accept `point.close`, `point.price`, `point.value`, or bare numbers and centered flat horizontal lines. In `renderWatchlist()`, isolated `My Favorites` (`cat === "ALL"`) strictly to `c.favorite === true`, rendered 13 columns consistently across all tabs, and formatted `% Chg` with sign and 2 decimals.
+  - `backend/adapters/tradexpress/passive_feed.py` & `backend/portfolio.py`: Accepted both `pctChg` and `pct_chg`, seeded `_intraday_series` with >= 2 points on first tick, aligned `summary` and `metrics` snapshot payload dictionary contracts, and passed `today_str` for formatted sparkline dates.
+  - `extension/tradexpress_mirror/content.js`: Implemented bulletproof 3-tier fallback for `extractGlobalBuyingPower()` (topbar text/regex -> Account Summary table -> DOM selectors), preserving positive buying power even during off-hours cash balance resets.
+  - `backend/routes_hermes.py`: Curated verified Google Gemini tool-calling models (`gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`, `gemini-3-flash-preview`, `gemini-3.1-flash-lite-preview`) and removed `gemini-3.5-flash` (`TEXT_ONLY`).
 - **Sprint 5G: Live Visual & Data Sync Fixes + Google Gemini Discovery & Tool-Calling Benchmark:**
   - `extension/tradexpress_mirror/content.js`: Resilient label-based extraction of `Account Summary` (`Customer Number`, `Cash Balance`, `Available Cash`, `Blocked Amount`, `Withdrawable`, `Unsettled Sales`, `Payable Amount`) with topbar Buying Power fallback. Fixed real 5-level depth table targeting and cleaned numeric `% Chg` / `Chg` parser.
   - `backend/adapters/tradexpress/passive_feed.py` & `backend/portfolio.py`: Case-insensitive tab normalization, isolation of full DSE views to `ALL_DSE` (`favorite=False`), retention of `GSC`, `GSC_L1`, `GSC_L2`, and automated `cleanup_polluted_gsc_symbols` on startup and full DSE views. Added rolling intraday tick series `_intraday_series[symbol]` ensuring sparklines synthesize >= 2 points so 7-15d curves never render blank.

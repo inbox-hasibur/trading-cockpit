@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Knowledge Graph & Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-24 05:51:54 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-24 06:39:03 UTC**.
 > **Core Strategy Invariants:**
 > - **Strict No-Loss Guarantee:** Never sell at net loss (< 0% net P/L after round-trip 1.00% fees).
 > - **Sequential No-Regret Selling:** 25% / 25% / 25% profit tiers (+1.5%, +3.5%, +6.0% net) + 25% runner.
@@ -76,6 +76,7 @@ trading-cockpit/
 │   ├── Backlog.md
 │   ├── CHANGELOG.md
 │   ├── CODEBASE_MAP.md
+│   ├── FRONTEND_MAP.md
 │   ├── MVP_VERIFICATION.md
 │   ├── STOCKNOW_SITE_MAP.md
 │   └── TRADEXPRESS_CONTEXT.md
@@ -124,6 +125,7 @@ trading-cockpit/
 │   ├── check_dse_market_open.py
 │   ├── check_heartbeat.py
 │   ├── generate_code_map.py
+│   ├── generate_frontend_map.py
 │   ├── inspect_tradexpress_passive.py
 │   ├── install_autostart.ps1
 │   ├── install_plugin.ps1
@@ -206,10 +208,10 @@ trading-cockpit/
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 96 | 30,691 | Python Core Kernel, Engine, Tests & Plugins |
-| `.css` | 2 | 11,117 | Custom Dark / Light / Terminal Design System |
-| `.js` | 8 | 7,850 | Vanilla ES6+ Reactive Terminal Controller & UI |
-| `.md` | 14 | 5,918 | Architecture & Strategy Documentation |
+| `.py` | 97 | 31,131 | Python Core Kernel, Engine, Tests & Plugins |
+| `.css` | 2 | 11,186 | Custom Dark / Light / Terminal Design System |
+| `.js` | 8 | 7,772 | Vanilla ES6+ Reactive Terminal Controller & UI |
+| `.md` | 15 | 6,263 | Architecture & Strategy Documentation |
 | `.json` | 14 | 5,710 | Fixtures & Configuration |
 | `.html` | 2 | 1,705 | Single Page Application DOM Structure |
 | `.ps1` | 2 | 199 | Windows PowerShell Automation |
@@ -219,7 +221,7 @@ trading-cockpit/
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.sh` | 1 | 9 | Shell Scripts |
 | *other* | 13 | 43,575 | Other Configuration, Assets & Dotfiles |
-| **TOTAL** | **158** | **106,905** | *Entire Humming Bird Repository* |
+| **TOTAL** | **160** | **107,681** | *Entire Humming Bird Repository* |
 
 ---
 
@@ -270,6 +272,7 @@ trading-cockpit/
 | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py) | 1 | 1 | LOW | `backend/main.py` |
 | [`backend/routes_tradexpress.py`](/backend/routes_tradexpress.py) | 1 | 1 | LOW | `backend/main.py` |
 | [`plugins/humming_bird/tools.py`](/plugins/humming_bird/tools.py) | 1 | 1 | LOW | `plugins/humming_bird/hooks.py` |
+| [`scripts/generate_frontend_map.py`](/scripts/generate_frontend_map.py) | 1 | 1 | LOW | `scripts/generate_code_map.py` |
 | [`scripts/preflight.py`](/scripts/preflight.py) | 1 | 1 | LOW | `backend/engine/preflight_service.py` |
 | [`backend/__init__.py`](/backend/__init__.py) | 0 | 0 | LEAF | *Leaf / Entrypoint* |
 | [`backend/adapters/__init__.py`](/backend/adapters/__init__.py) | 0 | 0 | LEAF | *Leaf / Entrypoint* |
@@ -346,7 +349,8 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 | [`scripts/backup_db.py`](/scripts/backup_db.py) | *Independent Core Module* |
 | [`scripts/check_dse_market_open.py`](/scripts/check_dse_market_open.py) | *Independent Core Module* |
 | [`scripts/check_heartbeat.py`](/scripts/check_heartbeat.py) | `backend.config.DEFAULT_DATABASE_URL`, `backend.config.Settings`, `backend.database.Database`, `backend.engine.heartbeat.check_dead_man_switch`, `backend.engine.heartbeat.record_system_heartbeat` |
-| [`scripts/generate_code_map.py`](/scripts/generate_code_map.py) | *Independent Core Module* |
+| [`scripts/generate_code_map.py`](/scripts/generate_code_map.py) | `scripts.generate_frontend_map.generate_frontend_map` |
+| [`scripts/generate_frontend_map.py`](/scripts/generate_frontend_map.py) | *Independent Core Module* |
 | [`scripts/inspect_tradexpress_passive.py`](/scripts/inspect_tradexpress_passive.py) | `backend.secret_guard.SecretGuard` |
 | [`scripts/preflight.py`](/scripts/preflight.py) | `backend.adapters.stocknow_client.get_safe_profile_dir`, `backend.config.DEFAULT_DATABASE_URL`, `backend.config.Settings`, `backend.config.test_portfolio_configured`, `backend.database.Database`, `backend.database.PortfolioState`, `backend.database.TaxLot`, `backend.engine.t2_ledger.assert_ledger`, `backend.engine.t2_ledger.bucket_balances`, `backend.hermes_bridge.get_hermes_dir`, `backend.hermes_bridge.read_hermes_state`, `plugins.humming_bird._TOOLS`, `scripts.backup_db.backup_database`, `scripts.backup_db.get_default_backup_dir`, `scripts.backup_db.get_default_db_path` |
 | [`scripts/restore_db.py`](/scripts/restore_db.py) | `scripts.backup_db.backup_database`, `scripts.backup_db.get_default_backup_dir`, `scripts.backup_db.get_default_db_path` |
@@ -755,7 +759,7 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
 | `AccountSummary` | `L44–L68` | `object` | Live account balance telemetry from TradeXpress Account Summary tab. | 1 |
-| `TradeXpressPassiveFeed` | `L290–L549` | `MarketFeedAdapter` | Thread-safe in-memory cache and feed adapter for TradeXpress passive market data. | 22 |
+| `TradeXpressPassiveFeed` | `L290–L558` | `MarketFeedAdapter` | Thread-safe in-memory cache and feed adapter for TradeXpress passive market data. | 22 |
 
 
 **Methods in `AccountSummary`:**
@@ -781,16 +785,16 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 | `record_net_tap_events` | `L387–L433` | `(self, events: list[dict[str, Any]]...)` | `dict[str, Any]` | Ingests a batch of passive network tap events, updates stats, and logs to JSONL. | `add`, `append`, `debug`, `dumps` |
 | `get_net_tap_summary` | `L435–L446` | `(self...)` | `dict[str, Any]` | — | `len`, `list`, `sorted` |
 | `update_tab_timestamp` | `L448–L450` | `(self, tab: str, timestamp: float | ...)` | `None` | — | `lower`, `time` |
-| `update_quotes` | `L452–L470` | `(self, quotes: list[MarketQuote]...)` | `None` | — | `append`, `float`, `len`, `setdefault` |
-| `get_intraday_series` | `L472–L475` | `(self, symbol: str...)` | `list[dict[str, Any]]` | — | `from_tradexpress_symbol`, `get`, `list` |
-| `update_holdings` | `L477–L480` | `(self, holdings: list[PortfolioHoldi...)` | `None` | — | — |
-| `update_account_summary` | `L482–L484` | `(self, summary: AccountSummary...)` | `None` | — | — |
-| `get_account_summary` | `L486–L488` | `(self...)` | `AccountSummary` | — | — |
-| `get_all_holdings` | `L490–L492` | `(self...)` | `dict[str, PortfolioHolding]` | — | `dict` |
-| `get_all_quotes` | `L494–L496` | `(self...)` | `dict[str, MarketQuote]` | — | `dict` |
-| `get_quote` | `L498–L531` | `(self, symbol: str...)` | `MarketQuote | None` | — | `Decimal`, `MarketQuote`, `from_tradexpress_symbol`, `get` |
-| `get_quotes` | `L533–L539` | `(self, symbols: list[str]...)` | `dict[str, MarketQuote]` | — | `get_quote` |
-| `get_health_and_guidance` | `L541–L549` | `(self, now_utc: float | None=None...)` | `dict[str, Any]` | — | `get_feed_health_and_guidance`, `is_bridge_connected` |
+| `update_quotes` | `L452–L479` | `(self, quotes: list[MarketQuote]...)` | `None` | — | `append`, `float`, `len`, `round` |
+| `get_intraday_series` | `L481–L484` | `(self, symbol: str...)` | `list[dict[str, Any]]` | — | `from_tradexpress_symbol`, `get`, `list` |
+| `update_holdings` | `L486–L489` | `(self, holdings: list[PortfolioHoldi...)` | `None` | — | — |
+| `update_account_summary` | `L491–L493` | `(self, summary: AccountSummary...)` | `None` | — | — |
+| `get_account_summary` | `L495–L497` | `(self...)` | `AccountSummary` | — | — |
+| `get_all_holdings` | `L499–L501` | `(self...)` | `dict[str, PortfolioHolding]` | — | `dict` |
+| `get_all_quotes` | `L503–L505` | `(self...)` | `dict[str, MarketQuote]` | — | `dict` |
+| `get_quote` | `L507–L540` | `(self, symbol: str...)` | `MarketQuote | None` | — | `Decimal`, `MarketQuote`, `from_tradexpress_symbol`, `get` |
+| `get_quotes` | `L542–L548` | `(self, symbols: list[str]...)` | `dict[str, MarketQuote]` | — | `get_quote` |
+| `get_health_and_guidance` | `L550–L558` | `(self, now_utc: float | None=None...)` | `dict[str, Any]` | — | `get_feed_health_and_guidance`, `is_bridge_connected` |
 
 
 #### Standalone Functions
@@ -801,9 +805,9 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 | `parse_ember_portfolio_rows` | `L170–L200` | `(rows: list[dict[str, Any]]...)` | `list[PortfolioHolding]` | Pure parser mapping Ember.js portfolio rows to PortfolioHolding instances. | `PortfolioHolding`, `append`, `decimal`, `from_tradexpress_symbol` |
 | `parse_account_summary_dict` | `L203–L223` | `(data: dict[str, Any]...)` | `AccountSummary` | Parses raw Account Summary payload into an AccountSummary dataclass. | `AccountSummary`, `decimal`, `get`, `str` |
 | `get_feed_health_and_guidance` | `L226–L287` | `(tab_timestamps: dict[str, float], c...)` | `dict[str, Any]` | Evaluates freshness of CDP/extension connection & each tab, generating operator guidance. | `all`, `append`, `get`, `round` |
-| `cleanup_polluted_gsc_symbols` | `L578–L623` | `(session: Session...)` | `int` | Resets accidental non-GSC symbols to watchlist_category='ALL_DSE' and favorite=False. | `get`, `limit`, `list`, `scalar` |
-| `get_global_passive_feed` | `L626–L633` | `(database: Database | None=None...)` | `TradeXpressPassiveFeed` | Singleton getter for the global passive market feed adapter. | `TradeXpressPassiveFeed` |
-| `ingest_passive_snapshot` | `L636–L913` | `(db: Database, snapshot_payload: dic...)` | `dict[str, Any]` | Ingests passively sniffed snapshot payload into SQLite and in-memory feed. | `CompanyProfile`, `CustomRule`, `Decimal`, `add` |
+| `cleanup_polluted_gsc_symbols` | `L587–L632` | `(session: Session...)` | `int` | Resets accidental non-GSC symbols to watchlist_category='ALL_DSE' and favorite=False. | `get`, `limit`, `list`, `scalar` |
+| `get_global_passive_feed` | `L635–L642` | `(database: Database | None=None...)` | `TradeXpressPassiveFeed` | Singleton getter for the global passive market feed adapter. | `TradeXpressPassiveFeed` |
+| `ingest_passive_snapshot` | `L645–L922` | `(db: Database, snapshot_payload: dic...)` | `dict[str, Any]` | Ingests passively sniffed snapshot payload into SQLite and in-memory feed. | `CompanyProfile`, `CustomRule`, `Decimal`, `add` |
 
 
 ---
@@ -1451,8 +1455,8 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 | `trade_view` | `L323–L352` | `(trade: TradeLog...)` | `dict` | — | `float`, `getattr`, `isoformat` |
 | `period_totals` | `L355–L370` | `(trades: list[TradeLog], start: date...)` | `dict` | — | `float`, `isoformat`, `len`, `sum` |
 | `build_snapshot` | `L373–L375` | `(database: Database, settings: Setti...)` | `dict` | — | `read`, `snapshot_from_session` |
-| `snapshot_from_session` | `L378–L809` | `(session: Session, settings: Setting...)` | `dict` | — | `CurveAnalysis`, `Decimal`, `StockNowAdapter`, `TradingCalendar` |
-| `normalized_watchlist` | `L812–L831` | `(companies: list[dict]...)` | `list[dict]` | Equal-weight normalized PRICE index, explicitly not portfolio performance. | `any`, `append`, `decimal`, `float` |
+| `snapshot_from_session` | `L378–L817` | `(session: Session, settings: Setting...)` | `dict` | — | `CurveAnalysis`, `Decimal`, `StockNowAdapter`, `TradingCalendar` |
+| `normalized_watchlist` | `L820–L839` | `(companies: list[dict]...)` | `list[dict]` | Equal-weight normalized PRICE index, explicitly not portfolio performance. | `any`, `append`, `decimal`, `float` |
 
 
 ---
@@ -1497,13 +1501,13 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `build_hermes_router` | `L115–L289` | `(database: Database, settings: Setti...)` | `APIRouter` | — | `APIRouter` |
-| `list_conversations` | `L119–L121` | `(...)` | — | Returns conversation topics. | `get` |
-| `create_conversation` | `L124–L132` | `(body: CreateThreadRequest...)` | — | Creates a local conversation topic stub. | `post` |
-| `conversation_messages` | `L135–L137` | `(conversation_id: str...)` | — | Returns messages for a conversation topic. | `get` |
-| `system_changes` | `L140–L212` | `(...)` | — | Returns git diff summary and recent kernel checkpoints. | `Path`, `append`, `desc`, `get` |
-| `get_hermes_models` | `L215–L226` | `(...)` | — | Returns available models, active model, and provider from Hermes state. | `get`, `read_hermes_state` |
-| `switch_hermes_model` | `L229–L287` | `(body: SwitchModelRequest...)` | — | Switches active model and provider in Hermes profile and updates local state. | `create_checkpoint`, `exists`, `flush`, `get_hermes_cmd` |
+| `build_hermes_router` | `L107–L281` | `(database: Database, settings: Setti...)` | `APIRouter` | — | `APIRouter` |
+| `list_conversations` | `L111–L113` | `(...)` | — | Returns conversation topics. | `get` |
+| `create_conversation` | `L116–L124` | `(body: CreateThreadRequest...)` | — | Creates a local conversation topic stub. | `post` |
+| `conversation_messages` | `L127–L129` | `(conversation_id: str...)` | — | Returns messages for a conversation topic. | `get` |
+| `system_changes` | `L132–L204` | `(...)` | — | Returns git diff summary and recent kernel checkpoints. | `Path`, `append`, `desc`, `get` |
+| `get_hermes_models` | `L207–L218` | `(...)` | — | Returns available models, active model, and provider from Hermes state. | `get`, `read_hermes_state` |
+| `switch_hermes_model` | `L221–L279` | `(body: SwitchModelRequest...)` | — | Switches active model and provider in Hermes profile and updates local state. | `create_checkpoint`, `exists`, `flush`, `get_hermes_cmd` |
 
 
 ---
@@ -1766,7 +1770,22 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 | `parse_pydantic_contracts` | `L760–L794` | `(discovered_files: list[Path], repo_...)` | `list[dict[str, Any]]` | Parse all Pydantic models across backend/ and plugins/. | `any`, `append`, `as_posix`, `endswith` |
 | `parse_hermes_skills_graph` | `L797–L851` | `(repo_root: Path=REPO_ROOT...)` | `list[dict[str, Any]]` | Map Hermes tools in plugins/humming_bird/tools.py to kernel routes and procedural skills. | `append`, `exists`, `get`, `get_docstring` |
 | `parse_environment_registry` | `L854–L872` | `(repo_root: Path=REPO_ROOT...)` | `list[dict[str, str]]` | Extract environment variables and configuration properties across the repository. | — |
-| `generate_markdown` | `L875–L1160` | `(repo_root: Path=REPO_ROOT, output_f...)` | — | — | `append`, `collect_file_metrics`, `compute_blast_radius`, `discover_files` |
+| `generate_markdown` | `L875–L1170` | `(repo_root: Path=REPO_ROOT, output_f...)` | — | — | `append`, `collect_file_metrics`, `compute_blast_radius`, `discover_files` |
+
+
+---
+
+### 📄 [`scripts/generate_frontend_map.py`](/scripts/generate_frontend_map.py)
+
+#### Standalone Functions
+
+| Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `audit_css_dark_light_parity` | `L24–L108` | `(...)` | `tuple[list[dict[str, str]], int]` | Audits dark backgrounds in styles.css vs light overrides in theme_light_hermes.css. | `add`, `any`, `append`, `bool` |
+| `audit_backend_frontend_contracts` | `L111–L175` | `(...)` | `tuple[list[dict[str, Any]], int]` | Audits emitted backend snapshot keys against accessed keys in frontend JS. | `add`, `append`, `findall`, `isinstance` |
+| `map_js_functions_and_endpoints` | `L178–L216` | `(...)` | `list[dict[str, Any]]` | Maps JS functions to DOM IDs and API endpoints across frontend JS. | `append`, `exists`, `findall`, `finditer` |
+| `map_extension_sniffer` | `L219–L245` | `(...)` | `dict[str, Any]` | Extracts extension Manifest V3 configuration, DOM selectors, storage keys, and endpoints. | `exists`, `findall`, `get`, `loads` |
+| `generate_frontend_map` | `L248–L344` | `(...)` | — | — | `append`, `audit_backend_frontend_contracts`, `audit_css_dark_light_parity`, `get` |
 
 
 ---
@@ -2388,11 +2407,11 @@ Indexed **30** Pydantic contract and request/response models across `backend/` a
 | `.tx-topbar` | [`frontend/styles.css`](/frontend/styles.css#L6828) | `L6828` | `flex !important` | — | `relative !important` | `#0a0f18 !important` | `nowrap !important` |
 | `.tx-top-header` | [`frontend/styles.css`](/frontend/styles.css#L6867) | `L6867` | — | — | — | — | `wrap !important` |
 | `.tx-topbar` | [`frontend/styles.css`](/frontend/styles.css#L6868) | `L6868` | — | — | — | — | `wrap !important` |
-| `.tx-topbar` | [`frontend/styles.css`](/frontend/styles.css#L6942) | `L6942` | — | — | — | — | — |
-| `.tx-mw-header` | [`frontend/styles.css`](/frontend/styles.css#L6951) | `L6951` | `flex` | — | — | `#0a0f18` | `nowrap` |
-| `.tx-ticket-strip` | [`frontend/styles.css`](/frontend/styles.css#L7193) | `L7193` | `flex` | — | — | `#0d1522` | — |
-| `.tx-depth-pane` | [`frontend/styles.css`](/frontend/styles.css#L7405) | `L7405` | `flex` | — | — | `#090e17` | — |
-| `#tx-confirm-order-modal` | [`frontend/styles.css`](/frontend/styles.css#L7607) | `L7607` | — | — | — | `#0f172a` | — |
+| `.tx-topbar` | [`frontend/styles.css`](/frontend/styles.css#L6953) | `L6953` | — | — | — | — | — |
+| `.tx-mw-header` | [`frontend/styles.css`](/frontend/styles.css#L6962) | `L6962` | `flex` | — | — | `#0a0f18` | `nowrap` |
+| `.tx-ticket-strip` | [`frontend/styles.css`](/frontend/styles.css#L7204) | `L7204` | `flex` | — | — | `#0d1522` | — |
+| `.tx-depth-pane` | [`frontend/styles.css`](/frontend/styles.css#L7416) | `L7416` | `flex` | — | — | `#090e17` | — |
+| `#tx-confirm-order-modal` | [`frontend/styles.css`](/frontend/styles.css#L7618) | `L7618` | — | — | — | `#0f172a` | — |
 | `.session-bar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L69) | `L69` | — | — | — | `#ffffff` | — |
 | `.metric-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L95) | `L95` | — | — | — | `#ffffff` | — |
 | `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L499) | `L499` | — | — | — | `#f8fafc !important` | — |
@@ -2416,12 +2435,14 @@ Indexed **30** Pydantic contract and request/response models across `backend/` a
 | `#tx-order-ticket` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L3180) | `L3180` | — | — | — | `#ffffff !important` | — |
 | `.tx-ticket-strip` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L3186) | `L3186` | — | — | — | `#f8fafc !important` | — |
 | `.tx-depth-pane` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L3231) | `L3231` | — | — | — | `#ffffff !important` | — |
-| `.tx-top-header` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L3343) | `L3343` | — | — | — | `#ffffff !important` | — |
-| `.tx-topbar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L3344) | `L3344` | — | — | — | `#ffffff !important` | — |
-| `.tx-top-header` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L3350) | `L3350` | — | — | — | — | — |
-| `.tx-top-header` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L3351) | `L3351` | — | — | — | — | — |
-| `.tx-topbar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L3352) | `L3352` | — | — | — | — | — |
-| `.tx-topbar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L3353) | `L3353` | — | — | — | — | — |
+| `#tx-order-ticket` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L3303) | `L3303` | — | — | — | `#f1f5f9 !important` | — |
+| `#tx-order-ticket` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L3304) | `L3304` | — | — | — | `#f1f5f9 !important` | — |
+| `.tx-top-header` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L3401) | `L3401` | — | — | — | `#ffffff !important` | — |
+| `.tx-topbar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L3402) | `L3402` | — | — | — | `#ffffff !important` | — |
+| `.tx-top-header` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L3408) | `L3408` | — | — | — | — | — |
+| `.tx-top-header` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L3409) | `L3409` | — | — | — | — | — |
+| `.tx-topbar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L3410) | `L3410` | — | — | — | — | — |
+| `.tx-topbar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L3411) | `L3411` | — | — | — | — | — |
 
 
 ### 6.3 DOM Identifiers Index (`frontend/index.html`)
@@ -2909,54 +2930,54 @@ Complete index of all **145** JavaScript controller and rendering functions:
 | `selectCompany()` | [`frontend/app.js`](/frontend/app.js#L679) | `L679` | Event Handler / State Transition |
 | `formatCompactNumber()` | [`frontend/app.js`](/frontend/app.js#L686) | `L686` | Formatter / Utility |
 | `renderWatchlist()` | [`frontend/app.js`](/frontend/app.js#L694) | `L694` | DOM Renderer |
-| `renderCanaryTheses()` | [`frontend/app.js`](/frontend/app.js#L1023) | `L1023` | DOM Renderer |
-| `renderInspector()` | [`frontend/app.js`](/frontend/app.js#L1057) | `L1057` | DOM Renderer |
-| `isBuyDecision()` | [`frontend/app.js`](/frontend/app.js#L1096) | `L1096` | UI Controller |
-| `isSellDecision()` | [`frontend/app.js`](/frontend/app.js#L1102) | `L1102` | UI Controller |
-| `isLockDecision()` | [`frontend/app.js`](/frontend/app.js#L1108) | `L1108` | UI Controller |
-| `isBlockedDecision()` | [`frontend/app.js`](/frontend/app.js#L1125) | `L1125` | UI Controller |
-| `renderDecisions()` | [`frontend/app.js`](/frontend/app.js#L1148) | `L1148` | DOM Renderer |
-| `renderLedger()` | [`frontend/app.js`](/frontend/app.js#L1236) | `L1236` | DOM Renderer |
-| `initMarketMapResizeObserver()` | [`frontend/app.js`](/frontend/app.js#L1426) | `L1426` | UI Controller |
-| `initTheme()` | [`frontend/app.js`](/frontend/app.js#L1452) | `L1452` | UI Controller |
-| `setTheme()` | [`frontend/app.js`](/frontend/app.js#L1458) | `L1458` | DOM Updater / State Sync |
-| `toggleTheme()` | [`frontend/app.js`](/frontend/app.js#L1469) | `L1469` | Event Handler / State Transition |
-| `tickMarketClock()` | [`frontend/app.js`](/frontend/app.js#L1475) | `L1475` | UI Controller |
-| `tickClock()` | [`frontend/app.js`](/frontend/app.js#L1557) | `L1557` | UI Controller |
-| `renderAutomationControlBar()` | [`frontend/app.js`](/frontend/app.js#L1566) | `L1566` | DOM Renderer |
-| `setAutomationConfig()` | [`frontend/app.js`](/frontend/app.js#L1907) | `L1907` | DOM Updater / State Sync |
-| `setHandoffPendingState()` | [`frontend/app.js`](/frontend/app.js#L2030) | `L2030` | DOM Updater / State Sync |
-| `executeRunModeHandoff()` | [`frontend/app.js`](/frontend/app.js#L2048) | `L2048` | UI Controller |
-| `executeHandoff()` | [`frontend/app.js`](/frontend/app.js#L2073) | `L2073` | UI Controller |
-| `switchToLiveHours()` | [`frontend/app.js`](/frontend/app.js#L2174) | `L2174` | Event Handler / State Transition |
-| `switchToTestMode()` | [`frontend/app.js`](/frontend/app.js#L2183) | `L2183` | Event Handler / State Transition |
-| `initRealtimeStream()` | [`frontend/app.js`](/frontend/app.js#L2235) | `L2235` | UI Controller |
-| `switchView()` | [`frontend/app.js`](/frontend/app.js#L2261) | `L2261` | Event Handler / State Transition |
-| `initViewRouter()` | [`frontend/app.js`](/frontend/app.js#L2319) | `L2319` | UI Controller |
-| `initScrollSpy()` | [`frontend/app.js`](/frontend/app.js#L2356) | `L2356` | UI Controller |
-| `updateActiveNav()` | [`frontend/app.js`](/frontend/app.js#L2369) | `L2369` | DOM Updater / State Sync |
+| `renderCanaryTheses()` | [`frontend/app.js`](/frontend/app.js#L921) | `L921` | DOM Renderer |
+| `renderInspector()` | [`frontend/app.js`](/frontend/app.js#L955) | `L955` | DOM Renderer |
+| `isBuyDecision()` | [`frontend/app.js`](/frontend/app.js#L994) | `L994` | UI Controller |
+| `isSellDecision()` | [`frontend/app.js`](/frontend/app.js#L1000) | `L1000` | UI Controller |
+| `isLockDecision()` | [`frontend/app.js`](/frontend/app.js#L1006) | `L1006` | UI Controller |
+| `isBlockedDecision()` | [`frontend/app.js`](/frontend/app.js#L1023) | `L1023` | UI Controller |
+| `renderDecisions()` | [`frontend/app.js`](/frontend/app.js#L1046) | `L1046` | DOM Renderer |
+| `renderLedger()` | [`frontend/app.js`](/frontend/app.js#L1134) | `L1134` | DOM Renderer |
+| `initMarketMapResizeObserver()` | [`frontend/app.js`](/frontend/app.js#L1324) | `L1324` | UI Controller |
+| `initTheme()` | [`frontend/app.js`](/frontend/app.js#L1350) | `L1350` | UI Controller |
+| `setTheme()` | [`frontend/app.js`](/frontend/app.js#L1356) | `L1356` | DOM Updater / State Sync |
+| `toggleTheme()` | [`frontend/app.js`](/frontend/app.js#L1367) | `L1367` | Event Handler / State Transition |
+| `tickMarketClock()` | [`frontend/app.js`](/frontend/app.js#L1373) | `L1373` | UI Controller |
+| `tickClock()` | [`frontend/app.js`](/frontend/app.js#L1455) | `L1455` | UI Controller |
+| `renderAutomationControlBar()` | [`frontend/app.js`](/frontend/app.js#L1464) | `L1464` | DOM Renderer |
+| `setAutomationConfig()` | [`frontend/app.js`](/frontend/app.js#L1805) | `L1805` | DOM Updater / State Sync |
+| `setHandoffPendingState()` | [`frontend/app.js`](/frontend/app.js#L1928) | `L1928` | DOM Updater / State Sync |
+| `executeRunModeHandoff()` | [`frontend/app.js`](/frontend/app.js#L1946) | `L1946` | UI Controller |
+| `executeHandoff()` | [`frontend/app.js`](/frontend/app.js#L1971) | `L1971` | UI Controller |
+| `switchToLiveHours()` | [`frontend/app.js`](/frontend/app.js#L2072) | `L2072` | Event Handler / State Transition |
+| `switchToTestMode()` | [`frontend/app.js`](/frontend/app.js#L2081) | `L2081` | Event Handler / State Transition |
+| `initRealtimeStream()` | [`frontend/app.js`](/frontend/app.js#L2133) | `L2133` | UI Controller |
+| `switchView()` | [`frontend/app.js`](/frontend/app.js#L2159) | `L2159` | Event Handler / State Transition |
+| `initViewRouter()` | [`frontend/app.js`](/frontend/app.js#L2217) | `L2217` | UI Controller |
+| `initScrollSpy()` | [`frontend/app.js`](/frontend/app.js#L2254) | `L2254` | UI Controller |
+| `updateActiveNav()` | [`frontend/app.js`](/frontend/app.js#L2267) | `L2267` | DOM Updater / State Sync |
 | `smoothCurvePath()` | [`frontend/charts.js`](/frontend/charts.js#L8) | `L8` | Canvas / Chart Geometry |
 | `getBezierPointAtContinuousIndex()` | [`frontend/charts.js`](/frontend/charts.js#L31) | `L31` | Canvas / Chart Geometry |
 | `renderMainChart()` | [`frontend/charts.js`](/frontend/charts.js#L63) | `L63` | DOM Renderer |
 | `x()` | [`frontend/charts.js`](/frontend/charts.js#L95) | `L95` | UI Controller |
 | `y()` | [`frontend/charts.js`](/frontend/charts.js#L96) | `L96` | UI Controller |
 | `sparkline()` | [`frontend/charts.js`](/frontend/charts.js#L352) | `L352` | Canvas / Chart Geometry |
-| `squarify()` | [`frontend/charts.js`](/frontend/charts.js#L368) | `L368` | Canvas / Chart Geometry |
-| `layoutRow()` | [`frontend/charts.js`](/frontend/charts.js#L378) | `L378` | UI Controller |
-| `worst()` | [`frontend/charts.js`](/frontend/charts.js#L425) | `L425` | UI Controller |
-| `showTreemapTooltip()` | [`frontend/charts.js`](/frontend/charts.js#L462) | `L462` | Canvas / Chart Geometry |
-| `hideTreemapTooltip()` | [`frontend/charts.js`](/frontend/charts.js#L475) | `L475` | Canvas / Chart Geometry |
-| `renderMarketMap()` | [`frontend/charts.js`](/frontend/charts.js#L480) | `L480` | DOM Renderer |
-| `renderTopSectorsChart()` | [`frontend/charts.js`](/frontend/charts.js#L659) | `L659` | DOM Renderer |
-| `renderGainerChart()` | [`frontend/charts.js`](/frontend/charts.js#L819) | `L819` | DOM Renderer |
-| `updateWhatIfSimulator()` | [`frontend/charts.js`](/frontend/charts.js#L824) | `L824` | DOM Updater / State Sync |
-| `updateModalSimulator()` | [`frontend/charts.js`](/frontend/charts.js#L868) | `L868` | DOM Updater / State Sync |
-| `openDeepTrendModal()` | [`frontend/charts.js`](/frontend/charts.js#L907) | `L907` | UI Controller |
-| `closeDeepTrendModal()` | [`frontend/charts.js`](/frontend/charts.js#L1016) | `L1016` | UI Controller |
-| `renderDeepTrendChart()` | [`frontend/charts.js`](/frontend/charts.js#L1026) | `L1026` | DOM Renderer |
-| `x()` | [`frontend/charts.js`](/frontend/charts.js#L1054) | `L1054` | UI Controller |
-| `y()` | [`frontend/charts.js`](/frontend/charts.js#L1055) | `L1055` | UI Controller |
-| `initCharts()` | [`frontend/charts.js`](/frontend/charts.js#L1310) | `L1310` | Canvas / Chart Geometry |
+| `squarify()` | [`frontend/charts.js`](/frontend/charts.js#L369) | `L369` | Canvas / Chart Geometry |
+| `layoutRow()` | [`frontend/charts.js`](/frontend/charts.js#L379) | `L379` | UI Controller |
+| `worst()` | [`frontend/charts.js`](/frontend/charts.js#L426) | `L426` | UI Controller |
+| `showTreemapTooltip()` | [`frontend/charts.js`](/frontend/charts.js#L463) | `L463` | Canvas / Chart Geometry |
+| `hideTreemapTooltip()` | [`frontend/charts.js`](/frontend/charts.js#L476) | `L476` | Canvas / Chart Geometry |
+| `renderMarketMap()` | [`frontend/charts.js`](/frontend/charts.js#L481) | `L481` | DOM Renderer |
+| `renderTopSectorsChart()` | [`frontend/charts.js`](/frontend/charts.js#L660) | `L660` | DOM Renderer |
+| `renderGainerChart()` | [`frontend/charts.js`](/frontend/charts.js#L820) | `L820` | DOM Renderer |
+| `updateWhatIfSimulator()` | [`frontend/charts.js`](/frontend/charts.js#L825) | `L825` | DOM Updater / State Sync |
+| `updateModalSimulator()` | [`frontend/charts.js`](/frontend/charts.js#L869) | `L869` | DOM Updater / State Sync |
+| `openDeepTrendModal()` | [`frontend/charts.js`](/frontend/charts.js#L908) | `L908` | UI Controller |
+| `closeDeepTrendModal()` | [`frontend/charts.js`](/frontend/charts.js#L1017) | `L1017` | UI Controller |
+| `renderDeepTrendChart()` | [`frontend/charts.js`](/frontend/charts.js#L1027) | `L1027` | DOM Renderer |
+| `x()` | [`frontend/charts.js`](/frontend/charts.js#L1055) | `L1055` | UI Controller |
+| `y()` | [`frontend/charts.js`](/frontend/charts.js#L1056) | `L1056` | UI Controller |
+| `initCharts()` | [`frontend/charts.js`](/frontend/charts.js#L1311) | `L1311` | Canvas / Chart Geometry |
 | `renderHermesSkills()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L8) | `L8` | DOM Renderer |
 | `createCard()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L23) | `L23` | UI Controller |
 | `loadHermesOSState()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L79) | `L79` | API Client / Ingestion |
@@ -3065,8 +3086,8 @@ Complete catalog of all **24** registered Hermes tools powering chat commands an
 
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
-| `styles.css` | 7740 | Core design tokens, layout & widgets |
-| `theme_light_hermes.css` | 3377 | Daylight overrides & Hermes IDE sidebar |
+| `styles.css` | 7751 | Core design tokens, layout & widgets |
+| `theme_light_hermes.css` | 3435 | Daylight overrides & Hermes IDE sidebar |
 
 
 ### 6.7 Frontend API Contract Invocations (`frontend/*.js`)
@@ -3215,7 +3236,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/adapters/tradexpress/passive_feed.py` | `get_feed_health_and_guidance` | 62 | 8 | Acceptable; well-scoped logic |
 | `backend/adapters/tradexpress/passive_feed.py` | `ingest_passive_snapshot` | 278 | 7 | Decompose into sub-functions |
 | `backend/adapters/tradexpress/passive_feed.py` | `record_net_tap_events` | 47 | 7 | Acceptable; well-scoped logic |
-| `backend/adapters/tradexpress/passive_feed.py` | `update_quotes` | 19 | 6 | Acceptable; well-scoped logic |
+| `backend/adapters/tradexpress/passive_feed.py` | `update_quotes` | 28 | 8 | Acceptable; well-scoped logic |
 | `backend/adapters/tradexpress/passive_feed.py` | `get_quote` | 34 | 4 | Acceptable; well-scoped logic |
 | `backend/adapters/tradexpress/shadow_simulator.py` | `submit_shadow_order` | 85 | 2 | Acceptable; well-scoped logic |
 | `backend/adapters/tradexpress/shadow_simulator.py` | `_execute_shadow_order_in_session` | 239 | 6 | Decompose into sub-functions |
@@ -3272,7 +3293,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/main.py` | `event_stream` | 26 | 4 | Acceptable; well-scoped logic |
 | `backend/main.py` | `generator` | 13 | 4 | Acceptable; well-scoped logic |
 | `backend/market_map.py` | `build_market_map_payload` | 72 | 5 | Acceptable; well-scoped logic |
-| `backend/portfolio.py` | `snapshot_from_session` | 432 | 6 | Decompose into sub-functions |
+| `backend/portfolio.py` | `snapshot_from_session` | 440 | 6 | Decompose into sub-functions |
 | `backend/portfolio.py` | `normalized_watchlist` | 20 | 4 | Acceptable; well-scoped logic |
 | `backend/routes_auth_settings.py` | `build_auth_settings_router` | 134 | 2 | Decompose into sub-functions |
 | `backend/routes_hermes.py` | `build_hermes_router` | 175 | 5 | Decompose into sub-functions |
@@ -3303,9 +3324,13 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/generate_code_map.py` | `parse_sqlalchemy_schema` | 44 | 9 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `parse_pydantic_contracts` | 35 | 8 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `parse_hermes_skills_graph` | 55 | 7 | Acceptable; well-scoped logic |
-| `scripts/generate_code_map.py` | `generate_markdown` | 286 | 6 | Decompose into sub-functions |
+| `scripts/generate_code_map.py` | `generate_markdown` | 296 | 6 | Decompose into sub-functions |
 | `scripts/generate_code_map.py` | `visit_Call` | 10 | 4 | Acceptable; well-scoped logic |
 | `scripts/generate_code_map.py` | `_compute_depth` | 12 | 4 | Acceptable; well-scoped logic |
+| `scripts/generate_frontend_map.py` | `audit_css_dark_light_parity` | 85 | 6 | Acceptable; well-scoped logic |
+| `scripts/generate_frontend_map.py` | `audit_backend_frontend_contracts` | 65 | 7 | Acceptable; well-scoped logic |
+| `scripts/generate_frontend_map.py` | `map_js_functions_and_endpoints` | 39 | 4 | Acceptable; well-scoped logic |
+| `scripts/generate_frontend_map.py` | `generate_frontend_map` | 97 | 2 | Acceptable; well-scoped logic |
 | `scripts/inspect_tradexpress_passive.py` | `run_passive_probe` | 264 | 4 | Decompose into sub-functions |
 | `scripts/preflight.py` | `check_gateway` | 18 | 5 | Acceptable; well-scoped logic |
 | `scripts/preflight.py` | `check_kernel_token` | 20 | 5 | Acceptable; well-scoped logic |
@@ -3321,4 +3346,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/verify_chat_card.py` | `main` | 121 | 3 | Decompose into sub-functions |
 
 
-> **Knowledge Graph Summary:** 58 Python modules inspected, 67 FastAPI endpoints registered, 19 SQLAlchemy tables mapped, 30 Pydantic contracts indexed, 24 Hermes tools bound to skills, 145 JS functions mapped, 444 DOM IDs indexed, 106,905 total LOC indexed across 158 repository files.
+> **Knowledge Graph Summary:** 59 Python modules inspected, 67 FastAPI endpoints registered, 19 SQLAlchemy tables mapped, 30 Pydantic contracts indexed, 24 Hermes tools bound to skills, 145 JS functions mapped, 444 DOM IDs indexed, 107,681 total LOC indexed across 160 repository files.

@@ -1159,6 +1159,16 @@ def generate_markdown(repo_root: Path = REPO_ROOT, output_file: Path = OUTPUT_FI
     output_file.write_text("\n".join(md), encoding="utf-8")
     print(f"Generated {output_file} (7 enriched Knowledge Graph sections, {total_lines:,} LOC mapped across {total_files} files).")
 
+    # Also invoke paired frontend map generator
+    try:
+        import sys
+        if str(REPO_ROOT) not in sys.path:
+            sys.path.insert(0, str(REPO_ROOT))
+        from scripts.generate_frontend_map import generate_frontend_map
+        generate_frontend_map()
+    except Exception as exc:
+        print(f"Warning: generate_frontend_map failed: {exc}")
+
 
 
 if __name__ == "__main__":
