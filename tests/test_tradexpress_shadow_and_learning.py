@@ -638,3 +638,54 @@ def test_tradexpress_routes_and_learning_api(test_db_and_settings):
         assert "total_records" in learn_data
         assert "win_rate_pct" in learn_data
         assert len(learn_data["recent_logs"]) >= 1
+
+
+def test_post_shadow_reset_clean_and_mirror(test_db_and_settings):
+    """Verifies POST /api/tradexpress/shadow/reset with CLEAN_DUMMY and MIRROR_H9210."""
+    db, settings = test_db_and_settings
+    app = create_app(settings)
+    client = TestClient(app, base_url="http://127.0.0.1:8000")
+
+    # 1. Ingest passive snapshot with buying power
+    ingest_res = client.post(
+        "/api/tradexpress/passive-ingest",
+        json={
+            "source": "EDGE_EXTENSION_PASSIVE",
+            "dse_status": "Trading",
+            "tab": "Dhaka Stock Exchange",
+            "market_watch_rows": [
+                {"sDes": "BANKASIA", "ltp": "19.20", "chg": "0.80", "pctChg": "4.35", "vol": "50000"}
+            ],
+            "account_summary": {
+                "customer_number": "H9210",
+                "cash_balance": 353.00,
+                "buying_power": 353.00,
+            },
+        },
+    )
+    assert ingest_res.status_code == 200
+
+    # 2. Reset with CLEAN_DUMMY 50,000
+    res_clean = client.post(
+        "/api/tradexpress/shadow/reset",
+        json={"mode": "CLEAN_DUMMY", "capital": 50000.00},
+    )
+    assert res_clean.status_code == 200
+    clean_data = res_clean.json()
+    assert clean_data["ok"] is True
+    assert clean_data["status"] in ("RESET_OK", "RESET_SUCCESS")
+    assert clean_data["portfolio_id"] == "H9210_SHADOW"
+    assert clean_data["initial_capital"] == 50000.00
+    assert clean_data["circuit_breaker_reset"] is True
+
+    # 3. Reset with MIRROR_H9210
+    res_mirror = client.post(
+        "/api/tradexpress/shadow/reset",
+        json={"mode": "MIRROR_H9210"},
+    )
+    assert res_mirror.status_code == 200
+    mirror_data = res_mirror.json()
+    assert mirror_data["ok"] is True
+    assert mirror_data["status"] in ("RESET_OK", "RESET_SUCCESS")
+    assert mirror_data["initial_capital"] == 353.00
+

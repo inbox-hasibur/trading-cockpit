@@ -225,12 +225,19 @@ def check_portfolio_drift(db: Database) -> CheckResult:
             if not state:
                 return CheckResult("Portfolio Drift 0.00", False, "PortfolioState record missing in database")
 
-            balances = bucket_balances(session, state)
-            assert_ledger(session, state)
-
             from backend.database import TaxLot
             from sqlalchemy import select
-            lots = list(session.scalars(select(TaxLot).where(TaxLot.remaining_qty > 0)))
+
+            pids = [p for p in session.scalars(select(TaxLot.portfolio_id).distinct()).all() if p]
+            target_pid = "H9210_SHADOW" if getattr(state, "mode", "") == "SHADOW" else (pids[0] if len(pids) == 1 else None)
+
+            balances = bucket_balances(session, state, portfolio_id=target_pid)
+            assert_ledger(session, state, portfolio_id=target_pid)
+
+            lots_q = select(TaxLot).where(TaxLot.remaining_qty > 0)
+            if target_pid:
+                lots_q = lots_q.where(TaxLot.portfolio_id == target_pid)
+            lots = list(session.scalars(lots_q))
             total_basis = sum((lot.remaining_cost_basis for lot in lots), Decimal("0.00"))
             total_cash = sum((b.available_cash for b in balances.values()), Decimal("0.00"))
             total_unsettled = sum((b.unsettled_proceeds for b in balances.values()), Decimal("0.00"))

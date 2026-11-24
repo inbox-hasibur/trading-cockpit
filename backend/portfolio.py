@@ -384,10 +384,15 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
     passive_quotes = passive_feed.get_all_quotes() if passive_feed else {}
     companies = list(session.scalars(select(CompanyProfile).order_by(CompanyProfile.symbol)))
     rules = {rule.symbol: rule for rule in session.scalars(select(CustomRule))}
+    is_shadow = getattr(state, "mode", "") == "SHADOW"
     active_pid = (
-        str(live_client.bound_portfolio_id)
-        if live_client and getattr(live_client, "bound_portfolio_id", None)
-        else (get_active_target_portfolio(getattr(state, "trading_mode", "LIVE_HOURS"), settings) or settings.stocknow_live_portfolio_id)
+        "H9210_SHADOW"
+        if is_shadow
+        else (
+            str(live_client.bound_portfolio_id)
+            if live_client and getattr(live_client, "bound_portfolio_id", None)
+            else (get_active_target_portfolio(getattr(state, "trading_mode", "LIVE_HOURS"), settings) or settings.stocknow_live_portfolio_id)
+        )
     )
     lots = list(session.scalars(select(TaxLot).where(TaxLot.remaining_qty > 0, TaxLot.portfolio_id == active_pid).order_by(TaxLot.id)))
     trades = list(session.scalars(
@@ -413,17 +418,26 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
         rule = rules.get(company.symbol)
         if rule is None:
             rule = default_custom_rule(company.symbol)
-        if company.last_price <= ZERO or not company.price_history:
+
+        live_q = passive_quotes.get(company.symbol) if passive_quotes else None
+        live_ltp = live_q.ltp if (live_q and live_q.ltp > ZERO) else (company.last_price if company.last_price > ZERO else ZERO)
+        effective_price = live_ltp if live_ltp > ZERO else company.last_price
+
+        if effective_price <= ZERO or not company.price_history:
             analysis = CurveAnalysis("WAIT_SOD", "Waiting for market open (LTP 0.00 / SOD phase)...")
             _quote = None
         else:
+            if live_ltp > ZERO and live_ltp != company.last_price:
+                company.last_price = live_ltp
+                if company.price_history and company.price_history[-1].get("date") == state.clock_date.isoformat():
+                    company.price_history[-1] = {**company.price_history[-1], "close": str(live_ltp)}
             analysis, _quote = assess_company(company, rule, settings, state.clock_date, adapter)
         company_lots = []
         company_basis = ZERO
         company_net = ZERO
         for lot in [lot for lot in lots if lot.symbol == company.symbol]:
-            net_value, exit_fee = sale_amount(lot.remaining_qty, company.last_price, settings.sell_fee_rate)
-            gross_value = money(lot.remaining_qty * company.last_price)
+            net_value, exit_fee = sale_amount(lot.remaining_qty, effective_price, settings.sell_fee_rate)
+            gross_value = money(lot.remaining_qty * effective_price)
             pnl = net_value - lot.remaining_cost_basis
             view = {
                 "id": lot.id,
@@ -575,7 +589,7 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             "watchlist_category": getattr(company, "watchlist_category", "GSC"),
             "favorite": company.favorite,
             "stability_preference": company.sector in {"BANK", "INSURANCE", "MUTUAL_FUND"},
-            "price": float(company.last_price),
+            "price": float(effective_price),
             "quote_on": company.quote_on.isoformat(),
             "source": company.source,
             "history": effective_history,

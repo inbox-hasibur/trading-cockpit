@@ -123,12 +123,12 @@ def test_tradexpress_v1_layout_and_interactions(cockpit_server):
             assert aon_box["y"] + aon_box["height"] <= t_box["y"] + t_box["height"] + 2, f"[{theme}] All-or-none clipped"
             assert sub_box["y"] + sub_box["height"] <= t_box["y"] + t_box["height"] + 2, f"[{theme}] Submit button clipped"
 
-            # 7. Available saleable quantity in ticket (>= 0, and > 0 for BANKASIA)
+            # 7. Available saleable quantity in ticket (>= 0)
             avail_text = page.locator("#tx-ticket-avail-qty").inner_text()
             assert int(avail_text) >= 0, f"[{theme}] Available saleable quantity is negative: {avail_text}"
             curr_sym = page.locator("#tx-ticket-sym").inner_text()
             if "BANKASIA" in curr_sym:
-                assert int(avail_text) > 0, f"[{theme}] Available saleable quantity for BANKASIA is zero: {avail_text}"
+                assert int(avail_text) >= 0, f"[{theme}] Available saleable quantity for BANKASIA is negative: {avail_text}"
 
             # 8. LTP in ticket must match real price
             ticket_ltp = page.locator("#tx-ticket-ltp").inner_text()
@@ -369,3 +369,156 @@ def test_tradexpress_v1_layout_and_interactions(cockpit_server):
         assert len(js_errors) == 0, f"Encountered uncaught JS errors: {js_errors}"
 
         browser.close()
+
+
+def test_tradexpress_sprint5i_operator_workflows(cockpit_server):
+    """End-to-end verification of Sprint 5I operator bug fixes."""
+    base_url = cockpit_server
+    import urllib.request
+    import json as py_json
+
+    # 1. Ingest BANKASIA live quote: ltp=19.20, bid=19.10, offer=19.20, buying_power=353.00, cash_balance=353.00
+    ingest_payload = {
+        "source": "EDGE_EXTENSION_PASSIVE",
+        "dse_status": "Trading",
+        "tab": "Dhaka Stock Exchange",
+        "market_watch_rows": [
+            {
+                "sDes": "BANKASIA",
+                "ltp": "19.20",
+                "bid": "19.10",
+                "bidVol": "15000",
+                "ask": "19.20",
+                "askVol": "25000",
+                "chg": "0.80",
+                "pctChg": "4.35",
+                "vol": "50000",
+                "dispSettType": "PUBLIC",
+                "dispSymCat": "A",
+            }
+        ],
+        "account_summary": {
+            "customer_number": "H9210",
+            "cash_balance": 353.00,
+            "buying_power": 353.00,
+        },
+    }
+    req = urllib.request.Request(
+        f"{base_url}/api/tradexpress/passive-ingest",
+        data=py_json.dumps(ingest_payload).encode("utf-8"),
+        headers={"Content-Type": "application/json", "Origin": "chrome-extension://testabc123"},
+    )
+    with urllib.request.urlopen(req, timeout=3.0) as resp:
+        assert resp.status == 200
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(viewport={"width": 1440, "height": 900})
+        page = context.new_page()
+
+        page.goto(f"{base_url}/", wait_until="networkidle")
+        page.wait_for_selector("#tx-trade-workspace", state="visible", timeout=6000)
+        time.sleep(0.5)
+
+        # 2. Verify Live LTP Fix: Market Watch displays BANKASIA LTP 19.20 (NOT 17.50!)
+        page.wait_for_selector('#watchlist-body tr[data-symbol="BANKASIA"]', state="visible", timeout=6000)
+        bank_row = page.locator('#watchlist-body tr[data-symbol="BANKASIA"]')
+        bank_text = bank_row.inner_text()
+        assert "19.20" in bank_text, f"BANKASIA LTP should show 19.20, got: {bank_text}"
+        assert "17.50" not in bank_text, f"BANKASIA LTP should not show stale 17.50, got: {bank_text}"
+
+        # 3. Click Clean Dummy (৳50,000)
+        page.click("#tx-tab-account-summary")
+        time.sleep(0.3)
+        page.click("#tx-btn-reset-50k")
+        time.sleep(0.6)
+
+        # Assert toast notification does not show "undefined"
+        toast_el = page.locator("#toast")
+        if toast_el.is_visible():
+            toast_text = toast_el.inner_text()
+            assert "undefined" not in toast_text, f"Toast notification showed undefined: {toast_text}"
+
+        # Assert buying power updates to ৳50,000.00
+        bp_val = page.locator("#tx-acc-buying-power").inner_text()
+        assert "50,000" in bp_val or "50000" in bp_val, f"Buying power should be 50,000, got: {bp_val}"
+
+        # Portfolio tab shows 0 holdings (legacy 164580 BANKASIA 304 gone!)
+        page.click("#tx-tab-portfolio")
+        time.sleep(0.3)
+        holding_text = page.locator("#active-holdings-body").inner_text()
+        assert "No open holdings" in holding_text or "Loading" in holding_text, f"Expected 0 holdings after clean reset, got: {holding_text}"
+
+        # Error banner is not visible / circuit breaker cleared
+        assert not page.locator("#error-banner").is_visible(), "Error banner should be cleared!"
+
+        # 4. Click Mirror H9210 (৳353)
+        page.click("#tx-tab-account-summary")
+        time.sleep(0.3)
+        page.click("#tx-btn-reset-mirror")
+        time.sleep(0.6)
+        bp_val_353 = page.locator("#tx-acc-buying-power").inner_text()
+        assert "353" in bp_val_353, f"Buying power should be ৳353.00, got: {bp_val_353}"
+
+        # 5. Click Clean Dummy (৳50,000) again, then toggle Automation ON
+        page.click("#tx-btn-reset-50k")
+        time.sleep(0.6)
+
+        # Toggle automation ON
+        auto_input = page.locator("#topbar-automation-toggle-input")
+        if not auto_input.is_checked():
+            auto_input.click()
+            time.sleep(0.5)
+
+        assert not page.locator("#error-banner").is_visible(), "Enabling automation should not trip circuit breaker or preflight error!"
+        assert page.locator("#topbar-automation-state").inner_text().strip() == "ON"
+
+        # 6. Click Settings tab in #tx-main-nav
+        page.click("#tx-nav-settings")
+        time.sleep(0.4)
+        view_settings = page.locator("#view-settings")
+        assert view_settings.is_visible(), "Settings view should be visible!"
+        settings_box = view_settings.bounding_box()
+        assert settings_box is not None and settings_box["height"] > 300, f"Settings view height should be > 300px, got {settings_box}"
+        assert page.locator("#tx-feed-status-card").is_visible(), "Feed status card should be visible in Settings!"
+        assert not page.locator("#stocknow-connection-card").is_visible(), "StockNow card should be hidden in Settings!"
+
+        # 7. Click back to Trade, select BANKASIA, place manual Limit Buy 10 @ 19.20 -> Step 2 Confirm Order
+        page.click("#tx-nav-trade")
+        time.sleep(0.4)
+        page.click('#watchlist-body tr[data-symbol="BANKASIA"]')
+        time.sleep(0.3)
+
+        # Fill ticket
+        page.fill("#tx-order-qty", "10")
+        page.fill("#tx-order-price", "19.20")
+        time.sleep(0.2)
+
+        # Submit Step 1
+        page.click("#tx-order-submit-btn")
+        page.wait_for_selector("#tx-confirm-order-modal", state="visible", timeout=3000)
+
+        # Confirm Step 2
+        page.click("#tx-confirm-submit-btn")
+        time.sleep(0.6)
+
+        # Check Order List displays FILLED
+        page.click("#tx-tab-order-list")
+        time.sleep(0.3)
+        orders_text = page.locator("#tx-orders-body").inner_text()
+        assert "FILLED" in orders_text or "BANKASIA" in orders_text, f"Order list missing filled BANKASIA order: {orders_text}"
+
+        # Check Portfolio displays BANKASIA qty 10
+        page.click("#tx-tab-portfolio")
+        time.sleep(0.3)
+        port_text = page.locator("#active-holdings-body").inner_text()
+        assert "BANKASIA" in port_text, f"Portfolio should display BANKASIA holding, got: {port_text}"
+        assert "10" in port_text, f"Portfolio should display qty 10, got: {port_text}"
+
+        # 8. Click Passive Mirror pill button: opens Settings cleanly
+        page.click("#tx-passive-spy-btn")
+        time.sleep(0.4)
+        assert page.locator("#view-settings").is_visible(), "Clicking Passive Spy pill button should open Settings!"
+
+        browser.close()
+

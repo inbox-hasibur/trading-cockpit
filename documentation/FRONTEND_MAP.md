@@ -1,6 +1,6 @@
 # 🗺️ Humming Bird Trading Cockpit V1 — Frontend Architecture & Contract Map
 
-> **Auto-Generated on:** `2026-11-24 06:39:03 UTC` via `scripts/generate_frontend_map.py`  
+> **Auto-Generated on:** `2026-11-24 09:20:35 UTC` via `scripts/generate_frontend_map.py`  
 > **Zero-Regression Mandate:** 0 `MISSING_LIGHT_OVERRIDE` CSS issues, 0 Field Contract mismatches.
 
 ---
@@ -160,17 +160,17 @@ Mapping of client functions to active DOM elements and localhost API endpoints:
 | File | Function Name | Referenced DOM IDs | API Endpoints Invoked |
 | :--- | :--- | :--- | :--- |
 | `frontend/app.js` | `formatTimestamp` | `#toast` | — |
-| `frontend/app.js` | `element` | `#error-banner`, `#toast` | — |
-| `frontend/app.js` | `svgElement` | `#error-banner`, `#toast` | — |
-| `frontend/app.js` | `currency` | `#error-banner`, `#toast` | — |
-| `frontend/app.js` | `percentage` | `#error-banner`, `#toast` | — |
-| `frontend/app.js` | `sessionDate` | `#error-banner`, `#toast` | — |
-| `frontend/app.js` | `setText` | `#error-banner`, `#toast` | — |
-| `frontend/app.js` | `setPnl` | `#error-banner`, `#toast` | — |
-| `frontend/app.js` | `tone` | `#error-banner`, `#toast` | — |
-| `frontend/app.js` | `badge` | `#error-banner`, `#run-cycle`, `#run-label`, `#toast` | — |
-| `frontend/app.js` | `notify` | `#error-banner`, `#next-session`, `#run-cycle`, `#run-label`, `#scenario`, `#settings-handoff-btn` | — |
-| `frontend/app.js` | `showError` | `#buy-allocation`, `#chat-send`, `#company-enabled`, `#error-banner`, `#next-session`, `#run-cycle` | — |
+| `frontend/app.js` | `element` | `#error-banner`, `#reset-breaker-btn`, `#toast` | — |
+| `frontend/app.js` | `svgElement` | `#error-banner`, `#reset-breaker-btn`, `#toast` | — |
+| `frontend/app.js` | `currency` | `#error-banner`, `#reset-breaker-btn`, `#toast` | — |
+| `frontend/app.js` | `percentage` | `#error-banner`, `#reset-breaker-btn`, `#toast` | — |
+| `frontend/app.js` | `sessionDate` | `#error-banner`, `#reset-breaker-btn`, `#toast` | — |
+| `frontend/app.js` | `setText` | `#error-banner`, `#reset-breaker-btn`, `#toast` | — |
+| `frontend/app.js` | `setPnl` | `#error-banner`, `#reset-breaker-btn`, `#toast` | — |
+| `frontend/app.js` | `tone` | `#error-banner`, `#reset-breaker-btn`, `#toast` | — |
+| `frontend/app.js` | `badge` | `#error-banner`, `#reset-breaker-btn`, `#toast` | — |
+| `frontend/app.js` | `notify` | `#error-banner`, `#reset-breaker-btn`, `#run-cycle`, `#run-label`, `#toast`, `#topbar-handoff-btn` | — |
+| `frontend/app.js` | `showError` | `#buy-allocation`, `#company-enabled`, `#error-banner`, `#next-session`, `#reset-breaker-btn`, `#run-cycle` | — |
 | `frontend/app.js` | `api` | `#buy-allocation`, `#chat-send`, `#company-enabled`, `#engine-state`, `#next-session`, `#run-cycle` | — |
 | `frontend/app.js` | `updateControls` | `#buy-allocation`, `#chat-send`, `#company-enabled`, `#engine-state`, `#error-banner`, `#next-session` | `/api/portfolio` |
 | `frontend/app.js` | `refresh` | `#error-banner`, `#portfolio-header-badge`, `#portfolio-header-badge-dot`, `#portfolio-header-badge-text` | `/api/portfolio` |

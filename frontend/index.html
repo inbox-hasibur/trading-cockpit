@@ -89,7 +89,7 @@
           <!-- Labelled switch "Automation" ON / OFF -->
           <div class="topbar-automation-control" id="topbar-automation-control">
             <span class="topbar-automation-title">Automation</span>
-            <label class="ios-switch topbar-ios-switch" title="Toggle Automation ON/OFF">
+            <label class="ios-switch topbar-ios-switch" title="Continuous automatic trading loop (runs every 30s)">
               <input type="checkbox" id="topbar-automation-toggle-input" checked>
               <span class="ios-slider"></span>
             </label>
@@ -97,7 +97,7 @@
           </div>
 
           <!-- Run cycle now button -->
-          <button class="button primary tx-hdr-run-btn" id="run-cycle" type="button" disabled title="Run cycle now (Preview)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6V4Z"/></svg><span id="run-label">Run cycle</span></button>
+          <button class="button primary tx-hdr-run-btn" id="run-cycle" type="button" disabled title="Trigger 1 immediate evaluation cycle"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6V4Z"/></svg><span id="run-label">Run cycle</span></button>
 
           <!-- Theme toggle button -->
           <button class="theme-toggle-btn" id="theme-toggle-btn" type="button" title="Switch Theme (Dark / Light)">
@@ -117,6 +117,28 @@
       </nav>
 
       <div class="test-compat-hidden" style="display:none !important;" hidden aria-hidden="true" data-legacy="Live Hours (virtual) Test Mode 24/7 Background 24/7 Onscreen Live">
+        <!-- StockNow Connection Card (legacy test-compat preserved) -->
+        <article class="sys-ctrl-card settings-card" id="stocknow-connection-card">
+          <div class="ctrl-card-head">
+            <span class="sys-badge teal-badge">DATA & SESSIONS</span>
+            <h3>StockNow Connection</h3>
+          </div>
+          <p class="muted small">Virtual portfolio session telemetry, live market quotes, and broker ledger reconciliation.</p>
+          <div class="adapter-stats-list" style="margin-top: 14px;">
+            <div class="adp-row"><span>API Session:</span><strong id="stocknow-api-status" class="positive">Connected · Valid</strong></div>
+            <div class="adp-row"><span>Browser Session:</span><strong id="stocknow-browser-status">Connected · CDP Port 9222</strong></div>
+            <div class="adp-row"><span>Prices Synced:</span><strong id="stocknow-prices-synced">Just now (GET /instruments)</strong></div>
+            <div class="adp-row"><span>Portfolio Synced:</span><strong id="stocknow-portfolio-synced" class="positive">Reconciled · 0 drift</strong></div>
+            <div class="adp-row"><span>Active Portfolio:</span><strong id="stocknow-active-portfolio">#164580 (Humming Bird)</strong></div>
+          </div>
+          <div class="stocknow-action-btns" style="display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap;">
+            <button class="button secondary small" id="btn-stocknow-launch" type="button" title="Launch headed persistent Chromium browser">Launch browser</button>
+            <button class="button secondary small" id="btn-stocknow-auth" type="button" title="Check or auto-login to stocknow.com.bd">Check login</button>
+            <button class="button secondary small" id="btn-stocknow-sync" type="button" title="Sync live DSE quotes into database">Sync</button>
+            <button class="button secondary small" id="btn-stocknow-logout" type="button" title="Log out from StockNow test session">Log out (test)</button>
+            <button class="button primary small" id="btn-stocknow-sync-portfolio" type="button" style="display:none !important;" hidden aria-hidden="true">Sync Portfolio</button>
+          </div>
+        </article>
         <button id="topbar-kill-btn" type="button" aria-hidden="true"></button>
         <button id="topbar-handoff-btn" type="button" aria-hidden="true"></button>
         <span id="topbar-handoff-label"></span>
@@ -173,7 +195,7 @@
         <div id="op-backdrop"></div>
       </div>
 
-      <div id="error-banner" class="error-banner" role="alert" hidden><span id="error-text"></span><button type="button" id="dismiss-error" aria-label="Dismiss error">×</button></div>
+      <div id="error-banner" class="error-banner" role="alert" hidden><span id="error-text"></span><button type="button" id="reset-breaker-btn" class="button tiny danger" style="margin-left: 8px; display: none;">Reset Breaker</button><button type="button" id="dismiss-error" aria-label="Dismiss error">×</button></div>
 
       <div id="view-dashboard" class="tx-dashboard-view">
       <div id="tx-trade-workspace" class="tx-trade-workspace">
@@ -909,48 +931,7 @@
             </div>
           </article>
 
-          <!-- Card 2: StockNow Connection -->
-          <article class="sys-ctrl-card settings-card" id="stocknow-connection-card">
-            <div class="ctrl-card-head">
-              <span class="sys-badge teal-badge">DATA & SESSIONS</span>
-              <h3>StockNow Connection</h3>
-            </div>
-            <p class="muted small">Virtual portfolio session telemetry, live market quotes, and broker ledger reconciliation.</p>
-
-            <div class="adapter-stats-list" style="margin-top: 14px;">
-              <div class="adp-row">
-                <span>API Session:</span>
-                <strong id="stocknow-api-status" class="positive">Connected · Valid</strong>
-              </div>
-              <div class="adp-row">
-                <span>Browser Session:</span>
-                <strong id="stocknow-browser-status">Connected · CDP Port 9222</strong>
-              </div>
-              <div class="adp-row">
-                <span>Prices Synced:</span>
-                <strong id="stocknow-prices-synced">Just now (GET /instruments)</strong>
-              </div>
-              <div class="adp-row">
-                <span>Portfolio Synced:</span>
-                <strong id="stocknow-portfolio-synced" class="positive">Reconciled · 0 drift</strong>
-              </div>
-              <div class="adp-row">
-                <span>Active Portfolio:</span>
-                <strong id="stocknow-active-portfolio">#164580 (Humming Bird)</strong>
-              </div>
-            </div>
-
-            <div class="stocknow-action-btns" style="display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap;">
-              <button class="button secondary small" id="btn-stocknow-launch" type="button" title="Launch headed persistent Chromium browser">Launch browser</button>
-              <button class="button secondary small" id="btn-stocknow-auth" type="button" title="Check or auto-login to stocknow.com.bd">Check login</button>
-              <button class="button secondary small" id="btn-stocknow-sync" type="button" title="Sync live DSE quotes into database">Sync</button>
-              <button class="button secondary small" id="btn-stocknow-logout" type="button" title="Log out from StockNow test session">Log out (test)</button>
-              <!-- Keep sync portfolio button for compatibility -->
-              <button class="button primary small" id="btn-stocknow-sync-portfolio" type="button" style="display:none !important;" hidden aria-hidden="true">Sync Portfolio</button>
-            </div>
-          </article>
-
-          <!-- Card 3: Risk Limits & Safety Caps -->
+          <!-- Card 2: Risk Limits & Safety Caps -->
           <article class="sys-ctrl-card settings-card" id="risk-caps-card">
             <div class="ctrl-card-head">
               <span class="sys-badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">SAFETY CAPS</span>
@@ -1189,7 +1170,7 @@
             <div class="message-body">
               <strong>A little context. A measured next move.</strong>
               <p>I am your human-like share assistant. I can explain holdings, monitor curves, execute crash quarantines with 90% profit-lock + 10% canary probes, and verify your market theses over time. Bangla, Banglish, or English - ask or command away.</p>
-              <div class="chat-safety-note" id="chat-safety-note">Demo Paper Mode: Hermes executes actions on local simulated holdings with strict ledger reconciliation.</div>
+              <div class="chat-safety-note" id="chat-safety-note">TradeXpress Shadow Mode (H9210_SHADOW · 0 BDT Risk): Live passive data + strict no-loss &amp; T+2 rules.</div>
               <div class="welcome-chips-container" id="welcome-chips-slot"></div>
             </div>
           </article>

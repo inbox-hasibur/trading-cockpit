@@ -706,16 +706,23 @@ def test_pct_chg_sparklines_and_hb_place_order_tool(client: TestClient, test_db_
     assert len(gp.get("sparkline_points") or []) >= 2
 
     # Verify plugins.humming_bird.tools.hb_place_order allowlist
+    from unittest.mock import MagicMock, patch
     from plugins.humming_bird.tools import hb_place_order
 
-    order_prev = hb_place_order(
-        symbol="GP",
-        side="BUY",
-        quantity=10,
-        price=275.0,
-        portfolio="H9210_SHADOW",
-        confirm=False,
-    )
-    assert "error" not in order_prev.lower() or "rejected" not in order_prev.lower()
-    assert "preview" in order_prev.lower() or "token" in order_prev.lower() or "validated" in order_prev.lower()
+    with patch("urllib.request.urlopen") as mock_open:
+        fake_resp = MagicMock()
+        fake_resp.read.return_value = json.dumps({"dry_run": True, "status": "VALIDATED", "preview_token": "token_123"}).encode("utf-8")
+        fake_resp.__enter__.return_value = fake_resp
+        mock_open.return_value = fake_resp
+
+        order_prev = hb_place_order(
+            symbol="GP",
+            side="BUY",
+            quantity=10,
+            price=275.0,
+            portfolio="H9210_SHADOW",
+            confirm=False,
+        )
+        assert "error" not in order_prev.lower() or "rejected" not in order_prev.lower()
+        assert "preview" in order_prev.lower() or "token" in order_prev.lower() or "validated" in order_prev.lower()
 

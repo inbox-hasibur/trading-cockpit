@@ -267,7 +267,7 @@ def hb_place_order(args: dict[str, Any] | None = None, **kwargs) -> str:
 
     # 1. Enforce allowlist if portfolio_id is supplied
     allowed = _get_allowed_portfolios()
-    raw_pid = merged.get("portfolio_id")
+    raw_pid = merged.get("portfolio_id") or merged.get("portfolio")
     target_pid: str | None = None
     if raw_pid is not None and str(raw_pid).strip():
         target_pid = str(raw_pid).strip()

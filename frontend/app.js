@@ -155,11 +155,21 @@ function notify(message, type = false) {
 }
 window.notify = notify;
 window.showToast = notify;
+window.refresh = refresh;
+window.refreshSnapshot = refresh;
 
 function showError(message, withToast = true) {
   setText("error-text", message);
   const banner = $("error-banner");
-  if (banner) banner.hidden = false;
+  if (banner) {
+    banner.hidden = false;
+    banner.style.display = "";
+  }
+  const resetBtn = $("reset-breaker-btn");
+  if (resetBtn) {
+    const isBreaker = /circuit[- ]breaker/i.test(message) || /tripped/i.test(message);
+    resetBtn.style.display = isBreaker ? "inline-block" : "none";
+  }
   if (withToast) notify(message, true);
 }
 
@@ -1224,6 +1234,20 @@ const compSearchInput = $("company-search");
 if (compSearchInput) compSearchInput.addEventListener("input", () => { if (state.snapshot) renderWatchlist(); });
 const dismissErrBtn = $("dismiss-error");
 if (dismissErrBtn) dismissErrBtn.addEventListener("click", () => { $("error-banner").hidden = true; });
+const resetBreakerBtn = $("reset-breaker-btn");
+if (resetBreakerBtn) {
+  resetBreakerBtn.addEventListener("click", async () => {
+    try {
+      await api("/api/automation/circuit-breaker/reset", { method: "POST" });
+      notify("Circuit breaker reset successfully", false);
+      const banner = $("error-banner");
+      if (banner) banner.hidden = true;
+      if (typeof refresh === "function") await refresh();
+    } catch (err) {
+      notify(`Reset breaker failed: ${err.message}`, true);
+    }
+  });
+}
 
 document.querySelectorAll(".decision-filter-chip").forEach((button) => {
   button.addEventListener("click", () => {
@@ -2157,8 +2181,18 @@ function initRealtimeStream() {
 
 // --- Multi-View Navigation Router ---
 function switchView(viewName) {
-  viewName = (viewName || "overview").replace("#", "");
-  const isSettings = viewName === "settings" || viewName === "system-control";
+  viewName = (viewName || "trade").replace("#", "");
+  const mapping = {
+    overview: "trade",
+    dashboard: "trade",
+    "system-control": "settings",
+  };
+  const canonical = mapping[viewName] || viewName;
+  if (window.TradeXpressUI && typeof window.TradeXpressUI.switchNavView === "function") {
+    window.TradeXpressUI.switchNavView(canonical);
+    return;
+  }
+  const isSettings = canonical === "settings";
   const viewDashboard = $("view-dashboard");
   const viewSettings = $("view-settings");
 
@@ -2169,7 +2203,7 @@ function switchView(viewName) {
     if (isSettings) {
       el.classList.toggle("active", target === "settings" || target === "system-control");
     } else {
-      el.classList.toggle("active", target === viewName || (!viewName && target === "overview"));
+      el.classList.toggle("active", target === canonical || (!canonical && target === "overview"));
     }
   });
 
@@ -2179,8 +2213,10 @@ function switchView(viewName) {
       viewDashboard.hidden = true;
     }
     if (viewSettings) {
+      viewSettings.classList.remove("view-hidden");
       viewSettings.classList.add("active");
       viewSettings.hidden = false;
+      viewSettings.removeAttribute("hidden");
     }
     const workspace = document.querySelector(".workspace");
     if (workspace) workspace.scrollTo({ top: 0, behavior: "smooth" });
@@ -2189,14 +2225,18 @@ function switchView(viewName) {
     }
   } else {
     if (viewSettings) {
+      viewSettings.classList.add("view-hidden");
       viewSettings.classList.remove("active");
       viewSettings.hidden = true;
+      viewSettings.setAttribute("hidden", "true");
     }
     if (viewDashboard) {
       viewDashboard.classList.add("active");
+      viewDashboard.classList.remove("view-hidden");
       viewDashboard.hidden = false;
+      viewDashboard.removeAttribute("hidden");
     }
-    const targetId = viewName || "overview";
+    const targetId = canonical === "trade" ? "overview" : canonical;
     if (targetId === "overview") {
       const workspace = document.querySelector(".workspace");
       if (workspace) workspace.scrollTo({ top: 0, behavior: "smooth" });
@@ -2206,7 +2246,6 @@ function switchView(viewName) {
         targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
-    // Render treemap and gainers if scrolling to or past watchlist
     setTimeout(() => {
       renderMarketMap();
       renderTopSectorsChart();
@@ -2226,10 +2265,6 @@ function initViewRouter() {
       if (href && href.startsWith("#")) {
         e.preventDefault();
         const target = href.slice(1);
-        window.location.hash = target;
-        if (typeof window.setNavClickScrolling === "function") {
-          window.setNavClickScrolling();
-        }
         switchView(target);
       }
     });
@@ -2240,13 +2275,12 @@ function initViewRouter() {
   if (sysLink) {
     sysLink.addEventListener("click", (e) => {
       e.preventDefault();
-      window.location.hash = "settings";
       switchView("settings");
     });
   }
 
-  // Initial view from URL hash or default to overview
-  const initialHash = window.location.hash.slice(1) || "overview";
+  // Initial view from URL hash or default to trade
+  const initialHash = window.location.hash.slice(1) || "trade";
   switchView(initialHash);
 }
 

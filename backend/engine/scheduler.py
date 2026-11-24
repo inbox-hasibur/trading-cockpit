@@ -147,6 +147,8 @@ class DSEMarketScheduler:
             trading_mode = getattr(state, "trading_mode", "LIVE_HOURS")
             kill_switch = getattr(state, "kill_switch_active", False)
             ingestion_mode = getattr(state, "ingestion_mode", "BACKGROUND_POLLING")
+            execution_venue = getattr(state, "execution_venue", "SHADOW_DUMMY") or "SHADOW_DUMMY"
+            is_shadow = getattr(state, "mode", "") == "SHADOW"
 
         gate = is_dse_market_open(settings=self.settings)
         if not force:
@@ -178,21 +180,35 @@ class DSEMarketScheduler:
                 return {"status": "SKIPPED", "reason": "KILL_SWITCH", "market": gate}
 
         synced_count = 0
-        try:
-            if ingestion_mode == "ONSCREEN_LIVE" and self.client and getattr(self.client, "page", None):
-                quotes = await extract_quotes_from_stocknow(self.client)
-                if quotes:
-                    sync_res = sync_live_market_to_db(self.database, quotes)
-                    synced_count = sync_res.get("synced_count", 0)
-            elif ingestion_mode in ("BACKGROUND_POLLING", "BACKGROUND_24_7", "BACKGROUND 24/7"):
-                if self.client and getattr(self.client, "is_authenticated", False):
-                    from backend.adapters.stocknow_market_sync import fetch_stocknow_live_market_data
-                    quotes = await fetch_stocknow_live_market_data(client=self.client)
+        if is_shadow:
+            # Reconcile queued shadow orders against live passive feed
+            try:
+                from backend.adapters.tradexpress.passive_feed import get_global_passive_feed
+                from backend.adapters.tradexpress.shadow_simulator import TradeXpressShadowSimulator
+
+                feed = get_global_passive_feed(self.database)
+                simulator = TradeXpressShadowSimulator(self.database, self.settings, feed=feed)
+                with self.database.write() as session:
+                    reconciled = simulator.reconcile_queued_orders(session, feed.get_all_quotes() if feed else {})
+                    synced_count = len(reconciled)
+            except Exception as exc:
+                logger.debug("Shadow order reconciliation notice: %s", exc)
+        else:
+            try:
+                if ingestion_mode == "ONSCREEN_LIVE" and self.client and getattr(self.client, "page", None):
+                    quotes = await extract_quotes_from_stocknow(self.client)
                     if quotes:
                         sync_res = sync_live_market_to_db(self.database, quotes)
                         synced_count = sync_res.get("synced_count", 0)
-        except Exception as exc:
-            logger.warning("Scheduler market quote sync notice: %s", exc)
+                elif ingestion_mode in ("BACKGROUND_POLLING", "BACKGROUND_24_7", "BACKGROUND 24/7"):
+                    if self.client and getattr(self.client, "is_authenticated", False):
+                        from backend.adapters.stocknow_market_sync import fetch_stocknow_live_market_data
+                        quotes = await fetch_stocknow_live_market_data(client=self.client)
+                        if quotes:
+                            sync_res = sync_live_market_to_db(self.database, quotes)
+                            synced_count = sync_res.get("synced_count", 0)
+            except Exception as exc:
+                logger.warning("Scheduler market quote sync notice: %s", exc)
 
         cycle_res = None
         try:

@@ -6,6 +6,7 @@ shadow order book operations (Step 1 preview -> Step 2 dispatch), and learning l
 
 from __future__ import annotations
 
+from decimal import Decimal
 import logging
 from typing import Any
 
@@ -199,11 +200,39 @@ def build_tradexpress_router(
     @router.post("/shadow/reset")
     def post_shadow_reset(req: dict[str, Any] | None = None):
         """Resets H9210_SHADOW tax lots, orders, trades, and restores initial capital with checkpoint."""
-        from backend.database import KernelStateCheckpoint, ShadowOrder, TaxLot, TradeLog
+        from sqlalchemy import update
+        from backend.database import (
+            CycleRequestKey,
+            DecisionLog,
+            KernelStateCheckpoint,
+            OrderIdempotencyKey,
+            ShadowOrder,
+            TaxLot,
+            TradeLog,
+        )
         from backend.engine.checkpoint import CheckpointManager
+        from backend.engine.t2_ledger import assert_ledger
 
-        target_pid = str((req or {}).get("portfolio_id") or "H9210_SHADOW")
-        initial_cap = decimal((req or {}).get("initial_capital") or settings.initial_capital)
+        req_data = req or {}
+        mode = str(req_data.get("mode") or "").strip().upper()
+        capital_input = req_data.get("capital") or req_data.get("initial_cash") or req_data.get("initial_capital")
+
+        feed = get_global_passive_feed(database)
+        if mode == "MIRROR_H9210":
+            acct = feed.get_account_summary() if feed else None
+            if acct and acct.buying_power > ZERO:
+                new_capital = acct.buying_power
+            elif acct and acct.cash_balance > ZERO:
+                new_capital = acct.cash_balance
+            elif capital_input:
+                new_capital = decimal(capital_input)
+            else:
+                new_capital = Decimal("353.00")
+        else:
+            # CLEAN_DUMMY or default
+            new_capital = decimal(capital_input or Decimal("50000.00"))
+
+        target_pid = "H9210_SHADOW"
 
         with database.write() as session:
             state = portfolio_state(session)
@@ -211,14 +240,38 @@ def build_tradexpress_router(
                 session,
                 state,
                 "SHADOW_RESET",
-                f"Resetting {target_pid} to initial capital ৳{initial_cap}",
+                f"Resetting {target_pid} ({mode or 'CLEAN_DUMMY'}) to initial capital ৳{new_capital}",
             )
-            session.query(TradeLog).filter(TradeLog.portfolio_id == target_pid).delete()
-            session.query(TaxLot).filter(TaxLot.portfolio_id == target_pid).delete()
-            session.query(ShadowOrder).filter(ShadowOrder.portfolio_id == target_pid).delete()
-            state.unsettled_sales_bdt = ZERO
+
+            # 1. Clear FK references safely in exact order:
+            # - Update decision_logs referencing tax_lots
+            session.execute(update(DecisionLog).values(lot_id=None))
+
+            # - Delete ALL OrderIdempotencyKey, CycleRequestKey, ShadowOrder, TradeLog, TaxLot rows
+            session.query(OrderIdempotencyKey).delete()
+            session.query(CycleRequestKey).delete()
+            session.query(ShadowOrder).delete()
+            session.query(TradeLog).delete()
+            session.query(TaxLot).delete()
+
+            # 2. Update PortfolioState:
+            state.mode = "SHADOW"
+            state.execution_venue = "SHADOW_DUMMY"
+            state.initial_capital = new_capital
+            state.unsettled_sales_bdt = Decimal("0.00")
+            state.paused = False
+            state.kill_switch_active = False
+            state.circuit_breaker_tripped = False
+            state.consecutive_failure_count = 0
+            state.circuit_breaker_reason = None
+            state.startup_health_passed = True
+            state.startup_health_status = "READY"
+
+            # 3. Reconcile ledger
+            assert_ledger(session, state, portfolio_id=target_pid)
             session.flush()
 
+        # 4. Broadcast fresh SSE snapshot
         if broadcaster:
             try:
                 from backend.portfolio import build_snapshot
@@ -229,9 +282,12 @@ def build_tradexpress_router(
                 logger.debug("Failed publishing live SSE portfolio update after shadow reset: %s", b_err)
 
         return {
+            "ok": True,
             "status": "RESET_SUCCESS",
             "portfolio_id": target_pid,
-            "initial_capital": float(initial_cap),
+            "initial_capital": float(new_capital),
+            "holdings_count": 0,
+            "circuit_breaker_reset": True,
             "checkpoint_id": cp.id if cp else None,
         }
 

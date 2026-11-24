@@ -228,17 +228,24 @@ def get_curve(
 
     sym = symbol.strip().upper()
     passive_feed = get_global_passive_feed()
-    q = passive_feed.get_all_quotes().get(sym) if passive_feed else None
+    q = passive_feed.get_cached_quote(sym) if passive_feed else None
 
     with db.read() as session:
         comp = session.get(CompanyProfile, sym)
         if not comp:
             raise HTTPException(status_code=404, detail=f"Company '{sym}' not found in database.")
         state = portfolio_state(session)
-        history = comp.price_history or []
+        live_ltp = float(q.ltp) if (q and q.ltp > ZERO) else float(comp.last_price)
+        history = list(comp.price_history or [])
+        if live_ltp > 0 and history:
+            today_iso = state.clock_date.isoformat()
+            if history[-1].get("date") == today_iso:
+                history[-1] = {**history[-1], "close": str(live_ltp)}
+            else:
+                history.append({"date": today_iso, "close": str(live_ltp)})
         closes = [float(p["close"]) for p in history if isinstance(p, dict) and "close" in p]
-        sup = min(closes) if closes else float(comp.last_price)
-        res = max(closes) if closes else float(comp.last_price)
+        sup = min(closes) if closes else live_ltp
+        res = max(closes) if closes else live_ltp
         analysis = None
         if history:
             analysis = analyze_curve(
@@ -262,7 +269,7 @@ def get_curve(
 
         return {
             "symbol": comp.symbol,
-            "last_price": float(comp.last_price),
+            "last_price": live_ltp,
             "support": sup,
             "resistance": res,
             "watchlist_category": comp.watchlist_category,

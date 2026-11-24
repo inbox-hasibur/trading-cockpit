@@ -584,7 +584,34 @@ Reconciliation of all audit findings and architectural items from historical MVP
 
 ---
 
-### 🏦 Sprint 6: Production Graduation to Live TradeXpress 2-Step Execution & iBroker EOD Audit
+### ✅ Sprint 5I (Completed): Purge Legacy StockNow Runtime, Fix All 6 Live Operator Bugs & End-to-End Playwright Proof
+
+- [x] **Complete Legacy StockNow Runtime & Pollution Purge:**
+  - Gated `migrate_real_stocknow_market` behind `ENABLE_STOCKNOW_LEGACY == "1"`.
+  - Scoped `portfolio.py` and ledger strictly to `H9210_SHADOW` when in shadow mode, eliminating legacy StockNow `#164580` (`BANKASIA 304`, `৳121,292.71`) pollution.
+- [x] **Bulletproof Shadow Reset (`POST /api/tradexpress/shadow/reset`):**
+  - Resolved SQLite foreign key cascade issues by nulling `DecisionLog.lot_id` and deleting `OrderIdempotencyKey`, `CycleRequestKey`, `ShadowOrder`, `TradeLog`, and `TaxLot` in exact sequence.
+  - Set `state.mode = "SHADOW"` and `state.execution_venue = "SHADOW_DUMMY"`, reset capital to `CLEAN_DUMMY` (৳50,000) or `MIRROR_H9210` (৳353), cleared circuit breaker, asserted ledger with exact 0.00 drift, and published live SSE snapshot.
+  - Fixed frontend `handleShadowReset` error parsing and refresh, eliminating `"Shadow reset failed: undefined"`.
+- [x] **Circuit Breaker Clearance & 1-Click Recovery (`#error-banner`):**
+  - Added 1-click `Reset Breaker` button in `#error-banner` wired to `/api/automation/circuit-breaker/reset`.
+  - Scoped `bucket_balances` and `assert_ledger` strictly to `H9210_SHADOW` in shadow mode, preventing false ledger invariant violations.
+- [x] **Continuous `SHADOW_DUMMY` Automation Loop:**
+  - Bypassed StockNow 24h preflight requirement in `automation/config` and `automation/handoff` when in `SHADOW_DUMMY`, enabling smooth 30s scheduler loop without false blocks while preserving risk caps.
+  - Skipped live StockNow quote fetches in `scheduler.py` when in `SHADOW_DUMMY`.
+- [x] **Live Realtime LTP Synchronization:**
+  - Overlaid live passive quotes into `CompanyProfile.last_price` and appended today's candle to `price_history` using `flag_modified`.
+  - Overlaid live LTP in `portfolio.py:snapshot_from_session` and `kernel_api.py:get_curve`, eliminating stale history lags.
+- [x] **Settings View Navigation Fix:**
+  - Unified `#tx-main-nav` and hash router navigation (`switchNavView`), stripping `.view-hidden` and rendering `#view-settings` cleanly.
+  - Wired `#tx-passive-spy-btn` in main nav to navigate directly to the feed status card in Settings.
+- [x] **Preserve Mirror Cash Balance:**
+  - Preserved positive cached cash balances in `passive_feed.py` when incoming tick only contains topbar buying power while Account Summary tab is inactive.
+- [x] **Full Click-Through Playwright Proof & 100% Test Pass Rate:**
+  - Built comprehensive end-to-end Playwright workflow test (`test_tradexpress_sprint5i_operator_workflows`) asserting live LTP display, clean reset to ৳50,000, 0 legacy holdings, mirror reset to ৳353, automation toggle ON, settings navigation, and 2-step manual order placement.
+  - Maintained 100% full pytest pass rate (282 passed across entire codebase).
+
+---
 
 - [ ] **Production TradeXpress 2-Step Executor (`TRADEXPRESS_LIVE` Mode):**
   - Operator-permissioned graduation gate enabling live order dispatch to DSE.

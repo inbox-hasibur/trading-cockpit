@@ -51,6 +51,13 @@
 
   // --- 1. Secondary Navigation Switching ---
   function switchNavView(viewName) {
+    viewName = (viewName || "trade").replace("#", "");
+    const mapping = {
+      overview: "trade",
+      dashboard: "trade",
+      "system-control": "settings",
+    };
+    viewName = mapping[viewName] || viewName;
     state.activeNavView = viewName;
     document.querySelectorAll(".tx-nav-tab").forEach((tab) => {
       tab.classList.toggle("active", tab.dataset.txView === viewName);
@@ -71,17 +78,31 @@
         el.classList.remove("view-hidden");
         el.classList.add("active");
         el.hidden = false;
+        el.removeAttribute("hidden");
+        el.style.display = "";
       } else {
         el.classList.add("view-hidden");
         el.classList.remove("active");
         el.hidden = true;
+        el.setAttribute("hidden", "true");
       }
     });
+
+    if (window.location.hash.slice(1) !== viewName) {
+      try {
+        history.replaceState(null, "", `#${viewName}`);
+      } catch (_) {
+        window.location.hash = viewName;
+      }
+    }
 
     if (viewName === "learning") {
       loadLearningSummary();
     } else if (viewName === "settings") {
       loadFeedStatus();
+      if (typeof window.loadApiKeysSettings === "function") {
+        try { window.loadApiKeysSettings(); } catch (err) { console.warn("Failed to load settings:", err); }
+      }
     } else if (viewName === "heatmap" && typeof window.renderMarketMap === "function") {
       setTimeout(() => {
         window.renderMarketMap();
@@ -913,24 +934,30 @@
     const resetMirrorBtn = document.getElementById("tx-btn-reset-mirror");
     const reset50kBtn = document.getElementById("tx-btn-reset-50k");
 
-    async function handleShadowReset(initialCash, label) {
+    async function handleShadowReset(initialCash, label, mode = "CLEAN_DUMMY") {
       try {
         const res = await fetch("/api/tradexpress/shadow/reset", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ portfolio_id: "H9210_SHADOW", initial_cash: initialCash }),
+          body: JSON.stringify({ mode: mode, capital: initialCash, initial_cash: initialCash, portfolio_id: "H9210_SHADOW" }),
         });
         const data = await res.json();
-        if (data.status === "RESET_OK") {
+        if (data.ok || data.status === "RESET_OK" || data.status === "RESET_SUCCESS") {
+          const eb = document.getElementById("error-banner");
+          if (eb) eb.hidden = true;
           if (typeof window.notify === "function") {
-            window.notify(`Shadow Dummy reset: ${label} (৳${initialCash.toLocaleString()})`, false);
+            window.notify(`Shadow dummy reset: ${label} (৳${initialCash.toLocaleString()})`, false);
           }
           if (typeof window.refreshSnapshot === "function") {
             window.refreshSnapshot();
+          } else if (typeof window.refresh === "function") {
+            window.refresh();
           }
+          loadOrders();
         } else {
+          const errText = data.detail || data.error || data.message || res.statusText || "Unknown error";
           if (typeof window.notify === "function") {
-            window.notify(`Shadow reset failed: ${data.detail || data.error}`, true);
+            window.notify(`Shadow reset failed: ${errText}`, true);
           }
         }
       } catch (err) {
@@ -944,40 +971,25 @@
       resetMirrorBtn.addEventListener("click", () => {
         const bm = state.lastSnapshot?.broker_mirror_account;
         const liveCash = (bm && bm.buying_power > 0) ? bm.buying_power : ((bm && bm.cash_balance > 0) ? bm.cash_balance : 353.00);
-        handleShadowReset(liveCash, "Mirror H9210 Cash");
+        handleShadowReset(liveCash, "Mirror H9210 Cash", "MIRROR_H9210");
       });
     }
 
     if (reset50kBtn) {
       reset50kBtn.addEventListener("click", () => {
-        handleShadowReset(50000.00, "Clean Dummy Capital");
+        handleShadowReset(50000.00, "Clean Dummy Capital", "CLEAN_DUMMY");
       });
     }
 
-    // Quick prompt chip for Passive Sync Guide
-    const passiveGuideChip = document.getElementById("chip-passive-sync-guide");
-    if (passiveGuideChip) {
-      passiveGuideChip.addEventListener("click", () => {
-        const promptText = "Check hb_feed_status and tell me which TradeXpress tabs to click right now";
-        const input = document.getElementById("chat-input");
-        const form = document.getElementById("chat-form");
-        if (input && form) {
-          input.value = promptText;
-          if (typeof form.requestSubmit === "function") {
-            form.requestSubmit();
-          } else {
-            form.dispatchEvent(new Event("submit", { cancelable: true }));
-          }
-        }
-      });
-    }
-
-    // Passive Spy & Bridge Control buttons
+    // Passive Spy pill button navigates to Settings feed card
     const spyBtn = document.getElementById("tx-passive-spy-btn");
     if (spyBtn) {
       spyBtn.addEventListener("click", () => {
-        const isLive = spyBtn.classList.contains("active");
-        controlBridge(isLive ? "detach" : "attach");
+        switchNavView("settings");
+        setTimeout(() => {
+          const card = document.getElementById("tx-feed-status-card");
+          if (card) card.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 50);
       });
     }
 

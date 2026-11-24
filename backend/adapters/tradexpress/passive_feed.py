@@ -504,6 +504,11 @@ class TradeXpressPassiveFeed(MarketFeedAdapter):
         with self._lock:
             return dict(self._quotes)
 
+    def get_cached_quote(self, symbol: str) -> MarketQuote | None:
+        clean = from_tradexpress_symbol(symbol)
+        with self._lock:
+            return self._quotes.get(clean)
+
     async def get_quote(self, symbol: str) -> MarketQuote | None:
         clean = from_tradexpress_symbol(symbol)
         with self._lock:
@@ -738,6 +743,17 @@ def ingest_passive_snapshot(
             # Automatic purge of polluted GSC rows on full DSE view
             if tab_norm in ("dhaka stock exchange", "market_watch", "all", "all_dse", ""):
                 cleanup_polluted_gsc_symbols(session)
+            elif (tab_norm == "gsc" or tab_norm.endswith(" gsc")) and len(parsed_quotes) >= 5:
+                # Sync GSC: demote unheld non-present GSC rows back to ALL_DSE
+                gsc_symbols_in_tab = {q.symbol for q in parsed_quotes}
+                all_gsc_cps = list(session.scalars(select(CompanyProfile).where(CompanyProfile.watchlist_category == "GSC")))
+                held_syms = set(session.scalars(select(TaxLot.symbol).where(TaxLot.remaining_qty > 0)))
+                for gsc_cp in all_gsc_cps:
+                    if gsc_cp.symbol not in gsc_symbols_in_tab and gsc_cp.symbol not in held_syms:
+                        r = session.get(CustomRule, gsc_cp.symbol)
+                        if not (r and (r.enabled or (r.buy_allocation_pct or ZERO) > ZERO)):
+                            gsc_cp.watchlist_category = "ALL_DSE"
+                            gsc_cp.favorite = False
 
             for q in parsed_quotes:
                 cp = session.get(CompanyProfile, q.symbol)
@@ -813,7 +829,9 @@ def ingest_passive_snapshot(
                         history[-1] = candle
                     else:
                         history.append(candle)
-                    cp.price_history = history[-30:]
+                    cp.price_history = list(history[-30:])
+                    from sqlalchemy.orm.attributes import flag_modified
+                    flag_modified(cp, "price_history")
                 quotes_updated += 1
 
             session.flush()
@@ -852,28 +870,30 @@ def ingest_passive_snapshot(
         summary = parse_account_summary_dict(acct_data)
         prev_summary = active_feed.get_account_summary()
 
-        # Off-Hours 0.00 Cash Guard:
-        # When dse_status is "Close"/"CLOSED" AND incoming account_summary has
-        # buying_power == 0 and cash_balance == 0, preserve previously cached
-        # positive buying_power / cash_balance instead of overwriting with 0.00!
-        if (
-            is_offhours_closed
-            and summary.cash_balance <= ZERO
-            and summary.buying_power <= ZERO
-            and (prev_summary.cash_balance > ZERO or prev_summary.buying_power > ZERO)
-        ):
-            logger.info(
-                "Off-Hours 0.00 Cash Guard: Preserving cached cash balances (buying_power=%s)",
-                prev_summary.buying_power,
-            )
+        # Cash & Buying Power Preservation Guard:
+        # Preserve positive cached cash balances whenever an incoming tick has
+        # cash_balance == 0 or buying_power == 0 (e.g. off-hours or viewing another tab like Portfolio)
+        if summary.cash_balance <= ZERO and prev_summary.cash_balance > ZERO:
             summary.cash_balance = prev_summary.cash_balance
+        elif summary.cash_balance <= ZERO and summary.buying_power > ZERO:
+            summary.cash_balance = summary.buying_power
+
+        if summary.available_cash_balance <= ZERO and prev_summary.available_cash_balance > ZERO:
             summary.available_cash_balance = prev_summary.available_cash_balance
-            summary.buying_power = prev_summary.buying_power
+        elif summary.available_cash_balance <= ZERO and summary.buying_power > ZERO:
+            summary.available_cash_balance = summary.buying_power
+
+        if summary.cash_available_for_withdrawal <= ZERO and prev_summary.cash_available_for_withdrawal > ZERO:
             summary.cash_available_for_withdrawal = prev_summary.cash_available_for_withdrawal
-            if summary.unsettled_sales <= ZERO and prev_summary.unsettled_sales > ZERO:
-                summary.unsettled_sales = prev_summary.unsettled_sales
-            if summary.blocked_amount <= ZERO and prev_summary.blocked_amount > ZERO:
-                summary.blocked_amount = prev_summary.blocked_amount
+        elif summary.cash_available_for_withdrawal <= ZERO and summary.buying_power > ZERO:
+            summary.cash_available_for_withdrawal = summary.buying_power
+
+        if summary.buying_power <= ZERO and prev_summary.buying_power > ZERO:
+            summary.buying_power = prev_summary.buying_power
+        if summary.unsettled_sales <= ZERO and prev_summary.unsettled_sales > ZERO:
+            summary.unsettled_sales = prev_summary.unsettled_sales
+        if summary.blocked_amount <= ZERO and prev_summary.blocked_amount > ZERO:
+            summary.blocked_amount = prev_summary.blocked_amount
 
         active_feed.update_account_summary(summary)
         summary_updated = True

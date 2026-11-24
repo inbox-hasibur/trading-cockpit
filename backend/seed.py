@@ -49,6 +49,7 @@ def seed_demo(session: Session, settings: Settings) -> None:
         clock_date=today,
         calendar_holidays=sorted(day.isoformat() for day in settings.holidays),
         bucket_anchor=settings.bucket_anchor,
+        execution_venue="DEMO",
     )
     session.add(state)
     for symbol, name, sector, category, allocation, values in FIXTURES:

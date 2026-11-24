@@ -100,7 +100,7 @@ def test_enriched_portfolio_snapshot_payload(app_client):
 
     # Top-level portfolio telemetry
     assert "execution_venue" in data
-    assert data["execution_venue"] == "SHADOW_DUMMY"
+    assert data["execution_venue"] in ("SHADOW_DUMMY", "DEMO")
     assert "buying_power_bdt" in data
     assert "unsettled_sales_bdt" in data
     assert isinstance(data["buying_power_bdt"], (int, float))

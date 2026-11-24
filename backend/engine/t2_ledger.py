@@ -65,13 +65,18 @@ class BucketBalance:
 
 def bucket_balances(session: Session, state: PortfolioState, portfolio_id: str | None = None) -> dict[str, BucketBalance]:
     if portfolio_id is None:
-        pids = list(session.scalars(select(TaxLot.portfolio_id).distinct()).all())
-        if len(pids) == 1:
-            portfolio_id = pids[0]
-        elif pids:
-            trading_mode = getattr(state, "trading_mode", "LIVE_HOURS")
-            from backend.config import get_active_target_portfolio
-            portfolio_id = get_active_target_portfolio(trading_mode) or "164580"
+        if getattr(state, "mode", "") == "SHADOW":
+            portfolio_id = "H9210_SHADOW"
+        else:
+            pids = list(session.scalars(select(TaxLot.portfolio_id).distinct()).all())
+            if len(pids) == 1:
+                portfolio_id = pids[0]
+            elif pids:
+                trading_mode = getattr(state, "trading_mode", "LIVE_HOURS")
+                from backend.config import get_active_target_portfolio
+                portfolio_id = get_active_target_portfolio(trading_mode) or "164580"
+            else:
+                portfolio_id = "H9210_SHADOW" if getattr(state, "execution_venue", "") == "SHADOW_DUMMY" else "164580"
 
     base = (state.initial_capital / 3).quantize(CENT, rounding="ROUND_DOWN")
     allocations = {"A": base, "B": base, "C": state.initial_capital - 2 * base}
@@ -114,13 +119,18 @@ def bucket_balances(session: Session, state: PortfolioState, portfolio_id: str |
 def assert_ledger(session: Session, state: PortfolioState, portfolio_id: str | None = None) -> None:
     """Book assets must equal initial capital plus realized P/L, to the paisa."""
     if portfolio_id is None:
-        pids = list(session.scalars(select(TaxLot.portfolio_id).distinct()).all())
-        if len(pids) == 1:
-            portfolio_id = pids[0]
-        elif pids:
-            trading_mode = getattr(state, "trading_mode", "LIVE_HOURS")
-            from backend.config import get_active_target_portfolio
-            portfolio_id = get_active_target_portfolio(trading_mode) or "164580"
+        if getattr(state, "mode", "") == "SHADOW":
+            portfolio_id = "H9210_SHADOW"
+        else:
+            pids = list(session.scalars(select(TaxLot.portfolio_id).distinct()).all())
+            if len(pids) == 1:
+                portfolio_id = pids[0]
+            elif pids:
+                trading_mode = getattr(state, "trading_mode", "LIVE_HOURS")
+                from backend.config import get_active_target_portfolio
+                portfolio_id = get_active_target_portfolio(trading_mode) or "164580"
+            else:
+                portfolio_id = "H9210_SHADOW" if getattr(state, "execution_venue", "") == "SHADOW_DUMMY" else "164580"
 
     balances = bucket_balances(session, state, portfolio_id=portfolio_id)
     book_assets = sum(

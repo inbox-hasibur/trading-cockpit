@@ -136,7 +136,8 @@ def create_app(settings: Settings | None = None, database: Database | None = Non
         database.create_schema()
         with database.write() as session:
             seed_demo(session, settings)
-            migrate_real_stocknow_market(session, settings)
+            if os.getenv("ENABLE_STOCKNOW_LEGACY") == "1":
+                migrate_real_stocknow_market(session, settings)
             from backend.adapters.tradexpress.passive_feed import cleanup_polluted_gsc_symbols
             cleanup_polluted_gsc_symbols(session)
             state = portfolio_state(session)
@@ -359,28 +360,29 @@ def create_app(settings: Settings | None = None, database: Database | None = Non
             state = portfolio_state(session)
             mode = getattr(state, "ingestion_mode", "BACKGROUND_POLLING")
             auto_enabled = getattr(state, "automation_enabled", not getattr(state, "paused", False))
+            is_shadow = getattr(state, "mode", "") == "SHADOW"
 
         if require_active and not auto_enabled:
             raise HTTPException(status_code=409, detail="Cycle blocked: automation is paused.")
-
-        # Sync latest quotes from live page or API before cycle if active
-        if mode == "ONSCREEN_LIVE" and stocknow_client and stocknow_client.state == "READY" and stocknow_client.page:
-            try:
-                quotes = await extract_quotes_from_stocknow(stocknow_client)
-                if quotes:
-                    sync_live_market_to_db(database, quotes)
-            except Exception as exc:
-                logger.warning("Pre-cycle live quote sync skipped: %s", exc)
-        elif mode in ("BACKGROUND_POLLING", "BACKGROUND_24_7", "BACKGROUND 24/7"):
-            api_client = getattr(app.state, "stocknow_api", None)
-            if api_client and getattr(api_client, "is_authenticated", False):
+        if not is_shadow:
+            # Sync latest quotes from live page or API before cycle if active
+            if mode == "ONSCREEN_LIVE" and stocknow_client and stocknow_client.state == "READY" and stocknow_client.page:
                 try:
-                    from backend.adapters.stocknow_market_sync import fetch_stocknow_live_market_data
-                    quotes = await fetch_stocknow_live_market_data(client=stocknow_client, api_client=api_client)
+                    quotes = await extract_quotes_from_stocknow(stocknow_client)
                     if quotes:
                         sync_live_market_to_db(database, quotes)
                 except Exception as exc:
-                    logger.warning("Pre-cycle background quote sync skipped: %s", exc)
+                    logger.warning("Pre-cycle live quote sync skipped: %s", exc)
+            elif mode in ("BACKGROUND_POLLING", "BACKGROUND_24_7", "BACKGROUND 24/7"):
+                api_client = getattr(app.state, "stocknow_api", None)
+                if api_client and getattr(api_client, "is_authenticated", False):
+                    try:
+                        from backend.adapters.stocknow_market_sync import fetch_stocknow_live_market_data
+                        quotes = await fetch_stocknow_live_market_data(client=stocknow_client, api_client=api_client)
+                        if quotes:
+                            sync_live_market_to_db(database, quotes)
+                    except Exception as exc:
+                        logger.warning("Pre-cycle background quote sync skipped: %s", exc)
 
         # Automation OFF runs labeled PREVIEW (decisions only); ON submits subject to mode, caps and checks
         dry_run = not auto_enabled
@@ -428,9 +430,12 @@ def create_app(settings: Settings | None = None, database: Database | None = Non
     @app.post("/api/automation/handoff")
     async def automation_handoff(body: HandoffRequest):
         target = "BACKGROUND_POLLING" if body.target_mode in ("BACKGROUND_24_7", "BACKGROUND 24/7") else body.target_mode
+        with database.read() as session:
+            state_chk = portfolio_state(session)
+            is_shadow = getattr(state_chk, "mode", "") == "SHADOW"
         if target == "BACKGROUND_POLLING":
             from backend.engine.preflight_service import are_caps_set, has_passing_preflight_within_24h
-            if not are_caps_set(database) or not has_passing_preflight_within_24h(database):
+            if not are_caps_set(database) or (not is_shadow and not has_passing_preflight_within_24h(database)):
                 raise HTTPException(
                     status_code=422,
                     detail="Enabling Background mode requires risk caps set and a passing preflight check within the last 24 hours.",
@@ -450,7 +455,7 @@ def create_app(settings: Settings | None = None, database: Database | None = Non
                 # Background 24/7: away from PC, headless ApiTransport, unattended
                 if sched and target_enabled and not target_paused:
                     sched.start()
-                if stocknow_client:
+                if stocknow_client and not is_shadow:
                     stocknow_client.ingestion_mode = "BACKGROUND_POLLING"
                     try:
                         if stocknow_client.state == "READY":
@@ -461,7 +466,7 @@ def create_app(settings: Settings | None = None, database: Database | None = Non
                 # Onscreen Live: at the PC, headed browser visible, browser transport
                 if sched:
                     sched.stop_sync()
-                if stocknow_client:
+                if stocknow_client and not is_shadow:
                     stocknow_client.ingestion_mode = "ONSCREEN_LIVE"
                     try:
                         await stocknow_client.launch(mode="ONSCREEN_LIVE")
@@ -504,16 +509,17 @@ def create_app(settings: Settings | None = None, database: Database | None = Non
                         detail=f"Circuit breaker is tripped: {st.circuit_breaker_reason}. Reset breaker first via /api/automation/circuit-breaker/reset.",
                     )
 
-        # 2. Preflight Check when enabling or switching to Background mode
+        # 2. Preflight Check when enabling or switching to Background mode (StockNow only)
         with database.read() as session:
             curr_state = portfolio_state(session)
             curr_mode = curr_state.ingestion_mode
             curr_enabled = curr_state.automation_enabled
+            is_shadow = getattr(curr_state, "mode", "") == "SHADOW"
         target_mode_candidate = body.ingestion_mode or curr_mode
         target_enabled_candidate = body.automation_enabled if body.automation_enabled is not None else (not body.paused if body.paused is not None else curr_enabled)
         if target_mode_candidate == "BACKGROUND_POLLING" and target_enabled_candidate:
             from backend.engine.preflight_service import are_caps_set, has_passing_preflight_within_24h
-            if not are_caps_set(database) or not has_passing_preflight_within_24h(database):
+            if not are_caps_set(database) or (not is_shadow and not has_passing_preflight_within_24h(database)):
                 raise HTTPException(
                     status_code=422,
                     detail="Enabling Background mode requires risk caps set and a passing preflight check within the last 24 hours.",
@@ -531,6 +537,8 @@ def create_app(settings: Settings | None = None, database: Database | None = Non
                 state.ingestion_mode = body.ingestion_mode
             if body.polling_interval_sec is not None:
                 state.polling_interval_sec = body.polling_interval_sec
+            elif is_shadow and (state.polling_interval_sec is None or state.polling_interval_sec > 30):
+                state.polling_interval_sec = 30
             if body.trading_mode is not None:
                 state.trading_mode = body.trading_mode
             target_mode = state.ingestion_mode
@@ -542,11 +550,11 @@ def create_app(settings: Settings | None = None, database: Database | None = Non
         if sched:
             if not target_enabled or target_paused:
                 sched.stop_sync()
-            elif target_mode == "BACKGROUND_POLLING":
+            elif is_shadow or target_mode == "BACKGROUND_POLLING":
                 sched.start()
 
         # Ingestion mode switch handling (non-blocking, safe with or without browser attached)
-        if target_mode == "ONSCREEN_LIVE":
+        if target_mode == "ONSCREEN_LIVE" and not is_shadow:
             if stocknow_client:
                 async def _bg_onscreen_attach():
                     try:
@@ -563,7 +571,7 @@ def create_app(settings: Settings | None = None, database: Database | None = Non
                         logger.warning("Onscreen live mode background attach noticed: %s", exc)
 
                 asyncio.create_task(_bg_onscreen_attach())
-        elif target_mode == "BACKGROUND_POLLING":
+        elif target_mode == "BACKGROUND_POLLING" and not is_shadow:
             if stocknow_client:
                 stocknow_client.ingestion_mode = "BACKGROUND_POLLING"
 

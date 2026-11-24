@@ -92,6 +92,29 @@ class AutoTrader:
         session: Session | None = None,
         reason: str = "",
     ) -> dict | None:
+        if session is not None:
+            state = portfolio_state(session)
+            is_sh = (getattr(state, "execution_venue", "") == "SHADOW_DUMMY" or getattr(state, "mode", "") == "SHADOW") and getattr(state, "execution_venue", "") != "DEMO" and getattr(state, "mode", "") != "LIVE"
+            if is_sh:
+                from backend.adapters.tradexpress.passive_feed import get_global_passive_feed
+                from backend.adapters.tradexpress.shadow_simulator import TradeXpressShadowSimulator
+
+                feed = get_global_passive_feed(self.database)
+                simulator = TradeXpressShadowSimulator(self.database, self.settings, feed=feed)
+                shadow_res = simulator.submit_shadow_order(
+                    symbol=symbol,
+                    side=side,
+                    quantity=quantity,
+                    limit_price=price,
+                    confirm=True,
+                    actor="AUTOTRADER",
+                    reason=reason or f"AutoTrader {side} execution",
+                    portfolio_id="H9210_SHADOW",
+                    session=session,
+                    record_tax_lot=False,
+                )
+                return shadow_res
+
         adapter_res = None
         if hasattr(self.adapter, "execute_order"):
             res = self.adapter.execute_order(
@@ -116,43 +139,7 @@ class AutoTrader:
                     adapter_res = asyncio.run(res)
             else:
                 adapter_res = res
-
-        # TradeXpress SHADOW_DUMMY Execution Venue
-        if session is not None:
-            state = portfolio_state(session)
-            if getattr(state, "execution_venue", "") == "SHADOW_DUMMY":
-                from backend.adapters.tradexpress.passive_feed import get_global_passive_feed
-                from backend.adapters.tradexpress.shadow_simulator import TradeXpressShadowSimulator
-
-                feed = get_global_passive_feed(self.database)
-                simulator = TradeXpressShadowSimulator(self.database, self.settings, feed=feed)
-                shadow_res = simulator.submit_shadow_order(
-                    symbol=symbol,
-                    side=side,
-                    quantity=quantity,
-                    limit_price=price,
-                    confirm=True,
-                    actor="AUTOTRADER",
-                    reason=reason or f"AutoTrader {side} execution",
-                    portfolio_id=portfolio_id or "H9210_SHADOW",
-                    session=session,
-                    record_tax_lot=False,
-                )
-                return shadow_res or adapter_res
-
         return adapter_res
-        if asyncio.iscoroutine(res):
-            try:
-                loop = asyncio.get_running_loop()
-                if loop.is_running():
-                    import concurrent.futures
-                    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                        return pool.submit(asyncio.run, res).result()
-                else:
-                    return loop.run_until_complete(res)
-            except RuntimeError:
-                return asyncio.run(res)
-        return res
 
     def _run_cycle_internal(
         self,
@@ -398,10 +385,14 @@ class AutoTrader:
 
         sold_symbols: set[str] = set()
         from backend.config import get_active_target_portfolio, get_allowed_portfolios
-        active_pid = get_active_target_portfolio(getattr(state, "trading_mode", "LIVE_HOURS"), self.settings)
+        is_shadow = (getattr(state, "execution_venue", "") == "SHADOW_DUMMY" or getattr(state, "mode", "") == "SHADOW") and getattr(state, "execution_venue", "") != "DEMO" and getattr(state, "mode", "") != "LIVE"
+        if is_shadow:
+            active_pid = "H9210_SHADOW"
+        else:
+            active_pid = get_active_target_portfolio(getattr(state, "trading_mode", "LIVE_HOURS"), self.settings)
 
         # In Test Mode, if no test portfolio is configured, block execution with clear message
-        if getattr(state, "trading_mode", "LIVE_HOURS") == "TEST_OFFHOURS" and not active_pid:
+        if not is_shadow and getattr(state, "trading_mode", "LIVE_HOURS") == "TEST_OFFHOURS" and not active_pid:
             for c in companies:
                 record(c.symbol, "BLOCKED_NO_TEST_PORTFOLIO", "Order execution blocked in Test Mode: STOCKNOW_TEST_PORTFOLIO_ID is not configured.")
             return trades
@@ -521,8 +512,8 @@ class AutoTrader:
                     bucket=lot.bucket, trade_on=state.clock_date,
                     settles_on=self.calendar.add_sessions(state.clock_date, company.settlement_days),
                     reason=plan.reason,
-                    source="STOCKNOW_RECEIPT" if getattr(self.adapter, "mode", "DEMO") != "DEMO" else "DEMO_PAPER",
-                    portfolio_id=active_pid or "164580",
+                    source="SHADOW_FILL" if is_shadow else ("STOCKNOW_RECEIPT" if getattr(self.adapter, "mode", "DEMO") != "DEMO" else "DEMO_PAPER"),
+                    portfolio_id="H9210_SHADOW" if is_shadow else (active_pid or "164580"),
                 )
                 session.add(trade)
                 session.flush()
@@ -638,7 +629,7 @@ class AutoTrader:
                 continue
 
             is_stocknow = getattr(company, "source", "") == "STOCKNOW_FAVORITES" or any(pid in getattr(state, "name", "") for pid in get_allowed_portfolios(self.settings))
-            if is_stocknow and has_active_tiers and cat not in {"GSC_L1", "GSC_L2"}:
+            if (is_stocknow or is_shadow or getattr(company, "source", "") == "TRADEXPRESS_PASSIVE") and has_active_tiers and cat not in {"GSC_L1", "GSC_L2"}:
                 record(company.symbol, "WAIT_OBSERVATION_ONLY", "Observation pool only (not in GSC_L1 or GSC_L2).")
                 continue
             if not rule.enabled or rule.buy_allocation_pct <= ZERO:
@@ -800,8 +791,8 @@ class AutoTrader:
                 net_cash_change=-cost, realized_pnl=ZERO, bucket=active_name,
                 trade_on=state.clock_date, settles_on=lot.matures_on,
                 reason=f"{analysis.reason} Within company exposure and bucket cash limits.",
-                source="STOCKNOW_RECEIPT" if getattr(self.adapter, "mode", "DEMO") != "DEMO" else "DEMO_PAPER",
-                portfolio_id=active_pid or "164580",
+                source="SHADOW_FILL" if is_shadow else ("STOCKNOW_RECEIPT" if getattr(self.adapter, "mode", "DEMO") != "DEMO" else "DEMO_PAPER"),
+                portfolio_id="H9210_SHADOW" if is_shadow else (active_pid or "164580"),
             )
             session.add(trade)
             session.flush()
