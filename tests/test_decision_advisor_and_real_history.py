@@ -67,6 +67,69 @@ def test_parse_daily_history_candles_sorted_and_filtered():
     assert bars[1]["close"] == "18.40"
 
 
+def test_parse_stocknow_6_parallel_arrays_and_reject_short_sync(isolated_db_settings):
+    """Verifies StockNow's real 6-array format [O,H,L,C,V,T] parses cleanly & <7 bars fails sync."""
+    db, settings, feed = isolated_db_settings
+    ts_base = int(datetime(2026, 11, 1, 14, 0, tzinfo=DHAKA_TZ).timestamp())
+    n = 12
+    opens = [328.0 + i * 0.1 for i in range(n)]
+    highs = [331.0 + i * 0.1 for i in range(n)]
+    lows = [327.0 + i * 0.1 for i in range(n)]
+    closes = [329.0 + i * 0.1 for i in range(n)]
+    volumes = [12000 + i * 100 for i in range(n)]
+    timestamps = [ts_base + i * 86400 for i in range(n)]
+
+    bars = parse_daily_history_candles([opens, highs, lows, closes, volumes, timestamps], sessions=30)
+    assert len(bars) == 12
+    assert bars[0]["close"] == "329.00"
+    assert bars[-1]["close"] == f"{closes[-1]:.2f}"
+
+    # Verify sync_watchlist_real_history NEVER counts <7 bars in synced_count
+    import asyncio
+
+    with patch("backend.adapters.tradexpress.history_provider.fetch_real_daily_history", new=AsyncMock(return_value=bars[:2])):
+        res = asyncio.run(sync_watchlist_real_history(db, symbols=["BANKASIA"], sessions=30, feed=feed, pace_seconds=0))
+        assert res["synced_count"] == 0
+        assert any("BANKASIA" in f for f in res["failed_symbols"])
+
+
+def test_passive_broker_order_list_ingest_and_route(isolated_db_settings):
+    """Verifies passive broker_order_list is stored and surfaced in GET /api/tradexpress/orders."""
+    db, settings, feed = isolated_db_settings
+    app = create_app(settings)
+    client = TestClient(app, base_url="http://127.0.0.1:8000")
+
+    resp = client.post(
+        "/api/tradexpress/passive-ingest",
+        json={
+            "source": "EDGE_EXTENSION_PASSIVE",
+            "tab": "order_list",
+            "broker_order_list": [
+                {
+                    "symbol": "BANKASIA`PB",
+                    "orderId": "ORD-9210-1",
+                    "cashAccount": "H9210",
+                    "status": "Filled",
+                    "side": "SELL",
+                    "quantity": 9,
+                    "price": 18.40,
+                    "filledQty": 9,
+                    "pendingQty": 0,
+                    "avgPrice": 18.40,
+                    "orderValue": 165.60,
+                }
+            ],
+        },
+        headers={"Origin": "chrome-extension://testabc123"},
+    )
+    assert resp.status_code == 200
+
+    orders_resp = client.get("/api/tradexpress/orders")
+    assert orders_resp.status_code == 200
+    orders = orders_resp.json()
+    assert any(o.get("source") == "BROKER H9210" and o.get("symbol") == "BANKASIA" for o in orders)
+
+
 def test_decision_advisor_zero_dummy_buy_and_blocked(isolated_db_settings):
     """Verifies NO_HISTORY (<7 bars), BUY_CANDIDATE (real 15d dip on L1), and BLOCKED (Z/SPOT)."""
     db, settings, feed = isolated_db_settings

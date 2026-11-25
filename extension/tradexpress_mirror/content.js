@@ -385,6 +385,7 @@
     const portContainer = document.querySelector('#portfolioContainer-8-1-2-3, [container-id="portfolio"]');
     const result = {
       portfolio_rows: [],
+      broker_order_list: [],
       account_summary: null,
       active_tab: 'portfolio',
     };
@@ -423,6 +424,34 @@
           const topKey = r.style.top || (r.offsetTop + 'px');
           const sym = leftMap.get(topKey);
           if (!sym) return;
+
+          if (result.active_tab === 'order_list') {
+            const ordIdEl = r.querySelector('[cell-id="dataObj.orderId"], [cell-id="dataObj.ordId"], [cell-id="dataObj.refNo"]');
+            const cashEl = r.querySelector('[cell-id="dataObj.cashAccount"], [cell-id="dataObj.clientCode"]');
+            const statEl = r.querySelector('[cell-id="dataObj.ordStatus"], [cell-id="dataObj.status"]');
+            const sideEl = r.querySelector('[cell-id="dataObj.side"], [cell-id="dataObj.ordSide"]');
+            const qtyEl = r.querySelector('[cell-id="dataObj.ordQty"], [cell-id="dataObj.qty"]');
+            const priceEl = r.querySelector('[cell-id="dataObj.ordPrice"], [cell-id="dataObj.price"]');
+            const fillEl = r.querySelector('[cell-id="dataObj.filledQty"], [cell-id="dataObj.execQty"]');
+            const pendEl = r.querySelector('[cell-id="dataObj.pendingQty"], [cell-id="dataObj.leavesQty"]');
+            const avgEl = r.querySelector('[cell-id="dataObj.avgPrice"]');
+            const valEl = r.querySelector('[cell-id="dataObj.orderValue"], [cell-id="dataObj.ordVal"]');
+
+            result.broker_order_list.push({
+              symbol: sym,
+              orderId: safeText(ordIdEl),
+              cashAccount: safeText(cashEl) || 'H9210',
+              status: safeText(statEl),
+              side: safeText(sideEl),
+              quantity: parseNum(safeText(qtyEl)) || 0,
+              price: parseNum(safeText(priceEl)) || 0,
+              filledQty: parseNum(safeText(fillEl)) || 0,
+              pendingQty: parseNum(safeText(pendEl)) || 0,
+              avgPrice: parseNum(safeText(avgEl)) || 0,
+              orderValue: parseNum(safeText(valEl)) || 0,
+            });
+            return;
+          }
 
           const totalQtyEl = r.querySelector('[cell-id="dataObj.profLossQty"]');
           const avaiQtyEl = r.querySelector('[cell-id="dataObj.avaiQtyDSE"]');
@@ -576,6 +605,7 @@
           tab: activeTab,
           market_watch_rows: mwRows,
           portfolio_rows: portData.portfolio_rows,
+          broker_order_list: portData.broker_order_list || [],
           account_summary: acctSummary,
           order_ticket_limits: ticketLimits,
           order_ticket_depth: ticketDepth,
@@ -590,6 +620,7 @@
           mw_first: mwRows[0] || null,
           mw_last: mwRows[mwRows.length - 1] || null,
           pf_len: portData.portfolio_rows.length,
+          ord_len: (portData.broker_order_list || []).length,
           acct: acctSummary,
           limits: ticketLimits,
           depth: ticketDepth,

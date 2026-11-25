@@ -257,7 +257,6 @@ def test_tradexpress_v1_layout_and_interactions(cockpit_server):
             "#tx-depth-table thead",
             "#tx-depth-table thead th",
             ".tx-depth-foot",
-            "#tx-broker-mirror-card",
         ]
         for sel in light_selectors:
             brightness = page.evaluate(f"""() => {{
@@ -354,12 +353,46 @@ def test_tradexpress_v1_layout_and_interactions(cockpit_server):
                 f"ACMEPL should render '—' (NO_HISTORY) or real sparkline: {row_text}"
             )
 
-        # 8c. LIVE BROKER MIRROR card displays ৳353.00
+        # 8c. Single Account Summary displays ৳353.00 and NO duplicate mirror card or dummy 50k button
         page.click("#tx-tab-account-summary")
         time.sleep(0.3)
-        bm_bp_text = page.locator("#tx-bm-bp").inner_text()
-        assert "353" in bm_bp_text, f"LIVE BROKER MIRROR Buying Power not showing ৳353.00: {bm_bp_text}"
-        assert bm_bp_text != "৳0.00", f"LIVE BROKER MIRROR stuck at ৳0.00: {bm_bp_text}"
+        acc_bp_text = page.locator("#tx-acc-buying-power").inner_text()
+        assert "353" in acc_bp_text, f"Account Summary Buying Power not showing ৳353.00: {acc_bp_text}"
+        assert page.locator("#tx-btn-reset-50k").count() == 0, "Dummy 50k reset button should be removed!"
+        assert page.locator("#tx-broker-mirror-card").count() == 0, "Duplicate broker mirror card should be removed!"
+
+        # 8d. Topbar Decision button is plain text "Decision" and zero overlap at 1280x800 & 1440x900
+        dec_btn_text = page.locator("#tx-analyze-decide-btn").inner_text().strip()
+        assert dec_btn_text == "Decision", f"Expected plain-text 'Decision' button, got: {dec_btn_text!r}"
+        for vp_w, vp_h in ((1280, 800), (1440, 900)):
+            page.set_viewport_size({"width": vp_w, "height": vp_h})
+            time.sleep(0.2)
+            overlaps = page.evaluate("""() => {
+                const items = Array.from(document.querySelectorAll('#tx-top-header .tx-brand-pill, #tx-top-header .tx-tele-item, #tx-top-header .topbar-market-pill, #tx-top-header .topbar-automation-control, #tx-top-header #tx-analyze-decide-btn, #tx-top-header #theme-toggle-btn'))
+                  .filter(el => el.offsetParent !== null)
+                  .map(el => ({ id: el.id || el.className, r: el.getBoundingClientRect() }))
+                  .sort((a, b) => a.r.left - b.r.left);
+                const bad = [];
+                for (let i = 0; i < items.length - 1; i++) {
+                    const a = items[i], b = items[i + 1];
+                    const sameRow = Math.abs(a.r.top - b.r.top) < 15;
+                    if (sameRow && a.r.right > b.r.left + 2) {
+                        bad.push(`${a.id} (${a.r.right}) > ${b.id} (${b.r.left})`);
+                    }
+                }
+                return bad;
+            }""")
+            assert not overlaps, f"[{vp_w}x{vp_h}] Topbar overlapping elements: {overlaps}"
+
+        # 8e. Companies with >= 7 real bars render real <svg> sparklines & non-NO_HISTORY signals
+        fav_tab = page.locator('button[data-cat="ALL"]')
+        if fav_tab.count() > 0:
+            fav_tab.click()
+            time.sleep(0.3)
+        bank_fav = page.locator('#watchlist-body tr[data-symbol="BANKASIA"]')
+        if bank_fav.count() > 0:
+            assert bank_fav.locator("svg.sparkline").count() > 0, "BANKASIA (>=7 bars) should render real SVG sparkline!"
+            assert "NO HISTORY" not in bank_fav.inner_text(), "BANKASIA (>=7 bars) should not show NO HISTORY!"
 
         # 9. Zero JS Console Errors
         assert len(js_errors) == 0, f"Encountered uncaught JS errors: {js_errors}"
@@ -423,21 +456,23 @@ def test_tradexpress_sprint5i_operator_workflows(cockpit_server):
         assert "19.20" in bank_text, f"BANKASIA LTP should show 19.20, got: {bank_text}"
         assert "17.50" not in bank_text, f"BANKASIA LTP should not show stale 17.50, got: {bank_text}"
 
-        # 3. Click Clean Dummy (৳50,000)
+        # 3. Call POST /api/tradexpress/shadow/reset (CLEAN_DUMMY ৳50,000) and verify UI updates
+        reset_req = urllib.request.Request(
+            f"{base_url}/api/tradexpress/shadow/reset",
+            data=py_json.dumps({"mode": "CLEAN_DUMMY", "capital": 50000.00}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(reset_req, timeout=3.0) as resp:
+            assert resp.status == 200
+
+        page.reload(wait_until="networkidle")
+        page.wait_for_selector("#tx-trade-workspace", state="visible", timeout=6000)
         page.click("#tx-tab-account-summary")
-        time.sleep(0.3)
-        page.click("#tx-btn-reset-50k")
-        time.sleep(0.6)
+        time.sleep(0.4)
 
-        # Assert toast notification does not show "undefined"
-        toast_el = page.locator("#toast")
-        if toast_el.is_visible():
-            toast_text = toast_el.inner_text()
-            assert "undefined" not in toast_text, f"Toast notification showed undefined: {toast_text}"
-
-        # Assert buying power updates to ৳50,000.00
+        # Assert buying power faithfully mirrors real H9210 (৳353.00)
         bp_val = page.locator("#tx-acc-buying-power").inner_text()
-        assert "50,000" in bp_val or "50000" in bp_val, f"Buying power should be 50,000, got: {bp_val}"
+        assert "353" in bp_val, f"Account Summary Buying Power should mirror ৳353.00, got: {bp_val}"
 
         # Portfolio tab shows 0 holdings (legacy 164580 BANKASIA 304 gone!)
         page.click("#tx-tab-portfolio")
@@ -448,19 +483,7 @@ def test_tradexpress_sprint5i_operator_workflows(cockpit_server):
         # Error banner is not visible / circuit breaker cleared
         assert not page.locator("#error-banner").is_visible(), "Error banner should be cleared!"
 
-        # 4. Click Mirror H9210 (৳353)
-        page.click("#tx-tab-account-summary")
-        time.sleep(0.3)
-        page.click("#tx-btn-reset-mirror")
-        time.sleep(0.6)
-        bp_val_353 = page.locator("#tx-acc-buying-power").inner_text()
-        assert "353" in bp_val_353, f"Buying power should be ৳353.00, got: {bp_val_353}"
-
-        # 5. Click Clean Dummy (৳50,000) again, then toggle Automation ON
-        page.click("#tx-btn-reset-50k")
-        time.sleep(0.6)
-
-        # Toggle automation ON
+        # 4. Toggle Auto-Trade ON
         auto_input = page.locator("#topbar-automation-toggle-input")
         if not auto_input.is_checked():
             page.locator("#topbar-automation-control label.ios-switch").click()

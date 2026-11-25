@@ -441,6 +441,16 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             eff_hist = list(history_list)
             if live_ltp > ZERO and eff_hist and eff_hist[-1].get("date") == state.clock_date.isoformat():
                 eff_hist[-1] = {**eff_hist[-1], "close": str(live_ltp)}
+            elif live_ltp > ZERO and eff_hist and eff_hist[-1].get("date", "") < state.clock_date.isoformat():
+                eff_hist.append({"date": state.clock_date.isoformat(), "close": str(live_ltp)})
+
+            eval_date = state.clock_date
+            if getattr(company, "source", "") in ("TRADEXPRESS_LIVE_CURVE", "TRADEXPRESS_PASSIVE", "STOCKNOW_HISTORY") and eff_hist:
+                try:
+                    eval_date = date.fromisoformat(str(eff_hist[-1]["date"])[:10])
+                except Exception:
+                    eval_date = state.clock_date
+
             company_proxy = SimpleNamespace(
                 symbol=company.symbol,
                 source=getattr(company, "source", "") or "",
@@ -452,7 +462,7 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
                 settlement_type=getattr(company, "settlement_type", "PUBLIC"),
                 symbol_category=getattr(company, "symbol_category", "A"),
             )
-            analysis, _quote = assess_company(company_proxy, rule, settings, state.clock_date, adapter)
+            analysis, _quote = assess_company(company_proxy, rule, settings, eval_date, adapter)
         company_lots = []
         company_basis = ZERO
         company_net = ZERO

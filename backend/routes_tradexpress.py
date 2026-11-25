@@ -166,9 +166,15 @@ def build_tradexpress_router(
         portfolio_id: str = "H9210_SHADOW",
         limit: int = 50,
     ):
-        """Lists simulated shadow orders mirroring TradeXpress Order List."""
+        """Lists passive BROKER H9210 Order List alongside simulated shadow orders."""
         simulator = TradeXpressShadowSimulator(database, settings)
-        return simulator.get_orders(portfolio_id=portfolio_id, status=status, limit=limit)
+        sim_orders = simulator.get_orders(portfolio_id=portfolio_id, status=status, limit=limit)
+        feed = get_global_passive_feed(database)
+        broker_orders = feed.get_broker_order_list() if feed else []
+        if status and broker_orders:
+            st_upper = status.strip().upper()
+            broker_orders = [o for o in broker_orders if st_upper in str(o.get("status") or "").upper()]
+        return broker_orders + sim_orders
 
     @router.post("/shadow-order")
     def submit_shadow_order(req: ShadowOrderRequest):

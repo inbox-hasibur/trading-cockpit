@@ -390,7 +390,7 @@ function renderSnapshot() {
       const modeText = tradingMode === "TEST_OFFHOURS" ? "Test Mode" : "Live Hours";
       chatSafetyNote.textContent = `Connected to StockNow portfolio ${name} #${id}, ${modeText}. Orders need your confirmation.`;
     } else {
-      chatSafetyNote.textContent = "Demo Paper Mode: Hermes executes actions on local simulated holdings with strict ledger reconciliation.";
+      chatSafetyNote.textContent = "Real TradeXpress Mirror · Decision Advisor Mode (read-only analysis & human-confirmed orders).";
     }
   }
 

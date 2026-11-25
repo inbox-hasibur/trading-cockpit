@@ -317,6 +317,37 @@ class TradeXpressPassiveFeed(MarketFeedAdapter):
         self._order_ticket_depth: dict[str, dict[str, Any]] = {}
         self._market_index: dict[str, Any] = {}
         self._intraday_series: dict[str, list[dict[str, Any]]] = {}
+        self._broker_order_list: list[dict[str, Any]] = []
+
+    def update_broker_order_list(self, orders: list[dict[str, Any]]) -> None:
+        cleaned: list[dict[str, Any]] = []
+        for item in orders:
+            if not isinstance(item, dict):
+                continue
+            raw_sym = str(item.get("symbol") or "").strip()
+            if not raw_sym:
+                continue
+            cleaned.append({
+                "symbol": from_tradexpress_symbol(raw_sym),
+                "tradexpress_symbol": raw_sym,
+                "order_ref": str(item.get("orderId") or item.get("order_ref") or ""),
+                "cash_account": str(item.get("cashAccount") or "H9210"),
+                "status": str(item.get("status") or ""),
+                "side": str(item.get("side") or "").upper(),
+                "quantity": int(float(item.get("quantity") or 0)),
+                "price": float(item.get("price") or 0),
+                "filled_qty": int(float(item.get("filledQty") or 0)),
+                "pending_qty": int(float(item.get("pendingQty") or 0)),
+                "avg_price": float(item.get("avgPrice") or 0),
+                "order_value": float(item.get("orderValue") or 0),
+                "source": "BROKER H9210",
+            })
+        with self._lock:
+            self._broker_order_list = cleaned
+
+    def get_broker_order_list(self) -> list[dict[str, Any]]:
+        with self._lock:
+            return list(self._broker_order_list)
 
     def update_order_ticket_depth(self, symbol: str, depth_data: dict[str, Any]) -> None:
         clean = from_tradexpress_symbol(symbol)
@@ -609,6 +640,7 @@ FOUNDATIONAL_GSC_SYMBOLS: set[str] = {
     "RENATA",
     "BEXIMCO",
     "ISLAMIBANK",
+    "WALTONHIL",
 }
 
 
@@ -885,6 +917,11 @@ def ingest_passive_snapshot(
         parsed_holdings = parse_ember_portfolio_rows(pf_rows)
         active_feed.update_holdings(parsed_holdings)
         holdings_updated = len(parsed_holdings)
+
+    # 2.5. Parse & Ingest Passive Broker Order List
+    broker_orders = snapshot_payload.get("broker_order_list")
+    if broker_orders is not None and isinstance(broker_orders, list) and (broker_orders or tab in ("order_list", "order list")):
+        active_feed.update_broker_order_list(broker_orders)
 
     # 3. Parse & Ingest Account Summary
     acct_data = snapshot_payload.get("account_summary")

@@ -6827,18 +6827,18 @@ button.local-avatar:hover {
 .tx-top-header,
 .tx-topbar {
   margin: 0 !important;
-  padding: 4px 10px !important;
-  min-height: 38px !important;
-  max-height: 42px !important;
+  padding: 6px 12px !important;
+  min-height: 48px !important;
+  max-height: none !important;
   border-bottom: 1px solid #1e293b !important;
   background: #0a0f18 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  gap: 8px !important;
+  gap: 8px 12px !important;
   flex-shrink: 0 !important;
-  flex-wrap: nowrap !important;
-  overflow: hidden !important;
+  flex-wrap: wrap !important;
+  overflow: visible !important;
   box-sizing: border-box !important;
   width: 100% !important;
   position: relative !important;
@@ -6849,31 +6849,31 @@ button.local-avatar:hover {
 .tx-topbar-brand {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
 .tx-topbar-telemetry {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
   flex-wrap: nowrap;
   flex-shrink: 1;
   min-width: 0;
   justify-content: flex-end;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1380px) {
   .tx-top-header,
   .tx-topbar {
     justify-content: flex-start !important;
     align-items: center !important;
     flex-wrap: wrap !important;
     height: auto !important;
-    min-height: 40px !important;
+    min-height: 48px !important;
     max-height: none !important;
-    padding: 4px 8px !important;
-    gap: 6px !important;
+    padding: 6px 10px !important;
+    gap: 8px !important;
     overflow: visible !important;
   }
 

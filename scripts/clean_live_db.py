@@ -67,8 +67,22 @@ def clean_live_database(db_path: Path | None = None, create_backup: bool = True)
         )
         session.execute(delete(TaxLot).where(TaxLot.portfolio_id.in_(legacy_pids)))
 
-        # Clear any synthetic/seeded price_history on DEMO_SEED or STOCKNOW_FAVORITES
-        for cp in session.scalars(select_all := __import__("sqlalchemy").select(CompanyProfile)):
+        # Clear any synthetic/seeded price_history and strip legacy dummy suffixes from company names
+        clean_name_overrides = {
+            "GP": "Grameenphone Ltd.",
+            "BXPHARMA": "Beximco Pharmaceuticals Ltd.",
+            "SQURPHARMA": "Square Pharmaceuticals PLC",
+            "BANKASIA": "Bank Asia PLC",
+            "EXIM1STMF": "EXIM Bank 1st Mutual Fund",
+        }
+        dummy_suffixes = (" · Demo", " · Crash", " · Rally", " · Pullback", " · Normal", " · Recovery")
+        for cp in session.scalars(__import__("sqlalchemy").select(CompanyProfile)):
+            if cp.symbol in clean_name_overrides and any(s in (cp.name or "") for s in dummy_suffixes):
+                cp.name = clean_name_overrides[cp.symbol]
+            elif cp.name:
+                for suf in dummy_suffixes:
+                    if suf in cp.name:
+                        cp.name = cp.name.replace(suf, "").strip()
             if getattr(cp, "source", "") in ("DEMO_SEED", "STOCKNOW_FAVORITES"):
                 cp.price_history = []
                 flag_modified(cp, "price_history")

@@ -625,7 +625,18 @@ Reconciliation of all audit findings and architectural items from historical MVP
 
 ---
 
-### 🏦 Sprint 6B (Checkpoint 3 — Parked Until Checkpoints 1 & 2 Prove Accurate): Production Graduation to Live TradeXpress 2-Step Execution & iBroker EOD Audit
+### ✅ Sprint 6B (Completed): Fix Real 30d StockNow 6-Array Curve Fetcher, Clean Topbar & Single H9210 Account Summary, Dummy Text Purge & Passive Order List Capture
+
+- [x] **Real 30-Day Public StockNow 6-Array Curve Fix (`backend/adapters/tradexpress/history_provider.py`, `backend/portfolio.py`):**
+  - Decoded StockNow's real `[opens, highs, lows, closes, volumes, timestamps]` 6-parallel-array schema (400 daily bars), enforced `len(bars) >= 7` before counting a symbol as synced, evaluated `analyze_curve` using the latest real bar date, and added `WALTONHIL` to `FOUNDATIONAL_GSC_SYMBOLS`.
+- [x] **Topbar Redesign & Single Real `H9210` Account Summary (`frontend/`):**
+  - Spacious non-overlapping `#tx-top-header` (`1280x800` & `1440x900` Playwright verified), plain-text `Decision` button (`#tx-analyze-decide-btn`), and unified `Account Summary` mirroring real `H9210` without duplicate mirror box or dummy 50k reset buttons.
+- [x] **Dummy Label Purge & Passive `Order List` Capture (`scripts/clean_live_db.py`, `extension/tradexpress_mirror/content.js`, `backend/routes_tradexpress.py`):**
+  - Stripped `" · Demo"` / `" · Crash"` suffixes from company names, replaced `"Demo Paper Mode"` in `#chat-safety-note`, and passively extracted TradeXpress `Order List` rows (`BROKER H9210`) into `/api/tradexpress/orders`.
+
+---
+
+### 🏦 Sprint 6C (Checkpoint 3 — Parked Until Checkpoints 1 & 2 Prove Accurate): Production Graduation to Live TradeXpress 2-Step Execution & iBroker EOD Audit
 
 - [ ] **Production TradeXpress 2-Step Executor (`TRADEXPRESS_LIVE` Mode):**
   - Operator-permissioned graduation gate enabling live order dispatch to DSE.

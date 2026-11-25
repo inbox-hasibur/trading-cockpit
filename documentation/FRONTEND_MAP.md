@@ -1,6 +1,6 @@
 # 🗺️ Humming Bird Trading Cockpit V1 — Frontend Architecture & Contract Map
 
-> **Auto-Generated on:** `2026-11-25 06:29:10 UTC` via `scripts/generate_frontend_map.py`  
+> **Auto-Generated on:** `2026-11-25 07:18:41 UTC` via `scripts/generate_frontend_map.py`  
 > **Zero-Regression Mandate:** 0 `MISSING_LIGHT_OVERRIDE` CSS issues, 0 Field Contract mismatches.
 
 ---

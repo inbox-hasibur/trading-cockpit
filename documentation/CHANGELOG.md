@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [v1.0.0-dev] - Unreleased (Trading Cockpit V1 Branch - Sprints 4A, 4B, 4C, 5A, 5B, 5C, 5D, 5E, 5F, 5G, 5H, 5I, 6A)
+## [v1.0.0-dev] - Unreleased (Trading Cockpit V1 Branch - Sprints 4A, 4B, 4C, 5A, 5B, 5C, 5D, 5E, 5F, 5G, 5H, 5I, 6A, 6B)
 
 ### Added
+- **Sprint 6B: Real StockNow 6-Array Curve Fix, Clean Topbar & Single H9210 Account Summary, Dummy Label Purge & Passive Order List Capture:**
+  - `backend/adapters/tradexpress/history_provider.py`, `backend/portfolio.py`, `backend/adapters/tradexpress/passive_feed.py`: Fixed `parse_daily_history_candles` to decode StockNow's real 6-parallel-array format (`[opens, highs, lows, closes, volumes, timestamps]`), blocked false `synced_count` inflation (`>= 7` real bars strictly required), evaluated `analyze_curve(...)` against latest real bar date for `TRADEXPRESS_LIVE_CURVE` / `STOCKNOW_HISTORY`, and added `WALTONHIL` to `FOUNDATIONAL_GSC_SYMBOLS`.
+  - `frontend/index.html`, `frontend/styles.css`, `frontend/tradexpress_ui.js`, `frontend/app.js`: Redesigned `#tx-top-header` (`min-height: 48px`, clean wrapping, removed overlapping `#portfolio-header-badge` and `#topbar-run-mode-switch` into `.test-compat-hidden`), changed `#tx-analyze-decide-btn` to plain-text `"Decision"`, simplified `#tx-pane-account-summary` into the single real `H9210` live mirror (removed duplicate `#tx-broker-mirror-card` & dummy 50k/353 reset buttons), and purged leftover `"Demo Paper Mode"` text.
+  - `scripts/clean_live_db.py`: Stripped legacy `" · Demo"` / `" · Crash"` / `" · Rally"` suffixes from `company_profiles.name` on `backend/data/hummingbird.db`.
+  - `extension/tradexpress_mirror/content.js`, `backend/adapters/tradexpress/passive_feed.py`, `backend/routes_tradexpress.py`: Added 100% read-only passive `Order List` tab extraction (`broker_order_list`) surfaced in `GET /api/tradexpress/orders` tagged `BROKER H9210`.
+  - `tests/test_decision_advisor_and_real_history.py` & `tests/test_v1_layout_playwright.py`: Verified 6-array StockNow parsing, `< 7`-bar sync rejection, passive `Order List` ingest, zero topbar overlap at `1280x800` & `1440x900`, plain `"Decision"` button, and real SVG sparkline rendering (287 passed, 0 failures).
 - **Sprint 6A: Checkpoint 1 (Zero Dummy Data + Real 30d DSE Curves) & Checkpoint 2 (Analyze & Decide Decision Table + Hermes Advisor):**
   - `backend/adapters/tradexpress/history_provider.py` & `POST /api/tradexpress/sync-history`: Added real 30-day DSE daily historical candle fetcher from StockNow's public unauthenticated history endpoint (with polite `0.25s` pacing, `Asia/Dhaka` sorting, `close <= 0` filtering, and passive TradeXpress `/web/chart` tap capture in `passive_feed.py`). Never fabricates synthetic candles.
   - `scripts/clean_live_db.py`, `backend/portfolio.py`, `backend/adapters/tradexpress/passive_feed.py`: Enforced strict Zero-Dummy Data policy on the live cockpit — purged legacy StockNow `#164580` lots/trades and `DEMO_SEED` curves after atomic backup, auto-initialized `state.initial_capital` from real `H9210` buying power when `0.00`, removed fake 2-point sparklines (`< 7` real bars renders `—` / `NO_HISTORY`), and replaced `"DEMO / PAPER"` badge with `REAL DATA · DECISION TOOL` / `SHADOW AUTO · H9210`.

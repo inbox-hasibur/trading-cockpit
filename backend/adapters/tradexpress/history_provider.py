@@ -35,7 +35,16 @@ def parse_daily_history_candles(raw_payload: Any, sessions: int = 30) -> list[di
     """
     rows: list[Any] = []
     if isinstance(raw_payload, list):
-        rows = raw_payload
+        # StockNow native 6-parallel-array format: [opens, highs, lows, closes, volumes, timestamps]
+        if len(raw_payload) == 6 and all(isinstance(sub, list) for sub in raw_payload):
+            opens, highs, lows, closes, volumes, timestamps = raw_payload
+            n = min(len(opens), len(highs), len(lows), len(closes), len(volumes), len(timestamps))
+            rows = [
+                [timestamps[i], opens[i], highs[i], lows[i], closes[i], volumes[i]]
+                for i in range(n)
+            ]
+        else:
+            rows = raw_payload
     elif isinstance(raw_payload, dict):
         for key in ("data", "history", "candles", "bars", "results", "s"):
             val = raw_payload.get(key)
@@ -221,11 +230,11 @@ async def sync_watchlist_real_history(
     async with httpx.AsyncClient(timeout=10.0) as client:
         for idx, sym in enumerate(target_symbols):
             bars = await fetch_real_daily_history(sym, sessions=sessions, client=client)
-            if bars:
+            if len(bars) >= 7:
                 fetched_map[sym] = bars
                 synced_symbols.append(sym)
             else:
-                failed_symbols.append(sym)
+                failed_symbols.append(f"{sym} ({len(bars)} bars)")
             if pace_seconds > 0 and idx < len(target_symbols) - 1:
                 await asyncio.sleep(pace_seconds)
 

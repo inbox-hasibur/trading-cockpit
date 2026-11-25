@@ -792,27 +792,18 @@
       dsexVal.className = `tx-tele-val tabular-nums ${Number(dseIdx.dsex_chg || 0) >= 0 ? "positive" : "negative"}`;
     }
 
-    // Account Summary values
-    setText("tx-acc-settled-cash", formatMoney(metrics.available_cash || 0));
-    setText("tx-acc-buying-power", formatMoney(bp));
-    setText("tx-acc-blocked", "৳0.00");
-    setText("tx-acc-unsettled-sales", formatMoney(snapshot.unsettled_sales_bdt || metrics.unsettled_proceeds || 0));
+    // Account Summary values (Single Real H9210 Live Mirror; never fake)
+    const bm = snapshot.broker_mirror_account || {};
+    const hasMirror = Boolean(bm.last_updated || (bm.buying_power && bm.buying_power > 0) || (bm.cash_balance && bm.cash_balance > 0));
+    const liveBp = (bm.buying_power !== undefined && bm.buying_power > 0) ? bm.buying_power : (bm.cash_balance || 0);
+    setText("tx-acc-customer-no", bm.customer_number || "H9210");
+    setText("tx-acc-settled-cash", hasMirror ? formatMoney(bm.cash_balance || 0) : "—");
+    setText("tx-acc-buying-power", hasMirror ? formatMoney(liveBp || bp || 0) : (bp > 0 ? formatMoney(bp) : "—"));
+    setText("tx-acc-blocked", hasMirror ? formatMoney(bm.blocked_amount || 0) : "—");
+    setText("tx-acc-unsettled-sales", hasMirror ? formatMoney(bm.unsettled_sales || 0) : "—");
+    setText("tx-acc-withdrawable", hasMirror ? formatMoney(bm.cash_available_for_withdrawal || bm.cash_balance || 0) : "—");
     setText("tx-acc-realized-pnl", formatMoney(metrics.realized_pnl || 0));
     setText("tx-acc-unrealized-pnl", formatMoney(metrics.unrealized_pnl || 0));
-
-    // Live Broker Mirror (H9210) Card values
-    const bm = snapshot.broker_mirror_account || {};
-    const liveBp = (bm.buying_power !== undefined && bm.buying_power > 0) ? bm.buying_power : (bm.cash_balance || 0);
-    setText("tx-bm-cash", formatMoney(bm.cash_balance || 0));
-    setText("tx-bm-bp", formatMoney(liveBp || 0));
-    setText("tx-bm-unsettled", formatMoney(bm.unsettled_sales || 0));
-    setText("tx-bm-withdrawable", formatMoney(bm.cash_available_for_withdrawal || bm.cash_balance || 0));
-    if (bm.last_updated) {
-      try {
-        const d = new Date(bm.last_updated);
-        setText("tx-broker-mirror-time", `Updated: ${d.toLocaleTimeString()}`);
-      } catch (_) {}
-    }
 
     // Donut chart
     renderAccountDonut(
@@ -931,57 +922,6 @@
     }
     if (heldOnly && typeof window.renderWatchlist === "function") {
       heldOnly.addEventListener("change", () => window.renderWatchlist());
-    }
-
-    // Shadow Simulator Reset Buttons
-    const resetMirrorBtn = document.getElementById("tx-btn-reset-mirror");
-    const reset50kBtn = document.getElementById("tx-btn-reset-50k");
-
-    async function handleShadowReset(initialCash, label, mode = "CLEAN_DUMMY") {
-      try {
-        const res = await fetch("/api/tradexpress/shadow/reset", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ mode: mode, capital: initialCash, initial_cash: initialCash, portfolio_id: "H9210_SHADOW" }),
-        });
-        const data = await res.json();
-        if (data.ok || data.status === "RESET_OK" || data.status === "RESET_SUCCESS") {
-          const eb = document.getElementById("error-banner");
-          if (eb) eb.hidden = true;
-          if (typeof window.notify === "function") {
-            window.notify(`Shadow dummy reset: ${label} (৳${initialCash.toLocaleString()})`, false);
-          }
-          if (typeof window.refreshSnapshot === "function") {
-            window.refreshSnapshot();
-          } else if (typeof window.refresh === "function") {
-            window.refresh();
-          }
-          loadOrders();
-        } else {
-          const errText = data.detail || data.error || data.message || res.statusText || "Unknown error";
-          if (typeof window.notify === "function") {
-            window.notify(`Shadow reset failed: ${errText}`, true);
-          }
-        }
-      } catch (err) {
-        if (typeof window.notify === "function") {
-          window.notify(`Reset error: ${err.message}`, true);
-        }
-      }
-    }
-
-    if (resetMirrorBtn) {
-      resetMirrorBtn.addEventListener("click", () => {
-        const bm = state.lastSnapshot?.broker_mirror_account;
-        const liveCash = (bm && bm.buying_power > 0) ? bm.buying_power : ((bm && bm.cash_balance > 0) ? bm.cash_balance : 353.00);
-        handleShadowReset(liveCash, "Mirror H9210 Cash", "MIRROR_H9210");
-      });
-    }
-
-    if (reset50kBtn) {
-      reset50kBtn.addEventListener("click", () => {
-        handleShadowReset(50000.00, "Clean Dummy Capital", "CLEAN_DUMMY");
-      });
     }
 
     // Passive Spy pill button navigates to Settings feed card
