@@ -613,6 +613,20 @@ Reconciliation of all audit findings and architectural items from historical MVP
 
 ---
 
+### ✅ Sprint 6A (Completed): Checkpoint 1 (Zero Dummy Data + Real 30d DSE Curves) & Checkpoint 2 (`Analyze & Decide` Decision Table + Hermes Advisor)
+
+- [x] **Checkpoint 1 — Real 30-Day DSE Historical Candle Provider (`backend/adapters/tradexpress/history_provider.py`):**
+  - Unauthenticated public StockNow `1D` history fetcher + passive TradeXpress `/web/chart` tap integration (`POST /api/tradexpress/sync-history`).
+  - Zero-Dummy Curve Guard (`backend/portfolio.py`, `frontend/app.js`): `< 7` real candles renders `—` (`NO_HISTORY`), never synthetic 2-point curves or `DEMO_SEED` data.
+  - Live DB sanitizer (`scripts/clean_live_db.py`) + auto `H9210` real buying power mirror on clean boot + replaced `"DEMO / PAPER"` badge with `REAL DATA · DECISION TOOL` / `SHADOW AUTO · H9210`.
+- [x] **Checkpoint 2 — Actionable Decision Engine & Hermes Advisor (`backend/engine/decision_advisor.py`):**
+  - Evaluates `GSC_L1`, `GSC_L2`, `GSC`, and held lots strictly from real TradeXpress quotes + verified 7–30d curves (`GET /api/tradexpress/decisions`, `GET /k/decisions/analyze`, `hb_analyze_market` — 25 tools total).
+  - Dedicated `📊 Analyze & Decide` topbar button, `📈 Sync 30d Curves` button, and `#tx-decisions-view` table with `[Load in Ticket]` and `[Ask Hermes]` actions + full Light Mode parity.
+
+---
+
+### 🏦 Sprint 6B (Checkpoint 3 — Parked Until Checkpoints 1 & 2 Prove Accurate): Production Graduation to Live TradeXpress 2-Step Execution & iBroker EOD Audit
+
 - [ ] **Production TradeXpress 2-Step Executor (`TRADEXPRESS_LIVE` Mode):**
   - Operator-permissioned graduation gate enabling live order dispatch to DSE.
   - Automated 2-step execution: `New Order - <SYMBOL>'PB` -> read-back verification -> `Confirm Order` modal click.

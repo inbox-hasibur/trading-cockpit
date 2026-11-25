@@ -30,5 +30,6 @@ provides_tools:
   - hb_caps_set
   - hb_feed_status
   - hb_learning_review
+  - hb_analyze_market
 provides_hooks:
   - pre_tool_call

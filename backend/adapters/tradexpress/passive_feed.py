@@ -408,6 +408,29 @@ class TradeXpressPassiveFeed(MarketFeedAdapter):
                     self._net_tap_endpoints.add(clean_ep)
 
                 self._net_tap_events.append(ev)
+                if endpoint and "/web/chart" in str(endpoint).lower():
+                    chart_payload = ev.get("payload") or ev.get("body") or ev.get("response") or ev.get("data")
+                    if isinstance(chart_payload, str):
+                        try:
+                            chart_payload = json.loads(chart_payload)
+                        except Exception:
+                            chart_payload = None
+                    if isinstance(chart_payload, dict) and self.database is not None:
+                        try:
+                            from sqlalchemy.orm.attributes import flag_modified
+                            from backend.adapters.tradexpress.history_provider import parse_tradexpress_chart_payload
+
+                            chart_sym, chart_bars = parse_tradexpress_chart_payload(chart_payload)
+                            if chart_sym and chart_bars:
+                                with self.database.write() as session:
+                                    cp = session.get(CompanyProfile, chart_sym)
+                                    if cp is not None:
+                                        cp.price_history = chart_bars[-30:]
+                                        flag_modified(cp, "price_history")
+                                        cp.source = "TRADEXPRESS_LIVE_CURVE"
+                                        session.flush()
+                        except Exception as chart_err:
+                            logger.debug("Passive /web/chart parse skipped: %s", chart_err)
                 try:
                     lines_to_write.append(json.dumps(ev, default=str))
                 except Exception:
@@ -901,6 +924,15 @@ def ingest_passive_snapshot(
             state = portfolio_state(session)
             if summary.unsettled_sales > ZERO or not is_offhours_closed:
                 state.unsettled_sales_bdt = summary.unsettled_sales
+            if (state.initial_capital or ZERO) <= ZERO:
+                real_bp = summary.buying_power if summary.buying_power > ZERO else summary.cash_balance
+                if real_bp > ZERO:
+                    from backend.database import TaxLot, TradeLog
+
+                    has_trades = session.scalar(select(TradeLog.id).where(TradeLog.portfolio_id == "H9210_SHADOW").limit(1)) is not None
+                    has_lots = session.scalar(select(TaxLot.id).where(TaxLot.portfolio_id == "H9210_SHADOW").limit(1)) is not None
+                    if not has_trades and not has_lots:
+                        state.initial_capital = real_bp
             session.flush()
 
     # 3.5. Ingest net tap events if present in snapshot

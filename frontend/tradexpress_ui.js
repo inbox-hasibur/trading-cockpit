@@ -65,6 +65,7 @@
 
     const views = {
       trade: document.getElementById("view-dashboard") || document.getElementById("tx-trade-workspace"),
+      decisions: document.getElementById("tx-decisions-view"),
       heatmap: document.getElementById("view-heatmap-wrap"),
       rules: document.getElementById("view-rules-wrap"),
       ledger: document.getElementById("view-ledger-wrap"),
@@ -96,7 +97,9 @@
       }
     }
 
-    if (viewName === "learning") {
+    if (viewName === "decisions") {
+      loadDecisions();
+    } else if (viewName === "learning") {
       loadLearningSummary();
     } else if (viewName === "settings") {
       loadFeedStatus();
@@ -1032,9 +1035,167 @@
     loadFeedStatus();
     selectSymbolForTicket(state.selectedSymbol || "BANKASIA");
 
+    // Checkpoint 1 & 2: Sync 30d Curves & Analyze & Decide
+    const analyzeDecideBtn = document.getElementById("tx-analyze-decide-btn");
+    const syncHistoryBtn = document.getElementById("tx-sync-history-btn");
+    const decSyncBtn = document.getElementById("tx-decisions-sync-btn");
+    const decRefreshBtn = document.getElementById("tx-decisions-refresh-btn");
+
+    if (analyzeDecideBtn) {
+      analyzeDecideBtn.addEventListener("click", () => {
+        switchNavView("decisions");
+      });
+    }
+    if (syncHistoryBtn) {
+      syncHistoryBtn.addEventListener("click", () => sync30dCurves(syncHistoryBtn));
+    }
+    if (decSyncBtn) {
+      decSyncBtn.addEventListener("click", () => sync30dCurves(decSyncBtn));
+    }
+    if (decRefreshBtn) {
+      decRefreshBtn.addEventListener("click", () => loadDecisions());
+    }
+
     // Auto poll orders and feed status
     setInterval(loadOrders, 10000);
     setInterval(loadFeedStatus, 10000);
+  }
+
+  async function sync30dCurves(btn) {
+    const origText = btn ? btn.textContent : "";
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "⏳ Syncing 30d...";
+    }
+    try {
+      const res = await fetch("/api/tradexpress/sync-history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessions: 30 }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        const label = `✓ ${data.synced_count || 0} Real Curves`;
+        const mwBtn = document.getElementById("tx-sync-history-btn");
+        if (mwBtn) mwBtn.textContent = label;
+        if (btn && btn !== mwBtn) btn.textContent = label;
+        if (typeof window.notify === "function") {
+          window.notify(`Synced ${data.synced_count || 0} real 30-day DSE curves.`, false);
+        }
+        if (typeof window.refreshSnapshot === "function") {
+          window.refreshSnapshot();
+        }
+        if (state.activeNavView === "decisions") {
+          loadDecisions();
+        }
+      } else if (typeof window.notify === "function") {
+        window.notify(`Curve sync failed: ${data.detail || res.statusText}`, true);
+        if (btn) btn.textContent = origText;
+      }
+    } catch (err) {
+      if (typeof window.notify === "function") {
+        window.notify(`Curve sync error: ${err.message}`, true);
+      }
+      if (btn) btn.textContent = origText;
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function loadDecisions() {
+    const tbody = document.getElementById("tx-decisions-tbody");
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="11" class="loading-cell">Analyzing real TradeXpress quotes and 30d DSE curves…</td></tr>';
+    }
+    try {
+      const res = await fetch("/api/tradexpress/decisions");
+      if (!res.ok) throw new Error(res.statusText || "Failed to load decisions");
+      const data = await res.json();
+      const summary = data.data_truth_summary || {};
+      setText("tx-dec-live-quotes", String(summary.live_quotes_count ?? 0));
+      setText("tx-dec-verified-curves", String(summary.verified_curves_count ?? 0));
+      setText("tx-dec-h9210-bp", formatMoney(summary.real_h9210_bp ?? 0));
+      setText("tx-dec-buy-count", String(summary.buy_ideas_count ?? 0));
+      setText("tx-dec-sell-count", String(summary.sell_ideas_count ?? 0));
+
+      const rows = data.all_decisions || [];
+      if (!tbody) return;
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="11" class="loading-cell">No watchlist or held symbols found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = rows.map((r) => {
+        const badgeClass =
+          r.action === "BUY_CANDIDATE" ? "positive" :
+          r.action === "SELL_CANDIDATE" ? "negative" :
+          r.action === "BLOCKED" ? "negative" : "muted";
+        const srText = (r.support > 0 && r.resistance > 0) ? `${Number(r.support).toFixed(2)} – ${Number(r.resistance).toFixed(2)}` : "—";
+        const upsideText = r.history_verified ? `${r.est_net_upside_pct >= 0 ? "+" : ""}${Number(r.est_net_upside_pct).toFixed(2)}%` : "—";
+        const bidOfferText = `${Number(r.bid || 0).toFixed(2)} / ${Number(r.offer || 0).toFixed(2)}`;
+        const qtyText = r.action === "SELL_CANDIDATE" ? `${r.mature_qty || 0} sell` : `${r.affordable_qty_h9210 || 0}`;
+        return `
+          <tr data-dec-symbol="${r.symbol}">
+            <td><strong>${r.symbol}</strong> <span class="muted small">(${r.category}/${r.settlement_type})</span></td>
+            <td>${r.tier}</td>
+            <td><span class="tx-dec-badge ${badgeClass}">${r.action}</span></td>
+            <td class="align-right tabular-nums">${Number(r.ltp || 0).toFixed(2)}</td>
+            <td class="align-right tabular-nums">${bidOfferText}</td>
+            <td class="align-right tabular-nums"><strong>${Number(r.suggested_limit_price || 0).toFixed(2)}</strong></td>
+            <td class="align-right tabular-nums">${srText}</td>
+            <td class="align-right tabular-nums ${r.est_net_upside_pct > 0 ? "positive" : "muted"}">${upsideText}</td>
+            <td class="align-right tabular-nums">${qtyText}</td>
+            <td class="tx-dec-reason">${r.reason || ""}</td>
+            <td class="align-center tx-dec-row-actions">
+              <button type="button" class="button tiny secondary tx-dec-load-btn" data-sym="${r.symbol}" data-action="${r.action}" data-price="${r.suggested_limit_price}">Load in Ticket</button>
+              <button type="button" class="button tiny primary tx-dec-hermes-btn" data-sym="${r.symbol}" data-action="${r.action}" data-price="${r.suggested_limit_price}" data-upside="${r.est_net_upside_pct}" data-sr="${srText}">Ask Hermes</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      tbody.querySelectorAll(".tx-dec-load-btn").forEach((b) => {
+        b.addEventListener("click", () => {
+          const sym = b.dataset.sym;
+          const act = b.dataset.action;
+          const pr = b.dataset.price;
+          switchNavView("trade");
+          selectSymbolForTicket(sym);
+          setOrderSide(act === "SELL_CANDIDATE" ? "SELL" : "BUY");
+          const pInp = document.getElementById("tx-order-price");
+          if (pInp && Number(pr) > 0) {
+            pInp.value = Number(pr).toFixed(2);
+            updateOrderTicketCalculations();
+          }
+        });
+      });
+
+      tbody.querySelectorAll(".tx-dec-hermes-btn").forEach((b) => {
+        b.addEventListener("click", () => {
+          const sym = b.dataset.sym;
+          const act = b.dataset.action;
+          const pr = b.dataset.price;
+          const up = b.dataset.upside;
+          const sr = b.dataset.sr;
+          const prompt = `Check ${sym} (${act}) at Limit ৳${pr} (Support-Resist ${sr}, Est Net Upside ${up}%). Use hb_analyze_market and our GSC/L1/L2 + Strict No-Loss rules to advise in Banglish: should I place this order manually on TradeXpress today?`;
+          const chatTab = document.getElementById("tab-hermes-chat");
+          if (chatTab) chatTab.click();
+          const chatInput = document.getElementById("chat-input");
+          const chatForm = document.getElementById("chat-form");
+          if (chatInput) {
+            chatInput.value = prompt;
+            chatInput.focus();
+            if (chatForm) {
+              chatForm.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+            }
+          }
+        });
+      });
+    } catch (err) {
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="11" class="negative">Error loading decisions: ${err.message}</td></tr>`;
+      }
+    }
   }
 
   // Expose global controller
@@ -1046,6 +1207,8 @@
     switchNavView,
     switchMonPane,
     loadOrders,
+    loadDecisions,
+    sync30dCurves,
     loadLearningSummary,
     loadFeedStatus,
     updateFromSnapshot,

@@ -1,6 +1,6 @@
 # 🗺️ Humming Bird Trading Cockpit V1 — Frontend Architecture & Contract Map
 
-> **Auto-Generated on:** `2026-11-24 09:20:35 UTC` via `scripts/generate_frontend_map.py`  
+> **Auto-Generated on:** `2026-11-25 06:29:10 UTC` via `scripts/generate_frontend_map.py`  
 > **Zero-Regression Mandate:** 0 `MISSING_LIGHT_OVERRIDE` CSS issues, 0 Field Contract mismatches.
 
 ---
@@ -74,6 +74,9 @@ Audit of `.tx-*`, `#tx-*`, and critical ticket/search elements in `styles.css` v
 | `.tx-confirm-banner.buy` | `#10b981` | `#dcfce7` | ✅ PARITY_OK |
 | `.tx-confirm-note` | `rgba(0, 0, 0, 0.2)` | `#f8fafc` | ✅ PARITY_OK |
 | `.tx-confirm-actions` | `#0a0f18` | `#f8fafc` | ✅ PARITY_OK |
+| `.tx-decisions-summary-bar` | `#0f172a` | `#ffffff` | ✅ PARITY_OK |
+| `.tx-decisions-scroll` | `#0f172a` | `#ffffff` | ✅ PARITY_OK |
+| `.tx-decisions-table th` | `#111827` | `#f1f5f9` | ✅ PARITY_OK |
 
 ---
 
@@ -97,6 +100,7 @@ Verification of data contracts between `backend/portfolio.py` and frontend JS (`
 | Company View (`company.*` / `c.*`) | `estimated_net_value` | Yes | ✅ CONTRACT_VERIFIED |
 | Company View (`company.*` / `c.*`) | `favorite` | Yes | ✅ CONTRACT_VERIFIED |
 | Company View (`company.*` / `c.*`) | `history` | Yes | ✅ CONTRACT_VERIFIED |
+| Company View (`company.*` / `c.*`) | `history_days` | Yes | ✅ CONTRACT_VERIFIED |
 | Company View (`company.*` / `c.*`) | `hit_52w_high` | Yes | ✅ CONTRACT_VERIFIED |
 | Company View (`company.*` / `c.*`) | `hit_upper_circuit` | Yes | ✅ CONTRACT_VERIFIED |
 | Company View (`company.*` / `c.*`) | `hold_day_label` | Yes | ✅ CONTRACT_VERIFIED |
@@ -174,8 +178,8 @@ Mapping of client functions to active DOM elements and localhost API endpoints:
 | `frontend/app.js` | `api` | `#buy-allocation`, `#chat-send`, `#company-enabled`, `#engine-state`, `#next-session`, `#run-cycle` | — |
 | `frontend/app.js` | `updateControls` | `#buy-allocation`, `#chat-send`, `#company-enabled`, `#engine-state`, `#error-banner`, `#next-session` | `/api/portfolio` |
 | `frontend/app.js` | `refresh` | `#error-banner`, `#portfolio-header-badge`, `#portfolio-header-badge-dot`, `#portfolio-header-badge-text` | `/api/portfolio` |
-| `frontend/app.js` | `mutate` | `#footer-mode-tag`, `#portfolio-header-badge`, `#portfolio-header-badge-dot`, `#portfolio-header-badge-text` | — |
-| `frontend/app.js` | `isLiveSource` | `#chat-safety-note`, `#footer-mode-tag`, `#portfolio-header-badge`, `#portfolio-header-badge-dot`, `#portfolio-header-badge-text` | — |
+| `frontend/app.js` | `mutate` | `#portfolio-header-badge`, `#portfolio-header-badge-dot`, `#portfolio-header-badge-text` | — |
+| `frontend/app.js` | `isLiveSource` | `#footer-mode-tag`, `#portfolio-header-badge`, `#portfolio-header-badge-dot`, `#portfolio-header-badge-text` | — |
 | `frontend/app.js` | `renderPortfolioHeaderBadge` | `#chat-safety-note`, `#footer-mode-tag`, `#portfolio-header-badge`, `#portfolio-header-badge-dot`, `#portfolio-header-badge-text` | — |
 | `frontend/app.js` | `renderSnapshot` | `#chat-safety-note`, `#footer-mode-tag`, `#metric-total-gain` | — |
 | `frontend/app.js` | `renderEquitySparkline` | `#active-holdings-body`, `#active-holdings-foot`, `#equity-sparkline`, `#holdings-unrealized-gain` | — |

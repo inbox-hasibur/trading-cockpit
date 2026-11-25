@@ -89,11 +89,12 @@ ALL_EXPECTED_TOOLS = [
     "hb_caps_set",
     "hb_feed_status",
     "hb_learning_review",
+    "hb_analyze_market",
 ]
 
 
 def test_plugin_yaml_manifest():
-    """Manifest declares proper metadata, 24 tools, and pre_tool_call hook."""
+    """Manifest declares proper metadata, 25 tools, and pre_tool_call hook."""
     with open("plugins/humming_bird/plugin.yaml", "r", encoding="utf-8") as f:
         manifest = yaml.safe_load(f)
 
@@ -106,11 +107,11 @@ def test_plugin_yaml_manifest():
 
 
 def test_plugin_registration():
-    """register(ctx) registers all 24 tools and the pre_tool_call hook."""
+    """register(ctx) registers all 25 tools and the pre_tool_call hook."""
     ctx = MagicMock()
     register(ctx)
 
-    assert ctx.register_tool.call_count == 24
+    assert ctx.register_tool.call_count == 25
     registered_names = [call.kwargs["name"] for call in ctx.register_tool.call_args_list]
     for name in ALL_EXPECTED_TOOLS:
         assert name in registered_names
@@ -141,9 +142,9 @@ def test_skills_registration():
 
 
 def test_schemas_structure():
-    """All 24 schemas conform to JSON Schema parameter specifications."""
+    """All 25 schemas conform to JSON Schema parameter specifications."""
     from plugins.humming_bird import _TOOLS
-    assert len(_TOOLS) == 24
+    assert len(_TOOLS) == 25
     for name, schema, handler in _TOOLS:
         assert "name" in schema
         assert "description" in schema

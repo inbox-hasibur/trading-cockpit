@@ -484,4 +484,5 @@ classDiagram
 - [x] **Verified:** 2-Touchpoint Hard Broker Firewall rule enforced in documentation and agent guidelines.
 - [x] **Verified:** Midnight maintenance window (`23:45–01:00`) causes `Authentication timed out`.
 - [x] **Verified (Sprint 5):** Live-Data Dummy Mirror Simulator (`SHADOW_DUMMY` mode) and 100% Read-Only Passive Extension Mirror (`extension/tradexpress_mirror/`).
-- [ ] **Pending (Sprint 6):** Automated 2-step execution harness with live order verification.
+- [x] **Verified (Sprint 6A):** Zero-Dummy Live DB, Real 30d DSE Historical Curves (`history_provider.py` + `/web/chart` passive tap), `Market` tab `Detail Quote` (`52wk High/Low` + `VWAP` + `News` panel telemetry notes), and Checkpoint 2 `Analyze & Decide` Decision Table + `hb_analyze_market` Hermes Advisor.
+- [ ] **Pending (Sprint 6B):** Automated 2-step execution harness with live order verification.

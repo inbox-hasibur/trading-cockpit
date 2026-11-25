@@ -7749,3 +7749,76 @@ button.local-avatar:hover {
   background: #ef4444;
   color: #ffffff;
 }
+
+
+/* Sprint 6A: Decisions Table & Sync / Analyze Buttons */
+.tx-hdr-analyze-btn,
+.tx-sync-history-btn {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.tx-decisions-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.tx-decisions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tx-decisions-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tx-decisions-summary-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 10px 14px;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.tx-decisions-scroll {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  overflow: auto;
+}
+
+.tx-decisions-table th {
+  background: #111827;
+  color: #94a3b8;
+}
+
+.tx-dec-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.tx-dec-reason {
+  max-width: 280px;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.tx-dec-row-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  white-space: nowrap;
+}

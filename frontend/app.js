@@ -307,10 +307,13 @@ function renderPortfolioHeaderBadge() {
   const isLive = isLiveSource();
 
   if (!isLive) {
-    badgeEl.className = "portfolio-header-badge is-demo";
-    badgeText.textContent = "DEMO / PAPER";
-    if (badgeDot) badgeDot.className = "status-dot amber";
-    badgeEl.title = "Demo Simulation · Synthetic data";
+    const autoOn = Boolean(state.snapshot?.app?.automation_enabled);
+    badgeEl.className = autoOn ? "portfolio-header-badge is-live" : "portfolio-header-badge is-demo";
+    badgeText.textContent = autoOn ? "SHADOW AUTO · H9210" : "REAL DATA · DECISION TOOL";
+    if (badgeDot) badgeDot.className = autoOn ? "status-dot green" : "status-dot amber";
+    badgeEl.title = autoOn
+      ? "Shadow Auto-Trade Active · H9210"
+      : "Real Passive TradeXpress Data · Decision & Advisor Mode";
     return;
   }
 
@@ -769,12 +772,19 @@ function renderWatchlist() {
     name.append(symSpan, element("span", "company-subtitle", (company.name || company.sector).slice(0, 20)));
     button.append(name); companyCell.append(button);
 
-    // 2. Curve sparkline
+    // 2. Curve sparkline (Real 7-30d curve only; never fake)
     const chart = cell();
-    const curvePoints = (company.sparkline_points && company.sparkline_points.length >= 2)
+    const curvePoints = (company.sparkline_points && company.sparkline_points.length >= 7)
       ? company.sparkline_points
-      : (company.history && company.history.length >= 2 ? company.history : [company.price, company.price]);
-    chart.append(sparkline(curvePoints));
+      : (company.history && company.history.length >= 7 ? company.history : []);
+    if (curvePoints.length >= 7) {
+      chart.append(sparkline(curvePoints));
+      chart.title = `${company.history_days || curvePoints.length}d Real DSE Curve`;
+    } else {
+      chart.textContent = "—";
+      chart.className = "align-center muted";
+      chart.title = "Real 7–30d history not synced yet (click Sync 30d Curves)";
+    }
 
     // 3. LTP
     const ltpCell = cell(numberFormat.format(company.price), "align-right tabular-nums");
@@ -2340,7 +2350,7 @@ api("/api/stocknow/all-shares")
     state.allDseShares = res.shares || [];
     if ($("cat-dse-count")) setText("cat-dse-count", state.allDseShares.length);
   })
-  .catch(() => {});
+  .catch(() => { });
 
 // Initialize view router and scroll spy first so navigation works immediately
 initViewRouter();

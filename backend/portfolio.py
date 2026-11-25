@@ -423,15 +423,36 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
         live_ltp = live_q.ltp if (live_q and live_q.ltp > ZERO) else (company.last_price if company.last_price > ZERO else ZERO)
         effective_price = live_ltp if live_ltp > ZERO else company.last_price
 
-        if effective_price <= ZERO or not company.price_history:
+        history_list = list(company.price_history or [])
+        if effective_price <= ZERO:
             analysis = CurveAnalysis("WAIT_SOD", "Waiting for market open (LTP 0.00 / SOD phase)...")
             _quote = None
-        else:
+        elif len(history_list) < 7:
             if live_ltp > ZERO and live_ltp != company.last_price:
                 company.last_price = live_ltp
-                if company.price_history and company.price_history[-1].get("date") == state.clock_date.isoformat():
-                    company.price_history[-1] = {**company.price_history[-1], "close": str(live_ltp)}
-            analysis, _quote = assess_company(company, rule, settings, state.clock_date, adapter)
+            analysis = CurveAnalysis(
+                "NO_HISTORY",
+                "Real 7–30d history not synced yet (click Sync 30d Curves)",
+            )
+            _quote = None
+        else:
+            from types import SimpleNamespace
+
+            eff_hist = list(history_list)
+            if live_ltp > ZERO and eff_hist and eff_hist[-1].get("date") == state.clock_date.isoformat():
+                eff_hist[-1] = {**eff_hist[-1], "close": str(live_ltp)}
+            company_proxy = SimpleNamespace(
+                symbol=company.symbol,
+                source=getattr(company, "source", "") or "",
+                last_price=live_ltp if live_ltp > ZERO else company.last_price,
+                price_history=eff_hist,
+                quote_on=company.quote_on,
+                quarantined=company.quarantined,
+                quarantine_reason=company.quarantine_reason,
+                settlement_type=getattr(company, "settlement_type", "PUBLIC"),
+                symbol_category=getattr(company, "symbol_category", "A"),
+            )
+            analysis, _quote = assess_company(company_proxy, rule, settings, state.clock_date, adapter)
         company_lots = []
         company_basis = ZERO
         company_net = ZERO
@@ -551,9 +572,8 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             hold_sessions = None
             hold_day_label = "—"
 
-        # Sparkline points & intraday curve synthesis for live TradeXpress quotes
+        # Real-only sparkline points (no fake 2-point synthesis when < 7 real bars)
         history_list = list(company.price_history or [])
-        intraday_ticks = passive_feed.get_intraday_series(company.symbol) if passive_feed else []
         effective_pct_chg = live_pct_chg if live_pct_chg is not None else float(curve_dict.get("day_change_pct") or 0.0)
         effective_chg = live_chg if live_chg is not None else (
             float(company.last_price - decimal(company.price_history[-2]["close"]))
@@ -561,26 +581,21 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             else 0.0
         )
 
-        sparkline_pts: list[float] = []
-        if len(history_list) >= 2:
+        history_days = len(history_list)
+        history_verified = history_days >= 7
+        if history_verified:
             sparkline_pts = [float(p["close"]) for p in history_list if isinstance(p, dict) and "close" in p]
-        elif len(intraday_ticks) >= 2:
-            sparkline_pts = [float(t["price"]) for t in intraday_ticks]
-        elif len(intraday_ticks) == 1:
-            curr_p = float(intraday_ticks[0]["price"])
-            prev_p = curr_p - effective_chg if (curr_p - effective_chg) > 0 else curr_p * 0.99
-            sparkline_pts = [prev_p, curr_p]
+            today_str = state.clock_date.isoformat()
+            effective_history = history_list
+            formatted_sparkline = [
+                {"date": str(p.get("date") or today_str), "close": str(round(float(p["close"]), 2))}
+                for p in history_list
+                if isinstance(p, dict) and "close" in p
+            ]
         else:
-            curr_p = float(company.last_price)
-            if curr_p > 0:
-                prev_p = curr_p - effective_chg if (curr_p - effective_chg) > 0 else curr_p * 0.99
-                sparkline_pts = [prev_p, curr_p] if prev_p != curr_p else [prev_p * 0.998, curr_p]
-            else:
-                sparkline_pts = [10.0, 10.0]
-
-        today_str = state.clock_date.isoformat()
-        effective_history = history_list if len(history_list) >= 2 else [{"close": str(round(pt, 2))} for pt in sparkline_pts]
-        formatted_sparkline = [{"date": today_str, "close": str(round(pt, 2))} for pt in sparkline_pts]
+            sparkline_pts = []
+            effective_history = []
+            formatted_sparkline = []
 
         company_views.append({
             "symbol": company.symbol,
@@ -593,6 +608,8 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             "quote_on": company.quote_on.isoformat(),
             "source": company.source,
             "history": effective_history,
+            "history_days": history_days,
+            "history_verified": history_verified,
             "sparkline_points": formatted_sparkline,
             "extended_history": generate_extended_history(company.price_history, fundamentals, calendar, state.clock_date, session_dates=session_dates_240),
             "fundamentals": fundamentals,

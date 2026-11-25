@@ -517,4 +517,9 @@ def hb_learning_review(args: dict[str, Any] | None = None, **kwargs) -> str:
     return _kernel_get("/k/learning/summary", params=params)
 
 
+def hb_analyze_market(args: dict[str, Any] | None = None, **kwargs) -> str:
+    """Fetch deterministic BUY/SELL/WAIT/BLOCKED decision table from real quotes and 30d DSE curves."""
+    return _kernel_get("/k/decisions/analyze")
+
+
 

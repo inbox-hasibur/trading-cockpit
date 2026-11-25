@@ -445,4 +445,14 @@ HB_LEARNING_REVIEW_SCHEMA = {
     },
 }
 
+HB_ANALYZE_MARKET_SCHEMA = {
+    "name": "hb_analyze_market",
+    "description": "Analyze all watchlist and held stocks using real TradeXpress quotes and real 7-30d DSE curves to produce today's BUY / SELL / WAIT / BLOCKED decision table with exact limit prices, support/resistance, net upside after fees, and H9210 affordable qty.",
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": False,
+    },
+}
+
 

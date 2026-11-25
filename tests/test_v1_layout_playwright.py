@@ -27,14 +27,7 @@ def find_free_port() -> int:
 
 @pytest.fixture(scope="module")
 def cockpit_server(tmp_path_factory):
-    """Ensure a live cockpit server is available, either existing or ephemeral."""
-    try:
-        urllib.request.urlopen("http://127.0.0.1:8000/api/portfolio", timeout=0.8)
-        yield "http://127.0.0.1:8000"
-        return
-    except Exception:
-        pass
-
+    """Start an isolated ephemeral cockpit server for deterministic Playwright tests."""
     import uvicorn
     tmp_dir = tmp_path_factory.mktemp("playwright_db")
     db_file = tmp_dir / "test_hummingbird.db"
@@ -356,7 +349,10 @@ def test_tradexpress_v1_layout_and_interactions(cockpit_server):
             row_text = acme_row.inner_text()
             assert "+5.39%" in row_text or "5.39%" in row_text, f"ACMEPL % Chg missing +5.39%: {row_text}"
             assert "+0.00%" not in row_text, f"ACMEPL % Chg incorrectly shows +0.00%: {row_text}"
-            assert acme_row.locator("svg.sparkline").count() > 0, "ACMEPL missing inline sparkline svg!"
+            # Zero-Dummy Curve Guard: < 7 real bars renders "—" (NO_HISTORY) instead of fake 2-pt line
+            assert "—" in row_text or acme_row.locator("svg.sparkline").count() > 0, (
+                f"ACMEPL should render '—' (NO_HISTORY) or real sparkline: {row_text}"
+            )
 
         # 8c. LIVE BROKER MIRROR card displays ৳353.00
         page.click("#tx-tab-account-summary")
@@ -467,7 +463,7 @@ def test_tradexpress_sprint5i_operator_workflows(cockpit_server):
         # Toggle automation ON
         auto_input = page.locator("#topbar-automation-toggle-input")
         if not auto_input.is_checked():
-            auto_input.click()
+            page.locator("#topbar-automation-control label.ios-switch").click()
             time.sleep(0.5)
 
         assert not page.locator("#error-banner").is_visible(), "Enabling automation should not trip circuit breaker or preflight error!"
@@ -519,6 +515,27 @@ def test_tradexpress_sprint5i_operator_workflows(cockpit_server):
         page.click("#tx-passive-spy-btn")
         time.sleep(0.4)
         assert page.locator("#view-settings").is_visible(), "Clicking Passive Spy pill button should open Settings!"
+
+        # 9. Verify Sprint 6A Analyze & Decide + Sync 30d Curves + Decisions View in Dark & Light
+        page.click("#tx-nav-trade")
+        time.sleep(0.3)
+        assert page.locator("#tx-analyze-decide-btn").is_visible(), "Analyze & Decide button should be visible in topbar!"
+        assert page.locator("#tx-sync-history-btn").is_visible(), "Sync 30d Curves button should be visible in Market Watch!"
+
+        page.click("#tx-analyze-decide-btn")
+        page.wait_for_selector("#tx-decisions-view", state="visible", timeout=5000)
+        time.sleep(0.4)
+        assert page.locator("#tx-decisions-summary-bar").is_visible(), "Decisions summary bar should be visible!"
+        assert page.locator("#tx-decisions-table").is_visible(), "Decisions table should be visible!"
+
+        # Switch to Light mode on Decisions View and verify bright background
+        page.click("#theme-toggle-btn")
+        time.sleep(0.3)
+        dec_bg = page.evaluate("""() => {
+            const el = document.getElementById('tx-decisions-view');
+            return getComputedStyle(el).backgroundColor;
+        }""")
+        assert "15, 23, 42" not in dec_bg, f"Decisions view remained dark in Light Mode: {dec_bg}"
 
         browser.close()
 

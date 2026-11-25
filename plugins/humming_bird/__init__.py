@@ -30,8 +30,10 @@ from .schemas import (
     HB_CAPS_SET_SCHEMA,
     HB_FEED_STATUS_SCHEMA,
     HB_LEARNING_REVIEW_SCHEMA,
+    HB_ANALYZE_MARKET_SCHEMA,
 )
 from .tools import (
+    hb_analyze_market,
     hb_automation_get,
     hb_automation_set,
     hb_canaries,
@@ -83,6 +85,7 @@ _TOOLS = (
     ("hb_caps_set", HB_CAPS_SET_SCHEMA, hb_caps_set),
     ("hb_feed_status", HB_FEED_STATUS_SCHEMA, hb_feed_status),
     ("hb_learning_review", HB_LEARNING_REVIEW_SCHEMA, hb_learning_review),
+    ("hb_analyze_market", HB_ANALYZE_MARKET_SCHEMA, hb_analyze_market),
 )
 
 

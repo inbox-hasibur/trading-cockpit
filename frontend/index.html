@@ -86,18 +86,18 @@
             <span class="topbar-switching-state" id="topbar-switching-state" style="display:none;" title="Waiting for current trading cycle to finish before switching">Switching after current cycle...</span>
           </div>
 
-          <!-- Labelled switch "Automation" ON / OFF -->
+          <!-- Labelled switch "Auto-Trade" ON / OFF -->
           <div class="topbar-automation-control" id="topbar-automation-control">
-            <span class="topbar-automation-title">Automation</span>
+            <span class="topbar-automation-title">Auto-Trade</span>
             <label class="ios-switch topbar-ios-switch" title="Continuous automatic trading loop (runs every 30s)">
-              <input type="checkbox" id="topbar-automation-toggle-input" checked>
+              <input type="checkbox" id="topbar-automation-toggle-input">
               <span class="ios-slider"></span>
             </label>
-            <span class="topbar-automation-state is-on" id="topbar-automation-state">ON</span>
+            <span class="topbar-automation-state" id="topbar-automation-state">OFF</span>
           </div>
 
-          <!-- Run cycle now button -->
-          <button class="button primary tx-hdr-run-btn" id="run-cycle" type="button" disabled title="Trigger 1 immediate evaluation cycle"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6V4Z"/></svg><span id="run-label">Run cycle</span></button>
+          <!-- Dedicated Analyze & Decide button -->
+          <button class="button primary tx-hdr-analyze-btn" id="tx-analyze-decide-btn" type="button" title="Analyze real TradeXpress quotes + 30d DSE curves and open Today's Decision Table">📊 Analyze &amp; Decide</button>
 
           <!-- Theme toggle button -->
           <button class="theme-toggle-btn" id="theme-toggle-btn" type="button" title="Switch Theme (Dark / Light)">
@@ -108,6 +108,7 @@
 
       <nav class="tx-main-nav" id="tx-main-nav" role="tablist" aria-label="TradeXpress Navigation">
         <button type="button" class="tx-nav-tab active" id="tx-nav-trade" data-tx-view="trade">Trade</button>
+        <button type="button" class="tx-nav-tab" id="tx-nav-decisions" data-tx-view="decisions">Decisions</button>
         <button type="button" class="tx-nav-tab" id="tx-nav-heatmap" data-tx-view="heatmap">Heat Map</button>
         <button type="button" class="tx-nav-tab" id="tx-nav-rules" data-tx-view="rules">Auto Rules &amp; T+2</button>
         <button type="button" class="tx-nav-tab" id="tx-nav-ledger" data-tx-view="ledger">Ledger</button>
@@ -170,6 +171,7 @@
         <button id="hdr-tmode-test" type="button"></button>
         <button id="pause-button" type="button"></button>
         <button id="rollback-button" type="button"></button>
+        <button id="run-cycle" type="button" disabled><span id="run-label">Run cycle now</span></button>
         <button id="settings-handoff-btn" type="button"></button>
         <span id="settings-handoff-label"></span>
         <div id="skills-drawer"></div>
@@ -223,6 +225,7 @@
               <label class="tx-check-filter" title="Show only stocks currently held in portfolio">
                 <input type="checkbox" id="filter-held-only"> Held Only
               </label>
+              <button type="button" class="button tiny secondary tx-sync-history-btn" id="tx-sync-history-btn" title="Fetch real 30-day DSE daily candles for Watchlist symbols">📈 Sync 30d Curves</button>
               <span id="company-count" class="count-badge">11</span>
             </div>
           </div>
@@ -527,6 +530,49 @@
         </div>
       </div>
       </div> <!-- /view-dashboard -->
+
+      <!-- VIEW 1B: TODAY'S DECISION TABLE (CHECKPOINT 2) -->
+      <section id="tx-decisions-view" class="workspace-view tx-decisions-view view-hidden" hidden>
+        <div class="tx-decisions-header">
+          <div>
+            <div class="eyebrow">REAL-DATA CHECKPOINT 2 · ZERO DUMMY CURVES</div>
+            <h2>Today's Buy / Sell Decision Table</h2>
+          </div>
+          <div class="tx-decisions-actions">
+            <button type="button" class="button tiny secondary" id="tx-decisions-sync-btn">📈 Sync 30d Curves</button>
+            <button type="button" class="button tiny primary" id="tx-decisions-refresh-btn">🔄 Re-Analyze</button>
+          </div>
+        </div>
+        <div class="tx-decisions-summary-bar" id="tx-decisions-summary-bar">
+          <span>Real Quotes: <strong id="tx-dec-live-quotes">0</strong></span>
+          <span>Verified 30d Curves: <strong id="tx-dec-verified-curves">0</strong></span>
+          <span>H9210 Real BP: <strong id="tx-dec-h9210-bp">৳0.00</strong></span>
+          <span>Buy Ideas: <strong id="tx-dec-buy-count" class="positive">0</strong></span>
+          <span>Sell Ideas: <strong id="tx-dec-sell-count" class="negative">0</strong></span>
+        </div>
+        <div class="table-scroll tx-decisions-scroll">
+          <table class="tx-table tx-decisions-table" id="tx-decisions-table">
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Tier</th>
+                <th>Action</th>
+                <th class="align-right">Live LTP</th>
+                <th class="align-right">Bid / Offer</th>
+                <th class="align-right">Suggested Limit</th>
+                <th class="align-right">Support – Resist</th>
+                <th class="align-right">Est. Net Upside</th>
+                <th class="align-right">Qty (H9210)</th>
+                <th>Reason</th>
+                <th class="align-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tx-decisions-tbody">
+              <tr><td colspan="11" class="loading-cell">Click "Analyze &amp; Decide" to evaluate real quotes and 30d curves…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <!-- VIEW 2: HEAT MAP -->
       <div id="view-heatmap-wrap" class="workspace-view view-hidden" hidden>
@@ -1101,7 +1147,7 @@
                     <span>Telemetry Status:</span>
                     <div class="settings-telemetry-badges">
                       <span class="stream-badge" id="sse-status-badge" title="Live reactive Server-Sent Events stream connected"><span class="status-dot live-dot" id="live-dot"></span> REALTIME SSE</span>
-                      <span class="demo-badge" id="source-badge"><span class="status-dot"></span> DEMO / PAPER</span>
+                      <span class="demo-badge" id="source-badge"><span class="status-dot"></span> REAL DATA · DECISION TOOL</span>
                       <button class="text-button" id="token-button" type="button" title="Set an optional private API token for this browser session">API token</button>
                     </div>
                   </div>

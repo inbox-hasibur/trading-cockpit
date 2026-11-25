@@ -137,9 +137,9 @@ def test_frontend_dom_audit():
 
 
 def test_plugin_tools_indexing():
-    """Verify all 24 registered tools in plugins/humming_bird/tools.py are indexed."""
+    """Verify all 25 registered tools in plugins/humming_bird/tools.py are indexed."""
     tools = parse_plugin_tools(REPO_ROOT)
-    assert len(tools) == 24
+    assert len(tools) == 25
 
     tool_names = {t["name"] for t in tools}
     assert "hb_portfolio" in tool_names
@@ -149,6 +149,7 @@ def test_plugin_tools_indexing():
     assert "hb_caps_set" in tool_names
     assert "hb_feed_status" in tool_names
     assert "hb_learning_review" in tool_names
+    assert "hb_analyze_market" in tool_names
 
 
 def test_pinned_vendor_commit():

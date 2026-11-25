@@ -2138,6 +2138,20 @@ def get_learning_summary(
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+@router.get("/decisions/analyze")
+def kernel_analyze_decisions(
+    db: Database = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+) -> dict[str, Any]:
+    """Returns deterministic real-data BUY/SELL/WAIT/BLOCKED decision table for Hermes."""
+    from backend.adapters.tradexpress.passive_feed import get_global_passive_feed
+    from backend.engine.decision_advisor import analyze_market_decisions
+
+    feed = get_global_passive_feed(db)
+    with db.read() as session:
+        return analyze_market_decisions(session, settings, passive_feed=feed)
+
+
 def build_kernel_router(
     database: Database,
     settings: Settings,

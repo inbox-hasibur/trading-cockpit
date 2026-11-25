@@ -94,7 +94,7 @@ def check_model_and_fallback() -> CheckResult:
 
 def check_plugin_tools() -> CheckResult:
     """Verifies humming_bird plugin registration and expected tool count."""
-    expected_tool_count = 24
+    expected_tool_count = 25
     actual_count = len(_TOOLS)
 
     h_dir = get_hermes_dir()

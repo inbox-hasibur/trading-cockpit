@@ -339,4 +339,65 @@ def build_tradexpress_router(
                 ],
             }
 
+    @router.post("/sync-history")
+    async def post_sync_history(req: dict[str, Any] | None = None):
+        """Syncs real 30-day DSE daily candles for watchlist symbols."""
+        from backend.adapters.tradexpress.history_provider import sync_watchlist_real_history
+
+        req_data = req or {}
+        symbols = req_data.get("symbols")
+        if symbols is not None and not isinstance(symbols, list):
+            raise HTTPException(status_code=400, detail="symbols must be a list of strings")
+        try:
+            sessions = int(req_data.get("sessions") or 30)
+        except (TypeError, ValueError):
+            sessions = 30
+        sessions = max(7, min(sessions, 90))
+
+        feed = get_global_passive_feed(database)
+        res = await sync_watchlist_real_history(
+            database,
+            symbols=symbols,
+            sessions=sessions,
+            feed=feed,
+        )
+
+        if broadcaster:
+            try:
+                from backend.portfolio import build_snapshot
+
+                snap = build_snapshot(database, settings)
+                broadcaster.publish("portfolio", snap)
+            except Exception as b_err:
+                logger.debug("Failed publishing SSE after history sync: %s", b_err)
+
+        return res
+
+    @router.get("/decisions")
+    def get_decisions():
+        """Returns deterministic BUY/SELL/WAIT/BLOCKED decision table from real quotes & curves."""
+        from backend.engine.decision_advisor import analyze_market_decisions
+
+        feed = get_global_passive_feed(database)
+        with database.read() as session:
+            return analyze_market_decisions(session, settings, passive_feed=feed)
+
+    @router.post("/decisions/analyze")
+    async def post_decisions_analyze(req: dict[str, Any] | None = None):
+        """Optionally syncs real 30d curves first, then returns full decision table."""
+        from backend.adapters.tradexpress.history_provider import sync_watchlist_real_history
+        from backend.engine.decision_advisor import analyze_market_decisions
+
+        req_data = req or {}
+        feed = get_global_passive_feed(database)
+        sync_res = None
+        if req_data.get("sync_history"):
+            sync_res = await sync_watchlist_real_history(database, feed=feed)
+
+        with database.read() as session:
+            out = analyze_market_decisions(session, settings, passive_feed=feed)
+        if sync_res is not None:
+            out["history_sync"] = sync_res
+        return out
+
     return router

@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [v1.0.0-dev] - Unreleased (Trading Cockpit V1 Branch - Sprints 4A, 4B, 4C, 5A, 5B, 5C, 5D, 5E, 5F, 5G, 5H, 5I)
+## [v1.0.0-dev] - Unreleased (Trading Cockpit V1 Branch - Sprints 4A, 4B, 4C, 5A, 5B, 5C, 5D, 5E, 5F, 5G, 5H, 5I, 6A)
 
 ### Added
+- **Sprint 6A: Checkpoint 1 (Zero Dummy Data + Real 30d DSE Curves) & Checkpoint 2 (Analyze & Decide Decision Table + Hermes Advisor):**
+  - `backend/adapters/tradexpress/history_provider.py` & `POST /api/tradexpress/sync-history`: Added real 30-day DSE daily historical candle fetcher from StockNow's public unauthenticated history endpoint (with polite `0.25s` pacing, `Asia/Dhaka` sorting, `close <= 0` filtering, and passive TradeXpress `/web/chart` tap capture in `passive_feed.py`). Never fabricates synthetic candles.
+  - `scripts/clean_live_db.py`, `backend/portfolio.py`, `backend/adapters/tradexpress/passive_feed.py`: Enforced strict Zero-Dummy Data policy on the live cockpit — purged legacy StockNow `#164580` lots/trades and `DEMO_SEED` curves after atomic backup, auto-initialized `state.initial_capital` from real `H9210` buying power when `0.00`, removed fake 2-point sparklines (`< 7` real bars renders `—` / `NO_HISTORY`), and replaced `"DEMO / PAPER"` badge with `REAL DATA · DECISION TOOL` / `SHADOW AUTO · H9210`.
+  - `backend/engine/decision_advisor.py`, `GET /api/tradexpress/decisions`, `POST /api/tradexpress/decisions/analyze`, `GET /k/decisions/analyze`, & `hb_analyze_market` (25 Hermes tools): Deterministic real-data market analyzer producing `BUY_CANDIDATE`, `SELL_CANDIDATE`, `HOLD_WAIT`, `WATCH_ONLY`, `BLOCKED` (`Z`/`SPOT`), and `NO_HISTORY` (`< 7` real candles) with exact limit prices, support/resistance, net upside after fees, and `H9210` affordable share count.
+  - `frontend/index.html`, `frontend/tradexpress_ui.js`, `frontend/styles.css`, `frontend/theme_light_hermes.css`: Added topbar `📊 Analyze & Decide` (`#tx-analyze-decide-btn`), Market Watch `📈 Sync 30d Curves` (`#tx-sync-history-btn`), and `Decisions` view (`#tx-decisions-view`) with `[Load in Ticket]` and `[Ask Hermes]` actions plus full Dark & Light Mode parity.
+  - `tests/test_decision_advisor_and_real_history.py` & `tests/test_v1_layout_playwright.py`: Added offline unit, route, tool, and Playwright dark/light verification; full pytest suite passes 100% (285 passed, 0 failures).
 - **Sprint 5I: Complete Legacy StockNow Runtime Purge + Fix 6 Live Operator Bugs & End-to-End Playwright Proof:**
   - `backend/seed.py`: Gated `migrate_real_stocknow_market` behind `ENABLE_STOCKNOW_LEGACY == "1"`, stopping automatic injection of legacy StockNow `#164580` (`BANKASIA 304`, `৳121,292.71`) on boot and preserving demo/StockNow execution for tests.
   - `backend/routes_tradexpress.py`: Rebuilt `POST /api/tradexpress/shadow/reset` to safely clear FK references in exact sequence (`update(DecisionLog).values(lot_id=None)` and cascade deletion of `OrderIdempotencyKey`, `CycleRequestKey`, `ShadowOrder`, `TradeLog`, and `TaxLot`), reset state to `SHADOW_DUMMY` mode, compute clean capital (`MIRROR_H9210` ৳353 or `CLEAN_DUMMY` ৳50,000), assert ledger with 0.00 drift, and publish live SSE update.

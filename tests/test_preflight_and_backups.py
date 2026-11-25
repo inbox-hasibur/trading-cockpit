@@ -137,10 +137,10 @@ def test_check_model_and_fallback():
 
 
 def test_check_plugin_tools_count():
-    """Verify check_plugin_tools validates the 24 tools registered in humming_bird."""
+    """Verify check_plugin_tools validates the 25 tools registered in humming_bird."""
     res = check_plugin_tools()
     assert res.is_go is True
-    assert "24 tools registered" in res.details
+    assert "25 tools registered" in res.details
 
 
 def test_check_kernel_token_logic(monkeypatch: pytest.MonkeyPatch):
