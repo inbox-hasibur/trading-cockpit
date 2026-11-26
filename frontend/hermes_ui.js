@@ -55,7 +55,11 @@ function renderHermesSkills() {
     const facts = hermes.durable_facts || [];
     const factCards = facts.map((f) => {
       const item = element("div", "fact-item");
-      item.append(element("strong", "", f.symbol), element("span", "muted", `[${f.category}] `), document.createTextNode(f.fact));
+      const sym = f.symbol ? String(f.symbol) : "";
+      const cat = f.category ? `[${f.category}] ` : "";
+      if (sym) item.append(element("strong", "", sym));
+      if (cat) item.append(element("span", "muted", cat));
+      item.append(document.createTextNode(f.fact || ""));
       return item;
     });
     factsList.replaceChildren(...(factCards.length ? factCards : [element("div", "muted small", "No company facts recorded yet.")]));

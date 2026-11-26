@@ -996,12 +996,26 @@
       decRefreshBtn.addEventListener("click", () => loadDecisions());
     }
 
-    // Auto poll orders and feed status
+    // Auto poll orders, feed status, and live decisions when active
     setInterval(loadOrders, 10000);
     setInterval(loadFeedStatus, 10000);
+    setInterval(() => {
+      if (state.activeNavView === "decisions") {
+        loadDecisions(true);
+      }
+    }, 10000);
+    // Background auto-sync 30d curves once per page load so operator doesn't have to click manually
+    setTimeout(() => {
+      if (!state._autoSyncTried) {
+        state._autoSyncTried = true;
+        sync30dCurves(document.getElementById("tx-sync-history-btn"), true);
+      }
+    }, 2000);
   }
 
-  async function sync30dCurves(btn) {
+  async function sync30dCurves(btn, silent = false) {
+    if (state._syncInFlight) return;
+    state._syncInFlight = true;
     const origText = btn ? btn.textContent : "";
     if (btn) {
       btn.disabled = true;
@@ -1019,32 +1033,35 @@
         const mwBtn = document.getElementById("tx-sync-history-btn");
         if (mwBtn) mwBtn.textContent = label;
         if (btn && btn !== mwBtn) btn.textContent = label;
-        if (typeof window.notify === "function") {
+        if (!silent && typeof window.notify === "function") {
           window.notify(`Synced ${data.synced_count || 0} real 30-day DSE curves.`, false);
         }
         if (typeof window.refreshSnapshot === "function") {
           window.refreshSnapshot();
         }
         if (state.activeNavView === "decisions") {
-          loadDecisions();
+          loadDecisions(true);
         }
-      } else if (typeof window.notify === "function") {
+      } else if (!silent && typeof window.notify === "function") {
         window.notify(`Curve sync failed: ${data.detail || res.statusText}`, true);
         if (btn) btn.textContent = origText;
+      } else if (btn) {
+        btn.textContent = origText;
       }
     } catch (err) {
-      if (typeof window.notify === "function") {
+      if (!silent && typeof window.notify === "function") {
         window.notify(`Curve sync error: ${err.message}`, true);
       }
       if (btn) btn.textContent = origText;
     } finally {
+      state._syncInFlight = false;
       if (btn) btn.disabled = false;
     }
   }
 
-  async function loadDecisions() {
+  async function loadDecisions(silent = false) {
     const tbody = document.getElementById("tx-decisions-tbody");
-    if (tbody) {
+    if (tbody && !silent) {
       tbody.innerHTML = '<tr><td colspan="11" class="loading-cell">Analyzing real TradeXpress quotes and 30d DSE curves…</td></tr>';
     }
     try {

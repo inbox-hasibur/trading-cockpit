@@ -1577,6 +1577,34 @@ body.is-resizing-hermes .app-shell {
   background: transparent;
 }
 
+[data-theme="light"] .cron-card,
+[data-theme="light"] .memory-card {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .cron-card .cron-name,
+[data-theme="light"] .cron-card strong {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .cron-card .cron-meta,
+[data-theme="light"] .cron-card .muted {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .memory-head {
+  background: #f1f5f9 !important;
+  border-bottom-color: #cbd5e1 !important;
+  color: #334155 !important;
+}
+
+[data-theme="light"] .memory-code-preview {
+  color: #1e293b !important;
+  background: #ffffff !important;
+}
+
 [data-theme="light"] .sector-gainer-chart-wrap {
   background: #ffffff !important;
   border-color: #cbd5e1 !important;
