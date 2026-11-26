@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Knowledge Graph & Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-26 08:16:39 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-26 08:59:40 UTC**.
 > **Core Strategy Invariants:**
 > - **Strict No-Loss Guarantee:** Never sell at net loss (< 0% net P/L after round-trip 1.00% fees).
 > - **Sequential No-Regret Selling:** 25% / 25% / 25% profit tiers (+1.5%, +3.5%, +6.0% net) + 25% runner.
@@ -216,10 +216,10 @@ trading-cockpit/
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 102 | 33,380 | Python Core Kernel, Engine, Tests & Plugins |
-| `.css` | 2 | 12,637 | Custom Dark / Light / Terminal Design System |
-| `.js` | 8 | 8,021 | Vanilla ES6+ Reactive Terminal Controller & UI |
-| `.md` | 15 | 6,389 | Architecture & Strategy Documentation |
+| `.py` | 102 | 33,377 | Python Core Kernel, Engine, Tests & Plugins |
+| `.css` | 2 | 12,643 | Custom Dark / Light / Terminal Design System |
+| `.js` | 8 | 8,080 | Vanilla ES6+ Reactive Terminal Controller & UI |
+| `.md` | 15 | 6,393 | Architecture & Strategy Documentation |
 | `.json` | 14 | 5,710 | Fixtures & Configuration |
 | `.html` | 2 | 1,700 | Single Page Application DOM Structure |
 | `.ps1` | 2 | 199 | Windows PowerShell Automation |
@@ -229,7 +229,7 @@ trading-cockpit/
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.sh` | 1 | 9 | Shell Scripts |
 | *other* | 15 | 151,667 | Other Configuration, Assets & Dotfiles |
-| **TOTAL** | **167** | **219,844** | *Entire Humming Bird Repository* |
+| **TOTAL** | **167** | **219,910** | *Entire Humming Bird Repository* |
 
 ---
 
@@ -1501,8 +1501,8 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 | `trade_view` | `L323–L352` | `(trade: TradeLog...)` | `dict` | — | `float`, `getattr`, `isoformat` |
 | `period_totals` | `L355–L370` | `(trades: list[TradeLog], start: date...)` | `dict` | — | `float`, `isoformat`, `len`, `sum` |
 | `build_snapshot` | `L373–L375` | `(database: Database, settings: Setti...)` | `dict` | — | `read`, `snapshot_from_session` |
-| `snapshot_from_session` | `L378–L864` | `(session: Session, settings: Setting...)` | `dict` | — | `CurveAnalysis`, `Decimal`, `SimpleNamespace`, `StockNowAdapter` |
-| `normalized_watchlist` | `L867–L886` | `(companies: list[dict]...)` | `list[dict]` | Equal-weight normalized PRICE index, explicitly not portfolio performance. | `any`, `append`, `decimal`, `float` |
+| `snapshot_from_session` | `L378–L869` | `(session: Session, settings: Setting...)` | `dict` | — | `CurveAnalysis`, `Decimal`, `SimpleNamespace`, `StockNowAdapter` |
+| `normalized_watchlist` | `L872–L891` | `(companies: list[dict]...)` | `list[dict]` | Equal-weight normalized PRICE index, explicitly not portfolio performance. | `any`, `append`, `decimal`, `float` |
 
 
 ---
@@ -1552,13 +1552,13 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 | `_probe_provider_live` | `L97–L155` | `(provider: str, env_values: dict[str...)` | `tuple[bool, str, set[str] | None]` | Probes live provider auth & accessible model IDs with a 120s cache (skipped under pytest). | `get`, `getenv`, `json`, `monotonic` |
 | `is_provider_available` | `L158–L189` | `(provider: str, settings: Settings |...)` | `tuple[bool, str]` | Checks whether a provider has valid API key(s) configured. | `_probe_provider_live`, `_read_configured_env_keys`, `_read_env_key_values`, `add` |
 | `_infer_provider` | `L192–L210` | `(model_id: str...)` | `str` | Infers provider ID from catalog or model naming conventions. | `lower`, `startswith`, `strip` |
-| `build_hermes_router` | `L514–L742` | `(database: Database, settings: Setti...)` | `APIRouter` | — | `APIRouter` |
-| `list_conversations` | `L518–L520` | `(...)` | — | Returns conversation topics. | `get` |
-| `create_conversation` | `L523–L531` | `(body: CreateThreadRequest...)` | — | Creates a local conversation topic stub. | `post` |
-| `conversation_messages` | `L534–L536` | `(conversation_id: str...)` | — | Returns messages for a conversation topic. | `get` |
-| `system_changes` | `L539–L611` | `(...)` | — | Returns git diff summary and recent kernel checkpoints. | `Path`, `append`, `desc`, `get` |
-| `get_hermes_models` | `L614–L667` | `(...)` | — | Returns available models with live key/model verification, intelligence scores, and fallback chain. | `append`, `get`, `int`, `is_provider_available` |
-| `switch_hermes_model` | `L670–L740` | `(body: SwitchModelRequest...)` | — | Switches active model and provider in Hermes profile and updates local state. | `HTTPException`, `_infer_provider`, `append`, `create_checkpoint` |
+| `build_hermes_router` | `L494–L728` | `(database: Database, settings: Setti...)` | `APIRouter` | — | `APIRouter` |
+| `list_conversations` | `L498–L500` | `(...)` | — | Returns conversation topics. | `get` |
+| `create_conversation` | `L503–L511` | `(body: CreateThreadRequest...)` | — | Creates a local conversation topic stub. | `post` |
+| `conversation_messages` | `L514–L516` | `(conversation_id: str...)` | — | Returns messages for a conversation topic. | `get` |
+| `system_changes` | `L519–L591` | `(...)` | — | Returns git diff summary and recent kernel checkpoints. | `Path`, `append`, `desc`, `get` |
+| `get_hermes_models` | `L594–L653` | `(...)` | — | Returns available models with live key/model verification, intelligence scores, and fallback chain. | `append`, `get`, `int`, `is_provider_available` |
+| `switch_hermes_model` | `L656–L726` | `(body: SwitchModelRequest...)` | — | Switches active model and provider in Hermes profile and updates local state. | `HTTPException`, `_infer_provider`, `append`, `create_checkpoint` |
 
 
 ---
@@ -2491,17 +2491,17 @@ Indexed **30** Pydantic contract and request/response models across `backend/` a
 | `.chat-messages` | [`frontend/styles.css`](/frontend/styles.css#L3667) | `L3667` | — | — | — | — | — |
 | `.skills-drawer` | [`frontend/styles.css`](/frontend/styles.css#L3920) | `L3920` | — | — | — | `var(--panel)` | — |
 | `.model-dropup-menu` | [`frontend/styles.css`](/frontend/styles.css#L5895) | `L5895` | — | — | `absolute` | `var(--panel, #111a24)` | — |
-| `.tx-topbar` | [`frontend/styles.css`](/frontend/styles.css#L7834) | `L7834` | `flex` | — | — | `#0d1522` | — |
-| `.tx-bottom-split` | [`frontend/styles.css`](/frontend/styles.css#L8061) | `L8061` | `flex` | — | — | — | — |
-| `.tx-top-header` | [`frontend/styles.css`](/frontend/styles.css#L8080) | `L8080` | `flex !important` | — | `relative !important` | `#0a0f18 !important` | `wrap !important` |
-| `.tx-topbar` | [`frontend/styles.css`](/frontend/styles.css#L8081) | `L8081` | `flex !important` | — | `relative !important` | `#0a0f18 !important` | `wrap !important` |
-| `.tx-top-header` | [`frontend/styles.css`](/frontend/styles.css#L8121) | `L8121` | — | — | — | — | `wrap !important` |
-| `.tx-topbar` | [`frontend/styles.css`](/frontend/styles.css#L8122) | `L8122` | — | — | — | — | `wrap !important` |
-| `.tx-topbar` | [`frontend/styles.css`](/frontend/styles.css#L8207) | `L8207` | — | — | — | — | — |
-| `.tx-mw-header` | [`frontend/styles.css`](/frontend/styles.css#L8216) | `L8216` | `flex` | — | — | `#0a0f18` | `nowrap` |
-| `.tx-ticket-strip` | [`frontend/styles.css`](/frontend/styles.css#L8458) | `L8458` | `flex` | — | — | `#0d1522` | — |
-| `.tx-depth-pane` | [`frontend/styles.css`](/frontend/styles.css#L8670) | `L8670` | `flex` | — | — | `#090e17` | — |
-| `#tx-confirm-order-modal` | [`frontend/styles.css`](/frontend/styles.css#L8872) | `L8872` | — | — | — | `#0f172a` | — |
+| `.tx-topbar` | [`frontend/styles.css`](/frontend/styles.css#L7840) | `L7840` | `flex` | — | — | `#0d1522` | — |
+| `.tx-bottom-split` | [`frontend/styles.css`](/frontend/styles.css#L8067) | `L8067` | `flex` | — | — | — | — |
+| `.tx-top-header` | [`frontend/styles.css`](/frontend/styles.css#L8086) | `L8086` | `flex !important` | — | `relative !important` | `#0a0f18 !important` | `wrap !important` |
+| `.tx-topbar` | [`frontend/styles.css`](/frontend/styles.css#L8087) | `L8087` | `flex !important` | — | `relative !important` | `#0a0f18 !important` | `wrap !important` |
+| `.tx-top-header` | [`frontend/styles.css`](/frontend/styles.css#L8127) | `L8127` | — | — | — | — | `wrap !important` |
+| `.tx-topbar` | [`frontend/styles.css`](/frontend/styles.css#L8128) | `L8128` | — | — | — | — | `wrap !important` |
+| `.tx-topbar` | [`frontend/styles.css`](/frontend/styles.css#L8213) | `L8213` | — | — | — | — | — |
+| `.tx-mw-header` | [`frontend/styles.css`](/frontend/styles.css#L8222) | `L8222` | `flex` | — | — | `#0a0f18` | `nowrap` |
+| `.tx-ticket-strip` | [`frontend/styles.css`](/frontend/styles.css#L8464) | `L8464` | `flex` | — | — | `#0d1522` | — |
+| `.tx-depth-pane` | [`frontend/styles.css`](/frontend/styles.css#L8676) | `L8676` | `flex` | — | — | `#090e17` | — |
+| `#tx-confirm-order-modal` | [`frontend/styles.css`](/frontend/styles.css#L8878) | `L8878` | — | — | — | `#0f172a` | — |
 | `.session-bar` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L69) | `L69` | — | — | — | `#ffffff` | — |
 | `.metric-card` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L95) | `L95` | — | — | — | `#ffffff` | — |
 | `.nav-rail` | [`frontend/theme_light_hermes.css`](/frontend/theme_light_hermes.css#L499) | `L499` | — | — | — | `#f8fafc !important` | — |
@@ -3025,37 +3025,37 @@ Complete index of all **147** JavaScript controller and rendering functions:
 | `renderSnapshot()` | [`frontend/app.js`](/frontend/app.js#L363) | `L363` | DOM Renderer |
 | `renderEquitySparkline()` | [`frontend/app.js`](/frontend/app.js#L436) | `L436` | DOM Renderer |
 | `renderActiveHoldings()` | [`frontend/app.js`](/frontend/app.js#L450) | `L450` | DOM Renderer |
-| `renderBuckets()` | [`frontend/app.js`](/frontend/app.js#L649) | `L649` | DOM Renderer |
-| `cell()` | [`frontend/app.js`](/frontend/app.js#L682) | `L682` | UI Controller |
-| `selectCompany()` | [`frontend/app.js`](/frontend/app.js#L684) | `L684` | Event Handler / State Transition |
-| `formatCompactNumber()` | [`frontend/app.js`](/frontend/app.js#L691) | `L691` | Formatter / Utility |
-| `renderWatchlist()` | [`frontend/app.js`](/frontend/app.js#L699) | `L699` | DOM Renderer |
-| `renderCanaryTheses()` | [`frontend/app.js`](/frontend/app.js#L933) | `L933` | DOM Renderer |
-| `renderInspector()` | [`frontend/app.js`](/frontend/app.js#L967) | `L967` | DOM Renderer |
-| `isBuyDecision()` | [`frontend/app.js`](/frontend/app.js#L1006) | `L1006` | UI Controller |
-| `isSellDecision()` | [`frontend/app.js`](/frontend/app.js#L1012) | `L1012` | UI Controller |
-| `isLockDecision()` | [`frontend/app.js`](/frontend/app.js#L1018) | `L1018` | UI Controller |
-| `isBlockedDecision()` | [`frontend/app.js`](/frontend/app.js#L1035) | `L1035` | UI Controller |
-| `renderDecisions()` | [`frontend/app.js`](/frontend/app.js#L1058) | `L1058` | DOM Renderer |
-| `renderLedger()` | [`frontend/app.js`](/frontend/app.js#L1146) | `L1146` | DOM Renderer |
-| `initMarketMapResizeObserver()` | [`frontend/app.js`](/frontend/app.js#L1350) | `L1350` | UI Controller |
-| `initTheme()` | [`frontend/app.js`](/frontend/app.js#L1376) | `L1376` | UI Controller |
-| `setTheme()` | [`frontend/app.js`](/frontend/app.js#L1382) | `L1382` | DOM Updater / State Sync |
-| `toggleTheme()` | [`frontend/app.js`](/frontend/app.js#L1393) | `L1393` | Event Handler / State Transition |
-| `tickMarketClock()` | [`frontend/app.js`](/frontend/app.js#L1399) | `L1399` | UI Controller |
-| `tickClock()` | [`frontend/app.js`](/frontend/app.js#L1481) | `L1481` | UI Controller |
-| `renderAutomationControlBar()` | [`frontend/app.js`](/frontend/app.js#L1490) | `L1490` | DOM Renderer |
-| `setAutomationConfig()` | [`frontend/app.js`](/frontend/app.js#L1831) | `L1831` | DOM Updater / State Sync |
-| `setHandoffPendingState()` | [`frontend/app.js`](/frontend/app.js#L1954) | `L1954` | DOM Updater / State Sync |
-| `executeRunModeHandoff()` | [`frontend/app.js`](/frontend/app.js#L1972) | `L1972` | UI Controller |
-| `executeHandoff()` | [`frontend/app.js`](/frontend/app.js#L1997) | `L1997` | UI Controller |
-| `switchToLiveHours()` | [`frontend/app.js`](/frontend/app.js#L2098) | `L2098` | Event Handler / State Transition |
-| `switchToTestMode()` | [`frontend/app.js`](/frontend/app.js#L2107) | `L2107` | Event Handler / State Transition |
-| `initRealtimeStream()` | [`frontend/app.js`](/frontend/app.js#L2159) | `L2159` | UI Controller |
-| `switchView()` | [`frontend/app.js`](/frontend/app.js#L2185) | `L2185` | Event Handler / State Transition |
-| `initViewRouter()` | [`frontend/app.js`](/frontend/app.js#L2258) | `L2258` | UI Controller |
-| `initScrollSpy()` | [`frontend/app.js`](/frontend/app.js#L2290) | `L2290` | UI Controller |
-| `updateActiveNav()` | [`frontend/app.js`](/frontend/app.js#L2303) | `L2303` | DOM Updater / State Sync |
+| `renderBuckets()` | [`frontend/app.js`](/frontend/app.js#L674) | `L674` | DOM Renderer |
+| `cell()` | [`frontend/app.js`](/frontend/app.js#L707) | `L707` | UI Controller |
+| `selectCompany()` | [`frontend/app.js`](/frontend/app.js#L709) | `L709` | Event Handler / State Transition |
+| `formatCompactNumber()` | [`frontend/app.js`](/frontend/app.js#L716) | `L716` | Formatter / Utility |
+| `renderWatchlist()` | [`frontend/app.js`](/frontend/app.js#L724) | `L724` | DOM Renderer |
+| `renderCanaryTheses()` | [`frontend/app.js`](/frontend/app.js#L939) | `L939` | DOM Renderer |
+| `renderInspector()` | [`frontend/app.js`](/frontend/app.js#L973) | `L973` | DOM Renderer |
+| `isBuyDecision()` | [`frontend/app.js`](/frontend/app.js#L1012) | `L1012` | UI Controller |
+| `isSellDecision()` | [`frontend/app.js`](/frontend/app.js#L1018) | `L1018` | UI Controller |
+| `isLockDecision()` | [`frontend/app.js`](/frontend/app.js#L1024) | `L1024` | UI Controller |
+| `isBlockedDecision()` | [`frontend/app.js`](/frontend/app.js#L1041) | `L1041` | UI Controller |
+| `renderDecisions()` | [`frontend/app.js`](/frontend/app.js#L1064) | `L1064` | DOM Renderer |
+| `renderLedger()` | [`frontend/app.js`](/frontend/app.js#L1152) | `L1152` | DOM Renderer |
+| `initMarketMapResizeObserver()` | [`frontend/app.js`](/frontend/app.js#L1356) | `L1356` | UI Controller |
+| `initTheme()` | [`frontend/app.js`](/frontend/app.js#L1382) | `L1382` | UI Controller |
+| `setTheme()` | [`frontend/app.js`](/frontend/app.js#L1388) | `L1388` | DOM Updater / State Sync |
+| `toggleTheme()` | [`frontend/app.js`](/frontend/app.js#L1399) | `L1399` | Event Handler / State Transition |
+| `tickMarketClock()` | [`frontend/app.js`](/frontend/app.js#L1405) | `L1405` | UI Controller |
+| `tickClock()` | [`frontend/app.js`](/frontend/app.js#L1487) | `L1487` | UI Controller |
+| `renderAutomationControlBar()` | [`frontend/app.js`](/frontend/app.js#L1496) | `L1496` | DOM Renderer |
+| `setAutomationConfig()` | [`frontend/app.js`](/frontend/app.js#L1837) | `L1837` | DOM Updater / State Sync |
+| `setHandoffPendingState()` | [`frontend/app.js`](/frontend/app.js#L1960) | `L1960` | DOM Updater / State Sync |
+| `executeRunModeHandoff()` | [`frontend/app.js`](/frontend/app.js#L1978) | `L1978` | UI Controller |
+| `executeHandoff()` | [`frontend/app.js`](/frontend/app.js#L2003) | `L2003` | UI Controller |
+| `switchToLiveHours()` | [`frontend/app.js`](/frontend/app.js#L2104) | `L2104` | Event Handler / State Transition |
+| `switchToTestMode()` | [`frontend/app.js`](/frontend/app.js#L2113) | `L2113` | Event Handler / State Transition |
+| `initRealtimeStream()` | [`frontend/app.js`](/frontend/app.js#L2165) | `L2165` | UI Controller |
+| `switchView()` | [`frontend/app.js`](/frontend/app.js#L2191) | `L2191` | Event Handler / State Transition |
+| `initViewRouter()` | [`frontend/app.js`](/frontend/app.js#L2264) | `L2264` | UI Controller |
+| `initScrollSpy()` | [`frontend/app.js`](/frontend/app.js#L2296) | `L2296` | UI Controller |
+| `updateActiveNav()` | [`frontend/app.js`](/frontend/app.js#L2309) | `L2309` | DOM Updater / State Sync |
 | `smoothCurvePath()` | [`frontend/charts.js`](/frontend/charts.js#L8) | `L8` | Canvas / Chart Geometry |
 | `getBezierPointAtContinuousIndex()` | [`frontend/charts.js`](/frontend/charts.js#L31) | `L31` | Canvas / Chart Geometry |
 | `renderMainChart()` | [`frontend/charts.js`](/frontend/charts.js#L63) | `L63` | DOM Renderer |
@@ -3102,23 +3102,23 @@ Complete index of all **147** JavaScript controller and rendering functions:
 | `executeRollback()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1107) | `L1107` | UI Controller |
 | `_hermesProviderMeta()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1162) | `L1162` | Hermes Copilot / Chat UI |
 | `loadHermesModels()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1185) | `L1185` | API Client / Ingestion |
-| `switchHermesModel()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1240) | `L1240` | Hermes Copilot / Chat UI |
-| `loadRiskCapsSettings()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1264) | `L1264` | API Client / Ingestion |
-| `saveRiskCapsSettings()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1298) | `L1298` | DOM Updater / State Sync |
-| `loadApiKeysSettings()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1365) | `L1365` | API Client / Ingestion |
-| `saveApiKeysSettings()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1390) | `L1390` | API Client / Ingestion |
-| `checkAuthSession()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1429) | `L1429` | UI Controller |
-| `openOperatorProfile()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1447) | `L1447` | UI Controller |
-| `closeOperatorProfile()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1452) | `L1452` | UI Controller |
-| `handleOperatorLogin()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1457) | `L1457` | Event Handler / State Transition |
-| `handleOperatorLogout()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1486) | `L1486` | Event Handler / State Transition |
-| `markKeysDirty()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1496) | `L1496` | UI Controller |
-| `initAuthAndSettings()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1506) | `L1506` | DOM Updater / State Sync |
-| `loadSystemChanges()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1604) | `L1604` | API Client / Ingestion |
-| `initHermesChatListeners()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1693) | `L1693` | Hermes Copilot / Chat UI |
-| `setStockNowBusy()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1739) | `L1739` | DOM Updater / State Sync |
-| `updateSourceBadgeToLive()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1744) | `L1744` | DOM Updater / State Sync |
-| `runBridgeAction()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1752) | `L1752` | UI Controller |
+| `switchHermesModel()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1244) | `L1244` | Hermes Copilot / Chat UI |
+| `loadRiskCapsSettings()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1268) | `L1268` | API Client / Ingestion |
+| `saveRiskCapsSettings()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1302) | `L1302` | DOM Updater / State Sync |
+| `loadApiKeysSettings()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1369) | `L1369` | API Client / Ingestion |
+| `saveApiKeysSettings()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1394) | `L1394` | API Client / Ingestion |
+| `checkAuthSession()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1433) | `L1433` | UI Controller |
+| `openOperatorProfile()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1451) | `L1451` | UI Controller |
+| `closeOperatorProfile()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1456) | `L1456` | UI Controller |
+| `handleOperatorLogin()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1461) | `L1461` | Event Handler / State Transition |
+| `handleOperatorLogout()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1490) | `L1490` | Event Handler / State Transition |
+| `markKeysDirty()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1500) | `L1500` | UI Controller |
+| `initAuthAndSettings()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1510) | `L1510` | DOM Updater / State Sync |
+| `loadSystemChanges()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1608) | `L1608` | API Client / Ingestion |
+| `initHermesChatListeners()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1697) | `L1697` | Hermes Copilot / Chat UI |
+| `setStockNowBusy()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1743) | `L1743` | DOM Updater / State Sync |
+| `updateSourceBadgeToLive()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1748) | `L1748` | DOM Updater / State Sync |
+| `runBridgeAction()` | [`frontend/hermes_ui.js`](/frontend/hermes_ui.js#L1756) | `L1756` | UI Controller |
 | `toTradeXpressSymbol()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L24) | `L24` | UI Controller |
 | `cleanSymbol()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L30) | `L30` | UI Controller |
 | `calcBrokerFee()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L35) | `L35` | UI Controller |
@@ -3137,19 +3137,19 @@ Complete index of all **147** JavaScript controller and rendering functions:
 | `executeConfirmedOrder()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L427) | `L427` | UI Controller |
 | `loadOrders()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L472) | `L472` | API Client / Ingestion |
 | `renderOrdersTable()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L484) | `L484` | DOM Renderer |
-| `cancelOrder()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L526) | `L526` | UI Controller |
-| `loadLearningSummary()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L545) | `L545` | API Client / Ingestion |
-| `renderLearningView()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L557) | `L557` | DOM Renderer |
-| `loadFeedStatus()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L595) | `L595` | API Client / Ingestion |
-| `controlBridge()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L607) | `L607` | UI Controller |
-| `renderFeedStatusCard()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L626) | `L626` | DOM Renderer |
-| `renderAccountDonut()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L706) | `L706` | DOM Renderer |
-| `updateFromSnapshot()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L765) | `L765` | DOM Updater / State Sync |
-| `setText()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L830) | `L830` | DOM Updater / State Sync |
-| `showToast()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L835) | `L835` | UI Controller |
-| `init()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L853) | `L853` | UI Controller |
-| `sync30dCurves()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L1016) | `L1016` | Canvas / Chart Geometry |
-| `loadDecisions()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L1062) | `L1062` | API Client / Ingestion |
+| `cancelOrder()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L529) | `L529` | UI Controller |
+| `loadLearningSummary()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L548) | `L548` | API Client / Ingestion |
+| `renderLearningView()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L560) | `L560` | DOM Renderer |
+| `loadFeedStatus()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L598) | `L598` | API Client / Ingestion |
+| `controlBridge()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L610) | `L610` | UI Controller |
+| `renderFeedStatusCard()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L629) | `L629` | DOM Renderer |
+| `renderAccountDonut()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L709) | `L709` | DOM Renderer |
+| `updateFromSnapshot()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L768) | `L768` | DOM Updater / State Sync |
+| `setText()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L842) | `L842` | DOM Updater / State Sync |
+| `showToast()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L847) | `L847` | UI Controller |
+| `init()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L865) | `L865` | UI Controller |
+| `sync30dCurves()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L1028) | `L1028` | Canvas / Chart Geometry |
+| `loadDecisions()` | [`frontend/tradexpress_ui.js`](/frontend/tradexpress_ui.js#L1074) | `L1074` | API Client / Ingestion |
 
 
 ### 6.5 Hermes Agent Plugin Tool Registry (`plugins/humming_bird/tools.py`)
@@ -3189,7 +3189,7 @@ Complete catalog of all **25** registered Hermes tools powering chat commands an
 
 | Stylesheet File | Lines | Purpose |
 | :--- | :--- | :--- |
-| `styles.css` | 9078 | Core design tokens, layout & widgets |
+| `styles.css` | 9084 | Core design tokens, layout & widgets |
 | `theme_light_hermes.css` | 3559 | Daylight overrides & Hermes IDE sidebar |
 
 
@@ -3403,12 +3403,12 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/main.py` | `event_stream` | 26 | 4 | Acceptable; well-scoped logic |
 | `backend/main.py` | `generator` | 13 | 4 | Acceptable; well-scoped logic |
 | `backend/market_map.py` | `build_market_map_payload` | 72 | 5 | Acceptable; well-scoped logic |
-| `backend/portfolio.py` | `snapshot_from_session` | 487 | 7 | Decompose into sub-functions |
+| `backend/portfolio.py` | `snapshot_from_session` | 492 | 7 | Decompose into sub-functions |
 | `backend/portfolio.py` | `normalized_watchlist` | 20 | 4 | Acceptable; well-scoped logic |
 | `backend/routes_auth_settings.py` | `build_auth_settings_router` | 146 | 3 | Decompose into sub-functions |
 | `backend/routes_hermes.py` | `_read_env_key_values` | 41 | 5 | Acceptable; well-scoped logic |
 | `backend/routes_hermes.py` | `_probe_provider_live` | 59 | 7 | Acceptable; well-scoped logic |
-| `backend/routes_hermes.py` | `build_hermes_router` | 229 | 5 | Decompose into sub-functions |
+| `backend/routes_hermes.py` | `build_hermes_router` | 235 | 5 | Decompose into sub-functions |
 | `backend/routes_hermes.py` | `system_changes` | 73 | 5 | Acceptable; well-scoped logic |
 | `backend/routes_hermes.py` | `switch_hermes_model` | 71 | 4 | Acceptable; well-scoped logic |
 | `backend/routes_stocknow.py` | `build_stocknow_router` | 223 | 6 | Decompose into sub-functions |
@@ -3460,4 +3460,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/verify_chat_card.py` | `main` | 121 | 3 | Decompose into sub-functions |
 
 
-> **Knowledge Graph Summary:** 62 Python modules inspected, 68 FastAPI endpoints registered, 19 SQLAlchemy tables mapped, 30 Pydantic contracts indexed, 25 Hermes tools bound to skills, 147 JS functions mapped, 454 DOM IDs indexed, 219,844 total LOC indexed across 167 repository files.
+> **Knowledge Graph Summary:** 62 Python modules inspected, 68 FastAPI endpoints registered, 19 SQLAlchemy tables mapped, 30 Pydantic contracts indexed, 25 Hermes tools bound to skills, 147 JS functions mapped, 454 DOM IDs indexed, 219,910 total LOC indexed across 167 repository files.

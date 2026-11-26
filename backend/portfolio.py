@@ -858,6 +858,11 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
         "buying_power_bdt": float(cash + (getattr(state, "unsettled_sales_bdt", ZERO) or ZERO)),
         "dse_index": passive_feed.get_market_index() if passive_feed else {},
         "broker_mirror_account": passive_feed.get_account_summary().to_dict() if passive_feed else {},
+        "broker_orders": passive_feed.get_broker_order_list() if passive_feed else [],
+        "broker_holdings": [
+            h.to_dict() if hasattr(h, "to_dict") else dict(vars(h))
+            for h in passive_feed.get_all_holdings().values()
+        ] if passive_feed else [],
         "summary": metrics_dict,
         "last_market_sync": state.clock_date.isoformat(),
         "notice": "All prices/scenarios/trades are synthetic. No live orders. No guaranteed recovery or returns.",

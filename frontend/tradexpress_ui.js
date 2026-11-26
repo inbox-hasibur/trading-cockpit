@@ -494,24 +494,27 @@
 
     tbody.innerHTML = orders
       .map((o) => {
-        const statusClass = `tx-status-${o.status.toLowerCase()}`;
+        const st = String(o.status || "").toUpperCase();
+        const statusClass = `tx-status-${st.toLowerCase()}`;
+        const isBroker = o.source === "BROKER_H9210" || String(o.order_ref || "").startsWith("BROKER-") || Boolean(o.is_broker);
+        const brokerTag = isBroker ? ' <span class="badge badge-live" style="font-size:9px; padding:1px 4px;">BROKER H9210</span>' : "";
         const cancelBtn =
-          o.status === "QUEUED"
+          !isBroker && st === "QUEUED"
             ? `<button type="button" class="tx-cancel-order-btn" data-ref="${o.order_ref}" title="Cancel resting order">Cancel</button>`
             : `<span class="muted">—</span>`;
 
         return `
           <tr>
-            <td><strong>${toTradeXpressSymbol(o.symbol)}</strong></td>
-            <td class="small muted">${o.order_ref}</td>
-            <td>H9210</td>
-            <td><span class="tx-badge-status ${statusClass}">${o.status}</span></td>
-            <td><span class="${o.side === "BUY" ? "positive" : "negative"}">${o.side}</span></td>
-            <td class="align-right">${o.quantity}</td>
-            <td class="align-right">৳${Number(o.limit_price).toFixed(2)}</td>
-            <td class="align-right">${o.filled_qty}</td>
-            <td class="align-right">${o.pending_qty}</td>
-            <td class="align-right">৳${Number(o.order_value).toFixed(2)}</td>
+            <td><strong>${toTradeXpressSymbol(o.symbol)}</strong>${brokerTag}</td>
+            <td class="small muted">${o.order_ref || "—"}</td>
+            <td>${o.cash_account || "H9210"}</td>
+            <td><span class="tx-badge-status ${statusClass}">${o.status || "—"}</span></td>
+            <td><span class="${String(o.side || "").toUpperCase() === "BUY" ? "positive" : "negative"}">${o.side || "—"}</span></td>
+            <td class="align-right">${o.quantity ?? 0}</td>
+            <td class="align-right">৳${Number(o.limit_price ?? o.price ?? 0).toFixed(2)}</td>
+            <td class="align-right">${o.filled_qty ?? 0}</td>
+            <td class="align-right">${o.pending_qty ?? 0}</td>
+            <td class="align-right">৳${Number(o.order_value ?? 0).toFixed(2)}</td>
             <td class="align-center">${cancelBtn}</td>
           </tr>
         `;
@@ -804,6 +807,15 @@
     setText("tx-acc-withdrawable", hasMirror ? formatMoney(bm.cash_available_for_withdrawal || bm.cash_balance || 0) : "—");
     setText("tx-acc-realized-pnl", formatMoney(metrics.realized_pnl || 0));
     setText("tx-acc-unrealized-pnl", formatMoney(metrics.unrealized_pnl || 0));
+
+    // Real-time Order List update from SSE snapshot.broker_orders
+    if (Array.isArray(snapshot.broker_orders)) {
+      if (snapshot.broker_orders.length > 0) {
+        renderOrdersTable(snapshot.broker_orders);
+      } else {
+        loadOrders();
+      }
+    }
 
     // Donut chart
     renderAccountDonut(

@@ -394,7 +394,7 @@ class TradeXpressPassiveFeed(MarketFeedAdapter):
             if self._cdp_connected:
                 return True
             now = now_utc if now_utc is not None else time.time()
-            return self._last_ingest_epoch > 0.0 and (now - self._last_ingest_epoch <= 20.0)
+            return self._last_ingest_epoch > 0.0 and (now - self._last_ingest_epoch <= 90.0)
 
     def get_telemetry(self) -> dict[str, Any]:
         with self._lock:

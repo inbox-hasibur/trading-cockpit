@@ -76,9 +76,10 @@ def test_app_js_watchlist_invalid_data_replacement():
     assert '"STALE"' in content
     assert '"LIVE"' in content
 
-    # Check retry sync link in watchlist
-    assert 'retry-sync-link' in content
-    assert '/api/stocknow/sync-market' in content
+    # Real 30d curve signals are preserved without legacy StockNow Retry links
+    assert "hasRealCurve" in content
+    assert "retry-sync-link" not in content
+    assert "/api/stocknow/sync-market" not in content
 
     # Check trade ledger row tagging
     assert '"STOCKNOW RECEIPT"' in content

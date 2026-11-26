@@ -1,6 +1,6 @@
 # 🗺️ Humming Bird Trading Cockpit V1 — Frontend Architecture & Contract Map
 
-> **Auto-Generated on:** `2026-11-26 08:16:39 UTC` via `scripts/generate_frontend_map.py`  
+> **Auto-Generated on:** `2026-11-26 08:59:40 UTC` via `scripts/generate_frontend_map.py`  
 > **Zero-Regression Mandate:** 0 `MISSING_LIGHT_OVERRIDE` CSS issues, 0 Field Contract mismatches.
 
 ---
@@ -127,7 +127,6 @@ Verification of data contracts between `backend/portfolio.py` and frontend JS (`
 | Company View (`company.*` / `c.*`) | `sector` | Yes | ✅ CONTRACT_VERIFIED |
 | Company View (`company.*` / `c.*`) | `sell_total_net` | Yes | ✅ CONTRACT_VERIFIED |
 | Company View (`company.*` / `c.*`) | `settlement_type` | Yes | ✅ CONTRACT_VERIFIED |
-| Company View (`company.*` / `c.*`) | `source` | Yes | ✅ CONTRACT_VERIFIED |
 | Company View (`company.*` / `c.*`) | `sparkline_points` | Yes | ✅ CONTRACT_VERIFIED |
 | Company View (`company.*` / `c.*`) | `symbol` | Yes | ✅ CONTRACT_VERIFIED |
 | Company View (`company.*` / `c.*`) | `symbol_category` | Yes | ✅ CONTRACT_VERIFIED |
@@ -136,7 +135,9 @@ Verification of data contracts between `backend/portfolio.py` and frontend JS (`
 | Company View (`company.*` / `c.*`) | `watchlist_category` | Yes | ✅ CONTRACT_VERIFIED |
 | Root Snapshot (`snapshot.*` / `state.snapshot.*`) | `adapter` | Yes | ✅ CONTRACT_VERIFIED |
 | Root Snapshot (`snapshot.*` / `state.snapshot.*`) | `app` | Yes | ✅ CONTRACT_VERIFIED |
+| Root Snapshot (`snapshot.*` / `state.snapshot.*`) | `broker_holdings` | Yes | ✅ CONTRACT_VERIFIED |
 | Root Snapshot (`snapshot.*` / `state.snapshot.*`) | `broker_mirror_account` | Yes | ✅ CONTRACT_VERIFIED |
+| Root Snapshot (`snapshot.*` / `state.snapshot.*`) | `broker_orders` | Yes | ✅ CONTRACT_VERIFIED |
 | Root Snapshot (`snapshot.*` / `state.snapshot.*`) | `buckets` | Yes | ✅ CONTRACT_VERIFIED |
 | Root Snapshot (`snapshot.*` / `state.snapshot.*`) | `buying_power_bdt` | Yes | ✅ CONTRACT_VERIFIED |
 | Root Snapshot (`snapshot.*` / `state.snapshot.*`) | `canary_theses` | Yes | ✅ CONTRACT_VERIFIED |
@@ -179,7 +180,7 @@ Mapping of client functions to active DOM elements and localhost API endpoints:
 | `frontend/app.js` | `updateControls` | `#buy-allocation`, `#chat-send`, `#company-enabled`, `#engine-state`, `#error-banner`, `#next-session` | `/api/portfolio` |
 | `frontend/app.js` | `refresh` | `#error-banner`, `#portfolio-header-badge`, `#portfolio-header-badge-dot`, `#portfolio-header-badge-text` | `/api/portfolio` |
 | `frontend/app.js` | `mutate` | `#portfolio-header-badge`, `#portfolio-header-badge-dot`, `#portfolio-header-badge-text` | — |
-| `frontend/app.js` | `isLiveSource` | `#footer-mode-tag`, `#portfolio-header-badge`, `#portfolio-header-badge-dot`, `#portfolio-header-badge-text` | — |
+| `frontend/app.js` | `isLiveSource` | `#chat-safety-note`, `#footer-mode-tag`, `#portfolio-header-badge`, `#portfolio-header-badge-dot`, `#portfolio-header-badge-text` | — |
 | `frontend/app.js` | `renderPortfolioHeaderBadge` | `#chat-safety-note`, `#footer-mode-tag`, `#portfolio-header-badge`, `#portfolio-header-badge-dot`, `#portfolio-header-badge-text` | — |
 | `frontend/app.js` | `renderSnapshot` | `#active-holdings-body`, `#chat-safety-note`, `#equity-sparkline`, `#footer-mode-tag`, `#metric-total-gain` | — |
 | `frontend/app.js` | `renderEquitySparkline` | `#active-holdings-body`, `#active-holdings-foot`, `#equity-sparkline`, `#holdings-unrealized-gain` | — |

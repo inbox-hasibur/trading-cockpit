@@ -219,38 +219,10 @@ AVAILABLE_HERMES_MODELS = [
         "provider_label": "Google",
         "badge": "GOOGLE AI STUDIO · 1M CTX",
         "description": "Google AI Studio · Complex reasoning, coding & multimodal",
+        "intelligence": 96,
         "intelligence_score": 96,
+        "intel_tier": "Frontier",
         "intelligence_tier": "Frontier · 96%",
-    },
-    {
-        "id": "gemini-3.8-flash",
-        "name": "Gemini 3.8 Flash",
-        "provider": "gemini",
-        "provider_label": "Google",
-        "badge": "GOOGLE AI STUDIO · RECOMMENDED",
-        "description": "Google AI Studio · Fast multimodal & dynamic free quota",
-        "intelligence_score": 89,
-        "intelligence_tier": "High · 89%",
-    },
-    {
-        "id": "gemini-3.6-flash",
-        "name": "Gemini 3.6 Flash",
-        "provider": "gemini",
-        "provider_label": "Google",
-        "badge": "GOOGLE AI STUDIO",
-        "description": "Google AI Studio · Balanced speed & intelligence",
-        "intelligence_score": 87,
-        "intelligence_tier": "High · 87%",
-    },
-    {
-        "id": "gemini-2.5-flash",
-        "name": "Gemini 2.5 Flash",
-        "provider": "gemini",
-        "provider_label": "Google",
-        "badge": "GOOGLE DIRECT · STABLE",
-        "description": "Google Direct · Stable high-reliability reasoning & tools",
-        "intelligence_score": 86,
-        "intelligence_tier": "Reliable · 86%",
     },
     {
         "id": "gemini-3-flash-preview",
@@ -259,18 +231,22 @@ AVAILABLE_HERMES_MODELS = [
         "provider_label": "Google",
         "badge": "GOOGLE DIRECT",
         "description": "Google Direct · Tool-Calling Verified",
+        "intelligence": 87,
         "intelligence_score": 87,
-        "intelligence_tier": "High · 87%",
+        "intel_tier": "Strong",
+        "intelligence_tier": "Strong · 87%",
     },
     {
         "id": "gemini-3.5-flash-lite",
         "name": "Gemini 3.5 Flash-Lite",
         "provider": "gemini",
         "provider_label": "Google",
-        "badge": "GOOGLE DIRECT (~1.0s)",
+        "badge": "GOOGLE DIRECT (~1.0s) · RECOMMENDED",
         "description": "Google Direct · ~1.0s Tool-Calling Verified (Fastest)",
-        "intelligence_score": 78,
-        "intelligence_tier": "Fast · 78%",
+        "intelligence": 80,
+        "intelligence_score": 80,
+        "intel_tier": "Reliable",
+        "intelligence_tier": "Reliable · 80%",
     },
     {
         "id": "gemini-3.1-flash-lite",
@@ -279,7 +255,9 @@ AVAILABLE_HERMES_MODELS = [
         "provider_label": "Google",
         "badge": "GOOGLE DIRECT (~1.1s)",
         "description": "Google Direct · Tool-Calling Verified",
+        "intelligence": 77,
         "intelligence_score": 77,
+        "intel_tier": "Fast",
         "intelligence_tier": "Fast · 77%",
     },
     {
@@ -289,7 +267,9 @@ AVAILABLE_HERMES_MODELS = [
         "provider_label": "Google",
         "badge": "GOOGLE DIRECT",
         "description": "Google Direct · Tool-Calling Verified",
+        "intelligence": 77,
         "intelligence_score": 77,
+        "intel_tier": "Fast",
         "intelligence_tier": "Fast · 77%",
     },
     # --- Groq Cloud (Ultra-Fast LPU Backup) ---
@@ -637,19 +617,25 @@ def build_hermes_router(database: Database, settings: Settings, *args: Any, **kw
             if avail and m["provider"] == "gemini" and gemini_allowed is not None and m["id"] not in gemini_allowed:
                 avail = False
                 reason = f"{m['id']} not enabled on your Gemini API key"
+            score = int(m.get("intelligence") or m.get("intelligence_score") or 75)
+            tier = m.get("intel_tier") or ("Frontier" if score >= 90 else ("Strong" if score >= 82 else ("Reliable" if score >= 78 else "Fast")))
             enriched_models.append({
                 **m,
+                "intelligence": score,
+                "intelligence_score": score,
+                "intel_tier": tier,
+                "intelligence_tier": m.get("intelligence_tier") or f"{tier} · {score}%",
                 "available": avail,
                 "unavailable_reason": reason,
             })
 
         # Sort available models first (highest intelligence first), then unavailable models (highest intelligence first)
-        enriched_models.sort(key=lambda x: (0 if x["available"] else 1, -int(x.get("intelligence_score", 0))))
+        enriched_models.sort(key=lambda x: (0 if x["available"] else 1, -int(x.get("intelligence", 0))))
 
         fallbacks = state_data.get("fallbacks", [])
         if not fallbacks:
             recommended = [
-                {"provider": "gemini", "model": "gemini-2.5-flash", "role": "primary"},
+                {"provider": "gemini", "model": "gemini-3.5-flash-lite", "role": "primary"},
                 {"provider": "groq", "model": "openai/gpt-oss-120b", "role": "backup"},
                 {"provider": "openrouter", "model": "openrouter/free", "role": "tertiary"},
             ]
@@ -689,8 +675,8 @@ def build_hermes_router(database: Database, settings: Settings, *args: Any, **kw
         healthy_fallbacks: list[dict[str, str]] = []
         if is_provider_available("groq", settings)[0]:
             healthy_fallbacks.append({"provider": "groq", "model": "openai/gpt-oss-120b"})
-        if is_provider_available("gemini", settings)[0] and model_id != "gemini-2.5-flash":
-            healthy_fallbacks.append({"provider": "gemini", "model": "gemini-2.5-flash"})
+        if is_provider_available("gemini", settings)[0] and model_id != "gemini-3.5-flash-lite":
+            healthy_fallbacks.append({"provider": "gemini", "model": "gemini-3.5-flash-lite"})
 
         try:
             cmd1 = [*hermes_cmd, "-p", "hummingbird", "config", "set", "model.default", model_id]

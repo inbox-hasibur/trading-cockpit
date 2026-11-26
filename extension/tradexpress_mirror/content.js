@@ -407,69 +407,106 @@
         result.active_tab = 'portfolio';
       }
 
-      // 1. Portfolio Rows if portfolio tab or rows exist
+      // 1. Header-mapped Ember Table scraper for Order List & Portfolio
+      const leftHeaderCells = Array.from(
+        portContainer.querySelectorAll('.ember-table-left-table-block .ember-table-header-row .ember-table-header-cell, .ember-table-left-table-block .ember-table-header-cell')
+      );
+      const rightHeaderCells = Array.from(
+        portContainer.querySelectorAll('.ember-table-right-table-block .ember-table-header-row .ember-table-header-cell, .ember-table-right-table-block .ember-table-header-cell')
+      );
+      const normHdr = (s) => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+      const rightHeaders = rightHeaderCells.map((h) => normHdr(safeText(h)));
+      const looksLikeOrderList = rightHeaders.some((h) => h.includes('order id') || h.includes('filled') || h.includes('pending qty') || h.includes('pending quantity') || h === 'side');
+      if (looksLikeOrderList) {
+        result.active_tab = 'order_list';
+      }
+
       const leftRows = portContainer.querySelectorAll('.ember-table-left-table-block .ember-table-table-row');
       const rightRows = portContainer.querySelectorAll('.ember-table-right-table-block .ember-table-table-row');
 
       if (leftRows.length > 0 && rightRows.length > 0) {
-        const leftMap = new Map();
-        leftRows.forEach((r) => {
+        const leftByTop = new Map();
+        const leftByIdx = [];
+        leftRows.forEach((r, idx) => {
           const topKey = r.style.top || (r.offsetTop + 'px');
-          const symEl = r.querySelector('[cell-id="dataObj.symbolInfo.dSym"], [cell-id="dataObj.sDes"], .symbol-fore-color');
+          const symEl = r.querySelector('[cell-id="dataObj.symbolInfo.dSym"], [cell-id="dataObj.sDes"], [cell-id="dataObj.symbol"], .symbol-fore-color') || r.querySelector('.ember-table-cell');
           const sym = safeText(symEl);
-          if (sym) leftMap.set(topKey, sym);
+          if (sym) {
+            leftByTop.set(topKey, sym);
+            leftByIdx[idx] = sym;
+          }
         });
 
-        rightRows.forEach((r) => {
+        const pickByHeaderOrSelector = (row, selectors, headerMatchers) => {
+          for (const sel of selectors) {
+            const el = row.querySelector(sel);
+            if (el) {
+              const txt = safeText(el);
+              if (txt) return txt;
+            }
+          }
+          if (rightHeaders.length > 0) {
+            const cells = Array.from(row.querySelectorAll('.ember-table-cell'));
+            for (let i = 0; i < rightHeaders.length && i < cells.length; i++) {
+              const hdr = rightHeaders[i];
+              if (headerMatchers.some((m) => hdr.includes(m))) {
+                return safeText(cells[i]);
+              }
+            }
+          }
+          return '';
+        };
+
+        rightRows.forEach((r, idx) => {
           const topKey = r.style.top || (r.offsetTop + 'px');
-          const sym = leftMap.get(topKey);
+          const sym = leftByTop.get(topKey) || leftByIdx[idx];
           if (!sym) return;
 
           if (result.active_tab === 'order_list') {
-            const ordIdEl = r.querySelector('[cell-id="dataObj.orderId"], [cell-id="dataObj.ordId"], [cell-id="dataObj.refNo"]');
-            const cashEl = r.querySelector('[cell-id="dataObj.cashAccount"], [cell-id="dataObj.clientCode"]');
-            const statEl = r.querySelector('[cell-id="dataObj.ordStatus"], [cell-id="dataObj.status"]');
-            const sideEl = r.querySelector('[cell-id="dataObj.side"], [cell-id="dataObj.ordSide"]');
-            const qtyEl = r.querySelector('[cell-id="dataObj.ordQty"], [cell-id="dataObj.qty"]');
-            const priceEl = r.querySelector('[cell-id="dataObj.ordPrice"], [cell-id="dataObj.price"]');
-            const fillEl = r.querySelector('[cell-id="dataObj.filledQty"], [cell-id="dataObj.execQty"]');
-            const pendEl = r.querySelector('[cell-id="dataObj.pendingQty"], [cell-id="dataObj.leavesQty"]');
-            const avgEl = r.querySelector('[cell-id="dataObj.avgPrice"]');
-            const valEl = r.querySelector('[cell-id="dataObj.orderValue"], [cell-id="dataObj.ordVal"]');
+            const ordId = pickByHeaderOrSelector(r, ['[cell-id="dataObj.orderId"]', '[cell-id="dataObj.ordId"]', '[cell-id="dataObj.refNo"]'], ['order id', 'ord id', 'ref']);
+            const cash = pickByHeaderOrSelector(r, ['[cell-id="dataObj.cashAccount"]', '[cell-id="dataObj.clientCode"]'], ['cash a/c', 'cash', 'client']);
+            const stat = pickByHeaderOrSelector(r, ['[cell-id="dataObj.ordStatus"]', '[cell-id="dataObj.status"]'], ['status']);
+            const side = pickByHeaderOrSelector(r, ['[cell-id="dataObj.side"]', '[cell-id="dataObj.ordSide"]'], ['side']);
+            const qty = pickByHeaderOrSelector(r, ['[cell-id="dataObj.ordQty"]', '[cell-id="dataObj.qty"]'], ['quantity', 'qty']);
+            const price = pickByHeaderOrSelector(r, ['[cell-id="dataObj.ordPrice"]', '[cell-id="dataObj.price"]'], ['price']);
+            const fill = pickByHeaderOrSelector(r, ['[cell-id="dataObj.filledQty"]', '[cell-id="dataObj.execQty"]'], ['filled']);
+            const pend = pickByHeaderOrSelector(r, ['[cell-id="dataObj.pendingQty"]', '[cell-id="dataObj.leavesQty"]'], ['pending']);
+            const avg = pickByHeaderOrSelector(r, ['[cell-id="dataObj.avgPrice"]'], ['avg']);
+            const val = pickByHeaderOrSelector(r, ['[cell-id="dataObj.orderValue"]', '[cell-id="dataObj.ordVal"]'], ['order value', 'value']);
 
             result.broker_order_list.push({
               symbol: sym,
-              orderId: safeText(ordIdEl),
-              cashAccount: safeText(cashEl) || 'H9210',
-              status: safeText(statEl),
-              side: safeText(sideEl),
-              quantity: parseNum(safeText(qtyEl)) || 0,
-              price: parseNum(safeText(priceEl)) || 0,
-              filledQty: parseNum(safeText(fillEl)) || 0,
-              pendingQty: parseNum(safeText(pendEl)) || 0,
-              avgPrice: parseNum(safeText(avgEl)) || 0,
-              orderValue: parseNum(safeText(valEl)) || 0,
+              orderId: ordId,
+              cashAccount: cash || 'H9210',
+              status: stat,
+              side: side,
+              quantity: parseNum(qty) || 0,
+              price: parseNum(price) || 0,
+              filledQty: parseNum(fill) || 0,
+              pendingQty: parseNum(pend) || 0,
+              avgPrice: parseNum(avg) || 0,
+              orderValue: parseNum(val) || 0,
             });
             return;
           }
 
-          const totalQtyEl = r.querySelector('[cell-id="dataObj.profLossQty"]');
-          const avaiQtyEl = r.querySelector('[cell-id="dataObj.avaiQtyDSE"]');
-          const penHoldingEl = r.querySelector('[cell-id="dataObj.penHolding"]');
-          const pendBuyEl = r.querySelector('[cell-id="dataObj.pendBuy"]');
-          const pendSellEl = r.querySelector('[cell-id="dataObj.pendSell"]');
-          const avgCstEl = r.querySelector('[cell-id="dataObj.avgCst"]');
-          const mktPriceEl = r.querySelector('[cell-id="dataObj.mktPrice"]');
+          const totalQty = pickByHeaderOrSelector(r, ['[cell-id="dataObj.profLossQty"]'], ['quantity', 'total qty']);
+          const avaiQty = pickByHeaderOrSelector(r, ['[cell-id="dataObj.avaiQtyDSE"]'], ['available qty']);
+          const penHolding = pickByHeaderOrSelector(r, ['[cell-id="dataObj.penHolding"]'], ['pending holding']);
+          const pendBuy = pickByHeaderOrSelector(r, ['[cell-id="dataObj.pendBuy"]'], ['buy pending']);
+          const pendSell = pickByHeaderOrSelector(r, ['[cell-id="dataObj.pendSell"]'], ['sell pending']);
+          const avgCst = pickByHeaderOrSelector(r, ['[cell-id="dataObj.avgCst"]'], ['avg. cost', 'avg cost']);
+          const mktPrice = pickByHeaderOrSelector(r, ['[cell-id="dataObj.mktPrice"]'], ['market price']);
 
           result.portfolio_rows.push({
             symbol: sym,
-            total_qty: parseInt(cleanNum(safeText(totalQtyEl))) || 0,
-            available_dse_qty: parseInt(cleanNum(safeText(avaiQtyEl))) || 0,
-            pending_holding_qty: parseInt(cleanNum(safeText(penHoldingEl))) || 0,
-            buy_pending_qty: parseInt(cleanNum(safeText(pendBuyEl))) || 0,
-            sell_pending_qty: parseInt(cleanNum(safeText(pendSellEl))) || 0,
-            avg_cost: cleanNum(safeText(avgCstEl)),
-            market_price: cleanNum(safeText(mktPriceEl)),
+            total_qty: parseInt(cleanNum(totalQty)) || 0,
+            available_dse_qty: parseInt(cleanNum(avaiQty)) || 0,
+            pending_holding_qty: parseInt(cleanNum(penHolding)) || 0,
+            buy_pending_qty: parseInt(cleanNum(pendBuy)) || 0,
+            sell_pending_qty: parseInt(cleanNum(pendSell)) || 0,
+            avg_cost: cleanNum(avgCst),
+            market_price: cleanNum(mktPrice),
           });
         });
       }

@@ -44,10 +44,13 @@ def test_models_catalog_includes_all_free_providers(client: TestClient):
     assert providers == {"gemini", "groq", "mistral", "cerebras", "sambanova", "openrouter", "cloudflare"}
 
     ids = {(m["provider"], m["id"]) for m in models}
+    assert ("gemini", "gemini-3.8-flash") not in ids
+    assert ("gemini", "gemini-3.6-flash") not in ids
     expected = {
         ("gemini", "gemini-2.5-pro"),
-        ("gemini", "gemini-3.8-flash"),
-        ("gemini", "gemini-3.6-flash"),
+        ("gemini", "gemini-3.5-flash-lite"),
+        ("gemini", "gemini-3.1-flash-lite"),
+        ("gemini", "gemini-3-flash-preview"),
         ("groq", "openai/gpt-oss-120b"),
         ("groq", "qwen/qwen3.8-27b"),
         ("groq", "llama-3.3-70b-versatile"),
@@ -68,6 +71,8 @@ def test_models_catalog_includes_all_free_providers(client: TestClient):
     assert expected.issubset(ids)
     assert all(m["available"] is False for m in models)
     assert all(m["unavailable_reason"] for m in models)
+    assert all(isinstance(m["intelligence"], int) and m["intelligence"] > 0 for m in models)
+    assert all(m["intel_tier"] for m in models)
 
 
 def test_models_availability_respects_configured_keys(client: TestClient, monkeypatch):
@@ -96,9 +101,11 @@ def test_switch_model_blocks_unavailable_and_allows_available(client: TestClient
     assert "Missing MISTRAL_API_KEY" in resp_blocked.json()["detail"]
 
     monkeypatch.setenv("GROQ_API_KEY", "test-groq-key")
+    fake_hdir = client.app.state if hasattr(client, "app") else None
     with (
         patch("backend.routes_hermes._read_configured_env_keys", return_value={"GROQ_API_KEY"}),
         patch("backend.routes_hermes.subprocess.run"),
+        patch("backend.hermes_bridge.get_hermes_dir", return_value=Path("tests/.tmp_hermes_test")),
     ):
         resp_ok = client.post(
             "/api/hermes/model",

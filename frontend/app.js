@@ -352,9 +352,9 @@ function renderPortfolioHeaderBadge() {
   if (badgeDot) {
     badgeDot.className = `status-dot ${isRed ? "red active" : "live-dot active"}`;
   }
-  badgeText.textContent = `LIVE STOCKNOW ${name} #${id} (${syncedTime}, drift ${driftStr})`;
+  badgeText.textContent = `TradeXpress Mirror · H9210 (${syncedTime})`;
 
-  let tooltipReason = `Portfolio #${id} (${name}) synced from StockNow virtual broker at ${syncedTime}.`;
+  let tooltipReason = `TradeXpress Passive Mirror H9210 synced at ${syncedTime}.`;
   if (isDriftNonZero) tooltipReason += ` Drift detected: ${driftStr} BDT.`;
   if (isStale) tooltipReason += ` Warning: Sync data is stale.`;
   badgeEl.title = tooltipReason;
@@ -453,7 +453,32 @@ function renderActiveHoldings() {
   if (!body) return;
 
   const companies = state.snapshot.companies || [];
-  const holdings = companies.filter((c) => (c.holding_qty || 0) > 0);
+  let holdings = companies.filter((c) => (c.holding_qty || 0) > 0);
+  if (holdings.length === 0 && Array.isArray(state.snapshot.broker_holdings) && state.snapshot.broker_holdings.length > 0) {
+    holdings = state.snapshot.broker_holdings
+      .filter((bh) => Number(bh.quantity || bh.total_qty || 0) > 0)
+      .map((bh) => {
+        const qty = Number(bh.quantity || bh.total_qty || 0);
+        const avg = Number(bh.avg_cost || bh.market_price || 0);
+        const ltp = Number(bh.market_price || bh.avg_cost || 0);
+        const costBasis = avg * qty;
+        const gross = ltp * qty;
+        const netEst = gross * 0.995;
+        return {
+          symbol: bh.symbol,
+          name: `${bh.symbol} (H9210 Live)`,
+          holding_qty: qty,
+          mature_qty: Number(bh.available_dse_qty || 0),
+          locked_qty: Number(bh.pending_holding_qty || 0),
+          avg_bought_price: avg,
+          price: ltp,
+          cost_basis: costBasis,
+          estimated_net_value: netEst,
+          unrealized_pnl: netEst - costBasis,
+          net_profit_pct: costBasis > 0 ? ((netEst / costBasis) - 1) * 100 : 0,
+        };
+      });
+  }
 
   const cash = state.snapshot.metrics?.available_cash ?? 91236;
   const totalCost = holdings.reduce((sum, c) => sum + (c.cost_basis || 0), 0);
@@ -812,15 +837,16 @@ function renderWatchlist() {
     let tooltipReason = company.curve.reason || "";
     let isDataFallback = false;
 
-    // Replace red INVALID DATA with LIVE, LAST CLOSE, STALE, NO DATA
-    if (displaySignal === "INVALID_DATA" || /INVALID/i.test(displaySignal)) {
+    // Keep real curve signals when >= 7 daily candles exist; never mask with LAST CLOSE Retry
+    const hasRealCurve = (company.history_days >= 7 || (Array.isArray(company.history) && company.history.length >= 7));
+    if (!hasRealCurve && (displaySignal === "INVALID_DATA" || /INVALID/i.test(displaySignal))) {
       isDataFallback = true;
       if (!isTradingHours) {
         displaySignal = "LAST_CLOSE";
         tooltipReason = `Market closed (Trading hours: Sun–Thu 10:00–14:10) · Showing last close ৳${numberFormat.format(company.price)}`;
       } else if (!company.history || company.history.length === 0) {
         displaySignal = "NO_DATA";
-        tooltipReason = "No historical candle data available from StockNow API";
+        tooltipReason = "No historical candle data available yet";
       } else if (company.curve.reason && /stale/i.test(company.curve.reason)) {
         displaySignal = "STALE";
         tooltipReason = "Quote timestamp is from a prior session; awaiting live trade update";
@@ -828,11 +854,11 @@ function renderWatchlist() {
         displaySignal = "LIVE";
         tooltipReason = `Live intraday quote verified (৳${numberFormat.format(company.price)}) · Range analysis requires 7 sessions`;
       }
-    } else if (displaySignal === "NO_DATA" || displaySignal === "WAIT_DATA") {
+    } else if (!hasRealCurve && (displaySignal === "NO_DATA" || displaySignal === "WAIT_DATA")) {
       isDataFallback = true;
       displaySignal = "NO_DATA";
-      tooltipReason = tooltipReason || "Historical candles pending from StockNow API";
-    } else if (displaySignal === "STALE_DATA" || displaySignal === "STALE") {
+      tooltipReason = tooltipReason || "Historical candles pending";
+    } else if (!hasRealCurve && (displaySignal === "STALE_DATA" || displaySignal === "STALE")) {
       isDataFallback = true;
       displaySignal = "STALE";
       tooltipReason = tooltipReason || "Market quote delayed or from prior session";
@@ -865,26 +891,6 @@ function renderWatchlist() {
     }
 
     signalWrap.append(sigBadge);
-
-    // Provide a retry link for any data-fallback state (NO DATA, LAST CLOSE, STALE) on StockNow feeds; hide when LIVE or passive
-    if ((isDataFallback || displaySignal === "NO_DATA" || displaySignal === "STALE" || displaySignal === "LAST_CLOSE") && displaySignal !== "LIVE" && !company.source?.includes("PASSIVE")) {
-      const retryLink = element("a", "retry-sync-link", "Retry");
-      retryLink.href = "#";
-      retryLink.title = `Retry live quote sync for ${company.symbol} from StockNow`;
-      retryLink.addEventListener("click", async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        try {
-          notify(`Syncing market quotes for ${company.symbol}…`);
-          await api("/api/stocknow/sync-market", { method: "POST" });
-          await refresh(true);
-          notify(`Market sync complete for ${company.symbol}.`);
-        } catch (err) {
-          notify(`Sync failed: ${err.message}`, true);
-        }
-      });
-      signalWrap.append(retryLink);
-    }
     signal.append(signalWrap);
 
     // 8. Day (Hold-day label)

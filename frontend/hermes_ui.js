@@ -1194,22 +1194,26 @@ async function loadHermesModels() {
       listEl.innerHTML = '<div class="empty-state-small" style="padding:8px 10px; font-size:11px;">No models available.</div>';
       return;
     }
+    let renderedLockedDivider = false;
     listEl.innerHTML = models.map((m) => {
       const isAvailable = m.available !== false;
+      const dividerHtml = (!isAvailable && !renderedLockedDivider)
+        ? ((renderedLockedDivider = true), '<div class="model-dropup-divider" style="font-size:10px; font-weight:700; color:var(--muted, #94a3b8); padding:6px 8px 3px; border-top:1px solid var(--border-color, rgba(148,163,184,0.2)); margin-top:4px; text-transform:uppercase; letter-spacing:0.04em;">Locked · API Key / Access Required</div>')
+        : '';
       const isActive = isAvailable && (m.id === activeModel || m.name === activeModel) && (!activeProvider || (m.provider || "").toLowerCase() === activeProvider);
       const meta = _hermesProviderMeta(m.provider);
       const badgeStyle = isAvailable
         ? meta.style
         : "background: rgba(148, 163, 184, 0.12); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25);";
       const badgeText = meta.label;
-      const iqScore = Math.max(0, Math.min(100, Number(m.intelligence_score || 75)));
-      const iqTier = m.intelligence_tier || `IQ ${iqScore}%`;
+      const iqScore = Math.max(0, Math.min(100, Number(m.intelligence || m.intelligence_score || 75)));
+      const iqTier = m.intelligence_tier || `${m.intel_tier || "IQ"} · ${iqScore}%`;
       const iqColor = iqScore >= 90 ? "#10b981" : (iqScore >= 82 ? "#3b82f6" : "#f59e0b");
       const reasonTitle = !isAvailable ? escapeHtml(m.unavailable_reason || "API key not configured") : "";
       const statusHtml = isActive
         ? '<span style="font-size:10px; color:#10b981; font-weight:bold;">✓ Active</span>'
         : (!isAvailable ? '<span style="font-size:9px; color:#94a3b8; font-weight:600;">No Access</span>' : '');
-      return `
+      return `${dividerHtml}
         <button type="button"
                 class="model-dropup-item ${isActive ? "is-active" : ""} ${!isAvailable ? "is-unavailable" : ""}"
                 ${!isAvailable ? `disabled aria-disabled="true" title="${reasonTitle}"` : `onclick="window.selectHermesModelItem(event, '${escapeHtml(m.id)}', '${escapeHtml(m.provider)}')"`}>
