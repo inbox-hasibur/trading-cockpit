@@ -123,11 +123,12 @@ def analyze_market_decisions(
             or "PUBLIC"
         ).upper()
 
-        history = list(cp.price_history or [])
-        if ltp > ZERO and history and history[-1].get("date") == today_str:
-            history[-1] = {**history[-1], "close": f"{ltp:.2f}"}
-        elif ltp > ZERO and history and history[-1].get("date", "") < today_str:
-            history.append({"date": today_str, "close": f"{ltp:.2f}"})
+        from backend.adapters.tradexpress.history_provider import sanitize_price_history
+
+        raw_history = list(cp.price_history or [])
+        if ltp > ZERO and raw_history:
+            raw_history.append({"date": today_str, "close": f"{ltp:.2f}"})
+        history = sanitize_price_history(raw_history, max_bars=30)
 
         history_days = len(history)
         history_verified = history_days >= 7
@@ -251,6 +252,7 @@ def analyze_market_decisions(
             "est_net_upside_pct": est_net_upside_pct,
             "affordable_qty_h9210": affordable_h9210,
             "affordable_qty_shadow": affordable_shadow,
+            "affordable": (affordable_h9210 > 0) if action == "BUY_CANDIDATE" else True,
             "held_qty": held_qty,
             "mature_qty": mature_qty,
             "reason": reason,

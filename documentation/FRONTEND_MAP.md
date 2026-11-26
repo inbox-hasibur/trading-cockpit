@@ -1,6 +1,6 @@
 # 🗺️ Humming Bird Trading Cockpit V1 — Frontend Architecture & Contract Map
 
-> **Auto-Generated on:** `2026-11-25 07:18:41 UTC` via `scripts/generate_frontend_map.py`  
+> **Auto-Generated on:** `2026-11-26 07:26:10 UTC` via `scripts/generate_frontend_map.py`  
 > **Zero-Regression Mandate:** 0 `MISSING_LIGHT_OVERRIDE` CSS issues, 0 Field Contract mismatches.
 
 ---
@@ -181,7 +181,7 @@ Mapping of client functions to active DOM elements and localhost API endpoints:
 | `frontend/app.js` | `mutate` | `#portfolio-header-badge`, `#portfolio-header-badge-dot`, `#portfolio-header-badge-text` | — |
 | `frontend/app.js` | `isLiveSource` | `#footer-mode-tag`, `#portfolio-header-badge`, `#portfolio-header-badge-dot`, `#portfolio-header-badge-text` | — |
 | `frontend/app.js` | `renderPortfolioHeaderBadge` | `#chat-safety-note`, `#footer-mode-tag`, `#portfolio-header-badge`, `#portfolio-header-badge-dot`, `#portfolio-header-badge-text` | — |
-| `frontend/app.js` | `renderSnapshot` | `#chat-safety-note`, `#footer-mode-tag`, `#metric-total-gain` | — |
+| `frontend/app.js` | `renderSnapshot` | `#active-holdings-body`, `#chat-safety-note`, `#equity-sparkline`, `#footer-mode-tag`, `#metric-total-gain` | — |
 | `frontend/app.js` | `renderEquitySparkline` | `#active-holdings-body`, `#active-holdings-foot`, `#equity-sparkline`, `#holdings-unrealized-gain` | — |
 | `frontend/app.js` | `renderActiveHoldings` | `#active-holdings-body`, `#active-holdings-foot`, `#holdings-unrealized-gain` | — |
 | `frontend/app.js` | `renderBuckets` | `#bucket-stack`, `#cat-all-count`, `#cat-dse-count`, `#cat-gsc-count`, `#cat-l1-count`, `#cat-l2-count` | — |

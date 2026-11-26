@@ -28,6 +28,29 @@ DHAKA_TZ = ZoneInfo("Asia/Dhaka")
 STOCKNOW_PUBLIC_HISTORY_URL = "https://stocknow.com.bd/api/v1/instruments/{symbol}/history?data2=true&resolution=1D&skip=0"
 
 
+def sanitize_price_history(history: list[Any] | None, *, max_bars: int = 30) -> list[dict[str, Any]]:
+    """Deduplicates by ISO date, drops invalid/non-positive closes, and sorts ascending."""
+    if not history:
+        return []
+    by_date: dict[str, dict[str, Any]] = {}
+    for pt in history:
+        if not isinstance(pt, dict) or "close" not in pt:
+            continue
+        raw_date = str(pt.get("date") or "").strip()[:10]
+        if not raw_date:
+            continue
+        try:
+            datetime.strptime(raw_date, "%Y-%m-%d")
+            c_val = decimal(pt["close"])
+            if not c_val.is_finite() or c_val <= ZERO:
+                continue
+        except Exception:
+            continue
+        by_date[raw_date] = {**pt, "date": raw_date, "close": f"{c_val:.2f}"}
+    sorted_bars = [by_date[d] for d in sorted(by_date.keys())]
+    return sorted_bars[-max_bars:] if max_bars and max_bars > 0 else sorted_bars
+
+
 def parse_daily_history_candles(raw_payload: Any, sessions: int = 30) -> list[dict[str, Any]]:
     """Parses StockNow or TradeXpress OHLCV candle arrays/dicts into sorted daily bars.
 

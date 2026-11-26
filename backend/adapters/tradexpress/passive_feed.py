@@ -871,6 +871,9 @@ def ingest_passive_snapshot(
                 # Organically maintain closing candle bar in price_history ONLY if q.ltp > ZERO
                 # In SOD phase (q.ltp == 0.00), do NOT overwrite last_price or append 0.00 candle!
                 if q.ltp > ZERO:
+                    from sqlalchemy.orm.attributes import flag_modified
+                    from backend.adapters.tradexpress.history_provider import sanitize_price_history
+
                     candle = {
                         "date": today_str,
                         "close": str(q.ltp),
@@ -880,12 +883,8 @@ def ingest_passive_snapshot(
                         "volume": str(q.volume),
                     }
                     history = list(cp.price_history or [])
-                    if history and history[-1].get("date") == today_str:
-                        history[-1] = candle
-                    else:
-                        history.append(candle)
-                    cp.price_history = list(history[-30:])
-                    from sqlalchemy.orm.attributes import flag_modified
+                    history.append(candle)
+                    cp.price_history = sanitize_price_history(history, max_bars=30)
                     flag_modified(cp, "price_history")
                 quotes_updated += 1
 

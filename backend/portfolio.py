@@ -439,7 +439,13 @@ def snapshot_from_session(session: Session, settings: Settings, live_client: Any
             from types import SimpleNamespace
 
             eff_hist = list(history_list)
-            if live_ltp > ZERO and eff_hist and eff_hist[-1].get("date") == state.clock_date.isoformat():
+            if getattr(company, "source", "") in ("TRADEXPRESS_LIVE_CURVE", "TRADEXPRESS_PASSIVE", "STOCKNOW_HISTORY"):
+                from backend.adapters.tradexpress.history_provider import sanitize_price_history
+
+                if live_ltp > ZERO and eff_hist:
+                    eff_hist.append({"date": state.clock_date.isoformat(), "close": str(live_ltp)})
+                eff_hist = sanitize_price_history(eff_hist, max_bars=30)
+            elif live_ltp > ZERO and eff_hist and eff_hist[-1].get("date") == state.clock_date.isoformat():
                 eff_hist[-1] = {**eff_hist[-1], "close": str(live_ltp)}
             elif live_ltp > ZERO and eff_hist and eff_hist[-1].get("date", "") < state.clock_date.isoformat():
                 eff_hist.append({"date": state.clock_date.isoformat(), "close": str(live_ltp)})

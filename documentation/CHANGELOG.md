@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v1.0.0-dev] - Unreleased (Trading Cockpit V1 Branch - Sprints 4A, 4B, 4C, 5A, 5B, 5C, 5D, 5E, 5F, 5G, 5H, 5I, 6A, 6B)
 
 ### Fixed
+- **Curve `INVALID_DATA` Guard on Passive Ticks (`history_provider.py`, `passive_feed.py`, `decision_advisor.py`, `portfolio.py`):** Added shared `sanitize_price_history()` to deduplicate by ISO date, drop `close <= 0`, and sort ascending before `analyze_curve()`, preventing `EXIM1STMF` / `BEXIMCO` from flipping to `INVALID_DATA` on live ticks.
+- **Stale `canary_theses` & Legacy Label Purge (`scripts/clean_live_db.py`, `frontend/app.js`, `frontend/index.html`):** Wiped legacy `canary_theses` (`MATINSPINN` phantom canary) and `" · Demo"` / `" · Cra"` suffixes; updated `#chat-safety-note` to `"TradeXpress Passive Mirror · H9210 (Shadow Simulator — Real orders execute manually in TradeXpress)"`.
+- **Affordable vs Over-Budget Highlighting (`decision_advisor.py`, `frontend/tradexpress_ui.js`):** Flagged `affordable: False` on `BUY_CANDIDATE` rows with `affordable_qty_h9210 == 0` and rendered `"Over Budget (Qty 0)"` badge in `#tx-decisions-view`.
 - **Decimal `DivisionUndefined` Guard (`backend/portfolio.py`):** Guarded `total_gain_pct` (`state.initial_capital > 0`) and `net_return_pct` (`lot.remaining_cost_basis > 0`) against `0 / 0` when live DB starts at `initial_capital = 0.00` before `H9210` mirror sync, with regression test in `tests/test_decision_advisor_and_real_history.py`.
 - **Modern `README.md` Redesign:** Updated `README.md` with centered logo header, `flat-square` & `for-the-badge` pills, Problem/Solution, Key Features, Core Architecture table, Tech Stack table, Quick Start, and Zero-Ban Firewall summary.
 
@@ -133,6 +136,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.1.0] - 2026-11-15
 
 ### Fixed
+- **Curve `INVALID_DATA` Guard on Passive Ticks (`history_provider.py`, `passive_feed.py`, `decision_advisor.py`, `portfolio.py`):** Added shared `sanitize_price_history()` to deduplicate by ISO date, drop `close <= 0`, and sort ascending before `analyze_curve()`, preventing `EXIM1STMF` / `BEXIMCO` from flipping to `INVALID_DATA` on live ticks.
+- **Stale `canary_theses` & Legacy Label Purge (`scripts/clean_live_db.py`, `frontend/app.js`, `frontend/index.html`):** Wiped legacy `canary_theses` (`MATINSPINN` phantom canary) and `" · Demo"` / `" · Cra"` suffixes; updated `#chat-safety-note` to `"TradeXpress Passive Mirror · H9210 (Shadow Simulator — Real orders execute manually in TradeXpress)"`.
+- **Affordable vs Over-Budget Highlighting (`decision_advisor.py`, `frontend/tradexpress_ui.js`):** Flagged `affordable: False` on `BUY_CANDIDATE` rows with `affordable_qty_h9210 == 0` and rendered `"Over Budget (Qty 0)"` badge in `#tx-decisions-view`.
 - **Decimal `DivisionUndefined` Guard (`backend/portfolio.py`):** Guarded `total_gain_pct` (`state.initial_capital > 0`) and `net_return_pct` (`lot.remaining_cost_basis > 0`) against `0 / 0` when live DB starts at `initial_capital = 0.00` before `H9210` mirror sync, with regression test in `tests/test_decision_advisor_and_real_history.py`.
 - **Modern `README.md` Redesign:** Updated `README.md` with centered logo header, `flat-square` & `for-the-badge` pills, Problem/Solution, Key Features, Core Architecture table, Tech Stack table, Quick Start, and Zero-Ban Firewall summary.
 

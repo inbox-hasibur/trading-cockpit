@@ -383,15 +383,7 @@ function renderSnapshot() {
   // Chat safety note welcome line
   const chatSafetyNote = $("chat-safety-note") || document.querySelector(".chat-safety-note");
   if (chatSafetyNote) {
-    if (live) {
-      const name = state.snapshot.portfolio_name || app.target_portfolio_name || adapter.bound_portfolio_name || "Humming Bird";
-      const id = state.snapshot.portfolio_id || app.target_portfolio_id || adapter.bound_portfolio_id || "164580";
-      const tradingMode = app.trading_mode || (state.snapshot && state.snapshot.trading_mode) || "LIVE_HOURS";
-      const modeText = tradingMode === "TEST_OFFHOURS" ? "Test Mode" : "Live Hours";
-      chatSafetyNote.textContent = `Connected to StockNow portfolio ${name} #${id}, ${modeText}. Orders need your confirmation.`;
-    } else {
-      chatSafetyNote.textContent = "Real TradeXpress Mirror · Decision Advisor Mode (read-only analysis & human-confirmed orders).";
-    }
+    chatSafetyNote.textContent = "TradeXpress Passive Mirror · H9210 (Shadow Simulator — Real orders execute manually in TradeXpress)";
   }
 
   // Decision feed empty state text

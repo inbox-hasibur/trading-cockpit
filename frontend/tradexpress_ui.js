@@ -1074,11 +1074,14 @@
         const upsideText = r.history_verified ? `${r.est_net_upside_pct >= 0 ? "+" : ""}${Number(r.est_net_upside_pct).toFixed(2)}%` : "—";
         const bidOfferText = `${Number(r.bid || 0).toFixed(2)} / ${Number(r.offer || 0).toFixed(2)}`;
         const qtyText = r.action === "SELL_CANDIDATE" ? `${r.mature_qty || 0} sell` : `${r.affordable_qty_h9210 || 0}`;
+        const overBudgetBadge = (r.action === "BUY_CANDIDATE" && (r.affordable === false || (r.affordable_qty_h9210 || 0) === 0))
+          ? ' <span class="tx-dec-badge muted" title="Exceeds real H9210 Buying Power">Over Budget (Qty 0)</span>'
+          : "";
         return `
           <tr data-dec-symbol="${r.symbol}">
             <td><strong>${r.symbol}</strong> <span class="muted small">(${r.category}/${r.settlement_type})</span></td>
             <td>${r.tier}</td>
-            <td><span class="tx-dec-badge ${badgeClass}">${r.action}</span></td>
+            <td><span class="tx-dec-badge ${badgeClass}">${r.action}</span>${overBudgetBadge}</td>
             <td class="align-right tabular-nums">${Number(r.ltp || 0).toFixed(2)}</td>
             <td class="align-right tabular-nums">${bidOfferText}</td>
             <td class="align-right tabular-nums"><strong>${Number(r.suggested_limit_price || 0).toFixed(2)}</strong></td>

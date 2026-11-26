@@ -19,6 +19,7 @@ if str(WORKSPACE_ROOT) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_ROOT))
 
 from backend.database import (
+    CanaryThesis,
     CompanyProfile,
     CycleRequestKey,
     Database,
@@ -52,8 +53,9 @@ def clean_live_database(db_path: Path | None = None, create_backup: bool = True)
         # Unlink DecisionLog.lot_id before deleting TaxLot rows
         session.execute(update(DecisionLog).values(lot_id=None))
 
-        # Wipe legacy #164580 / DEMO_SEED / STOCKNOW_LIVE records
+        # Wipe legacy #164580 / DEMO_SEED / STOCKNOW_LIVE records & stale canary_theses
         legacy_pids = ("164580", "DEMO_SEED", "STOCKNOW_LIVE", "")
+        session.execute(delete(CanaryThesis))
         session.execute(delete(OrderIdempotencyKey))
         session.execute(delete(CycleRequestKey))
         session.execute(delete(ShadowOrder))
@@ -75,7 +77,7 @@ def clean_live_database(db_path: Path | None = None, create_backup: bool = True)
             "BANKASIA": "Bank Asia PLC",
             "EXIM1STMF": "EXIM Bank 1st Mutual Fund",
         }
-        dummy_suffixes = (" · Demo", " · Crash", " · Rally", " · Pullback", " · Normal", " · Recovery")
+        dummy_suffixes = (" · Demo", " · Crash", " · Cra", " · Rally", " · Pullback", " · Normal", " · Recovery")
         for cp in session.scalars(__import__("sqlalchemy").select(CompanyProfile)):
             if cp.symbol in clean_name_overrides and any(s in (cp.name or "") for s in dummy_suffixes):
                 cp.name = clean_name_overrides[cp.symbol]

@@ -272,3 +272,75 @@ def test_zero_initial_capital_snapshot_no_division_undefined(isolated_db_setting
     snap = build_snapshot(db, settings)
     assert snap["metrics"]["initial_capital"] == 0.0
     assert snap["metrics"]["total_gain_pct"] == 0.0
+
+
+def test_duplicate_unsorted_history_never_invalid_data_and_over_budget_flag(isolated_db_settings):
+    """Verifies duplicate/unsorted dates on passive tick never trigger INVALID_DATA & flags affordable=False."""
+    db, settings, feed = isolated_db_settings
+    from backend.adapters.tradexpress.passive_feed import ingest_passive_snapshot
+
+    unsorted_dup = [
+        {"date": "2026-11-26", "close": "5.50"},
+        {"date": "2026-11-20", "close": "5.40"},
+        {"date": "2026-11-21", "close": "5.30"},
+        {"date": "2026-11-22", "close": "5.80"},
+        {"date": "2026-11-23", "close": "5.60"},
+        {"date": "2026-11-24", "close": "5.40"},
+        {"date": "2026-11-25", "close": "5.40"},
+        {"date": "2026-11-24", "close": "5.45"},  # duplicate date!
+        {"date": "2026-11-19", "close": "5.35"},
+    ]
+
+    with db.write() as session:
+        exim = session.get(CompanyProfile, "EXIM1STMF")
+        exim.watchlist_category = "GSC_L2"
+        exim.favorite = True
+        exim.last_price = Decimal("5.50")
+        exim.price_history = unsorted_dup
+
+        gq = CompanyProfile(
+            symbol="GQBALLPEN",
+            name="GQ Ball Pen",
+            sector="MISC",
+            watchlist_category="GSC_L2",
+            favorite=True,
+            settlement_days=2,
+            settlement_type="PUBLIC",
+            symbol_category="A",
+            last_price=Decimal("607.20"),
+            offer=Decimal("607.20"),
+            bid=Decimal("605.00"),
+            price_history=[
+                {"date": f"2026-11-{i + 10:02d}", "close": f"{650.00 if i < 10 else 607.20:.2f}"}
+                for i in range(12)
+            ],
+            quote_on=date(2026, 11, 24),
+            source="TRADEXPRESS_LIVE_CURVE",
+        )
+        session.add(gq)
+        session.add(CustomRule(symbol="GQBALLPEN", enabled=True, buy_allocation_pct=Decimal("5.0")))
+
+    ingest_passive_snapshot(
+        db,
+        {
+            "source": "EDGE_EXTENSION_PASSIVE",
+            "dse_status": "Trading",
+            "tab": "L2",
+            "market_watch_rows": [
+                {"sDes": "EXIM1STMF", "ltp": "5.50", "bid": "5.40", "offer": "5.50", "dispSettType": "PUBLIC", "dispSymCat": "A"}
+            ],
+            "account_summary": {"customer_number": "H9210", "buying_power": 353.00, "cash_balance": 353.00},
+        },
+        feed=feed,
+    )
+
+    with db.read() as session:
+        res = analyze_market_decisions(session, settings, passive_feed=feed)
+
+    all_map = {r["symbol"]: r for r in res["all_decisions"]}
+    assert all_map["EXIM1STMF"]["curve_signal"] != "INVALID_DATA"
+    assert all_map["EXIM1STMF"]["support"] > 0
+
+    assert all_map["GQBALLPEN"]["action"] == "BUY_CANDIDATE"
+    assert all_map["GQBALLPEN"]["affordable_qty_h9210"] == 0
+    assert all_map["GQBALLPEN"]["affordable"] is False
