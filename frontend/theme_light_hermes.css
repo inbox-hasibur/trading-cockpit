@@ -1803,12 +1803,19 @@ body.is-resizing-hermes .app-shell {
   transition: background 0.15s ease;
 }
 
-.model-dropup-item:hover {
+.model-dropup-item:hover:not(:disabled):not(.is-unavailable) {
   background: var(--panel-hover);
 }
 
-[data-theme="light"] .model-dropup-item:hover {
+[data-theme="light"] .model-dropup-item:hover:not(:disabled):not(.is-unavailable) {
   background: #f1f5f9;
+}
+
+.model-dropup-item.is-unavailable,
+.model-dropup-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.75);
 }
 
 .model-dropup-item.is-active {

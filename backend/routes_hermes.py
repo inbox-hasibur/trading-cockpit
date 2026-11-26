@@ -5,11 +5,12 @@ Exposes git diffs, kernel state checkpoint changes, and conversation stubs.
 
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 
@@ -28,13 +29,126 @@ class SwitchModelRequest(BaseModel):
     provider: str | None = Field(default=None, max_length=64)
 
 
+PROVIDER_KEY_ENV_MAP: dict[str, tuple[str, ...]] = {
+    "gemini": ("GEMINI_API_KEY", "GOOGLE_API_KEY"),
+    "groq": ("GROQ_API_KEY",),
+    "mistral": ("MISTRAL_API_KEY",),
+    "cerebras": ("CEREBRAS_API_KEY",),
+    "sambanova": ("SAMBANOVA_API_KEY",),
+    "openrouter": ("OPENROUTER_API_KEY",),
+    "cloudflare": ("CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"),
+}
+
+
+def _read_configured_env_keys() -> set[str]:
+    """Returns names of non-empty API key env vars from process env and .env files (never values)."""
+    configured = {k for k, v in os.environ.items() if k in {x for cols in PROVIDER_KEY_ENV_MAP.values() for x in cols} and str(v).strip()}
+    candidate_paths = []
+    try:
+        from backend.hermes_bridge import get_hermes_dir
+        candidate_paths.append(get_hermes_dir() / ".env")
+    except Exception:
+        pass
+    from pathlib import Path
+    candidate_paths.extend([Path(".env"), Path("backend/.env")])
+    for env_path in candidate_paths:
+        try:
+            if not env_path.exists():
+                continue
+            for raw_line in env_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+                line = raw_line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                key_name = k.strip()
+                val = v.strip().strip('"').strip("'")
+                if val:
+                    configured.add(key_name)
+        except Exception:
+            continue
+    return configured
+
+
+def is_provider_available(provider: str, settings: Settings | None = None) -> tuple[bool, str]:
+    """Checks whether a provider has the required API key(s) configured."""
+    prov = (provider or "").strip().lower()
+    if prov in ("google", "google-ai-studio"):
+        prov = "gemini"
+    env_keys = PROVIDER_KEY_ENV_MAP.get(prov)
+    if not env_keys:
+        return False, f"Unsupported provider: {prov}"
+
+    configured = _read_configured_env_keys()
+    if settings is not None:
+        if getattr(settings, "gemini_api_key", ""):
+            configured.add("GEMINI_API_KEY")
+        if getattr(settings, "openrouter_api_key", ""):
+            configured.add("OPENROUTER_API_KEY")
+
+    if prov == "cloudflare":
+        missing = [k for k in env_keys if k not in configured]
+        if missing:
+            return False, f"Missing {' & '.join(missing)}"
+        return True, ""
+
+    if any(k in configured for k in env_keys):
+        return True, ""
+    return False, f"Missing {env_keys[0]}"
+
+
+def _infer_provider(model_id: str) -> str:
+    """Infers provider ID from catalog or model naming conventions."""
+    low = (model_id or "").strip().lower()
+    for item in AVAILABLE_HERMES_MODELS:
+        if item["id"].lower() == low:
+            return item["provider"]
+    if "gemini" in low or low.startswith("google/"):
+        return "gemini"
+    if low.startswith("@cf/"):
+        return "cloudflare"
+    if "mistral" in low or "codestral" in low:
+        return "mistral"
+    if "groq" in low or low in {"openai/gpt-oss-120b", "qwen/qwen3.8-27b", "llama-3.3-70b-versatile", "kimi-k2-instruct"}:
+        return "groq"
+    if low in {"qwen-3.8-27b"}:
+        return "cerebras"
+    if low in {"deepseek-v3.1", "meta-llama-3.3-70b-instruct"}:
+        return "sambanova"
+    return "openrouter"
+
+
 AVAILABLE_HERMES_MODELS = [
+    # --- Google AI Studio (Primary) ---
+    {
+        "id": "gemini-2.5-pro",
+        "name": "Gemini 2.5 Pro",
+        "provider": "gemini",
+        "provider_label": "Google",
+        "badge": "GOOGLE AI STUDIO · 1M CTX",
+        "description": "Google AI Studio · Complex reasoning, coding & multimodal",
+    },
+    {
+        "id": "gemini-3.8-flash",
+        "name": "Gemini 3.8 Flash",
+        "provider": "gemini",
+        "provider_label": "Google",
+        "badge": "GOOGLE AI STUDIO · RECOMMENDED",
+        "description": "Google AI Studio · Fast multimodal & dynamic free quota",
+    },
+    {
+        "id": "gemini-3.6-flash",
+        "name": "Gemini 3.6 Flash",
+        "provider": "gemini",
+        "provider_label": "Google",
+        "badge": "GOOGLE AI STUDIO",
+        "description": "Google AI Studio · Balanced speed & intelligence",
+    },
     {
         "id": "gemini-3.5-flash-lite",
         "name": "Gemini 3.5 Flash-Lite",
         "provider": "gemini",
         "provider_label": "Google",
-        "badge": "GOOGLE DIRECT (~1.0s) · RECOMMENDED",
+        "badge": "GOOGLE DIRECT (~1.0s)",
         "description": "Google Direct · ~1.0s Tool-Calling Verified (Fastest)",
     },
     {
@@ -60,6 +174,123 @@ AVAILABLE_HERMES_MODELS = [
         "provider_label": "Google",
         "badge": "GOOGLE DIRECT",
         "description": "Google Direct · Tool-Calling Verified",
+    },
+    # --- Groq Cloud (Ultra-Fast LPU Backup) ---
+    {
+        "id": "openai/gpt-oss-120b",
+        "name": "GPT-OSS 120B (Groq)",
+        "provider": "groq",
+        "provider_label": "Groq",
+        "badge": "GROQ LPU · BACKUP",
+        "description": "Groq Cloud · ~500+ tok/s 120B high-speed reasoning",
+    },
+    {
+        "id": "qwen/qwen3.8-27b",
+        "name": "Qwen 3.8 27B (Groq)",
+        "provider": "groq",
+        "provider_label": "Groq",
+        "badge": "GROQ LPU",
+        "description": "Groq Cloud · Fast coding, math & tool calling",
+    },
+    {
+        "id": "llama-3.3-70b-versatile",
+        "name": "Llama 3.3 70B Versatile",
+        "provider": "groq",
+        "provider_label": "Groq",
+        "badge": "GROQ LPU",
+        "description": "Groq Cloud · Versatile 70B free tier",
+    },
+    {
+        "id": "kimi-k2-instruct",
+        "name": "Kimi K2 Instruct",
+        "provider": "groq",
+        "provider_label": "Groq",
+        "badge": "GROQ LPU",
+        "description": "Groq Cloud · Long-context instruction following",
+    },
+    # --- Mistral AI ---
+    {
+        "id": "mistral-large-latest",
+        "name": "Mistral Large",
+        "provider": "mistral",
+        "provider_label": "Mistral",
+        "badge": "MISTRAL AI",
+        "description": "Mistral AI · Flagship reasoning & multilingual",
+    },
+    {
+        "id": "codestral-latest",
+        "name": "Codestral",
+        "provider": "mistral",
+        "provider_label": "Mistral",
+        "badge": "MISTRAL AI",
+        "description": "Mistral AI · Dedicated coding specialist",
+    },
+    {
+        "id": "mistral-small-latest",
+        "name": "Mistral Small",
+        "provider": "mistral",
+        "provider_label": "Mistral",
+        "badge": "MISTRAL AI",
+        "description": "Mistral AI · Lightweight fast free tier",
+    },
+    # --- Cerebras Cloud ---
+    {
+        "id": "gpt-oss-120b",
+        "name": "GPT-OSS 120B (Cerebras)",
+        "provider": "cerebras",
+        "provider_label": "Cerebras",
+        "badge": "CEREBRAS · ~2000 TPS",
+        "description": "Cerebras Wafer-Scale · ~2,000+ tok/s inference",
+    },
+    {
+        "id": "qwen-3.8-27b",
+        "name": "Qwen 3.8 27B (Cerebras)",
+        "provider": "cerebras",
+        "provider_label": "Cerebras",
+        "badge": "CEREBRAS",
+        "description": "Cerebras Wafer-Scale · Instant 27B coding & math",
+    },
+    # --- SambaNova Cloud ---
+    {
+        "id": "DeepSeek-V3.1",
+        "name": "DeepSeek V3.1 (SambaNova)",
+        "provider": "sambanova",
+        "provider_label": "SambaNova",
+        "badge": "SAMBANOVA",
+        "description": "SambaNova Cloud · Full 671B open-weights reasoning",
+    },
+    {
+        "id": "gpt-oss-120b",
+        "name": "GPT-OSS 120B (SambaNova)",
+        "provider": "sambanova",
+        "provider_label": "SambaNova",
+        "badge": "SAMBANOVA",
+        "description": "SambaNova Cloud · 120B free tier",
+    },
+    {
+        "id": "Meta-Llama-3.3-70B-Instruct",
+        "name": "Llama 3.3 70B (SambaNova)",
+        "provider": "sambanova",
+        "provider_label": "SambaNova",
+        "badge": "SAMBANOVA",
+        "description": "SambaNova Cloud · Fast 70B instruction model",
+    },
+    # --- OpenRouter ---
+    {
+        "id": "openrouter/free",
+        "name": "OpenRouter Free Router",
+        "provider": "openrouter",
+        "provider_label": "OpenRouter",
+        "badge": "OPENROUTER · FREE",
+        "description": "OpenRouter · Auto-routes across available free models",
+    },
+    {
+        "id": "nvidia/nemotron-3-nano-30b-a3b:free",
+        "name": "Nemotron 3 Nano 30B (Free)",
+        "provider": "openrouter",
+        "provider_label": "OpenRouter",
+        "badge": "OPENROUTER · FREE",
+        "description": "OpenRouter · Fast free reasoning model",
     },
     {
         "id": "xiaomi/mimo-v2.6-pro",
@@ -100,6 +331,23 @@ AVAILABLE_HERMES_MODELS = [
         "provider_label": "OpenRouter",
         "badge": "OPENROUTER",
         "description": "Meta Llama 3.3 70B Instruct via OpenRouter",
+    },
+    # --- Cloudflare Workers AI ---
+    {
+        "id": "@cf/openai/gpt-oss-120b",
+        "name": "GPT-OSS 120B (Cloudflare)",
+        "provider": "cloudflare",
+        "provider_label": "Cloudflare",
+        "badge": "CLOUDFLARE · 10K/DAY",
+        "description": "Cloudflare Workers AI · Edge serverless inference",
+    },
+    {
+        "id": "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
+        "name": "DeepSeek R1 Qwen 32B",
+        "provider": "cloudflare",
+        "provider_label": "Cloudflare",
+        "badge": "CLOUDFLARE · 10K/DAY",
+        "description": "Cloudflare Workers AI · Serverless reasoning model",
     },
 ]
 
@@ -205,29 +453,60 @@ def build_hermes_router(database: Database, settings: Settings, *args: Any, **kw
 
     @router.get("/api/hermes/models")
     def get_hermes_models():
-        """Returns available models, active model, and provider from Hermes state."""
+        """Returns available models with provider key availability, active model, and fallback chain."""
         from backend.hermes_bridge import read_hermes_state
         state_data = read_hermes_state()
         active_model = state_data.get("model", "gemini-3.1-flash-lite")
         active_provider = state_data.get("provider", "gemini")
+
+        provider_status: dict[str, dict[str, Any]] = {}
+        for prov in PROVIDER_KEY_ENV_MAP:
+            avail, reason = is_provider_available(prov, settings)
+            provider_status[prov] = {"available": avail, "reason": reason}
+
+        enriched_models = []
+        for m in AVAILABLE_HERMES_MODELS:
+            p_info = provider_status.get(m["provider"], {"available": False, "reason": "Provider not configured"})
+            enriched_models.append({
+                **m,
+                "available": p_info["available"],
+                "unavailable_reason": p_info["reason"],
+            })
+
+        fallbacks = state_data.get("fallbacks", [])
+        if not fallbacks:
+            recommended = [
+                {"provider": "gemini", "model": "gemini-3.8-flash", "role": "primary"},
+                {"provider": "groq", "model": "openai/gpt-oss-120b", "role": "backup"},
+                {"provider": "openrouter", "model": "openrouter/free", "role": "tertiary"},
+            ]
+            fallbacks = [
+                {**fb, "available": provider_status.get(fb["provider"], {}).get("available", False)}
+                for fb in recommended
+            ]
+
         return {
             "active_model": active_model,
             "active_provider": active_provider,
-            "models": AVAILABLE_HERMES_MODELS,
-            "fallback_chain": state_data.get("fallbacks", []),
+            "models": enriched_models,
+            "provider_status": provider_status,
+            "fallback_chain": fallbacks,
         }
 
     @router.post("/api/hermes/model")
     def switch_hermes_model(body: SwitchModelRequest):
         """Switches active model and provider in Hermes profile and updates local state."""
         model_id = body.model.strip()
-        provider_id = body.provider.strip() if body.provider else None
+        provider_id = (body.provider.strip().lower() if body.provider else None) or _infer_provider(model_id)
+        if provider_id in ("google", "google-ai-studio"):
+            provider_id = "gemini"
 
-        if not provider_id:
-            if "gemini" in model_id.lower() or model_id.startswith("google/"):
-                provider_id = "gemini"
-            else:
-                provider_id = "openrouter"
+        avail, reason = is_provider_available(provider_id, settings)
+        if not avail:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Model '{model_id}' ({provider_id}) is unavailable: {reason}. Configure the API key first.",
+            )
 
         from backend.hermes_bridge import get_hermes_cmd, get_hermes_dir
         hermes_cmd = get_hermes_cmd()

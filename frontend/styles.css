@@ -5925,8 +5925,15 @@ input[type=checkbox] {
   transition: background 0.15s ease;
 }
 
-.model-dropup-item:hover {
+.model-dropup-item:hover:not(:disabled):not(.is-unavailable) {
   background: var(--panel-hover, rgba(148, 163, 184, 0.1));
+}
+
+.model-dropup-item.is-unavailable,
+.model-dropup-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.75);
 }
 
 .model-dropup-item.is-active {

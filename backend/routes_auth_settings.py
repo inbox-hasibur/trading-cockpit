@@ -28,6 +28,12 @@ class KeysSettingsRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     openrouter_key: str | None = None
     gemini_key: str | None = None
+    groq_key: str | None = None
+    mistral_key: str | None = None
+    cerebras_key: str | None = None
+    sambanova_key: str | None = None
+    cloudflare_token: str | None = None
+    cloudflare_account_id: str | None = None
     telegram_bot_token: str | None = None
     telegram_chat_id: str | None = None
     daily_call_limit: int | None = None
@@ -135,6 +141,18 @@ def build_auth_settings_router(database: Database, settings: Settings, broadcast
             object.__setattr__(settings, "gemini_api_key", clean_val)
             os.environ["GEMINI_API_KEY"] = clean_val
             updated_fields.append("Google Gemini API Key")
+        for attr, env_name, label in (
+            ("groq_key", "GROQ_API_KEY", "Groq API Key"),
+            ("mistral_key", "MISTRAL_API_KEY", "Mistral API Key"),
+            ("cerebras_key", "CEREBRAS_API_KEY", "Cerebras API Key"),
+            ("sambanova_key", "SAMBANOVA_API_KEY", "SambaNova API Key"),
+            ("cloudflare_token", "CLOUDFLARE_API_TOKEN", "Cloudflare API Token"),
+            ("cloudflare_account_id", "CLOUDFLARE_ACCOUNT_ID", "Cloudflare Account ID"),
+        ):
+            raw_val = getattr(body, attr, None)
+            if raw_val is not None:
+                os.environ[env_name] = raw_val.strip()
+                updated_fields.append(label)
         if body.telegram_bot_token is not None:
             clean_val = body.telegram_bot_token.strip()
             object.__setattr__(settings, "telegram_bot_token", clean_val)

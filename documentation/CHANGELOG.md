@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v1.0.0-dev] - Unreleased (Trading Cockpit V1 Branch - Sprints 4A, 4B, 4C, 5A, 5B, 5C, 5D, 5E, 5F, 5G, 5H, 5I, 6A, 6B)
 
+### Added
+- **Hermes Free AI Provider Stack & Unavailable Model Guard (`backend/routes_hermes.py`, `backend/routes_auth_settings.py`, `frontend/hermes_ui.js`, `frontend/styles.css`, `frontend/theme_light_hermes.css`):**
+  - Added 7 free AI providers and models to `AVAILABLE_HERMES_MODELS`: Google AI Studio (`gemini-2.5-pro`, `gemini-3.8-flash`, `gemini-3.6-flash` + verified Gemini models), Groq (`openai/gpt-oss-120b`, `qwen/qwen3.8-27b`, `llama-3.3-70b-versatile`, `kimi-k2-instruct`), Mistral (`mistral-large-latest`, `codestral-latest`, `mistral-small-latest`), Cerebras (`gpt-oss-120b`, `qwen-3.8-27b`), SambaNova (`DeepSeek-V3.1`, `gpt-oss-120b`, `Meta-Llama-3.3-70B-Instruct`), OpenRouter (`openrouter/free`, `nvidia/nemotron-3-nano-30b-a3b:free` + existing models), and Cloudflare Workers AI (`@cf/openai/gpt-oss-120b`, `@cf/deepseek-ai/deepseek-r1-distill-qwen-32b`).
+  - Added `is_provider_available()` checking configured keys across process env, `settings`, and `.env` files (`~/.hermes/.env`, `.env`, `backend/.env`), returning `available` + `unavailable_reason` in `GET /api/hermes/models` and rejecting unavailable model switches with HTTP `400` in `POST /api/hermes/model`.
+  - Updated `#model-dropdown-list` in `frontend/hermes_ui.js` and CSS (dark + light) so models without configured API keys render grayed out (`is-unavailable`, `disabled`, `No Key` badge) and cannot be selected.
+  - Added unit tests in `tests/test_hermes_models_availability.py` (`293 passed, 1 skipped`).
+
 ### Fixed
 - **Curve `INVALID_DATA` Guard on Passive Ticks (`history_provider.py`, `passive_feed.py`, `decision_advisor.py`, `portfolio.py`):** Added shared `sanitize_price_history()` to deduplicate by ISO date, drop `close <= 0`, and sort ascending before `analyze_curve()`, preventing `EXIM1STMF` / `BEXIMCO` from flipping to `INVALID_DATA` on live ticks.
 - **Stale `canary_theses` & Legacy Label Purge (`scripts/clean_live_db.py`, `frontend/app.js`, `frontend/index.html`):** Wiped legacy `canary_theses` (`MATINSPINN` phantom canary) and `" · Demo"` / `" · Cra"` suffixes; updated `#chat-safety-note` to `"TradeXpress Passive Mirror · H9210 (Shadow Simulator — Real orders execute manually in TradeXpress)"`.

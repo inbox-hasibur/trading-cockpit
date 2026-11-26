@@ -1143,6 +1143,10 @@ window.selectHermesModelItem = function (e, modelId, provider) {
   if (e) {
     if (typeof e.stopPropagation === "function") e.stopPropagation();
     if (typeof e.preventDefault === "function") e.preventDefault();
+    const btn = e.currentTarget || (e.target && typeof e.target.closest === "function" ? e.target.closest(".model-dropup-item") : null);
+    if (btn && (btn.disabled || btn.classList.contains("is-unavailable") || btn.getAttribute("aria-disabled") === "true")) {
+      return;
+    }
   }
   const drop = $("model-dropup-menu");
   if (drop) drop.hidden = true;
@@ -1151,6 +1155,29 @@ window.selectHermesModelItem = function (e, modelId, provider) {
   switchHermesModel(modelId, provider);
 };
 
+function _hermesProviderMeta(provider) {
+  const p = String(provider || "").toLowerCase();
+  if (p.includes("gemini") || p.includes("google")) {
+    return { label: "Google Direct", prefix: "GOOGLE ·", style: "background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);" };
+  }
+  if (p === "groq") {
+    return { label: "Groq", prefix: "GROQ ·", style: "background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3);" };
+  }
+  if (p === "mistral") {
+    return { label: "Mistral", prefix: "MISTRAL ·", style: "background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);" };
+  }
+  if (p === "cerebras") {
+    return { label: "Cerebras", prefix: "CEREBRAS ·", style: "background: rgba(236, 72, 153, 0.15); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.3);" };
+  }
+  if (p === "sambanova") {
+    return { label: "SambaNova", prefix: "SAMBANOVA ·", style: "background: rgba(20, 184, 166, 0.15); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.3);" };
+  }
+  if (p === "cloudflare") {
+    return { label: "Cloudflare", prefix: "CLOUDFLARE ·", style: "background: rgba(234, 88, 12, 0.15); color: #fdba74; border: 1px solid rgba(234, 88, 12, 0.3);" };
+  }
+  return { label: "OpenRouter", prefix: "OPENROUTER ·", style: "background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);" };
+}
+
 async function loadHermesModels() {
   const listEl = $("model-dropdown-list");
   if (!listEl) return;
@@ -1158,28 +1185,35 @@ async function loadHermesModels() {
     const data = await api("/api/hermes/models");
     const models = data.models || [];
     const activeModel = data.active_model || "";
+    const activeProvider = (data.active_provider || "").toLowerCase();
     if (models.length === 0) {
       listEl.innerHTML = '<div class="empty-state-small" style="padding:8px 10px; font-size:11px;">No models available.</div>';
       return;
     }
     listEl.innerHTML = models.map((m) => {
-      const isActive = m.id === activeModel || m.name === activeModel;
-      const isGoogle = (m.provider || "").toLowerCase().includes("gemini") || (m.provider || "").toLowerCase().includes("google");
-      const badgeStyle = isGoogle
-        ? "background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);"
-        : "background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);";
-      const badgeText = isGoogle ? "Google Direct" : "OpenRouter";
+      const isAvailable = m.available !== false;
+      const isActive = isAvailable && (m.id === activeModel || m.name === activeModel) && (!activeProvider || (m.provider || "").toLowerCase() === activeProvider);
+      const meta = _hermesProviderMeta(m.provider);
+      const badgeStyle = isAvailable
+        ? meta.style
+        : "background: rgba(148, 163, 184, 0.12); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25);";
+      const badgeText = meta.label;
+      const reasonTitle = !isAvailable ? escapeHtml(m.unavailable_reason || "API key not configured") : "";
+      const statusHtml = isActive
+        ? '<span style="font-size:10px; color:#10b981; font-weight:bold;">✓ Active</span>'
+        : (!isAvailable ? '<span style="font-size:9px; color:#94a3b8; font-weight:600;">No Key</span>' : '');
       return `
-        <button type="button" class="model-dropup-item ${isActive ? "is-active" : ""}"
-                onclick="window.selectHermesModelItem(event, '${escapeHtml(m.id)}', '${escapeHtml(m.provider)}')">
+        <button type="button"
+                class="model-dropup-item ${isActive ? "is-active" : ""} ${!isAvailable ? "is-unavailable" : ""}"
+                ${!isAvailable ? `disabled aria-disabled="true" title="${reasonTitle}"` : `onclick="window.selectHermesModelItem(event, '${escapeHtml(m.id)}', '${escapeHtml(m.provider)}')"`}>
           <div style="display:flex; flex-direction:column; gap:2px; width:100%;">
             <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
               <span class="model-item-name" style="font-weight:600;">${escapeHtml(m.name)}</span>
               <span style="font-size:9px; padding:1px 5px; border-radius:4px; ${badgeStyle}">${badgeText}</span>
             </div>
             <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
-              <span style="font-size:10px; color:var(--muted, #94a3b8);">${escapeHtml(m.description || m.id)}</span>
-              ${isActive ? '<span style="font-size:10px; color:#10b981; font-weight:bold;">✓ Active</span>' : ''}
+              <span style="font-size:10px; color:var(--muted, #94a3b8);">${escapeHtml(!isAvailable && m.unavailable_reason ? m.unavailable_reason : (m.description || m.id))}</span>
+              ${statusHtml}
             </div>
           </div>
         </button>
@@ -1194,8 +1228,8 @@ async function switchHermesModel(modelId, provider) {
   if (!modelId) return;
   const short = modelId.split("/").pop();
   setText("hermes-active-model-name", short);
-  const isGoogle = (provider || "").toLowerCase().includes("gemini") || (provider || "").toLowerCase().includes("google") || modelId.toLowerCase().includes("gemini");
-  setText("provider-prefix-label", isGoogle ? "GOOGLE ·" : "OPENROUTER ·");
+  const meta = _hermesProviderMeta(provider || (modelId.toLowerCase().includes("gemini") ? "gemini" : "openrouter"));
+  setText("provider-prefix-label", meta.prefix);
 
   try {
     const res = await api("/api/hermes/model", {
