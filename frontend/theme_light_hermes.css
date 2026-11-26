@@ -1846,6 +1846,10 @@ body.is-resizing-hermes .app-shell {
   filter: grayscale(0.75);
 }
 
+[data-theme="light"] .model-iq-track {
+  background: #e2e8f0;
+}
+
 .model-dropup-item.is-active {
   background: var(--teal-bg);
   color: var(--teal);

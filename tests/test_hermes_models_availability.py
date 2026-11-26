@@ -117,6 +117,7 @@ def test_hermes_ui_grays_out_unavailable_models_in_dropdown():
 
     assert "is-unavailable" in hermes_js
     assert 'disabled aria-disabled="true"' in hermes_js
-    assert "No Key" in hermes_js
+    assert "No Access" in hermes_js
+    assert "model-iq-track" in hermes_js
     assert ".model-dropup-item.is-unavailable" in styles_css
     assert ".model-dropup-item.is-unavailable" in light_css

@@ -5936,6 +5936,20 @@ input[type=checkbox] {
   filter: grayscale(0.75);
 }
 
+.model-iq-track {
+  flex: 1;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.2);
+  overflow: hidden;
+}
+
+.model-iq-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
 .model-dropup-item.is-active {
   background: rgba(16, 185, 129, 0.15);
   color: #10b981;

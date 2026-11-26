@@ -1202,22 +1202,31 @@ async function loadHermesModels() {
         ? meta.style
         : "background: rgba(148, 163, 184, 0.12); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25);";
       const badgeText = meta.label;
+      const iqScore = Math.max(0, Math.min(100, Number(m.intelligence_score || 75)));
+      const iqTier = m.intelligence_tier || `IQ ${iqScore}%`;
+      const iqColor = iqScore >= 90 ? "#10b981" : (iqScore >= 82 ? "#3b82f6" : "#f59e0b");
       const reasonTitle = !isAvailable ? escapeHtml(m.unavailable_reason || "API key not configured") : "";
       const statusHtml = isActive
         ? '<span style="font-size:10px; color:#10b981; font-weight:bold;">✓ Active</span>'
-        : (!isAvailable ? '<span style="font-size:9px; color:#94a3b8; font-weight:600;">No Key</span>' : '');
+        : (!isAvailable ? '<span style="font-size:9px; color:#94a3b8; font-weight:600;">No Access</span>' : '');
       return `
         <button type="button"
                 class="model-dropup-item ${isActive ? "is-active" : ""} ${!isAvailable ? "is-unavailable" : ""}"
                 ${!isAvailable ? `disabled aria-disabled="true" title="${reasonTitle}"` : `onclick="window.selectHermesModelItem(event, '${escapeHtml(m.id)}', '${escapeHtml(m.provider)}')"`}>
-          <div style="display:flex; flex-direction:column; gap:2px; width:100%;">
-            <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+          <div style="display:flex; flex-direction:column; gap:3px; width:100%;">
+            <div style="display:flex; align-items:center; justify-content:space-between; width:100%; gap:6px;">
               <span class="model-item-name" style="font-weight:600;">${escapeHtml(m.name)}</span>
-              <span style="font-size:9px; padding:1px 5px; border-radius:4px; ${badgeStyle}">${badgeText}</span>
+              <span style="font-size:9px; padding:1px 5px; border-radius:4px; white-space:nowrap; ${badgeStyle}">${badgeText}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; width:100%;">
+              <span style="font-size:9px; font-weight:700; color:${isAvailable ? iqColor : '#94a3b8'}; min-width:58px;">${escapeHtml(iqTier)}</span>
+              <div class="model-iq-track" title="Benchmark Intelligence Score: ${iqScore}%">
+                <div class="model-iq-fill" style="width:${iqScore}%; background:${isAvailable ? iqColor : '#94a3b8'};"></div>
+              </div>
+              ${statusHtml}
             </div>
             <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
               <span style="font-size:10px; color:var(--muted, #94a3b8);">${escapeHtml(!isAvailable && m.unavailable_reason ? m.unavailable_reason : (m.description || m.id))}</span>
-              ${statusHtml}
             </div>
           </div>
         </button>
