@@ -254,3 +254,21 @@ def test_routes_decisions_sync_history_and_hermes_tool(isolated_db_settings):
         mock_open.return_value = fake_resp
         tool_out = json.loads(hb_analyze_market())
         assert "data_truth_summary" in tool_out
+
+
+def test_zero_initial_capital_snapshot_no_division_undefined(isolated_db_settings):
+    """Verifies build_snapshot handles initial_capital=0.00 & net_equity=0.00 without DivisionUndefined."""
+    db, settings, feed = isolated_db_settings
+    from backend.database import TaxLot, TradeLog
+    from backend.portfolio import build_snapshot
+    from sqlalchemy import delete
+
+    with db.write() as session:
+        session.execute(delete(TradeLog))
+        session.execute(delete(TaxLot))
+        st = portfolio_state(session)
+        st.initial_capital = Decimal("0.00")
+
+    snap = build_snapshot(db, settings)
+    assert snap["metrics"]["initial_capital"] == 0.0
+    assert snap["metrics"]["total_gain_pct"] == 0.0

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v1.0.0-dev] - Unreleased (Trading Cockpit V1 Branch - Sprints 4A, 4B, 4C, 5A, 5B, 5C, 5D, 5E, 5F, 5G, 5H, 5I, 6A, 6B)
 
+### Fixed
+- **Decimal `DivisionUndefined` Guard (`backend/portfolio.py`):** Guarded `total_gain_pct` (`state.initial_capital > 0`) and `net_return_pct` (`lot.remaining_cost_basis > 0`) against `0 / 0` when live DB starts at `initial_capital = 0.00` before `H9210` mirror sync, with regression test in `tests/test_decision_advisor_and_real_history.py`.
+- **Modern `README.md` Redesign:** Updated `README.md` with centered logo header, `flat-square` & `for-the-badge` pills, Problem/Solution, Key Features, Core Architecture table, Tech Stack table, Quick Start, and Zero-Ban Firewall summary.
+
 ### Added
 - **Sprint 6B: Real StockNow 6-Array Curve Fix, Clean Topbar & Single H9210 Account Summary, Dummy Label Purge & Passive Order List Capture:**
   - `backend/adapters/tradexpress/history_provider.py`, `backend/portfolio.py`, `backend/adapters/tradexpress/passive_feed.py`: Fixed `parse_daily_history_candles` to decode StockNow's real 6-parallel-array format (`[opens, highs, lows, closes, volumes, timestamps]`), blocked false `synced_count` inflation (`>= 7` real bars strictly required), evaluated `analyze_curve(...)` against latest real bar date for `TRADEXPRESS_LIVE_CURVE` / `STOCKNOW_HISTORY`, and added `WALTONHIL` to `FOUNDATIONAL_GSC_SYMBOLS`.
@@ -127,6 +131,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## [v0.1.0] - 2026-11-15
+
+### Fixed
+- **Decimal `DivisionUndefined` Guard (`backend/portfolio.py`):** Guarded `total_gain_pct` (`state.initial_capital > 0`) and `net_return_pct` (`lot.remaining_cost_basis > 0`) against `0 / 0` when live DB starts at `initial_capital = 0.00` before `H9210` mirror sync, with regression test in `tests/test_decision_advisor_and_real_history.py`.
+- **Modern `README.md` Redesign:** Updated `README.md` with centered logo header, `flat-square` & `for-the-badge` pills, Problem/Solution, Key Features, Core Architecture table, Tech Stack table, Quick Start, and Zero-Ban Firewall summary.
 
 ### Added
 - **Core Quantitative Backend & Ledger:**

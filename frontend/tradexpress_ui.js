@@ -817,8 +817,8 @@
       const exists = snapshot.companies.some((c) => c.symbol === state.selectedSymbol);
       if (!exists || !state.selectedSymbol) {
         const l1 = snapshot.companies.find((c) => c.watchlist_category === "GSC_L1") ||
-                   snapshot.companies.find((c) => (c.holding_qty || 0) > 0) ||
-                   snapshot.companies[0];
+          snapshot.companies.find((c) => (c.holding_qty || 0) > 0) ||
+          snapshot.companies[0];
         if (l1) state.selectedSymbol = l1.symbol;
       }
     }
@@ -956,7 +956,7 @@
           baseQty = Math.max(1, Math.round((mature * pct) / 100));
         } else {
           const bp = (state.lastSnapshot && (state.lastSnapshot.buying_power_bdt || (state.lastSnapshot.metrics && state.lastSnapshot.metrics.available_cash))) ||
-                     (window.state && window.state.snapshot && (window.state.snapshot.buying_power_bdt || (window.state.snapshot.metrics && window.state.snapshot.metrics.available_cash))) || 10000;
+            (window.state && window.state.snapshot && (window.state.snapshot.buying_power_bdt || (window.state.snapshot.metrics && window.state.snapshot.metrics.available_cash))) || 10000;
           const p = parseFloat(priceInput?.value) || (company && (company.last_price ?? company.price)) || 17.50;
           if (p > 0) {
             const maxShares = Math.floor(bp / p);
@@ -1068,8 +1068,8 @@
       tbody.innerHTML = rows.map((r) => {
         const badgeClass =
           r.action === "BUY_CANDIDATE" ? "positive" :
-          r.action === "SELL_CANDIDATE" ? "negative" :
-          r.action === "BLOCKED" ? "negative" : "muted";
+            r.action === "SELL_CANDIDATE" ? "negative" :
+              r.action === "BLOCKED" ? "negative" : "muted";
         const srText = (r.support > 0 && r.resistance > 0) ? `${Number(r.support).toFixed(2)} – ${Number(r.resistance).toFixed(2)}` : "—";
         const upsideText = r.history_verified ? `${r.est_net_upside_pct >= 0 ? "+" : ""}${Number(r.est_net_upside_pct).toFixed(2)}%` : "—";
         const bidOfferText = `${Number(r.bid || 0).toFixed(2)} / ${Number(r.offer || 0).toFixed(2)}`;
