@@ -5,6 +5,7 @@ Exposes git diffs, kernel state checkpoint changes, and conversation stubs.
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import time
@@ -210,7 +211,20 @@ def _infer_provider(model_id: str) -> str:
     return "openrouter"
 
 
-AVAILABLE_HERMES_MODELS = [
+def _load_static_models() -> list[dict[str, Any]]:
+    """Loads static model catalog and benchmark scores from backend/models.json."""
+    models_path = Path(__file__).resolve().parent / "models.json"
+    if models_path.exists():
+        try:
+            data = json.loads(models_path.read_text(encoding="utf-8"))
+            if isinstance(data, list) and data:
+                return data
+        except Exception:
+            pass
+    return []
+
+
+AVAILABLE_HERMES_MODELS = _load_static_models() or [
     # --- Google AI Studio (Primary) ---
     {
         "id": "gemini-2.5-pro",

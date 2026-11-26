@@ -1,6 +1,6 @@
 # 🗺️ Codebase AST Knowledge Graph & Architecture Radar
 
-> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-26 08:59:40 UTC**.
+> Auto-generated via `scripts/generate_code_map.py` (Zero-dependency stdlib AST inspection) on **2026-11-26 09:27:54 UTC**.
 > **Core Strategy Invariants:**
 > - **Strict No-Loss Guarantee:** Never sell at net loss (< 0% net P/L after round-trip 1.00% fees).
 > - **Sequential No-Regret Selling:** 25% / 25% / 25% profit tiers (+1.5%, +3.5%, +6.0% net) + 25% runner.
@@ -64,6 +64,7 @@ trading-cockpit/
 │   ├── logging_config.py
 │   ├── main.py
 │   ├── market_map.py
+│   ├── models.json
 │   ├── portfolio.py
 │   ├── requirements-dev.txt
 │   ├── requirements.txt
@@ -216,11 +217,11 @@ trading-cockpit/
 
 | Extension / Type | File Count | Total Lines of Code | Description |
 | :--- | :--- | :--- | :--- |
-| `.py` | 102 | 33,377 | Python Core Kernel, Engine, Tests & Plugins |
+| `.py` | 102 | 33,393 | Python Core Kernel, Engine, Tests & Plugins |
 | `.css` | 2 | 12,643 | Custom Dark / Light / Terminal Design System |
 | `.js` | 8 | 8,080 | Vanilla ES6+ Reactive Terminal Controller & UI |
-| `.md` | 15 | 6,393 | Architecture & Strategy Documentation |
-| `.json` | 14 | 5,710 | Fixtures & Configuration |
+| `.md` | 15 | 6,398 | Architecture & Strategy Documentation |
+| `.json` | 15 | 5,998 | Fixtures & Configuration |
 | `.html` | 2 | 1,700 | Single Page Application DOM Structure |
 | `.ps1` | 2 | 199 | Windows PowerShell Automation |
 | `.bat` | 2 | 73 | Batch Launchers |
@@ -229,7 +230,7 @@ trading-cockpit/
 | `.txt` | 2 | 11 | Dependency Specifications |
 | `.sh` | 1 | 9 | Shell Scripts |
 | *other* | 15 | 151,667 | Other Configuration, Assets & Dotfiles |
-| **TOTAL** | **167** | **219,910** | *Entire Humming Bird Repository* |
+| **TOTAL** | **168** | **220,219** | *Entire Humming Bird Repository* |
 
 ---
 
@@ -1539,26 +1540,27 @@ Shows intra-repo module dependencies within `backend/`, `plugins/`, and `scripts
 
 | Class | Line Range | Inherits | Docstring / Purpose | Methods Count |
 | :--- | :--- | :--- | :--- | :--- |
-| `CreateThreadRequest` | `L23–L25` | `BaseModel` | — | 0 |
-| `SwitchModelRequest` | `L28–L31` | `BaseModel` | — | 0 |
+| `CreateThreadRequest` | `L24–L26` | `BaseModel` | — | 0 |
+| `SwitchModelRequest` | `L29–L32` | `BaseModel` | — | 0 |
 
 
 #### Standalone Functions
 
 | Function | Line Range | Signature | Return Type | Docstring | Internal Calls |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `_read_env_key_values` | `L49–L89` | `(settings: Settings | None=None...)` | `dict[str, str]` | Reads configured API key values from env, settings, and .env files (never logged or returned). | `Path`, `append`, `exists`, `extend` |
-| `_read_configured_env_keys` | `L92–L94` | `(...)` | `set[str]` | Returns names of non-empty API key env vars from process env and .env files (never values). | `_read_env_key_values`, `keys`, `set` |
-| `_probe_provider_live` | `L97–L155` | `(provider: str, env_values: dict[str...)` | `tuple[bool, str, set[str] | None]` | Probes live provider auth & accessible model IDs with a 120s cache (skipped under pytest). | `get`, `getenv`, `json`, `monotonic` |
-| `is_provider_available` | `L158–L189` | `(provider: str, settings: Settings |...)` | `tuple[bool, str]` | Checks whether a provider has valid API key(s) configured. | `_probe_provider_live`, `_read_configured_env_keys`, `_read_env_key_values`, `add` |
-| `_infer_provider` | `L192–L210` | `(model_id: str...)` | `str` | Infers provider ID from catalog or model naming conventions. | `lower`, `startswith`, `strip` |
-| `build_hermes_router` | `L494–L728` | `(database: Database, settings: Setti...)` | `APIRouter` | — | `APIRouter` |
-| `list_conversations` | `L498–L500` | `(...)` | — | Returns conversation topics. | `get` |
-| `create_conversation` | `L503–L511` | `(body: CreateThreadRequest...)` | — | Creates a local conversation topic stub. | `post` |
-| `conversation_messages` | `L514–L516` | `(conversation_id: str...)` | — | Returns messages for a conversation topic. | `get` |
-| `system_changes` | `L519–L591` | `(...)` | — | Returns git diff summary and recent kernel checkpoints. | `Path`, `append`, `desc`, `get` |
-| `get_hermes_models` | `L594–L653` | `(...)` | — | Returns available models with live key/model verification, intelligence scores, and fallback chain. | `append`, `get`, `int`, `is_provider_available` |
-| `switch_hermes_model` | `L656–L726` | `(body: SwitchModelRequest...)` | — | Switches active model and provider in Hermes profile and updates local state. | `HTTPException`, `_infer_provider`, `append`, `create_checkpoint` |
+| `_read_env_key_values` | `L50–L90` | `(settings: Settings | None=None...)` | `dict[str, str]` | Reads configured API key values from env, settings, and .env files (never logged or returned). | `Path`, `append`, `exists`, `extend` |
+| `_read_configured_env_keys` | `L93–L95` | `(...)` | `set[str]` | Returns names of non-empty API key env vars from process env and .env files (never values). | `_read_env_key_values`, `keys`, `set` |
+| `_probe_provider_live` | `L98–L156` | `(provider: str, env_values: dict[str...)` | `tuple[bool, str, set[str] | None]` | Probes live provider auth & accessible model IDs with a 120s cache (skipped under pytest). | `get`, `getenv`, `json`, `monotonic` |
+| `is_provider_available` | `L159–L190` | `(provider: str, settings: Settings |...)` | `tuple[bool, str]` | Checks whether a provider has valid API key(s) configured. | `_probe_provider_live`, `_read_configured_env_keys`, `_read_env_key_values`, `add` |
+| `_infer_provider` | `L193–L211` | `(model_id: str...)` | `str` | Infers provider ID from catalog or model naming conventions. | `lower`, `startswith`, `strip` |
+| `_load_static_models` | `L214–L224` | `(...)` | `list[dict[str, Any]]` | Loads static model catalog and benchmark scores from backend/models.json. | `Path`, `exists`, `isinstance`, `loads` |
+| `build_hermes_router` | `L508–L742` | `(database: Database, settings: Setti...)` | `APIRouter` | — | `APIRouter` |
+| `list_conversations` | `L512–L514` | `(...)` | — | Returns conversation topics. | `get` |
+| `create_conversation` | `L517–L525` | `(body: CreateThreadRequest...)` | — | Creates a local conversation topic stub. | `post` |
+| `conversation_messages` | `L528–L530` | `(conversation_id: str...)` | — | Returns messages for a conversation topic. | `get` |
+| `system_changes` | `L533–L605` | `(...)` | — | Returns git diff summary and recent kernel checkpoints. | `Path`, `append`, `desc`, `get` |
+| `get_hermes_models` | `L608–L667` | `(...)` | — | Returns available models with live key/model verification, intelligence scores, and fallback chain. | `append`, `get`, `int`, `is_provider_available` |
+| `switch_hermes_model` | `L670–L740` | `(body: SwitchModelRequest...)` | — | Switches active model and provider in Hermes profile and updates local state. | `HTTPException`, `_infer_provider`, `append`, `create_checkpoint` |
 
 
 ---
@@ -2388,8 +2390,8 @@ Indexed **30** Pydantic contract and request/response models across `backend/` a
 | `AllocationRequest` | [`backend/main.py`](/backend/main.py#L100) | `L100` | Request Model | 2 | `buy_allocation_pct`: Decimal, `enabled`: StrictBool | Request Model |
 | `LoginRequest` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L21) | `L21` | Request Model | 2 | `username`: str, `password`: str | Request Model |
 | `KeysSettingsRequest` | [`backend/routes_auth_settings.py`](/backend/routes_auth_settings.py#L27) | `L27` | Request Model | 11 | `openrouter_key`: str \| None, `gemini_key`: str \| None, `groq_key`: str \| None... | Request Model |
-| `CreateThreadRequest` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L23) | `L23` | Request Model | 1 | `title`: str | Request Model |
-| `SwitchModelRequest` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L28) | `L28` | Request Model | 2 | `model`: str, `provider`: str \| None | Request Model |
+| `CreateThreadRequest` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L24) | `L24` | Request Model | 1 | `title`: str | Request Model |
+| `SwitchModelRequest` | [`backend/routes_hermes.py`](/backend/routes_hermes.py#L29) | `L29` | Request Model | 2 | `model`: str, `provider`: str \| None | Request Model |
 | `StockNowSessionActionRequest` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L36) | `L36` | Request Model | 2 | `action`: Literal['launch', 'check_auth', 'close'], `mode`: Literal['ONSCREEN_LIVE', 'BACKGROUND_POLLING'] \| None | Request Model |
 | `StockNowMarketSyncRequest` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L42) | `L42` | Request Model | 1 | `payload`: Any \| None | Request Model |
 | `StockNowPortfolioSyncRequest` | [`backend/routes_stocknow.py`](/backend/routes_stocknow.py#L47) | `L47` | Request Model | 1 | `injected_portfolio`: Any \| None | Request Model |
@@ -3408,6 +3410,7 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `backend/routes_auth_settings.py` | `build_auth_settings_router` | 146 | 3 | Decompose into sub-functions |
 | `backend/routes_hermes.py` | `_read_env_key_values` | 41 | 5 | Acceptable; well-scoped logic |
 | `backend/routes_hermes.py` | `_probe_provider_live` | 59 | 7 | Acceptable; well-scoped logic |
+| `backend/routes_hermes.py` | `_load_static_models` | 11 | 4 | Acceptable; well-scoped logic |
 | `backend/routes_hermes.py` | `build_hermes_router` | 235 | 5 | Decompose into sub-functions |
 | `backend/routes_hermes.py` | `system_changes` | 73 | 5 | Acceptable; well-scoped logic |
 | `backend/routes_hermes.py` | `switch_hermes_model` | 71 | 4 | Acceptable; well-scoped logic |
@@ -3460,4 +3463,4 @@ Functions requiring architectural attention (> 70 lines or nesting depth >= 4):
 | `scripts/verify_chat_card.py` | `main` | 121 | 3 | Decompose into sub-functions |
 
 
-> **Knowledge Graph Summary:** 62 Python modules inspected, 68 FastAPI endpoints registered, 19 SQLAlchemy tables mapped, 30 Pydantic contracts indexed, 25 Hermes tools bound to skills, 147 JS functions mapped, 454 DOM IDs indexed, 219,910 total LOC indexed across 167 repository files.
+> **Knowledge Graph Summary:** 62 Python modules inspected, 68 FastAPI endpoints registered, 19 SQLAlchemy tables mapped, 30 Pydantic contracts indexed, 25 Hermes tools bound to skills, 147 JS functions mapped, 454 DOM IDs indexed, 220,219 total LOC indexed across 168 repository files.
